@@ -1,0 +1,23 @@
+[ req]
+default_bits = 2048
+prompt = no
+default_md = sha256
+distinguished_name = dn
+x509_extensions = v3_req
+
+[ dn ]
+C=AT
+ST=Vienna
+L=Vienna
+O=42Vienna
+OU=WhoAreWe
+CN=${ENV::CN}
+
+[ v3_req ]
+subjectAltName = @alt_names
+
+[ alt_names ]
+DNS.1 = ${ENV::CN}
+DNS.2 = localhost
+IP.1 = 127.0.0.1
+IP.2 = ::1
