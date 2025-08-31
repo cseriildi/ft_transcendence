@@ -6,8 +6,8 @@ CN="${CN:-localhost.localdomain}"
 DAYS="${DAYS:-825}"
 CONF="ops/openssl/dev.cnf"
 
-KEY="$DIR/dev-key.pem"
-CRT="$DIR/dev-cert.pem"
+KEY="$DIR/key.pem"
+CRT="$DIR/cert.pem"
 CA="$DIR/rootCA.pem"
 
 [ -f "$KEY" ] && [ -f "$CRT" ] && {
