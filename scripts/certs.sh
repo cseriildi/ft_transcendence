@@ -10,7 +10,7 @@ KEY="$DIR/key.pem"
 CRT="$DIR/cert.pem"
 CA="$DIR/rootCA.pem"
 
-[ -f "$KEY" ] && [ -f "$CRT" ] && {
+[ -f "$KEY" ] && [ -f "$CRT" ] && [ -f "$CA" ] && {
   echo "[ok] Certs already exist in $DIR (use FORCE=true to overwrite)";
   [ "${FORCE:-false}" != "true" ] && exit 0;
 }
