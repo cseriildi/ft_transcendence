@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+if git diff --cached --name-only | grep -q '^\.env$'; then
+  echo ".env file is staged for commit! Please remove it from the staging area."
+  exit 1
+else
+  echo ".env file is not staged for commit. Good!"
+fi
