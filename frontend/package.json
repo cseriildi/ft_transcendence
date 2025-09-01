@@ -1,0 +1,16 @@
+{
+  "name": "transcendence-frontend",
+  "version": "1.0.0",
+  "description": "true",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tailwindcss -i ./src/input.css -o ./src/output.css --watch",
+    "start": "browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10"
+  },
+  "devDependencies": {
+    "tailwindcss": "^4.1.12",
+    "browser-sync": "^2.27.11"
+  },
+  "author": "",
+  "license": "ISC"
+}
