@@ -1,7 +1,7 @@
 {
   "name": "transcendence-frontend",
   "version": "1.0.0",
-  "description": "true",
+  "description": "Frontend for the Transcendence web application.",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10\"",
