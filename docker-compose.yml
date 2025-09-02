@@ -1,0 +1,12 @@
+services:
+  gateway:
+    image: nginx:latest
+    container_name: gateway
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./services/gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./services/gateway/site.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./.certs:/etc/nginx/certs:ro
+      - ./services/frontend:/usr/share/nginx/html:ro
