@@ -20,7 +20,7 @@ RUN mkdir -p dist
 RUN npx tsc
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
 # Start the application
 CMD ["npm", "run", "start:prod"]
