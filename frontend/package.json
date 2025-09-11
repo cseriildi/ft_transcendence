@@ -4,8 +4,8 @@
   "description": "Frontend for the Transcendence web application.",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10\"",
-    "start": "browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10"
+    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 4200 --reload-delay 10\"",
+    "start": "browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 4200 --reload-delay 10"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
