@@ -5,6 +5,8 @@
     "moduleResolution": "node",
     "outDir": "./dist",
     "rootDir": "./src",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
