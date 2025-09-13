@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./src/css/output.css --watch\" \"browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10\"",
-    "start": "browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10"
+    "start": "browser-sync start --server 'src' --files 'src/**/*' --no-ui --port 3000 --reload-delay 10",
+    "build": "mkdir -p dist/assets && find dist -mindepth 1 -delete 2>/dev/null || true && tsc && tailwindcss -i ./src/css/input.css -o ./dist/assets/styles.css --minify && cp -r ./public/* ./dist/ 2>/dev/null || true"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
