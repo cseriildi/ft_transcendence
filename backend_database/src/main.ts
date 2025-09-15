@@ -1,17 +1,16 @@
-import Fastify, { FastifyRequest } from 'fastify'
+import Fastify from 'fastify'
 import firstRoute from './routes.ts'
 import dbConnector from './database.ts'
-import { optional } from 'zod'
 
 const fastify = Fastify({
   logger: true
 })
 
-fastify.register(firstRoute)
-fastify.register(dbConnector,{path: './database/database.db'}  ) 
 
 const start = async () => {
   try {
+    await fastify.register(dbConnector,{path: './src/database/database.db'})
+    await fastify.register(firstRoute)
     await fastify.listen({ port: 3000, host: '::'}) 
   } 
   catch (err) {

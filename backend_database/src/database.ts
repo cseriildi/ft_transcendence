@@ -1,15 +1,29 @@
-import sqlite3 from "sqlite3"
+import sqlite3, { Database } from "sqlite3"
+import fp from "fastify-plugin";
+import { FastifyInstance} from "fastify";
 
-async function dbConnector (fastify, options) {
+interface DatabaseOptions {
+  path?: string
+}
 
-    const dbPath = options.path || './database/database.db';
-  const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      fastify.log.error('Could not connect to database', err)
-    } else {
-      fastify.log.info('Connected to database')
-    }
+async function dbConnector (fastify: FastifyInstance, options: DatabaseOptions) {
+
+  const dbPath = options.path || './src/database/database.db'
+  
+  // Create database connection with Promise wrapper
+  const db = await new Promise<sqlite3.Database>((resolve, reject) => {
+    const database = new sqlite3.Database(dbPath, (err) => {
+      if (err) {
+        fastify.log.error('Could not connect to database', err)
+        reject(err)
+      } else {
+        fastify.log.info(`Connected to database at ${dbPath}`)
+        resolve(database)
+      }
+    })
   })
+  
+  fastify.decorate('db', db)
 
   // Initialize database schema
   const initDb = () => {
@@ -27,22 +41,6 @@ async function dbConnector (fastify, options) {
           if (err) {
             fastify.log.error('Error creating users table:', err)
             reject(err)
-          }
-        })
-
-        db.run(`
-          CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            content TEXT NOT NULL,
-            user_id INTEGER,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users (id)
-          )
-        `, (err) => {
-          if (err) {
-            fastify.log.error('Error creating posts table:', err)
-            reject(err)
           } else {
             fastify.log.info('Database schema initialized')
             resolve(undefined)
@@ -53,10 +51,25 @@ async function dbConnector (fastify, options) {
   }
 
   // Initialize the database
-  await initDb()
+  try {
+    await initDb()
+  } catch (error) {
+    fastify.log.error('Failed to initialize database:', error)
+    throw error
+  }
 
-  fastify.decorate('db', db)
+  fastify.addHook('onClose', async (instance) => {
+    return new Promise<void>((resolve) => {
+      instance.db.close((err: Error | null) => {
+        if (err) {
+          instance.log.error('Error closing database:', err)
+        } else {
+          instance.log.info('Database connection closed')
+        }
+        resolve()
+      })
+    })
+  })
 }
 
-// and hooks, declared inside the plugin to the parent scope.
-export default dbConnector;
+export default fp(dbConnector, { name: 'dbConnector' });

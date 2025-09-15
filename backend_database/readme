@@ -1,0 +1,32 @@
+
+Reopen in Dev Container
+in container: npm run dev
+
+"Dev Containers: Rebuild Container" after modifyien devcontainer JSON
+
+Dev Containers: Reopen Folder Locally to exit container or click bottom left
+
+test post route:
+curl -X POST http://localhost:3000/users
+-H "Content-Type: application/json"
+-d '{"username": "john_doe", "email": "john@example.com"}'
+
+test get route:
+curl http://localhost:3000/users/john_doe
+
+Database schema (SQLite):
+-- Users table
+CREATE TABLE users (
+  id INTEGER PRIMARY KEY,
+  username TEXT,
+  email TEXT
+);
+
+-- Posts table that RELATES to users
+CREATE TABLE posts (
+  id INTEGER PRIMARY KEY,
+  title TEXT,
+  content TEXT,
+  user_id INTEGER,
+  FOREIGN KEY (user_id) REFERENCES users(id)  -- 👈 RELATIONSHIP!
+);
