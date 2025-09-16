@@ -11,7 +11,7 @@ import {
 import "../types/fastify.ts";
 import { userController } from "../controllers/users.ts";
 
-async function userRoutes(fastify: FastifyInstance, reply: FastifyReply) {
+async function userRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: UserParams;
     Reply: GetUserResponse | UserErrorResponse;

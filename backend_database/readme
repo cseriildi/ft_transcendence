@@ -7,9 +7,7 @@ in container: npm run dev
 Dev Containers: Reopen Folder Locally to exit container or click bottom left
 
 test post route:
-curl -X POST http://localhost:3000/users
--H "Content-Type: application/json"
--d '{"username": "john_doe", "email": "john@example.com"}'
+curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d '{"username": "john_doe", "email": "john@example.com"}'
 
 test get route:
 curl http://localhost:3000/users/john_doe

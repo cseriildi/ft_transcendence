@@ -7,11 +7,7 @@ import errorHandler from "./plugins/errorHandler.ts";
 // Validate configuration on startup
 validateConfig();
 
-const app = fastify({
-  logger: {
-    level: config.logging.level,
-  },
-});
+const app = fastify({  logger: { level: config.logging.level } });
 
 const start = async () => {
   try {

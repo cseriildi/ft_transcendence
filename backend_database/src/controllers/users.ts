@@ -7,105 +7,85 @@ import {
   CreateUserResponse,
   GetUserResponse,
   GetUsersResponse,
-  UserErrorResponse,
 } from "../types/users.ts";
 import { ApiResponseHelper } from "../utils/responses.ts";
 import { errors } from "../utils/errors.ts";
 import "../types/fastify.ts";
+import { createHandler } from "../utils/handler.ts";
+
+// alternatively maybe:
+// FastifyReply methods (see https://www.fastify.io/docs/latest/Reply/)
+// reply.status(201)           // Set HTTP status
+// reply.header('key', 'val')  // Set response header  
+// reply.send(data)           // Send response (rarely used with your pattern)
+// reply.code(404)            // Alternative to status()
+// reply.type('text/html')    // Set content type
+
 
 export const userController = {
-  // Handler to create a new user
-  async getUserById(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ): Promise<GetUserResponse | UserErrorResponse> {
-    const { id } = request.params as UserParams;
-    const { db } = request.server;
-    // Direct database call
-    const user = await new Promise<User | null>((resolve, reject) => {
-      db.get(
+
+  //structure for createHAndler:
+  // createHandler<{ whatever is provoded as neccesary for the query }, response type>(
+  //   async (request, { db , reply(optional)}) => {
+  //     // handler logic
+  //   }
+  // ),
+  getUserById: createHandler<{ Params: UserParams }, GetUserResponse>(
+    async (request, { db }) => {
+      const { id } = request.params;
+      const user = await db.get<User>(
         "SELECT id, username, email, created_at FROM users WHERE id = ?",
-        [id],
-        (err: Error | null, row: User | undefined) => {
-          if (err) {
-            reject(errors.internal("Database error"));
-          } else {
-            resolve(row || null);
-          }
-        }
+        [id]
       );
-    });
-
-    if (!user) {
-      throw errors.notFound("User");
-    }
-    return ApiResponseHelper.success(user, "User found");
-  },
-
-  async getUsers(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ): Promise<GetUsersResponse | UserErrorResponse> {
-    const { db } = request.server;
-    const users = await new Promise<User[]>((resolve, reject) => {
-      db.all(
-        "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC",
-        [],
-        (err: Error | null, rows: User[]) => {
-          if (err) {
-            reject(errors.internal("Database error"));
-          } else {
-            resolve(rows || []);
-          }
-        }
-      );
-    });
-    return ApiResponseHelper.success(users, "Users retrieved");
-  },
-
-  async createUser(
-    request: FastifyRequest,
-    reply: FastifyReply
-  ): Promise<CreateUserResponse | UserErrorResponse> {
-    const { username, email } = (request.body as CreateUserBody) || {};
-    const { db } = request.server;
-    if (!username?.trim() || !email?.trim()) {
-      throw errors.validation("Username and email are required");
-    }
-    if (!/\S+@\S+\.\S+/.test(email)) {
-      throw errors.validation("Invalid email format");
-    }
-
-    // Direct database call
-    const result = await new Promise<{ lastID: number; changes: number }>(
-      (resolve, reject) => {
-        db.run(
-          "INSERT INTO users (username, email) VALUES (?, ?)",
-          [username.trim(), email.trim()],
-          function (err) {
-            if (err) {
-              if (err.message.includes("UNIQUE constraint")) {
-                reject(errors.conflict("Username or email already exists"));
-              } else {
-                reject(errors.internal("Database error"));
-              }
-            } else {
-              resolve({ lastID: this.lastID, changes: this.changes });
-            }
-          }
-        );
+      if (!user) {
+        throw errors.notFound("User");
       }
-    );
+      return ApiResponseHelper.success(user, "User found");
+    }
+  ),
 
-    reply.status(201);
-    return ApiResponseHelper.success(
-      {
-        id: result.lastID,
-        username: username.trim(),
-        email: email.trim(),
-        created_at: new Date().toISOString(),
-      },
-      "User created"
-    );
-  },
+   getUsers: createHandler<{}, GetUsersResponse>(
+    async (request, { db }) => {
+      const users = await db.all<User>(
+        "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
+      );
+      return ApiResponseHelper.success(users, "Users retrieved");
+    }
+  ),
+
+  createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
+    async (request, { db, reply }) => {
+      const { username, email } = request.body || {};
+      
+      if (!username?.trim() || !email?.trim()) {
+        throw errors.validation("Username and email are required");
+      }
+      if (!/\S+@\S+\.\S+/.test(email)) {
+        throw errors.validation("Invalid email format");
+      }
+
+      try {
+        const result = await db.run(
+          "INSERT INTO users (username, email) VALUES (?, ?)",
+          [username.trim(), email.trim()]
+        );
+
+        reply.status(201);
+        return ApiResponseHelper.success(
+          {
+            id: result.lastID,
+            username: username.trim(),
+            email: email.trim(),
+            created_at: new Date().toISOString(),
+          },
+          "User created"
+        );
+      } catch (err: any) {
+        if (err.message?.includes("UNIQUE constraint")) {
+          throw errors.conflict("Username or email already exists");
+        }
+        throw err; // Re-throw other database errors
+      }
+    }
+  ),
 };
