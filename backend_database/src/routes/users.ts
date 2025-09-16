@@ -14,7 +14,6 @@ import { errors } from '../utils/errors.ts'
 import '../types/fastify.ts'
 
 async function userRoutes(fastify: FastifyInstance) {
-  
   // POST /users
   fastify.post<{ 
     Body: CreateUserBody
