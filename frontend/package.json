@@ -7,8 +7,8 @@
     "build": "mkdir -p dist dist/templates && cp src/index.html dist && cp src/templates/*.html dist/templates && tsc && tailwindcss -i ./src/css/input.css -o ./dist/css/output.css",
     "predev": "mkdir -p dist dist/templates && cp src/index.html dist && cp src/templates/*.html dist/templates",
     "prestart": "npm run build",
-    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10\"",
-    "start": "browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10"
+    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single\"",
+    "start": "browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
