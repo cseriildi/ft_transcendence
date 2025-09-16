@@ -1,8 +1,8 @@
-import { Database } from 'sqlite3'
+import { Database } from "sqlite3";
 
 // Extend Fastify's types globally
-declare module 'fastify' {
+declare module "fastify" {
   interface FastifyInstance {
-    db: Database
+    db: Database;
   }
 }

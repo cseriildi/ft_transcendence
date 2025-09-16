@@ -2,27 +2,26 @@ import { FastifyInstance } from "fastify";
 import { ApiResponseHelper } from "../utils/responses.js";
 
 async function checkRoutes(fastify: FastifyInstance) {
-
-      fastify.get('/', async (request, reply) => {
+  fastify.get("/", async (request, reply) => {
     return ApiResponseHelper.success(
-      { 
-        message: 'Welcome to the API',
-        version: '1.0.0'
+      {
+        message: "Welcome to the API",
+        version: "1.0.0",
       },
-      'API is running'
-    )
-  })
+      "API is running"
+    );
+  });
 
-  fastify.get('/health', async (request, reply) => {
+  fastify.get("/health", async (request, reply) => {
     return ApiResponseHelper.success(
-      { 
-        status: 'healthy', 
+      {
+        status: "healthy",
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
       },
-      'Service is healthy'
-    )
-  })
+      "Service is healthy"
+    );
+  });
 }
 
-export default checkRoutes
+export default checkRoutes;

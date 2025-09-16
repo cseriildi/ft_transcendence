@@ -1,4 +1,4 @@
-import { ApiResponse, ErrorResponse } from '../types/common'
+import { ApiResponse, ErrorResponse } from "../types/common";
 
 export class ApiResponseHelper {
   static success<T>(data: T, message?: string): ApiResponse<T> {
@@ -6,8 +6,8 @@ export class ApiResponseHelper {
       success: true,
       data,
       message,
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    };
   }
 
   static error(error: string, message?: string): ErrorResponse {
@@ -15,14 +15,14 @@ export class ApiResponseHelper {
       success: false,
       error,
       message,
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    };
   }
 
   static paginated<T>(
-    data: T[], 
-    page: number, 
-    limit: number, 
+    data: T[],
+    page: number,
+    limit: number,
     total: number,
     message?: string
   ) {
@@ -35,8 +35,8 @@ export class ApiResponseHelper {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit)
-      }
-    }
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 }
