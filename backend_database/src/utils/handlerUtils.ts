@@ -1,4 +1,4 @@
-import { FastifyRequest, FastifyReply } from "fastify";
+import { FastifyRequest, FastifyReply, RouteGenericInterface } from "fastify";
 import { DatabaseHelper } from  "./databaseUtils.ts";
 
 type HandlerContext = {
@@ -6,7 +6,7 @@ type HandlerContext = {
   reply: FastifyReply;
 };
 
-export function createHandler<TRequest = {}, TResponse = any>(
+export function createHandler<TRequest extends RouteGenericInterface = RouteGenericInterface, TResponse = any>(
   handler: (request: FastifyRequest<TRequest>, context: HandlerContext) => Promise<TResponse>
 ) {
   return async (request: FastifyRequest<TRequest>, reply: FastifyReply): Promise<TResponse> => {
