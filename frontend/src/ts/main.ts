@@ -1,4 +1,5 @@
 import './router/Router.js';
+import { Pong } from "./pong/Pong.js";
 
 console.log("Hello, TypeScript!");
 
@@ -10,12 +11,22 @@ const initHomePage = () => {
   authBtn?.addEventListener('click', () => router.navigate('/auth'));
 };
 
+let currentPong: Pong | null = null;
+
 const initPongPage = () => {
-  const backBtn = document.getElementById('back-btn');
-  backBtn?.addEventListener('click', () => router.navigate('/'));
-  
-  // Initialize pong game logic here
-  console.log('Pong game initialized');
+    const backBtn = document.getElementById("back-btn");
+    backBtn?.addEventListener("click", () => {
+        currentPong?.destroy(); // Optional cleanup
+        currentPong = null;
+        router.navigate("/");
+    });
+
+    const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
+    if (canvas) {
+        currentPong = new Pong("pong-canvas", "ws://localhost:3000/game");
+    } else {
+        console.error("❌ Pong canvas not found");
+    }
 };
 
 const initAuthPage = () => {
