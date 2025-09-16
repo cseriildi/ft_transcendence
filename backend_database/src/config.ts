@@ -14,7 +14,7 @@ export const config = {
   
   // Logging
   logging: {
-    level: process.env.LOG_LEVEL || 'info'
+    level: process.env.LOG_LEVEL || 'error'
   }
 }
 

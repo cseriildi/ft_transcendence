@@ -20,9 +20,6 @@ const start = async () => {
     await app.register(errorHandler) 
     await app.register(routes)
     await app.listen({ port: config.server.port, host: config.server.host }) 
-    
-    app.log.info(`Server running in ${config.server.env} mode`)
-    app.log.info(`Database: ${config.database.path}`)
   } 
   catch (err) {
     app.log.error(err)
