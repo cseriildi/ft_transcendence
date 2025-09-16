@@ -1,5 +1,5 @@
-
-Reopen in Dev Container
+ctrl+shift+p
+>Reopen in Dev Container
 in container: npm run dev
 
 "Dev Containers: Rebuild Container" after modifyien devcontainer JSON

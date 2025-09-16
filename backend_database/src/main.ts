@@ -16,8 +16,8 @@ const app = fastify({
 
 const start = async () => {
   try {
-    await app.register(errorHandler) 
     await app.register(dbConnector, { path: config.database.path })
+    await app.register(errorHandler) 
     await app.register(routes)
     await app.listen({ port: config.server.port, host: config.server.host }) 
     
