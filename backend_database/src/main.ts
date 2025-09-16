@@ -2,7 +2,7 @@ import fastify from "fastify";
 import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
 import { config, validateConfig } from "./config.ts";
-import errorHandler from "./plugins/errorHandler.ts";
+import errorHandler from "./plugins/errorHandlerPlugin.ts";
 
 // Validate configuration on startup
 validateConfig();

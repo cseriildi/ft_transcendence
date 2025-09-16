@@ -1,5 +1,5 @@
 import { Database } from "sqlite3";
-import { errors } from "./errors.ts";
+import { errors } from "./errorUtils.ts";
 
 export class DatabaseHelper {
   constructor(private db: Database) {}

@@ -1,5 +1,4 @@
 // src/routes/users.ts
-import { FastifyReply, FastifyRequest } from "fastify";
 import {
   User,
   CreateUserBody,
@@ -7,11 +6,11 @@ import {
   CreateUserResponse,
   GetUserResponse,
   GetUsersResponse,
-} from "../types/users.ts";
-import { ApiResponseHelper } from "../utils/responses.ts";
-import { errors } from "../utils/errors.ts";
-import "../types/fastify.ts";
-import { createHandler } from "../utils/handler.ts";
+} from "../types/userTypes.ts";
+import { ApiResponseHelper } from "../utils/responseUtils.ts";
+import { errors } from "../utils/errorUtils.ts";
+import "../types/fastifyTypes.ts";
+import { createHandler } from "../utils/handlerUtils.ts";
 
 // alternatively maybe:
 // FastifyReply methods (see https://www.fastify.io/docs/latest/Reply/)

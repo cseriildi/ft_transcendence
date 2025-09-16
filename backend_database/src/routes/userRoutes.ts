@@ -7,9 +7,9 @@ import {
   GetUserResponse,
   GetUsersResponse,
   UserErrorResponse,
-} from "../types/users.ts";
-import "../types/fastify.ts";
-import { userController } from "../controllers/users.ts";
+} from "../types/userTypes.ts";
+import "../types/fastifyTypes.ts";
+import { userController } from "../controllers/userController.ts";
 
 async function userRoutes(fastify: FastifyInstance) {
   fastify.get<{

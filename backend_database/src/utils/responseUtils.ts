@@ -1,4 +1,4 @@
-import { ApiResponse, ErrorResponse } from "../types/common";
+import { ApiResponse, ErrorResponse } from "../types/commonTypes";
 
 export class ApiResponseHelper {
   static success<T>(data: T, message?: string): ApiResponse<T> {

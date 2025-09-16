@@ -1,7 +1,7 @@
 import fp from "fastify-plugin";
 import { FastifyInstance } from "fastify";
-import { AppError } from "../utils/errors.ts";
-import { ApiResponseHelper } from "../utils/responses.ts";
+import { AppError } from "../utils/errorUtils.ts";
+import { ApiResponseHelper } from "../utils/responseUtils.ts";
 
 async function errorHandler(fastify: FastifyInstance) {
   fastify.setErrorHandler(async (error, request, reply) => {
