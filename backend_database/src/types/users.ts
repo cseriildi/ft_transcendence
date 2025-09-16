@@ -1,3 +1,5 @@
+import { ApiResponse, ErrorResponse } from './common.ts'
+
 // User database entity
 export interface User {
   id: number
@@ -12,7 +14,6 @@ export interface CreateUserBody {
   email: string
 }
 
-// Request body for updating a user (all optional)
 export interface UpdateUserBody {
   username?: string
   email?: string
@@ -24,24 +25,7 @@ export interface UserParams {
 }
 
 // Response types
-export interface CreateUserResponse {
-  message: string
-  user: {
-    id: number
-    username: string
-    email: string
-  }
-}
-
-export interface GetUserResponse {
-  user: User
-}
-
-export interface GetUsersResponse {
-  users: User[]
-}
-
-export interface ErrorResponse {
-  error: string
-}
-
+export type CreateUserResponse = ApiResponse<User>
+export type GetUserResponse = ApiResponse<User>
+export type GetUsersResponse = ApiResponse<User[]>
+export type UserErrorResponse = ErrorResponse
