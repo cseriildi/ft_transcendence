@@ -11,6 +11,7 @@ import { ApiResponseHelper } from "../utils/responseUtils.ts";
 import { errors } from "../utils/errorUtils.ts";
 import "../types/fastifyTypes.ts";
 import { createHandler } from "../utils/handlerUtils.ts";
+import { UserSchemaValidator } from "../schemas/userSchemas.ts";
 
 // alternatively maybe:
 // FastifyReply methods (see https://www.fastify.io/docs/latest/Reply/)
@@ -31,6 +32,8 @@ export const userController = {
   // ),
   getUserById: createHandler<{ Params: UserParams }, GetUserResponse>(
     async (request, { db }) => {
+      const valid = UserSchemaValidator.validateUserParams(request.params);
+      if (!valid) throw errors.validation("Invalid parameter");
       const { id } = request.params;
       const user = await db.get<User>(
         "SELECT id, username, email, created_at FROM users WHERE id = ?",
@@ -54,14 +57,19 @@ export const userController = {
 
   createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
     async (request, { db, reply }) => {
+      const valid = UserSchemaValidator.validateCreateUser(request.body);
+      if (!valid) throw errors.validation("Invalid data provided");
+      
       const { username, email } = request.body || {};
       
-      if (!username?.trim() || !email?.trim()) {
-        throw errors.validation("Username and email are required");
-      }
-      if (!/\S+@\S+\.\S+/.test(email)) {
-        throw errors.validation("Invalid email format");
-      }
+      // No longer needed because validator now takes care of it \(*_*)/ \(o_o)/
+     //                                                             \       /
+      // if (!username?.trim() || !email?.trim()) {                 /\     /\
+      //   throw errors.validation("Username and email are required");
+      // }
+      // if (!/\S+@\S+\.\S+/.test(email)) {
+      //   throw errors.validation("Invalid email format");
+      // }
 
       try {
         const result = await db.run(
