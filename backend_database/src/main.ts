@@ -3,6 +3,7 @@ import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
 import { config, validateConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
+import rateLimit from "@fastify/rate-limit";
 
 // Validate configuration on startup
 validateConfig();
@@ -11,6 +12,7 @@ const app = fastify({  logger: { level: config.logging.level } });
 
 const start = async () => {
   try {
+    await app.register(rateLimit, { max: 5, timeWindow: "1 second" });
     await app.register(dbConnector, { path: config.database.path });
     await app.register(errorHandler);
     await app.register(routes);

@@ -14,4 +14,6 @@ export const errors = {
   conflict: (message: string) => new AppError(409, "CONFLICT", message),
   internal: (message: string = "Internal server error") =>
     new AppError(500, "INTERNAL_ERROR", message),
+  unauthorized: (message: string = "Unauthorized") =>
+    new AppError(401, "UNAUTHORIZED", message),
 };

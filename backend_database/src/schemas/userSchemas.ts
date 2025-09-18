@@ -2,7 +2,8 @@ import {Ajv} from 'ajv';
 // plugin that speaks for itself
 import addFormats from "ajv-formats";
 
-const ajv = new Ajv();
+
+const ajv = new Ajv({coerceTypes: true, allErrors: true}); // options can be passed, e.g. to allow coercion of types
 addFormats(ajv);
 // Just need to specify what is expected from a schema,
 // then compile a validator for that schema into a function
@@ -11,9 +12,11 @@ const CreateUserSchema = {
 	type: "object",
 	properties: {
 		username: {type: "string", minLength: 3},
-		email: {type: "string", format: "email"}
+		email: {type: "string", format: "email"},
+		password: {type: "string", minLength: 8, format: "password" },
+		confirmPassword: {type: "string", minLength: 8, format: "password"}
 	},
-	required: ["username", "email"], //some properties might be optional
+	required: ["username", "email", "password", "confirmPassword"], // all properties required
 	additionalProperties: false
 }
 
@@ -21,8 +24,10 @@ const UpdateUserSchema = {
 	type: "object",
 	properties: {
 		username: {type: "string", minLength: 3},
-		email: {type: "string", format: "email"}
+		email: {type: "string", format: "email"},
+		password: {type: "string", minLength: 8, format: "password" }
 	},
+	required: [], //all properties optional
 	additionalProperties: false
 }
 
@@ -35,6 +40,16 @@ const UserParamSchema = {
 	additionalProperties: false
 }
 
+const UserLoginSchema = {
+	type: "object",
+	properties: {
+		email: {type: "string", format: "email"},
+		password: {type: "string", minLength: 8, format: "password" }
+	},
+	required: ["email", "password"], // all properties required
+	additionalProperties: false
+}
+
 // each schema needs to be compiled once
 export const UserSchemaValidator = {
 	validateCreateUser:
@@ -42,5 +57,7 @@ export const UserSchemaValidator = {
 	validateUpdateUser:
 		ajv.compile(UpdateUserSchema),
 	validateUserParams:
-		ajv.compile(UserParamSchema)
+		ajv.compile(UserParamSchema),
+	validateUserLogin:
+		ajv.compile(UserLoginSchema)
 }

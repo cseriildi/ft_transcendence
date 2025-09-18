@@ -6,17 +6,21 @@ export interface User {
   username: string;
   email: string;
   created_at: string;
+  password_hash?: string; // Optional, not returned in responses
 }
 
 // Request body for creating a user
 export interface CreateUserBody {
   username: string;
   email: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface UpdateUserBody {
   username?: string;
   email?: string;
+  password?: string;
 }
 
 // URL parameters for user routes
@@ -24,8 +28,14 @@ export interface UserParams {
   id: string;
 }
 
+export interface UserLoginBody {
+  email: string;
+  password: string;
+}
+
 // Response types
 export type CreateUserResponse = ApiResponse<User>;
 export type GetUserResponse = ApiResponse<User>;
 export type GetUsersResponse = ApiResponse<User[]>;
+export type UserLoginResponse = ApiResponse<User>;
 export type UserErrorResponse = ErrorResponse;
