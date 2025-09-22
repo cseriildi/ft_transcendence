@@ -11,9 +11,9 @@ addFormats(ajv);
 const CreateUserSchema = {
 	type: "object",
 	properties: {
-		username: {type: "string", minLength: 3},
+		username: {type: "string", minLength: 3, maxLength: 15},
 		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, format: "password" },
+		password: {type: "string", minLength: 8, maxLength: 20, format: "password" },
 		confirmPassword: {type: "string", minLength: 8, format: "password"}
 	},
 	required: ["username", "email", "password", "confirmPassword"], // all properties required
@@ -25,7 +25,7 @@ const UpdateUserSchema = {
 	properties: {
 		username: {type: "string", minLength: 3},
 		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, format: "password" }
+		password: {type: "string", minLength: 8, maxLength: 15, format: "password" }
 	},
 	required: [], //all properties optional
 	additionalProperties: false

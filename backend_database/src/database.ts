@@ -49,6 +49,27 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
             }
           }
         );
+
+        db.run(`
+          CREATE TABLE IF NOT EXISTS matches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            winner TEXT NOT NULL,
+            loser TEXT NOT NULL,
+            winner_score INTEGER NOT NULL,
+            loser_score INTEGER NOT NULL,
+            played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (winner) REFERENCES users(username),
+            FOREIGN KEY (loser) REFERENCES users(username)
+          )
+        `, (err) => {
+          if (err) {
+            fastify.log.error("Error creating matches table: %s", err.message);
+            reject(err);
+          } else {
+            fastify.log.info("Matches table ensured");
+            resolve(undefined);
+          }
+        });
       });
     });
   };

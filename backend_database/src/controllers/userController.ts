@@ -15,8 +15,6 @@ import "../types/fastifyTypes.ts";
 import { createHandler } from "../utils/handlerUtils.ts";
 import { UserSchemaValidator } from "../schemas/userSchemas.ts";
 import bcrypt from "bcrypt";
-import { resourceLimits } from "worker_threads";
-import { create } from "domain";
 
 // alternatively maybe:
 // FastifyReply methods (see https://www.fastify.io/docs/latest/Reply/)
