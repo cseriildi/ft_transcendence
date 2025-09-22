@@ -1,6 +1,7 @@
 ctrl+shift+p
->Reopen in Dev Container
-in container: npm run dev
+
+> Reopen in Dev Container
+> in container: npm run dev
 
 "Dev Containers: Rebuild Container" after modifyien devcontainer JSON
 
@@ -12,21 +13,24 @@ curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d 
 test get route:
 curl http://localhost:3000/users/john_doe
 
+test rate limiter:
+seq 1 15 | xargs -n 1 -P 15 -I {} sh -c 'curl -w "Request {}: %{http_code} - %{time_total}s\n" -s http://localhost:3000/health'
+
 Database schema (SQLite):
 -- Users table
 CREATE TABLE users (
-  id INTEGER PRIMARY KEY,
-  username TEXT,
-  email TEXT
+id INTEGER PRIMARY KEY,
+username TEXT,
+email TEXT
 );
 
 -- Posts table that RELATES to users
 CREATE TABLE posts (
-  id INTEGER PRIMARY KEY,
-  title TEXT,
-  content TEXT,
-  user_id INTEGER,
-  FOREIGN KEY (user_id) REFERENCES users(id)  -- 👈 RELATIONSHIP!
+id INTEGER PRIMARY KEY,
+title TEXT,
+content TEXT,
+user_id INTEGER,
+FOREIGN KEY (user_id) REFERENCES users(id) -- 👈 RELATIONSHIP!
 );
 
 to override env variables:
