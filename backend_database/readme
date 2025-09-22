@@ -35,3 +35,8 @@ FOREIGN KEY (user_id) REFERENCES users(id) -- 👈 RELATIONSHIP!
 
 to override env variables:
 NODE_ENV=development PORT=3001 npm run dev
+
+Testing:
+npm test # Run all tests
+npm run test:watch # Watch mode
+npm run test:coverage # With coverage report

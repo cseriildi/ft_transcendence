@@ -10,7 +10,7 @@ import {
 import "../types/fastifyTypes.ts";
 import { authController } from "./authController.ts";
 
-async function userRoutes(fastify: FastifyInstance) {
+async function authRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Body: CreateUserBody;
     Reply: CreateUserResponse | UserErrorResponse;
@@ -22,4 +22,4 @@ async function userRoutes(fastify: FastifyInstance) {
   }>("/login", authController.loginUser);
 }
 
-export default userRoutes;
+export default authRoutes;

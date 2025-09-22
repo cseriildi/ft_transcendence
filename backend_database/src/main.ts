@@ -10,17 +10,33 @@ validateConfig();
 
 const app = fastify({  logger: { level: config.logging.level } });
 
-const start = async () => {
+export async function build(opts = {}) {
+  const app = fastify({logger:  {level: config.logging.level}});
+
   try {
     await app.register(rateLimit, { max: 5, timeWindow: "1 second" });
     await app.register(dbConnector, { path: config.database.path });
     await app.register(errorHandler);
     await app.register(routes);
-    await app.listen({ port: config.server.port, host: config.server.host });
+    
+    return app;
   } catch (err) {
     app.log.error(err);
+    throw err;
+  }
+}
+
+const start = async () => {
+  try {
+    const app = await build();
+    await app.listen({ port: config.server.port, host: config.server.host });
+  } catch (err) {
+    console.error(err);
     process.exit(1);
   }
 };
 
-start();
+// Only start if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  start();
+}
