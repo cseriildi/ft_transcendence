@@ -2,30 +2,19 @@
 import {
   User,
   CreateUserBody,
-  UserParams,
   CreateUserResponse,
-  GetUserResponse,
-  GetUsersResponse,
   UserLoginResponse,
   UserLoginBody,
-} from "../types/userTypes.ts";
+} from "./authTypes.ts";
 import { ApiResponseHelper } from "../utils/responseUtils.ts";
 import { errors } from "../utils/errorUtils.ts";
 import "../types/fastifyTypes.ts";
 import { createHandler } from "../utils/handlerUtils.ts";
-import { UserSchemaValidator } from "../schemas/userSchemas.ts";
+import { UserSchemaValidator } from "../userService/userSchemas.ts";
 import bcrypt from "bcrypt";
 
-// alternatively maybe:
-// FastifyReply methods (see https://www.fastify.io/docs/latest/Reply/)
-// reply.status(201)           // Set HTTP status
-// reply.header('key', 'val')  // Set response header  
-// reply.send(data)           // Send response (rarely used with your pattern)
-// reply.code(404)            // Alternative to status()
-// reply.type('text/html')    // Set content type
 
-
-export const userController = {
+export const authController = {
 
   //structure for createHAndler:
   // createHandler<{ whatever is provoded as neccesary for the query }, response type>(
@@ -33,30 +22,6 @@ export const userController = {
   //     // handler logic
   //   }
   // ),
-  getUserById: createHandler<{ Params: UserParams }, GetUserResponse>(
-    async (request, { db }) => {
-      const valid = UserSchemaValidator.validateUserParams(request.params);
-      if (!valid) throw errors.validation("Invalid request parameters");
-      const { id } = request.params;
-      const user = await db.get<User>(
-        "SELECT id,username,email,created_at FROM users WHERE id = ?",
-        [id]
-      );
-      if (!user) {
-        throw errors.notFound("User");
-      }
-      return ApiResponseHelper.success(user, "User found");
-    }
-  ),
-
-   getUsers: createHandler<{}, GetUsersResponse>(
-    async (request, { db }) => {
-      const users = await db.all<User>(
-        "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
-      );
-      return ApiResponseHelper.success(users, "Users retrieved");
-    }
-  ),
 
   createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
     async (request, context) => {
@@ -70,7 +35,7 @@ export const userController = {
       const { username, email } = request.body || {};
       
       // No longer needed because validator now takes care of it \(*_*)/ \(o_o)/
-     //                                                             \       /
+      //                                                             \       /
       // if (!username?.trim() || !email?.trim()) {                 /\     /\
       //   throw errors.validation("Username and email are required");
       // }

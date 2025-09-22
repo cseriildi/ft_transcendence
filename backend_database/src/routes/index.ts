@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import userRoutes from "./userRoutes.ts";
+import userRoutes from "../userService/userRoutes.ts";
 import checkRoutes from "./healthRoutes.ts";
 import matchRoutes from "./matchRoutes.ts";
 

@@ -10,7 +10,7 @@ import {
 	  CreateMatchResponse,
 	  GetMatchesQuery,
 } from "../types/matchTypes.ts";
-import { MatchSchemaValidator } from "../schemas/matchSchemas.ts";
+import { MatchSchemaValidator } from "./matchSchemas.ts";
 
 export const matchController = {
 	  createMatch: createHandler<{ Body: CreateMatchBody }, CreateMatchResponse>(

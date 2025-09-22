@@ -9,9 +9,9 @@ import {
   UserErrorResponse,
   UserLoginBody,
   UserLoginResponse,
-} from "../types/userTypes.ts";
+} from "./userTypes.ts";
 import "../types/fastifyTypes.ts";
-import { userController } from "../controllers/userController.ts";
+import { userController } from "./userController.ts";
 
 async function userRoutes(fastify: FastifyInstance) {
   fastify.get<{
@@ -22,16 +22,6 @@ async function userRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Reply: GetUsersResponse | UserErrorResponse;
   }>("/users", userController.getUsers);
-
-  fastify.post<{
-    Body: CreateUserBody;
-    Reply: CreateUserResponse | UserErrorResponse;
-  }>("/register", userController.createUser);
-
-  fastify.post<{
-    Body: UserLoginBody;
-    Reply: UserLoginResponse | UserErrorResponse;
-  }>("/login", userController.loginUser);
 }
 
 export default userRoutes;
