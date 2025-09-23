@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import { ApiResponseHelper } from "../utils/responseUtils.js";
+import { ApiResponseHelper } from "../utils/responseUtils.ts";
 
 async function checkRoutes(fastify: FastifyInstance) {
   fastify.get("/", async (request, reply) => {
