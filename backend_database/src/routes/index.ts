@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import userRoutes from "../userService/userRoutes.ts";
 import authRoutes from "../authService/authRoutes.ts";
 import checkRoutes from "./healthRoutes.ts";
-import matchRoutes from "./matchRoutes.ts";
+import matchRoutes from "../matchService/matchRoutes.ts";
 
 async function routes(fastify: FastifyInstance) {
   // Register user routes

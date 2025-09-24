@@ -8,28 +8,6 @@ addFormats(ajv);
 // Just need to specify what is expected from a schema,
 // then compile a validator for that schema into a function
 // which takes the schema you want to compare as a parameter
-const CreateUserSchema = {
-	type: "object",
-	properties: {
-		username: {type: "string", minLength: 3, maxLength: 15},
-		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, maxLength: 20, format: "password" },
-		confirmPassword: {type: "string", minLength: 8, format: "password"}
-	},
-	required: ["username", "email", "password", "confirmPassword"], // all properties required
-	additionalProperties: false
-}
-
-const UpdateUserSchema = {
-	type: "object",
-	properties: {
-		username: {type: "string", minLength: 3},
-		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, maxLength: 15, format: "password" }
-	},
-	required: [], //all properties optional
-	additionalProperties: false
-}
 
 const UserParamSchema = {
 	type: "object",
@@ -40,24 +18,8 @@ const UserParamSchema = {
 	additionalProperties: false
 }
 
-const UserLoginSchema = {
-	type: "object",
-	properties: {
-		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, format: "password" }
-	},
-	required: ["email", "password"], // all properties required
-	additionalProperties: false
-}
-
 // each schema needs to be compiled once
 export const UserSchemaValidator = {
-	validateCreateUser:
-		ajv.compile(CreateUserSchema),
-	validateUpdateUser:
-		ajv.compile(UpdateUserSchema),
 	validateUserParams:
 		ajv.compile(UserParamSchema),
-	validateUserLogin:
-		ajv.compile(UserLoginSchema)
 }

@@ -6,8 +6,8 @@ import {
 	  GetMatchesResponse,
 	  MatchErrorResponse,
 	  GetMatchesQuery
-} from "../matchService/matchTypes.ts";
-import { matchController } from "../matchService/matchController.ts";
+} from "./matchTypes.ts";
+import { matchController } from "./matchController.ts";
 
 async function matchRoutes(fastify: FastifyInstance) {
 	// Create a new match
