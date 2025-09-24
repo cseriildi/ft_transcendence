@@ -9,7 +9,7 @@ import {
 	  GetMatchesResponse,
 	  CreateMatchResponse,
 	  GetMatchesQuery,
-} from "../types/matchTypes.ts";
+} from "./matchTypes.ts";
 import { MatchSchemaValidator } from "./matchSchemas.ts";
 
 export const matchController = {
@@ -19,11 +19,11 @@ export const matchController = {
 		  if (!valid) throw errors.validation("Invalid request body");
 		  const { winner, loser, winner_score, loser_score } = request.body;
 		  try {
-			const playersExist = await db.get(
+			const playersExist = await db.get<{ count: number }>(
 			  `SELECT COUNT(*) as count FROM users WHERE username IN (?, ?)`,
 			  [winner, loser]
 			);
-			if (playersExist.count < 2) {
+			if (!playersExist || playersExist.count < 2)  {
 			  throw errors.notFound("One or both players do not exist");
 			}
 		  } catch (err: any) {
@@ -55,11 +55,11 @@ export const matchController = {
 			if (!valid) throw errors.validation("Invalid query parameters");
 			const {username} = request.params;
 			try {
-				const matches = await db.all(
+				const matches = await db.all<Match>(
 					`SELECT * FROM matches WHERE winner = ? OR loser = ? ORDER BY played_at DESC`,
 					[username, username]
 				);
-				if (!matches) {
+				if (matches.length === 0) {
 					throw errors.notFound("No matches found for the specified player");
 				}
 				return ApiResponseHelper.success<Match[]>(matches, "Match retrieved successfully");

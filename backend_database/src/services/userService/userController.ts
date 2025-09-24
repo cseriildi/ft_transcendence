@@ -4,7 +4,7 @@ import {
   UserParams,
   GetUserResponse,
   GetUsersResponse,
-} from "../userService/userTypes.ts";
+} from "./userTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";

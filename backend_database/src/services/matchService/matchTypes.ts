@@ -1,4 +1,4 @@
-import { ApiResponse, ErrorResponse } from "./commonTypes.ts";
+import { ApiResponse, ErrorResponse } from "../../types/commonTypes.ts";
 
 export interface Match {
   id: number;

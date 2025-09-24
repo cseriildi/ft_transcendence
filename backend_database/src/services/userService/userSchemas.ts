@@ -1,4 +1,4 @@
-import {Ajv} from 'ajv';
+import Ajv from 'ajv';
 // plugin that speaks for itself
 import addFormats from "ajv-formats";
 

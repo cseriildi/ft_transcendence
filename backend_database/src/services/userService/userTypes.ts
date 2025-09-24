@@ -1,4 +1,4 @@
-import { ApiResponse, ErrorResponse } from "../types/commonTypes.ts";
+import { ApiResponse, ErrorResponse } from "../../types/commonTypes.ts";
 
 // User database entity
 export interface User {

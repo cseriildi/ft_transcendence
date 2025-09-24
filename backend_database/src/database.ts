@@ -24,54 +24,31 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
   });
 
   // Initialize database schema
-  const initDb = () => {
-    return new Promise((resolve, reject) => {
-      db.serialize(() => {
-        // Create tables here
-        db.run(
-          `
-          CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-            `,
-          (err) => {
-            if (err) {
-              fastify.log.error("Error creating users table: %s", err.message);
-              reject(err);
-            } else {
-              fastify.log.info("Database schema initialized");
-              resolve(undefined);
-            }
-          }
-        );
-
-        db.run(`
-          CREATE TABLE IF NOT EXISTS matches (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            winner TEXT NOT NULL,
-            loser TEXT NOT NULL,
-            winner_score INTEGER NOT NULL,
-            loser_score INTEGER NOT NULL,
-            played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (winner) REFERENCES users(username),
-            FOREIGN KEY (loser) REFERENCES users(username)
-          )
-        `, (err) => {
-          if (err) {
-            fastify.log.error("Error creating matches table: %s", err.message);
-            reject(err);
-          } else {
-            fastify.log.info("Matches table ensured");
-            resolve(undefined);
-          }
-        });
-      });
-    });
+  const initDb = async () => {
+    const run = (sql: string) =>
+      new Promise<void>((resolve, reject) => db.run(sql, (err) => (err ? reject(err) : resolve())));
+    db.serialize();
+    await run(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`);
+    await run(`
+      CREATE TABLE IF NOT EXISTS matches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        winner TEXT NOT NULL,
+        loser TEXT NOT NULL,
+        winner_score INTEGER NOT NULL,
+        loser_score INTEGER NOT NULL,
+        played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (winner) REFERENCES users(username),
+        FOREIGN KEY (loser) REFERENCES users(username)
+      )`);
+    fastify.log.info("Database schema initialized");
   };
 
   // Initialize the database
