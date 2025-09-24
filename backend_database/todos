@@ -1,0 +1,24 @@
+High Priority
+
+Add API documentation - OpenAPI/Swagger documentation
+
+Medium Priority
+Setup linting/formatting - ESLint, Prettier configuration
+Add environment configs - Separate dev/staging/prod configurations
+Implement proper logging - Structured logging with correlation IDs
+Add security middleware - Rate limiting, CORS, helmet configuration
+
+Lower Priority
+Setup CI/CD pipeline - Automated testing and deployment
+Add monitoring - Metrics, alerting, performance monitoring
+Database improvements - Connection pooling, query optimization
+
+
+Quick Wins to Implement First:
+
+Add Zod validation schemas
+Write basic API tests
+Setup ESLint configuration
+Document environment variables
+Add proper database error handling
+This application demonstrates good lean principles in its simplicity and focus, but needs investment in quality assurance and development practices to be production-ready and maintainable long-term.
