@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply, RouteGenericInterface } from "fastify";
-import { DatabaseHelper } from  "./databaseUtils.ts";
+import { DatabaseHelper } from "./databaseUtils.ts";
 
 type HandlerContext = {
   db: DatabaseHelper;
