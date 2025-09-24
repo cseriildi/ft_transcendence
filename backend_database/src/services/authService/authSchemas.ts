@@ -25,7 +25,7 @@ const UpdateUserSchema = {
 	properties: {
 		username: {type: "string", minLength: 3},
 		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, maxLength: 15 }
+		password: {type: "string", minLength: 8, maxLength: 20 }
 	},
 	required: [], //all properties optional
 	additionalProperties: false
