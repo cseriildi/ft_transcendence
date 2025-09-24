@@ -5,10 +5,10 @@ import {
   GetUserResponse,
   GetUsersResponse,
 } from "../userService/userTypes.ts";
-import { ApiResponseHelper } from "../utils/responseUtils.ts";
-import { errors } from "../utils/errorUtils.ts";
-import "../types/fastifyTypes.ts";
-import { createHandler } from "../utils/handlerUtils.ts";
+import { ApiResponseHelper } from "../../utils/responseUtils.ts";
+import { errors } from "../../utils/errorUtils.ts";
+import "../../types/fastifyTypes.ts";
+import { createHandler } from "../../utils/handlerUtils.ts";
 import { UserSchemaValidator } from "./userSchemas.ts";
 
 export const userController = {

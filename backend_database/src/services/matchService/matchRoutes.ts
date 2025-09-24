@@ -1,5 +1,5 @@
 import { FastifyInstance } from "fastify";
-import "../types/fastifyTypes.ts";
+import "../../types/fastifyTypes.ts";
 import {
 	  CreateMatchBody,
 	  GetMatchResponse,

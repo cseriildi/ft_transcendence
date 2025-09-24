@@ -10,7 +10,7 @@ import {
   UserLoginBody,
   UserLoginResponse,
 } from "./userTypes.ts";
-import "../types/fastifyTypes.ts";
+import "../../types/fastifyTypes.ts";
 import { userController } from "./userController.ts";
 
 async function userRoutes(fastify: FastifyInstance) {

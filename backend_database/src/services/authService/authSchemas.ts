@@ -2,7 +2,6 @@ import {Ajv} from 'ajv';
 // plugin that speaks for itself
 import addFormats from "ajv-formats";
 
-
 const ajv = new Ajv({coerceTypes: true, allErrors: true}); // options can be passed, e.g. to allow coercion of types
 addFormats(ajv);
 // Just need to specify what is expected from a schema,

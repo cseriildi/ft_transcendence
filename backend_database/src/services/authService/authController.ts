@@ -6,10 +6,10 @@ import {
   UserLoginResponse,
   UserLoginBody,
 } from "./authTypes.ts";
-import { ApiResponseHelper } from "../utils/responseUtils.ts";
-import { errors } from "../utils/errorUtils.ts";
-import "../types/fastifyTypes.ts";
-import { createHandler } from "../utils/handlerUtils.ts";
+import { ApiResponseHelper } from "../../utils/responseUtils.ts";
+import { errors } from "../../utils/errorUtils.ts";
+import "../../types/fastifyTypes.ts";
+import { createHandler } from "../../utils/handlerUtils.ts";
 import { AuthSchemaValidator } from "./authSchemas.ts";
 import bcrypt from "bcrypt";
 

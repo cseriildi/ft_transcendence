@@ -1,5 +1,6 @@
-// src/routes/users.ts
 import { FastifyInstance, FastifyReply } from "fastify";
+import "../../types/fastifyTypes.ts";
+import { authController } from "./authController.ts";
 import {
   CreateUserBody,
   CreateUserResponse,
@@ -7,8 +8,6 @@ import {
   UserLoginBody,
   UserLoginResponse,
 } from "./authTypes.ts";
-import "../types/fastifyTypes.ts";
-import { authController } from "./authController.ts";
 
 async function authRoutes(fastify: FastifyInstance) {
   fastify.post<{
