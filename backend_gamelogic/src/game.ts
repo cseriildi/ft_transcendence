@@ -18,8 +18,8 @@ export class Ball {
     this.x = field.width / 2;
     this.y = field.height / 2;
     this.radius = 40;
-    this.speedX = 20 * Math.random();
-    this.speedY = 20 * Math.random();
+    this.speedX = (Math.random() - 0.5) * 2 * 20;
+    this.speedY = (Math.random() - 0.5) * 2 * 20;
   }
 }
 
