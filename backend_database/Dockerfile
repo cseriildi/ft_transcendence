@@ -14,16 +14,16 @@ RUN mkdir -p /app/database
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Create dist directory
-RUN mkdir -p dist
+# # Create dist directory
+# RUN mkdir -p dist
 
-# Build TypeScript (compile to JS)
-RUN npx tsc
+# # Build TypeScript (compile to JS)
+# RUN npx tsc
 
 # Set default environment variables (can be overridden)
 ENV NODE_ENV=production
