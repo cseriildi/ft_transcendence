@@ -3,7 +3,7 @@ export class Field {
   width: number;
   height: number;
   constructor() {
-    this.width = 2000;
+    this.width = 4000;
     this.height = 2000;
   }
 }
@@ -18,8 +18,8 @@ export class Ball {
     this.x = field.width / 2;
     this.y = field.height / 2;
     this.radius = 40;
-    this.speedX = (Math.random() - 0.5) * 2 * 20;
-    this.speedY = (Math.random() - 0.5) * 2 * 20;
+    this.speedX = (Math.random() - 0.5) * 2 * 40;
+    this.speedY = (Math.random() - 0.5) * 2 * 40;
   }
 }
 
