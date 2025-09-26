@@ -1,0 +1,4 @@
+Update your login controller to issue JWT tokens
+Create a refresh endpoint
+Add an auth middleware for protected routes
+Register the cookie plugin in your main.ts

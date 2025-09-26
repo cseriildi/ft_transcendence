@@ -1,18 +1,21 @@
 // src/routes/users.ts
 import {
-  User,
   CreateUserBody,
   CreateUserResponse,
   UserLoginResponse,
   UserLoginBody,
 } from "./authTypes.ts";
+import { User } from "../userService/userTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { AuthSchemaValidator } from "./authSchemas.ts";
 import bcrypt from "bcrypt";
+import { signAccessToken, signRefreshToken, createJti } from "../../utils/authutils.ts";
+import { createHash } from "node:crypto";
 
+const hashRefreshToken = (token: string) => createHash("sha256").update(token).digest("hex");
 
 export const authController = {
 
@@ -33,15 +36,6 @@ export const authController = {
       }
 
       const { username, email } = request.body || {};
-      
-      // No longer needed because validator now takes care of it \(*_*)/ \(o_o)/
-      //                                                             \       /
-      // if (!username?.trim() || !email?.trim()) {                 /\     /\
-      //   throw errors.validation("Username and email are required");
-      // }
-      // if (!/\S+@\S+\.\S+/.test(email)) {
-      //   throw errors.validation("Invalid email format");
-      // }
 
       try {
         const hash = await bcrypt.hash(request.body.password, 10);
@@ -50,6 +44,25 @@ export const authController = {
           [username.trim(), email.trim(), hash]
         );
 
+        const accessToken = await signAccessToken(result.lastID);
+        const jti = createJti();
+        const refreshToken = await signRefreshToken(result.lastID, jti);
+        const refreshHash = await bcrypt.hash(refreshToken, 10);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+           await db.run(
+          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
+          [jti, result.lastID, refreshHash, expiresAt]
+        );
+
+        reply.setCookie("refresh_token", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/auth",
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        });
+
         reply.status(201);
         return ApiResponseHelper.success(
           {
@@ -57,6 +70,7 @@ export const authController = {
             username: username.trim(),
             email: email.trim(),
             created_at: new Date().toISOString(),
+            tokens: { accessToken },
           },
           "User created"
         );
@@ -87,8 +101,28 @@ export const authController = {
         if (!passwordMatch) {
           throw errors.unauthorized("Invalid password");
         }
-        // Successful login
-        // In a real application, you would generate and return a JWT or session token here
+        
+         const accessToken = await signAccessToken(result.id);
+        const jti = createJti();
+        const refreshToken = await signRefreshToken(result.id, jti);
+        const refreshHash = await bcrypt.hash(refreshToken, 10);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+         await db.run(
+          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
+          [jti, result.id, refreshHash, expiresAt]
+        );
+
+        // Set refresh token as HttpOnly cookie
+        reply.setCookie("refresh_token", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/auth",
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        });
+
+
         reply.status(200);
         return ApiResponseHelper.success(
           {
@@ -96,6 +130,7 @@ export const authController = {
             username: result.username,
             email: email.trim(),
             created_at: result.created_at,
+            tokens: { accessToken },
           },
           "User logged in successfully"
         );

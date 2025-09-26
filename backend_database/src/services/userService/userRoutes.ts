@@ -1,14 +1,10 @@
 // src/routes/users.ts
 import { FastifyInstance, FastifyReply } from "fastify";
 import {
-  CreateUserBody,
   UserParams,
-  CreateUserResponse,
   GetUserResponse,
   GetUsersResponse,
   UserErrorResponse,
-  UserLoginBody,
-  UserLoginResponse,
 } from "./userTypes.ts";
 import "../../types/fastifyTypes.ts";
 import { userController } from "./userController.ts";

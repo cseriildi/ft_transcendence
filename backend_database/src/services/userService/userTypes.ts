@@ -9,20 +9,6 @@ export interface User {
   password_hash?: string; // Optional, not returned in responses
 }
 
-// Request body for creating a user
-export interface CreateUserBody {
-  username: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface UpdateUserBody {
-  username?: string;
-  email?: string;
-  password?: string;
-}
-
 // URL parameters for user routes
 export interface UserParams {
   id: string;
