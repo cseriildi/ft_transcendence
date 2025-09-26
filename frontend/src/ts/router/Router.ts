@@ -60,4 +60,4 @@ class Router {
   }
 }
 
-(globalThis as any).Router = Router;
+export { Router };
