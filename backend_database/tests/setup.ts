@@ -11,14 +11,19 @@ export async function createTestApp(): Promise<FastifyInstance> {
 }
 
 export async function cleanupTestApp(app: FastifyInstance): Promise<void> {
-  await app.close()
+  if (app) {
+    await app.close()
+  }
 }
 
 export async function resetDatabase(app: FastifyInstance): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    app.db.run('DELETE FROM matches', [], (err) => {
+    app.db.run('DELETE FROM refresh_tokens', [], (err) => {
       if (err) return reject(err)
-      app.db.run('DELETE FROM users', [], (err2) => (err2 ? reject(err2) : resolve()))
+      app.db.run('DELETE FROM matches', [], (err2) => {
+        if (err2) return reject(err2)
+        app.db.run('DELETE FROM users', [], (err3) => (err3 ? reject(err3) : resolve()))
+      })
     })
   })
 }

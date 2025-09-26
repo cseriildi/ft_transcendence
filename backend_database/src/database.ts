@@ -38,6 +38,19 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`);
     await run(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        jti TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL,
+        revoked INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`);
+    
+    await run(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)`);
+    
+    await run(`
       CREATE TABLE IF NOT EXISTS matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         winner TEXT NOT NULL,
@@ -47,16 +60,6 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (winner) REFERENCES users(username),
         FOREIGN KEY (loser) REFERENCES users(username)
-      )`);
-      await run(`
-      CREATE TABLE IF NOT EXISTS refresh_tokens (
-        jti TEXT PRIMARY KEY,
-        user_id INTEGER NOT NULL,
-        token_hash TEXT NOT NULL,
-        revoked INTEGER NOT NULL DEFAULT 0,
-        created_at TEXT NOT NULL DEFAULT (datetime('now')),
-        expires_at TEXT NOT NULL,
-        FOREIGN KEY (user_id) REFERENCES users(id)
       )`);
     fastify.log.info("Database schema initialized");
   };
