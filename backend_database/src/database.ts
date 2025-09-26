@@ -48,6 +48,16 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         FOREIGN KEY (winner) REFERENCES users(username),
         FOREIGN KEY (loser) REFERENCES users(username)
       )`);
+      await run(`
+      CREATE TABLE IF NOT EXISTS refresh_tokens (
+        jti TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL,
+        revoked INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`);
     fastify.log.info("Database schema initialized");
   };
 
