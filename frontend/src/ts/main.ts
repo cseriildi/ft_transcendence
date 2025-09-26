@@ -46,7 +46,7 @@ const initNotFoundPage = () => {
   homeBtn?.addEventListener('click', () => router.navigate('/'));
 };
 
-const router = new Router();
+const router = new globalThis.Router();
 
 router.addRoute('/', 'home', initHomePage);
 router.addRoute('/pong', 'pong', initPongPage);
