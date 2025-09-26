@@ -1,4 +1,4 @@
-import './router/Router.js';
+import { Router } from './router/Router.js';
 import { Pong } from "./pong/Pong.js";
 
 console.log("Hello, TypeScript!");
@@ -46,7 +46,7 @@ const initNotFoundPage = () => {
   homeBtn?.addEventListener('click', () => router.navigate('/'));
 };
 
-const router = new globalThis.Router();
+const router = new Router();
 
 router.addRoute('/', 'home', initHomePage);
 router.addRoute('/pong', 'pong', initPongPage);
