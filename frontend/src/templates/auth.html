@@ -1,25 +1,27 @@
-<div class="min-h-screen bg-green-100 py-8">
-  <div class="max-w-md mx-auto px-4">
-    <h1 class="text-4xl font-bold text-center mb-8 text-green-800">Authentication</h1>
-    <div class="bg-white p-6 rounded-lg shadow-md">
-      <form id="auth-form" class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input type="email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Enter your email">
+<div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black py-8 font-orbitron">
+    <div class="max-w-md mx-auto px-4">
+        <h1 class="text-5xl font-bold text-center mb-8 text-neon-green drop-shadow-neon break-words">
+            Authentication
+        </h1>
+        <div class="bg-black p-6 rounded-lg shadow-neon border-2 border-neon-pink">
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-neon-green mb-1">Email</label>
+                    <input type="email" class="w-full px-3 py-2 border-2 border-neon-pink rounded-md bg-purple-900 text-neon-green focus:outline-none focus:ring-2 focus:ring-neon-green font-orbitron" placeholder="Enter your email">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-neon-green mb-1">Password</label>
+                    <input type="password" class="w-full px-3 py-2 border-2 border-neon-pink rounded-md bg-purple-900 text-neon-green focus:outline-none focus:ring-2 focus:ring-neon-green font-orbitron" placeholder="Enter your password">
+                </div>
+                <button type="submit" class="w-full bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition">
+                    Sign In
+                </button>
+            </form>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-          <input type="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Enter your password">
+        <div class="text-center mt-6">
+            <button id="back-btn" class="bg-neon-pink hover:bg-neon-green text-white font-bold py-2 px-4 rounded shadow-neon transition">
+                Back to Home
+            </button>
         </div>
-        <button type="submit" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-          Sign In
-        </button>
-      </form>
     </div>
-    <div class="text-center mt-6">
-      <button id="back-btn" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-        Back to Home
-      </button>
-    </div>
-  </div>
 </div>

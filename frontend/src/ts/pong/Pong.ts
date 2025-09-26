@@ -58,7 +58,6 @@ export class Pong {
 
         this.ws.onclose = () => {
             this.isConnected = false;
-            console.warn("❌ Disconnected from game server. Reconnecting in 3s...");
             setTimeout(() => this.connect(), 3000);
         };
 
@@ -77,18 +76,16 @@ export class Pong {
         document.addEventListener("keydown", (event) => {
             const key = event.key.toLowerCase();
             switch (key) {
-                case "arrowup":
-                case "w":
+                case "s":
                     sendInput("playerInput", { player: 1, action: "up" });
                     break;
-                case "arrowdown":
-                case "s":
+                case "x":
                     sendInput("playerInput", { player: 1, action: "down" });
                     break;
-                case "i":
+                case "arrowup":
                     sendInput("playerInput", { player: 2, action: "up" });
                     break;
-                case "k":
+                case "arrowdown":
                     sendInput("playerInput", { player: 2, action: "down" });
                     break;
             }
@@ -97,14 +94,12 @@ export class Pong {
         document.addEventListener("keyup", (event) => {
             const key = event.key.toLowerCase();
             switch (key) {
-                case "arrowup":
-                case "arrowdown":
-                case "w":
                 case "s":
+                case "x":
                     sendInput("playerInput", { player: 1, action: "stop" });
                     break;
-                case "i":
-                case "k":
+                case "arrowup":
+                case "arrowdown":
                     sendInput("playerInput", { player: 2, action: "stop" });
                     break;
             }
@@ -132,7 +127,7 @@ export class Pong {
         const scale = Math.min(scaleX, scaleY);
 
         // Draw center line
-        this.ctx.strokeStyle = "#fff";
+        this.ctx.strokeStyle = "#00ffff";
         this.ctx.setLineDash([5, 5]);
         this.ctx.beginPath();
         this.ctx.moveTo(width / 2, 0);
@@ -141,13 +136,13 @@ export class Pong {
         this.ctx.setLineDash([]);
 
         // Draw ball
-        this.ctx.fillStyle = "#fff";
+        this.ctx.fillStyle = "#ff00cc";
         this.ctx.beginPath();
         this.ctx.arc(ball.x * scale, ball.y * scale, ball.radius * scale, 0, Math.PI * 2);
         this.ctx.fill();
 
         // Draw paddles
-        this.ctx.fillStyle = "#fff";
+        this.ctx.fillStyle = "#39ff14";
         this.drawCapsule(paddle1.capsule, scale);
         this.drawCapsule(paddle2.capsule, scale);
     }
