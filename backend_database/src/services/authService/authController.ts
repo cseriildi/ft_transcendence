@@ -26,6 +26,63 @@ export const authController = {
   //   }
   // ),
 
+    refresh: createHandler<>(
+    async (request, context) => {
+      const { db, reply } = context;
+      const valid = AuthSchemaValidator.validateCreateUser(request.body);
+      if (!valid) throw errors.validation("Invalid request body");
+      if (request.body.password !== request.body.confirmPassword) {
+        throw errors.validation("Passwords do not match");
+      }
+
+      const { username, email } = request.body || {};
+
+      try {
+        const hash = await bcrypt.hash(request.body.password, 10);
+        const result = await db.run(
+          "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+          [username.trim(), email.trim(), hash]
+        );
+
+        const accessToken = await signAccessToken(result.lastID);
+        const jti = createJti();
+        const refreshToken = await signRefreshToken(result.lastID, jti);
+        const refreshHash = await bcrypt.hash(refreshToken, 10);
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+           await db.run(
+          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
+          [jti, result.lastID, refreshHash, expiresAt]
+        );
+
+        reply.setCookie("refresh_token", refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/auth",
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+        });
+
+        reply.status(201);
+        return ApiResponseHelper.success(
+          {
+            id: result.lastID,
+            username: username.trim(),
+            email: email.trim(),
+            created_at: new Date().toISOString(),
+            tokens: { accessToken },
+          },
+          "User created"
+        );
+      } catch (err: any) {
+        if (err.message?.includes("UNIQUE constraint")) {
+          throw errors.conflict("Username or email already exists");
+        }
+        throw err; // Re-throw other database errors
+      }
+    }
+  ),
+
   createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
     async (request, context) => {
       const { db, reply } = context;

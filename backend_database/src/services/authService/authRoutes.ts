@@ -19,6 +19,9 @@ async function authRoutes(fastify: FastifyInstance) {
     Body: UserLoginBody;
     Reply: UserLoginResponse | UserErrorResponse;
   }>("/login", authController.loginUser);
+
+    fastify.get<{
+  }>("/refresh", authController.refresh);
 }
 
 export default authRoutes;
