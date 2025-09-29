@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Chat</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: Arial;
+        }
+#chat {
+            width: 100vw;
+            height: 100vh;
+            padding: 12px;
+        }
+#chat div {
+            padding: 4px 0px;
+        }
+#chat div b {
+            color: #555;
+        }
+input[type=text] {
+            position: fixed;
+            bottom: 10px;
+            left: 12px;
+            outline: none;
+            width: 400px;
+            border: #555 solid 1px;
+            font-size: 14px;
+            padding: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chat"></div>
+    <input id="message" type="text" autofocus/>
+<script>
+        let _ws = null;
+init();
+function init() {
+            let username = getUsername();
+if(!username) {
+                sessionStorage.setItem('username', prompt('Enter username'))
+                username = getUsername();
+            }
+if(!username) {
+                init();
+            }
+_ws = new WebSocket(`ws://${window.location.host}/chat?username=${username}`);
+_ws.onmessage = (message) => {
+                message = JSON.parse(message.data);
+                appendMessage(message);
+            };
+document.getElementById('message')
+                .onkeypress = (evt) => {
+                    if(evt.key == 'Enter') {
+                        _ws.send(JSON.stringify({
+                            message: evt.target.value
+                        }));
+                        evt.target.value = '';
+                    }
+                };
+        }
+function getUsername() {
+            return sessionStorage.username;
+        }
+function appendMessage(message) {
+            document.getElementById('chat').innerHTML +=
+            `
+            <div>
+                <b>${message.sender}:&nbsp;</b>
+                ${message.message}
+            </div>
+`
+        }
+    </script>
+</body>
+</html>

@@ -1,35 +1,62 @@
-import Fastify from "fastify";
-import fastifyWebsocket from "@fastify/websocket";
-import { FastifyRequest } from "fastify";
-import { SocketStream } from "@fastify/websocket";
-import { sqlite3 } from "sqlite3";
-import dbConnector from "./database.ts";
-import { config, validateConfig } from "./config.ts";
+'use strict'
+import Fastify, { FastifyReply, FastifyRequest } from 'fastify'
+import path from 'path'
 
-validateConfig();
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const fastify = Fastify({ logger: {level: config.logging.level} });
-fastify.register(fastifyWebsocket);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-interface ChatMessage {
-  user: string;
-  message: string;
-  timestamp: number;
-}
+const fastify = Fastify()
 
-interface User {
-	username: string;
-	socket: SocketStream["socket"];
-}
+fastify.register(import('@fastify/websocket'), {
+  options: { maxPayload: 1048576 }
+});
 
-const start = async () => {
-  try {
-	await fastify.register(dbConnector, { path: config.database.path });
-    const port = process.env.PORT || 3002;
-    await fastify.listen({ port: Number(port), host: '0.0.0.0' });
-    console.log(`🚀 Live chat server running on http://localhost:${port}`);
-  } catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
+fastify.register(import('@fastify/static'), {
+  root: path.join(__dirname, 'www')
+})
+
+fastify.addHook('preValidation', async (request: FastifyRequest, reply: FastifyReply) => {
+  if (request.routerPath == '/chat' && !request.query.username) {
+    reply.status(403).send({ error: 'Connection rejected'});
   }
-};
+})
+
+fastify.get('/chat', { websocket: true }, (connection, req) => {
+    // New user
+    broadcast({
+        sender: '__server',
+        message: `${req.query.username} joined`
+    });
+    // Leaving user
+    connection.socket.on('close', () => {
+        broadcast({
+            sender: '__server',
+            message: `${req.query.username} left`
+        });
+    });
+   // Broadcast incoming message
+    connection.socket.on('message', (message) => {
+        message = JSON.parse(message.toString());
+        broadcast({
+            sender: req.query.username,
+            ...message
+        });
+    });
+});
+
+fastify.listen({ port: 3000 }, (err, address) => {
+    if(err) {
+        console.error(err);
+        process.exit(1);
+    }
+    console.log(`Server listening at: ${address}`);
+});
+
+function broadcast(message) {
+    for(let client of fastify.websocketServer.clients) {
+        client.send(JSON.stringify(message));
+    }
+}
