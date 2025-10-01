@@ -9,7 +9,7 @@ const CreateMatchSchema = {
 	properties: {
 		winner: {type: "string", minLength: 3},
 		loser: {type: "string", minLength: 3},
-		winner_score: {type: "number", maximum: 12},
+		winner_score: {type: "number", minimum: 0},
 		loser_score: {type: "number", minimum: 0}
 	},
 	required: ["winner", "loser", "winner_score", "loser_score"],

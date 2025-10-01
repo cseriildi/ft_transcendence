@@ -32,7 +32,7 @@ export const authController = {
         const jti = decoded.jti!;
         
         const storedToken = await db.get(
-          "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND expires_at > datetime('now')",
+          "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND revoked = 0 AND expires_at > datetime('now')",
           [jti, userId]
         );
         
@@ -87,6 +87,41 @@ export const authController = {
         );
       } catch (err: any) {
         throw err;
+      }
+    }
+  ),
+
+  logout: createHandler(
+    async (request, context) => {
+      const { db, reply } = context;
+      
+      const refreshToken = request.cookies.refresh_token;
+      if (!refreshToken) {
+        throw errors.unauthorized("No refresh token provided");
+      }
+
+      try {
+        // Verify refresh token to get jti
+        const decoded = await verifyRefreshToken(refreshToken);
+        const jti = decoded.jti!;
+
+        // Revoke the refresh token in database
+        const result = await db.run(
+          "UPDATE refresh_tokens SET revoked = 1 WHERE jti = ?",
+          [jti]
+        );
+
+        // Clear the refresh token cookie
+        reply.clearCookie("refresh_token", { path: "/auth" });
+
+        return ApiResponseHelper.success(
+          { message: "Logged out successfully" },
+          "Logged out successfully"
+        );
+      } catch (err: any) {
+        // Even if token is invalid/expired, clear the cookie
+        reply.clearCookie("refresh_token", { path: "/auth" });
+        throw errors.unauthorized("Invalid refresh token");
       }
     }
   ),
