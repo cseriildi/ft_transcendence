@@ -3,6 +3,7 @@
 -Protect routes
 -Protect websocket connection
 - udate cgame logic for actual win conditions and add scores and scroe condtitsion adn win condition
+
 -update routes and DB manipulation:
 
 ? Users can securely subscribe to the website.
