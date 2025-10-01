@@ -16,13 +16,6 @@ import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from 
 
 export const authController = {
 
-  //structure for createHAndler:
-  // createHandler<{ whatever is provoded as neccesary for the query }, response type>(
-  //   async (request, { db , reply(optional)}) => {
-  //     // handler logic
-  //   }
-  // ),
-
   refresh: createHandler<{}, UserLoginResponse>(
     async (request, context) => {
       const { db, reply } = context;
