@@ -20,7 +20,8 @@ async function authRoutes(fastify: FastifyInstance) {
     Reply: UserLoginResponse | UserErrorResponse;
   }>("/login", authController.loginUser);
 
-    fastify.get<{
+  fastify.post<{
+    Reply: UserLoginResponse | UserErrorResponse;
   }>("/refresh", authController.refresh);
 }
 

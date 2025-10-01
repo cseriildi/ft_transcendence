@@ -12,10 +12,7 @@ import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { AuthSchemaValidator } from "./authSchemas.ts";
 import bcrypt from "bcrypt";
-import { signAccessToken, signRefreshToken, createJti } from "../../utils/authutils.ts";
-import { createHash } from "node:crypto";
-
-const hashRefreshToken = (token: string) => createHash("sha256").update(token).digest("hex");
+import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authutils.ts";
 
 export const authController = {
 
@@ -26,59 +23,77 @@ export const authController = {
   //   }
   // ),
 
-    refresh: createHandler<>(
+  refresh: createHandler<{}, UserLoginResponse>(
     async (request, context) => {
       const { db, reply } = context;
-      const valid = AuthSchemaValidator.validateCreateUser(request.body);
-      if (!valid) throw errors.validation("Invalid request body");
-      if (request.body.password !== request.body.confirmPassword) {
-        throw errors.validation("Passwords do not match");
+      
+      const refreshToken = request.cookies.refresh_token;
+      if (!refreshToken) {
+        throw errors.unauthorized("No refresh token provided");
       }
 
-      const { username, email } = request.body || {};
-
       try {
-        const hash = await bcrypt.hash(request.body.password, 10);
-        const result = await db.run(
-          "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-          [username.trim(), email.trim(), hash]
+        // Verify refresh token and get user ID
+        const decoded = await verifyRefreshToken(refreshToken);
+        const userId = parseInt(decoded.sub!);
+        const jti = decoded.jti!;
+        
+        const storedToken = await db.get(
+          "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND expires_at > datetime('now')",
+          [jti, userId]
         );
+        
+        if (!storedToken) {
+          throw errors.unauthorized("Invalid or expired refresh token");
+        }
 
-        const accessToken = await signAccessToken(result.lastID);
-        const jti = createJti();
-        const refreshToken = await signRefreshToken(result.lastID, jti);
-        const refreshHash = await bcrypt.hash(refreshToken, 10);
+        const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
+        if (!tokenMatch) {
+          throw errors.unauthorized("Invalid refresh token");
+        }
+
+        const user = await db.get<User>(
+          "SELECT id, username, email, created_at FROM users WHERE id = ?",
+          [userId]
+        );
+        
+        if (!user) {
+          throw errors.notFound("User not found");
+        }
+
+        const accessToken = await signAccessToken(user.id);
+        
+        const newJti = createJti();
+        const newRefreshToken = await signRefreshToken(user.id, newJti);
+        const refreshHash = await bcrypt.hash(newRefreshToken, 10);
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-           await db.run(
+        await db.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
+        await db.run(
           "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [jti, result.lastID, refreshHash, expiresAt]
+          [newJti, user.id, refreshHash, expiresAt]
         );
 
-        reply.setCookie("refresh_token", refreshToken, {
+        reply.setCookie("refresh_token", newRefreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
           sameSite: "lax",
           path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+          maxAge: 7 * 24 * 60 * 60 * 1000,
         });
 
-        reply.status(201);
         return ApiResponseHelper.success(
           {
-            id: result.lastID,
-            username: username.trim(),
-            email: email.trim(),
-            created_at: new Date().toISOString(),
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            created_at: user.created_at,
             tokens: { accessToken },
           },
-          "User created"
+          "Token refreshed successfully"
         );
       } catch (err: any) {
-        if (err.message?.includes("UNIQUE constraint")) {
-          throw errors.conflict("Username or email already exists");
-        }
-        throw err; // Re-throw other database errors
+        throw err;
       }
     }
   ),
