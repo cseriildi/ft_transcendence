@@ -2,6 +2,17 @@ import { FastifyInstance } from 'fastify'
 import { build } from '../src/main.ts'
 
 export async function createTestApp(): Promise<FastifyInstance> {
+  // Set test OAuth environment variables if not already set
+  if (!process.env.GITHUB_CLIENT_ID) {
+    process.env.GITHUB_CLIENT_ID = 'test_client_id'
+  }
+  if (!process.env.GITHUB_CLIENT_SECRET) {
+    process.env.GITHUB_CLIENT_SECRET = 'test_client_secret'
+  }
+  if (!process.env.GITHUB_CALLBACK_URL) {
+    process.env.GITHUB_CALLBACK_URL = 'http://localhost:3000/oauth/github/callback'
+  }
+
   const app = await build({
     logger: false,
     database: { path: ':memory:' },

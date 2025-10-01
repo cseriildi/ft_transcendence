@@ -23,6 +23,8 @@ async function authRoutes(fastify: FastifyInstance) {
   fastify.post<{
     Reply: UserLoginResponse | UserErrorResponse;
   }>("/refresh", authController.refresh);
+
+  fastify.post("/logout", authController.logout);
 }
 
 export default authRoutes;
