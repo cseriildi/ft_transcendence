@@ -1,3 +1,4 @@
+// OAuth provider configuration
 export interface OAuthProvider {
   name: string;
   clientId: string;
@@ -8,14 +9,16 @@ export interface OAuthProvider {
   userInfoUrl: string;
 }
 
+// OAuth token response from provider
 export interface OAuthTokenResponse {
   access_token: string;
   token_type: string;
-  expires_in: number;
+  expires_in?: number;
   refresh_token?: string;
-  scope: string;
+  scope?: string;
 }
 
+// Normalized user info from OAuth provider
 export interface OAuthUserInfo {
   id: string;
   email: string;

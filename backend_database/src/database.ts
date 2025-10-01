@@ -33,9 +33,13 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT,
+        oauth_provider TEXT,
+        oauth_id TEXT,
+        avatar_url TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(oauth_provider, oauth_id)
       )`);
     await run(`
       CREATE TABLE IF NOT EXISTS refresh_tokens (
