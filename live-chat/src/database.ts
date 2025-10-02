@@ -30,11 +30,11 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         // Create tables here
         db.run(
           `
-          CREATE TABLE IF NOT EXISTS chats (
+          CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_1 TEXT UNIQUE NOT NULL,
-			user_2 TEXT UNIQUE NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            username TEXT UNIQUE NOT NULL,
+            online_status INTEGER DEFAULT 0,
+            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
             )
             `,
           (err) => {
@@ -50,14 +50,13 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
 
 		db.run(
           `
-          CREATE TABLE IF NOT EXISTS messages (
+          CREATE TABLE IF NOT EXISTS blocks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender TEXT NOT NULL,
-			receiver TEXT NOT NULL,
-			message TEXT NOT NULL,
-            sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-			chat_id INTEGER,
-			FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
+            blocker TEXT NOT NULL,
+			      blocked_user TEXT NOT NULL,
+            blocked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+			      FOREIGN KEY (blocker) REFERENCES users(username) ON DELETE CASCADE,
+            FOREIGN KEY (blocked_user) REFERENCES users(username) ON DELETE CASCADE
             )
             `,
           (err) => {
