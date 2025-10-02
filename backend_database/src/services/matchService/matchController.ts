@@ -14,7 +14,7 @@ import { MatchSchemaValidator } from "./matchSchemas.ts";
 
 export const matchController = {
 	  createMatch: createHandler<{ Body: CreateMatchBody }, CreateMatchResponse>(
-		async (request, { db }) => {
+		async (request, { db, reply }) => {
 		  const valid = MatchSchemaValidator.validateCreateMatch(request.body);
 		  if (!valid) throw errors.validation("Invalid request body");
 		  const { winner, loser, winner_score, loser_score } = request.body;
@@ -42,6 +42,7 @@ export const matchController = {
 			  loser_score,
 			  played_at: new Date().toISOString()
 			};
+			reply.status(201);
 			return ApiResponseHelper.success<Match>(match, "Match created successfully");
 		  } catch (err: any) {
 			throw err;
@@ -55,13 +56,20 @@ export const matchController = {
 			if (!valid) throw errors.validation("Invalid query parameters");
 			const {username} = request.params;
 			try {
+				// First check if the user exists
+				const userExists = await db.get<{ count: number }>(
+					`SELECT COUNT(*) as count FROM users WHERE username = ?`,
+					[username]
+				);
+				if (!userExists || userExists.count === 0) {
+					throw errors.notFound("User not found");
+				}
+
+				// Then get their matches
 				const matches = await db.all<Match>(
 					`SELECT * FROM matches WHERE winner = ? OR loser = ? ORDER BY played_at DESC`,
 					[username, username]
 				);
-				if (matches.length === 0) {
-					throw errors.notFound("No matches found for the specified player");
-				}
 				return ApiResponseHelper.success<Match[]>(matches, "Match retrieved successfully");
 			} catch (err: any) {
 				throw err;
