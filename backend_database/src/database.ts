@@ -34,7 +34,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         username TEXT UNIQUE NOT NULL,
         email TEXT UNIQUE NOT NULL,
         twofa_secret TEXT,
-        twofa_enabled BOOLEAN DEFAULT 0
+        twofa_enabled BOOLEAN DEFAULT 0,
         password_hash TEXT,
         oauth_provider TEXT,
         oauth_id TEXT,
