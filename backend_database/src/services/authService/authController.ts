@@ -92,8 +92,7 @@ export const authController = {
   ),
 
   logout: createHandler(
-    async (request, context) => {
-      const { db, reply } = context;
+    async (request, { db, reply }) => {
       
       const refreshToken = request.cookies.refresh_token;
       if (!refreshToken) {
@@ -127,8 +126,7 @@ export const authController = {
   ),
 
   createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
-    async (request, context) => {
-      const { db, reply } = context;
+      async (request, { db, reply }) => {
       const valid = AuthSchemaValidator.validateCreateUser(request.body);
       if (!valid) throw errors.validation("Invalid request body");
       if (request.body.password !== request.body.confirmPassword) {
@@ -184,8 +182,7 @@ export const authController = {
   ),
 
   loginUser: createHandler<{ Body: UserLoginBody }, UserLoginResponse>(
-    async (request, context) => {
-      const { db, reply } = context;
+      async (request, { db, reply }) => {
       const valid = AuthSchemaValidator.validateUserLogin(request.body);
       if (!valid) throw errors.validation("Invalid request body");
       const { email, password } = request.body || {};
