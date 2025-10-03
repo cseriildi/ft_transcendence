@@ -3,14 +3,14 @@ import crypto from "node:crypto";
 import { errors } from "./errorUtils.ts";
 import { JwtPayload } from "../services/authService/authTypes.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
-import { verifyAccessToken } from "../services/authService/authUtils.ts";
+import { config } from "../config.ts";
 
-const ISSUER = process.env.JWT_ISSUER || "ping-pong-api";
-const AUDIENCE = process.env.JWT_AUDIENCE || "ping-pong-clients";
-const ACCESS_SECRET = new TextEncoder().encode(process.env.JWT_ACCESS_SECRET || "dev-access-secret-change-me");
-const REFRESH_SECRET = new TextEncoder().encode(process.env.JWT_REFRESH_SECRET || "dev-refresh-secret-change-me");
-const ACCESS_TTL = process.env.JWT_ACCESS_TTL || "15m";
-const REFRESH_TTL = process.env.JWT_REFRESH_TTL || "7d";
+const ISSUER = config.jwt.issuer;
+const AUDIENCE = config.jwt.audience;
+const ACCESS_SECRET = new TextEncoder().encode(config.jwt.accessSecret);
+const REFRESH_SECRET = new TextEncoder().encode(config.jwt.refreshSecret);
+const ACCESS_TTL = config.jwt.accessTtl;
+const REFRESH_TTL = config.jwt.refreshTtl;
 
 export const createJti = () => crypto.randomUUID();
 
