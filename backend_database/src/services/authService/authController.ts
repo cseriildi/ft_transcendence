@@ -12,7 +12,7 @@ import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { AuthSchemaValidator } from "./authSchemas.ts";
 import bcrypt from "bcrypt";
-import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authutils.ts";
+import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authUtils.ts";
 
 export const authController = {
 
