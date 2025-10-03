@@ -1,7 +1,7 @@
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
-import { errors } from "../../utils/errors";
-import { ApiResponseHelper } from "../../utils/apiResponseHelper";
+import { errors } from "../../utils/errorUtils.ts";
+import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import type {
   Setup2FAResponse,
