@@ -1,10 +1,10 @@
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest'
 import { FastifyInstance } from 'fastify'
-import bcrypt from 'bcrypt'
 import { createTestApp, cleanupTestApp, resetDatabase } from './setup'
 
 describe('Auth Routes', () => {
   let app: FastifyInstance
+  const
 
   beforeAll(async () => {
     app = await createTestApp()

@@ -10,7 +10,7 @@ async function routes(fastify: FastifyInstance) {
   await fastify.register(checkRoutes);
   await fastify.register(userRoutes);
   await fastify.register(matchRoutes);
-  await fastify.register(authRoutes);
+  await fastify.register(authRoutes, { prefix: AUTH_ROUTE_PREFIX });
   await fastify.register(oauthRoutes);
 }
 
