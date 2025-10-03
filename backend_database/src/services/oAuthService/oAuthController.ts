@@ -13,8 +13,9 @@ import { UserLoginResponse } from "../authService/authTypes.ts";
 import { User } from "../userService/userTypes.ts";
 import bcrypt from "bcrypt";
 import crypto from "node:crypto";
+import { config } from "../../config.ts";
 
-const IS_PROD = process.env.NODE_ENV === "production";
+const IS_PROD = config.server.env === "production";
 
 export const oauthController = {
   // Step 1: Redirect to GitHub
