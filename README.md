@@ -33,7 +33,7 @@ docker compose down
 docker compose up -d
 
 # rebuild when Dockerfiles/code change
-docker compose -d --build
+docker compose up -d --build
 
 # view logs (all services)
 docker compose logs -f
