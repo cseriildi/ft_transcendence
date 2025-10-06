@@ -9,8 +9,8 @@ export async function createTestApp(): Promise<FastifyInstance> {
   if (!process.env.GITHUB_CLIENT_SECRET) {
     process.env.GITHUB_CLIENT_SECRET = 'test_client_secret'
   }
-  if (!process.env.GITHUB_CALLBACK_URL) {
-    process.env.GITHUB_CALLBACK_URL = 'http://localhost:3000/oauth/github/callback'
+  if (!process.env.GITHUB_REDIRECT_URI) {
+    process.env.GITHUB_REDIRECT_URI = 'http://localhost:3000/oauth/oauth/github/callback'
   }
 
   const app = await build({

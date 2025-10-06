@@ -26,11 +26,11 @@ describe(`OAuth Routes`, () => {
     vi.clearAllMocks()
   })
 
-  describe(`GET ${OAUTH_PREFIX}/oauth/github`, () => {
+  describe(`GET ${OAUTH_PREFIX}/github`, () => {
     it(`should return GitHub OAuth redirect URL`, async () => {
       const res = await app.inject({
         method: `GET`,
-        url: `${OAUTH_PREFIX}/oauth/github`,
+        url: `${OAUTH_PREFIX}/github`,
       })
 
       expect(res.statusCode).toBe(200)
@@ -45,7 +45,7 @@ describe(`OAuth Routes`, () => {
     it(`should set oauth_state cookie`, async () => {
       const res = await app.inject({
         method: `GET`,
-        url: `${OAUTH_PREFIX}/oauth/github`,
+        url: `${OAUTH_PREFIX}/github`,
       })
 
       expect(res.statusCode).toBe(200)
@@ -54,12 +54,12 @@ describe(`OAuth Routes`, () => {
       const stateCookie = cookies.find((c: any) => c.name === `oauth_state`)
       expect(stateCookie).toBeDefined()
       expect(stateCookie?.httpOnly).toBe(true)
-      expect(stateCookie?.path).toBe(`${OAUTH_PREFIX}/oauth`)
+      expect(stateCookie?.path).toBe(OAUTH_PREFIX)
     })
 
     it(`should generate unique state for each request`, async () => {
-      const res1 = await app.inject({ method: `GET`, url: `${OAUTH_PREFIX}/oauth/github` })
-      const res2 = await app.inject({ method: `GET`, url: `${OAUTH_PREFIX}/oauth/github` })
+      const res1 = await app.inject({ method: `GET`, url: `${OAUTH_PREFIX}/github` })
+      const res2 = await app.inject({ method: `GET`, url: `${OAUTH_PREFIX}/github` })
 
       const body1 = res1.json() as any
       const body2 = res2.json() as any
@@ -71,11 +71,11 @@ describe(`OAuth Routes`, () => {
     })
   })
 
-  describe(`GET ${OAUTH_PREFIX}/oauth/github/callback`, () => {
+  describe(`GET ${OAUTH_PREFIX}/github/callback`, () => {
     it(`should reject missing code parameter`, async () => {
       const res = await app.inject({
         method: `GET`,
-        url: `${OAUTH_PREFIX}/oauth/github/callback?state=test-state`,
+        url: `${OAUTH_PREFIX}/github/callback?state=test-state`,
       })
 
       expect(res.statusCode).toBe(400)
@@ -86,7 +86,7 @@ describe(`OAuth Routes`, () => {
     it(`should reject missing state parameter`, async () => {
       const res = await app.inject({
         method: `GET`,
-        url: `${OAUTH_PREFIX}/oauth/github/callback?code=test-code`,
+        url: `${OAUTH_PREFIX}/github/callback?code=test-code`,
       })
 
       expect(res.statusCode).toBe(400)
@@ -97,7 +97,7 @@ describe(`OAuth Routes`, () => {
     it(`should reject invalid state (CSRF protection)`, async () => {
       const res = await app.inject({
         method: `GET`,
-        url: `${OAUTH_PREFIX}/oauth/github/callback?code=test-code&state=invalid-state`,
+        url: `${OAUTH_PREFIX}/github/callback?code=test-code&state=invalid-state`,
         headers: {
           cookie: `oauth_state=different-state.signature`,
         },
