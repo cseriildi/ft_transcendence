@@ -1,5 +1,4 @@
 import Fastify from 'fastify';
-import type WebSocket from 'ws';
 
 const app = Fastify({ logger: true });
 
@@ -7,21 +6,86 @@ await app.register(import('@fastify/websocket'));
 
 // Store active connections per chat room
 const chatRooms = new Map<string, Map<any, string>>();
-// Store all connected users globally (for user list)
-const allUsers = new Map<any, string>(); // connection -> username
-const userConnections = new Map<string, Set<any>>(); // username -> connections
+// Store all connected users in the lobby
+const lobbyConnections = new Map<any, string>(); // connection -> username
+const userLobbyConnections = new Map<string, Set<any>>(); // username -> lobby connections
 
+const chatHistory = new Map<string, Array<{
+    username: string;
+    message: string;
+    timestamp: number;
+}>>();
+
+const MAX_MESSAGES = 20;
+
+// Main lobby connection - users connect here first
 app.register(async (fastify) => {
-    fastify.get('/:chatid', { websocket: true }, (connection, req) => {
+    fastify.get('/lobby', { websocket: true }, (connection, req) => {
+        const username = req.query.username as string;
+        
+        if (!username) {
+            connection.close();
+            return;
+        }
+        
+        // Track user in lobby
+        lobbyConnections.set(connection, username);
+        if (!userLobbyConnections.has(username)) {
+            userLobbyConnections.set(username, new Set());
+        }
+        userLobbyConnections.get(username)!.add(connection);
+        
+        // Send welcome message with all online users
+        const allUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(u => u !== username);
+        
+        connection.send(JSON.stringify({
+            type: 'lobby_connected',
+            message: `Welcome ${username}! You are now online.`,
+            allUsers: allUsersList
+        }));
+        
+        // Broadcast to all lobby users that someone new is online
+        for (const [otherConn, otherUsername] of lobbyConnections) {
+            if (otherConn !== connection) {
+                const otherUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(u => u !== otherUsername);
+                otherConn.send(JSON.stringify({
+                    type: 'user_list_update',
+                    allUsers: otherUsersList
+                }));
+            }
+        }
+        
+        connection.on('close', () => {
+            lobbyConnections.delete(connection);
+            
+            const userConns = userLobbyConnections.get(username);
+            if (userConns) {
+                userConns.delete(connection);
+                if (userConns.size === 0) {
+                    userLobbyConnections.delete(username);
+                }
+            }
+            
+            // Broadcast to all lobby users that someone went offline
+            const allUsersList = Array.from(new Set(userLobbyConnections.keys()));
+            for (const [otherConn, otherUsername] of lobbyConnections) {
+                otherConn.send(JSON.stringify({
+                    type: 'user_list_update',
+                    allUsers: allUsersList.filter(u => u !== otherUsername)
+                }));
+            }
+        });
+    });
+    
+    // Individual chat rooms
+    fastify.get('/chats/:chatid', { websocket: true }, (connection, req) => {
         const chatId = req.params.chatid;
         const username = req.query.username as string;
         
-        // Track user globally
-        allUsers.set(connection, username);
-        if (!userConnections.has(username)) {
-            userConnections.set(username, new Set());
+        if (!username) {
+            connection.close();
+            return;
         }
-        userConnections.get(username)!.add(connection);
         
         // Initialize chat room if it doesn't exist
         if (!chatRooms.has(chatId)) {
@@ -31,48 +95,49 @@ app.register(async (fastify) => {
         const room = chatRooms.get(chatId)!;
         room.set(connection, username);
         
-        // Send welcome message with user list
-        const usersInRoom = Array.from(new Set(room.values()));
-        const allUsersList = Array.from(new Set(userConnections.keys()));
+        // Get chat history for this room
+        const history = chatHistory.get(chatId) || [];
         
+        // Send welcome message with history
         connection.send(JSON.stringify({
-            type: 'system',
-            message: `Hello ${username}! You are connected to chat room: ${chatId}`,
-            usersInRoom,
-            allUsers: allUsersList.filter(u => u !== username)
+            type: 'chat_connected',
+            message: `Connected to chat: ${chatId}`,
+            history: history
         }));
         
-        // Notify others in the room and send updated user lists
+        // Notify others in the room that user is active in this chat
         for (const [client, clientUsername] of room) {
             if (client !== connection) {
                 client.send(JSON.stringify({
                     type: 'system',
-                    message: `${username} has joined the chat.`,
-                    usersInRoom,
-                    allUsers: allUsersList.filter(u => u !== clientUsername)
-                }));
-            }
-        }
-        
-        // Broadcast to all users that someone new is online
-        for (const [otherConn, otherUsername] of allUsers) {
-            if (otherConn !== connection) {
-                const otherUsersList = Array.from(new Set(userConnections.keys())).filter(u => u !== otherUsername);
-                otherConn.send(JSON.stringify({
-                    type: 'user_list_update',
-                    allUsers: otherUsersList
+                    message: `${username} opened the chat.`
                 }));
             }
         }
         
         connection.on('message', (message) => {
+            // Save message to history
+            if (!chatHistory.has(chatId)) {
+                chatHistory.set(chatId, []);
+            }
+            const history = chatHistory.get(chatId)!;
+            history.push({
+                username,
+                message: message.toString(),
+                timestamp: Date.now()
+            });
+            if (history.length > MAX_MESSAGES) {
+                history.shift(); // Remove oldest message
+            }
+            
             // Broadcast incoming message to all connected clients in the same room
             for (const [client, clientUsername] of room) {
                 if (client !== connection) {
                     client.send(JSON.stringify({
                         type: 'message',
                         username: username,
-                        message: message.toString()
+                        message: message.toString(),
+                        timestamp: Date.now()
                     }));
                 }
             }
@@ -80,33 +145,12 @@ app.register(async (fastify) => {
         
         connection.on('close', () => {
             room.delete(connection);
-            allUsers.delete(connection);
-            
-            const userConns = userConnections.get(username);
-            if (userConns) {
-                userConns.delete(connection);
-                if (userConns.size === 0) {
-                    userConnections.delete(username);
-                }
-            }
-            
-            const usersInRoom = Array.from(new Set(room.values()));
             
             // Notify others in the room
             for (const [client, clientUsername] of room) {
                 client.send(JSON.stringify({
                     type: 'system',
-                    message: `${username} has disconnected.`,
-                    usersInRoom
-                }));
-            }
-            
-            // Broadcast to all users that someone went offline
-            const allUsersList = Array.from(new Set(userConnections.keys()));
-            for (const [otherConn, otherUsername] of allUsers) {
-                otherConn.send(JSON.stringify({
-                    type: 'user_list_update',
-                    allUsers: allUsersList.filter(u => u !== otherUsername)
+                    message: `${username} closed the chat.`
                 }));
             }
             

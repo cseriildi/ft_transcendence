@@ -34,6 +34,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             online_status INTEGER DEFAULT 0,
+            token TEXT UNIQUE NOT NULL,
             last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
             )
             `,
