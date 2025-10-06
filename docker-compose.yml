@@ -1,10 +1,9 @@
-name: app-stack
+name: transendence
 
 services:
   databank:
     build:
       context: ./backend_database
-      dockerfile: Dockerfile
     container_name: databank
     volumes:
       - ./backend_database/database:/app/data
@@ -12,33 +11,31 @@ services:
       - "3001:3000"
     restart: unless-stopped
     networks:
-      - app-net
+      - transendence
 
   backend:
     build:
       context: ./backend_gamelogic
-      dockerfile: Dockerfile
     container_name: backend
     ports:
       - "3000:3000"
     restart: unless-stopped
     networks:
-      - app-net
+      - transendence
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile
     container_name: frontend
     ports:
       - "4200:4200"
     restart: unless-stopped
     networks:
-      - app-net
+      - transendence
 
 volumes:
   databank-data:
 
 networks:
-  app-net:
+  transendence:
     driver: bridge
