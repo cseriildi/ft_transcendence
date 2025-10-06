@@ -1,10 +1,11 @@
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest'
 import { FastifyInstance } from 'fastify'
-import bcrypt from 'bcrypt'
 import { createTestApp, cleanupTestApp, resetDatabase } from './setup'
+import { config } from '../src/config'
 
 describe('Auth Routes', () => {
   let app: FastifyInstance
+  const AUTH_PREFIX = config.routes.auth
 
   beforeAll(async () => {
     app = await createTestApp()
@@ -18,14 +19,14 @@ describe('Auth Routes', () => {
     await resetDatabase(app)
   })
 
-  it('POST /register should create a user', async () => {
+  it('POST /auth/register should create a user', async () => {
     const payload = {
       username: 'testuser',
       email: 'test@example.com',
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    const res = await app.inject({ method: 'POST', url: '/register', payload })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
     expect(res.statusCode).toBe(201)
     const body = res.json() as any
     expect(body.success).toBe(true)
@@ -33,30 +34,30 @@ describe('Auth Routes', () => {
     expect(body.data?.email).toBe(payload.email)
   })
 
-  it('POST /register should reject duplicate email', async () => {
+  it('POST /auth/register should reject duplicate email', async () => {
     const payload = {
       username: 'user1',
       email: 'dup@example.com',
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    await app.inject({ method: 'POST', url: '/register', payload })
-    const res = await app.inject({ method: 'POST', url: '/register', payload: { ...payload, username: 'user2' } })
+    await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload: { ...payload, username: 'user2' } })
     expect(res.statusCode).toBe(409)
     const body = res.json() as any
     expect(body.success).toBe(false)
   })
 
-  it('POST /login should authenticate valid user', async () => {
+  it('POST /auth/login should authenticate valid user', async () => {
     const payload = {
       username: 'userlogin',
       email: 'login@example.com',
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    await app.inject({ method: 'POST', url: '/register', payload })
+    await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
 
-    const res = await app.inject({ method: 'POST', url: '/login', payload: { email: payload.email, password: payload.password } })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/login`, payload: { email: payload.email, password: payload.password } })
     expect(res.statusCode).toBe(200)
     const body = res.json() as any
     expect(body.success).toBe(true)
@@ -70,9 +71,9 @@ describe('Auth Routes', () => {
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    await app.inject({ method: 'POST', url: '/register', payload })
+    await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
 
-    const res = await app.inject({ method: 'POST', url: '/login', payload: { email: payload.email, password: 'wrongpass123' } })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/login`, payload: { email: payload.email, password: 'wrongpass123' } })
     expect(res.statusCode).toBe(401)
     const body = res.json() as any
     expect(body.success).toBe(false)
@@ -85,9 +86,9 @@ describe('Auth Routes', () => {
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    await app.inject({ method: 'POST', url: '/register', payload })
+    await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
 
-    const res = await app.inject({ method: 'POST', url: '/login', payload: { email: payload.email, password: payload.password } })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/login`, payload: { email: payload.email, password: payload.password } })
     expect(res.statusCode).toBe(200)
     const body = res.json() as any
     expect(body.success).toBe(true)
@@ -108,14 +109,14 @@ describe('Auth Routes', () => {
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    const loginRes = await app.inject({ method: 'POST', url: '/register', payload })
+    const loginRes = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
     const refreshCookie = loginRes.cookies.find((c: any) => c.name === 'refresh_token')
     expect(refreshCookie).toBeDefined()
 
     // Use refresh token
     const refreshRes = await app.inject({
       method: 'POST',
-      url: '/refresh',
+      url: `${AUTH_PREFIX}/refresh`,
       cookies: { refresh_token: refreshCookie!.value }
     })
     expect(refreshRes.statusCode).toBe(200)
@@ -130,7 +131,7 @@ describe('Auth Routes', () => {
   })
 
   it('POST /refresh should reject without refresh cookie', async () => {
-    const res = await app.inject({ method: 'POST', url: '/refresh' })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/refresh` })
     expect(res.statusCode).toBe(401)
     const body = res.json() as any
     expect(body.success).toBe(false)
@@ -143,14 +144,14 @@ describe('Auth Routes', () => {
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    const loginRes = await app.inject({ method: 'POST', url: '/register', payload })
+    const loginRes = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
     const refreshCookie = loginRes.cookies.find((c: any) => c.name === 'refresh_token')
     expect(refreshCookie).toBeDefined()
 
     // Logout
     const logoutRes = await app.inject({
       method: 'POST',
-      url: '/logout',
+      url: `${AUTH_PREFIX}/logout`,
       cookies: { refresh_token: refreshCookie!.value }
     })
     expect(logoutRes.statusCode).toBe(200)
@@ -160,14 +161,14 @@ describe('Auth Routes', () => {
     // Try to use the same refresh token - should fail
     const refreshRes = await app.inject({
       method: 'POST',
-      url: '/refresh',
+      url: `${AUTH_PREFIX}/refresh`,
       cookies: { refresh_token: refreshCookie!.value }
     })
     expect(refreshRes.statusCode).toBe(401)
   })
 
   it('POST /logout should fail without refresh cookie', async () => {
-    const res = await app.inject({ method: 'POST', url: '/logout' })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/logout` })
     expect(res.statusCode).toBe(401)
     const body = res.json() as any
     expect(body.success).toBe(false)

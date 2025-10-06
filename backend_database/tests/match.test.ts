@@ -1,11 +1,14 @@
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import { createTestApp, cleanupTestApp, resetDatabase } from './setup'
+import { config } from '../src/config'
 
 describe('Match Routes', () => {
   let app: FastifyInstance
   let user1: { id: number; username: string }
   let user2: { id: number; username: string }
+  const AUTH_PREFIX = config.routes.auth
+  const API_PREFIX = config.routes.api
 
   beforeAll(async () => {
     app = await createTestApp()
@@ -21,7 +24,7 @@ describe('Match Routes', () => {
     // Create two test users
     const res1 = await app.inject({
       method: 'POST',
-      url: '/register',
+      url: `${AUTH_PREFIX}/register`,
       payload: {
         username: 'player1',
         email: 'player1@example.com',
@@ -34,7 +37,7 @@ describe('Match Routes', () => {
 
     const res2 = await app.inject({
       method: 'POST',
-      url: '/register',
+      url: `${AUTH_PREFIX}/register`,
       payload: {
         username: 'player2',
         email: 'player2@example.com',
@@ -56,7 +59,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload,
     })
 
@@ -79,7 +82,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload,
     })
 
@@ -98,7 +101,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload,
     })
 
@@ -117,7 +120,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload,
     })
 
@@ -136,7 +139,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload,
     })
 
@@ -145,11 +148,11 @@ describe('Match Routes', () => {
     expect(body.success).toBe(false)
   })
 
-  it('GET /matches/:username should return user matches', async () => {
+  it('GET ${API_PREFIX}/matches/:username should return user matches', async () => {
     // Create some matches
     await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload: {
         winner: user1.username,
         loser: user2.username,
@@ -160,7 +163,7 @@ describe('Match Routes', () => {
 
     await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload: {
         winner: user2.username,
         loser: user1.username,
@@ -171,7 +174,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: `/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.username}`,
     })
 
     expect(res.statusCode).toBe(200)
@@ -188,10 +191,10 @@ describe('Match Routes', () => {
     })
   })
 
-  it('GET /matches/:username should return empty array for no matches', async () => {
+  it('GET ${API_PREFIX}/matches/:username should return empty array for no matches', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: `/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.username}`,
     })
 
     expect(res.statusCode).toBe(200)
@@ -201,10 +204,10 @@ describe('Match Routes', () => {
     expect(body.data.length).toBe(0)
   })
 
-  it('GET /matches/:username should return 404 for non-existent user', async () => {
+  it('GET ${API_PREFIX}/matches/:username should return 404 for non-existent user', async () => {
     const res = await app.inject({
       method: 'GET',
-      url: '/matches/nonexistentuser',
+      url: `${API_PREFIX}/matches/nonexistentuser`,
     })
 
     expect(res.statusCode).toBe(404)
@@ -212,11 +215,11 @@ describe('Match Routes', () => {
     expect(body.success).toBe(false)
   })
 
-  it('GET /matches/:username should order matches by date (newest first)', async () => {
+  it('GET ${API_PREFIX}/matches/:username should order matches by date (newest first)', async () => {
     // Create matches with slight delay
     await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload: {
         winner: user1.username,
         loser: user2.username,
@@ -229,7 +232,7 @@ describe('Match Routes', () => {
 
     await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload: {
         winner: user2.username,
         loser: user1.username,
@@ -240,7 +243,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: `/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.username}`,
     })
 
     expect(res.statusCode).toBe(200)
@@ -257,7 +260,7 @@ describe('Match Routes', () => {
     // Player1 wins twice
     await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload: {
         winner: user1.username,
         loser: user2.username,
@@ -268,7 +271,7 @@ describe('Match Routes', () => {
 
     await app.inject({
       method: 'POST',
-      url: '/matches',
+      url: `${API_PREFIX}/matches`,
       payload: {
         winner: user1.username,
         loser: user2.username,
@@ -279,7 +282,7 @@ describe('Match Routes', () => {
 
     const res = await app.inject({
       method: 'GET',
-      url: `/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.username}`,
     })
 
     expect(res.statusCode).toBe(200)

@@ -1,17 +1,18 @@
 import crypto from "node:crypto";
 import { errors } from "./errorUtils.ts";
 import { OAuthProvider, OAuthTokenResponse, OAuthUserInfo } from "../services/oAuthService/oAuthTypes.ts";
+import { config } from "../config.ts";
 
 // CSRF state protection
-const STATE_SECRET = process.env.OAUTH_STATE_SECRET || process.env.JWT_REFRESH_SECRET || "dev-state-secret";
+const STATE_SECRET = config.oauth.stateSecret;
 
 // OAuth provider configurations
 export function getGitHubConfig(): OAuthProvider {
   return {
     name: "GitHub",
-    clientId: process.env.GITHUB_CLIENT_ID || "",
-    clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-    redirectUri: process.env.GITHUB_REDIRECT_URI || "http://localhost:3000/oauth/github/callback",
+    clientId: config.oauth.github.clientId,
+    clientSecret: config.oauth.github.clientSecret,
+    redirectUri: config.oauth.github.redirectUri,
     authUrl: "https://github.com/login/oauth/authorize",
     tokenUrl: "https://github.com/login/oauth/access_token",
     userInfoUrl: "https://api.github.com/user",

@@ -1,10 +1,14 @@
 import { describe, it, beforeAll, afterAll, beforeEach, expect } from 'vitest'
 import { FastifyInstance } from 'fastify'
 import { createTestApp, cleanupTestApp, resetDatabase } from './setup'
+import { config } from '../src/config'
 
 describe('User Routes', () => {
   let app: FastifyInstance
   let userId: number
+  let accessToken: string
+  const AUTH_PREFIX = config.routes.auth
+  const API_PREFIX = config.routes.api
 
   beforeAll(async () => {
     app = await createTestApp()
@@ -23,13 +27,14 @@ describe('User Routes', () => {
       password: 'securepassword123',
       confirmPassword: 'securepassword123',
     }
-    const res = await app.inject({ method: 'POST', url: '/register', payload })
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
     const body = res.json() as any
     userId = body.data?.id
+    accessToken = body.data?.tokens?.accessToken || ''
   })
 
   it('GET /users should return all users', async () => {
-    const res = await app.inject({ method: 'GET', url: '/users' })
+    const res = await app.inject({ method: 'GET', url: `${API_PREFIX}/users` })
     expect(res.statusCode).toBe(200)
     const body = res.json() as any
     expect(body.success).toBe(true)
@@ -43,7 +48,7 @@ describe('User Routes', () => {
 
   it('GET /users should return empty array when no users exist', async () => {
     await resetDatabase(app)
-    const res = await app.inject({ method: 'GET', url: '/users' })
+    const res = await app.inject({ method: 'GET', url: `${API_PREFIX}/users` })
     expect(res.statusCode).toBe(200)
     const body = res.json() as any
     expect(body.success).toBe(true)
@@ -52,7 +57,13 @@ describe('User Routes', () => {
   })
 
   it('GET /users/:id should return user by id', async () => {
-    const res = await app.inject({ method: 'GET', url: `/users/${userId}` })
+    const res = await app.inject({ 
+      method: 'GET', 
+      url: `${API_PREFIX}/users/${userId}`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    })
     expect(res.statusCode).toBe(200)
     const body = res.json() as any
     expect(body.success).toBe(true)
@@ -63,26 +74,46 @@ describe('User Routes', () => {
     expect(body.data).not.toHaveProperty('password_hash')
   })
 
-  it('GET /users/:id should return 404 for non-existent user', async () => {
-    const res = await app.inject({ method: 'GET', url: '/users/99999' })
-    expect(res.statusCode).toBe(404)
+  it('GET /users/:id should return 403 when accessing another user', async () => {
+    const res = await app.inject({ 
+      method: 'GET', 
+      url: `${API_PREFIX}/users/99999`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    })
+    expect(res.statusCode).toBe(403)
     const body = res.json() as any
     expect(body.success).toBe(false)
-    expect(body.message).toContain('not found')
+    expect(body.message).toContain('does not match')
   })
 
   it('GET /users/:id should return 400 for invalid id', async () => {
-    const res = await app.inject({ method: 'GET', url: '/users/invalid' })
+    const res = await app.inject({ 
+      method: 'GET', 
+      url: `${API_PREFIX}/users/invalid`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    })
     expect(res.statusCode).toBe(400)
     const body = res.json() as any
     expect(body.success).toBe(false)
+  })
+
+  it('GET /users/:id should return 401 without access token', async () => {
+    const res = await app.inject({ method: 'GET', url: `${API_PREFIX}/users/${userId}` })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('Access token required')
   })
 
   it('GET /users should return multiple users', async () => {
     // Create additional users
     await app.inject({
       method: 'POST',
-      url: '/register',
+      url: `${AUTH_PREFIX}/register`,
       payload: {
         username: 'user2',
         email: 'user2@example.com',
@@ -92,7 +123,7 @@ describe('User Routes', () => {
     })
     await app.inject({
       method: 'POST',
-      url: '/register',
+      url: `${AUTH_PREFIX}/register`,
       payload: {
         username: 'user3',
         email: 'user3@example.com',
@@ -101,7 +132,7 @@ describe('User Routes', () => {
       }
     })
 
-    const res = await app.inject({ method: 'GET', url: '/users' })
+    const res = await app.inject({ method: 'GET', url: `${API_PREFIX}/users` })
     expect(res.statusCode).toBe(200)
     const body = res.json() as any
     expect(body.success).toBe(true)
