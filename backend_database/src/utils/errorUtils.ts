@@ -17,4 +17,6 @@ export const errors = {
     new AppError(500, "INTERNAL_ERROR", message),
   unauthorized: (message: string = "Unauthorized") =>
     new AppError(401, "UNAUTHORIZED", message),
+  forbidden: (message: string = "Forbidden") =>
+    new AppError(403, "FORBIDDEN", message),
 };

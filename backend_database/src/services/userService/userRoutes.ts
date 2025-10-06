@@ -1,23 +1,23 @@
 // src/routes/users.ts
 import { FastifyInstance, FastifyReply } from "fastify";
 import {
-  CreateUserBody,
   UserParams,
-  CreateUserResponse,
   GetUserResponse,
   GetUsersResponse,
   UserErrorResponse,
-  UserLoginBody,
-  UserLoginResponse,
 } from "./userTypes.ts";
 import "../../types/fastifyTypes.ts";
 import { userController } from "./userController.ts";
+import { requireAuth } from "../../utils/authUtils.ts";
+
 
 async function userRoutes(fastify: FastifyInstance) {
   fastify.get<{
     Params: UserParams;
     Reply: GetUserResponse | UserErrorResponse;
-  }>("/users/:id", userController.getUserById);
+  }>("/users/:id",
+      { preHandler: requireAuth },
+       userController.getUserById);
 
   fastify.get<{
     Reply: GetUsersResponse | UserErrorResponse;
