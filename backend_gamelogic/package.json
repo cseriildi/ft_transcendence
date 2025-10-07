@@ -5,9 +5,9 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "nodemon src/server.ts",
+    "dev": "node --env-file=.env.gamelogic --loader ts-node/esm src/server.ts",
     "build": "tsc",
-    "start:prod": "node dist/server.js"
+    "start:prod": "node --env-file=.env.gamelogic dist/server.js"
   },
   "dependencies": {
     "@fastify/static": "^8.2.0",

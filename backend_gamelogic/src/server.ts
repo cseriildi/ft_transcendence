@@ -1,21 +1,13 @@
+
 import Fastify from 'fastify';
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { Field, Ball, Paddle, collideBallCapsule, collideBallWithWalls } from './game.js';
+import type { FastifyInstance} from 'fastify';
+import { GameServer } from "./gameTypes";
+import { GAME_CONFIG, PHYSICS_INTERVAL, RENDER_INTERVAL } from './config.ts';
+
 
 const fastify: FastifyInstance = Fastify({ logger: true });
 
-// Register WebSocket plugin
 await fastify.register(import('@fastify/websocket'));
-
-
-// Initialize game objects
-const field = new Field();
-const ball = new Ball(field);
-const paddle1 = new Paddle(1, field); // Left paddle
-const paddle2 = new Paddle(2, field); // Right paddle
-
-// Store connected clients
-const clients = new Set<any>();
 
 // Game loop variables
 const PHYSICS_FPS = 60;  // Physics updates
@@ -23,84 +15,28 @@ const RENDER_FPS = 30;   // Network updates (reduce network load)
 const PHYSICS_INTERVAL = 1000 / PHYSICS_FPS;
 const RENDER_INTERVAL = 1000 / RENDER_FPS;
 
-// Game state update function
-function updateGameState() {
-  // Update ball position
-  ball.x += ball.speedX;
-  ball.y += ball.speedY;
-  
-  // Check wall collisions
-  collideBallWithWalls(ball, field);
-  
-  // Check paddle collisions
-  collideBallCapsule(paddle1, ball);
-  collideBallCapsule(paddle2, ball);
-  
-  // Update paddle positions (apply ySpeed)
-  paddle1.cy += paddle1.ySpeed;
-  paddle2.cy += paddle2.ySpeed;
-  
-  // Keep paddles within bounds
-  const paddleHalfLength = paddle1.length / 2;
-  paddle1.cy = Math.max(paddleHalfLength, Math.min(paddle1.cy, field.height - paddleHalfLength));
-  paddle2.cy = Math.max(paddleHalfLength, Math.min(paddle2.cy, field.height - paddleHalfLength));
-}
 
-// Broadcast game state to all connected clients
-function broadcastGameState() {
-  const paddle1Capsule = paddle1.getCapsule();
-  const paddle2Capsule = paddle2.getCapsule();
-  
-  const gameState = {
-    field: {
-      width: field.width,
-      height: field.height
-    },
-    ball: {
-      x: ball.x,
-      y: ball.y,
-      radius: ball.radius,
-      speedX: ball.speedX,
-      speedY: ball.speedY
-    },
-    paddle1: {
-      cx: paddle1.cx,
-      cy: paddle1.cy,
-      length: paddle1.length,
-      width: paddle1.width,
-      radius: paddle1Capsule.R,
-      capsule: paddle1Capsule
-    },
-    paddle2: {
-      cx: paddle2.cx,
-      cy: paddle2.cy,
-      length: paddle2.length,
-      width: paddle2.width,
-      radius: paddle2Capsule.R,
-      capsule: paddle2Capsule
-    }
-  };
+// Initialize game objects
+function initializeGame(){
+  const game = new GameServer(
+    GAME_CONFIG.width,
+    GAME_CONFIG.height,
+    GAME_CONFIG.ballRadius,
+    GAME_CONFIG.ballSpeed,
+    GAME_CONFIG.paddleSpeed,
+    PHYSICS_INTERVAL,
+    RENDER_INTERVAL
+  );
+  return game;
 
-  const message = JSON.stringify({
-    type: 'gameState',
-    data: gameState
-  });
-
-  // Send to all connected clients
-  for (const client of clients) {
-    try {
-      client.send(message);
-    } catch (err) {
-      // Remove client if sending fails
-      clients.delete(client);
-    }
-  }
-}
+  startGameLoop();
+};
 
 // Start game loops
-setInterval(() => {
-  updateGameState();
-}, PHYSICS_INTERVAL);
+
+export const gameLoop = setInterval((game: GameServer) => {
+  updateGameState(game);
+}, game.updateInterval);
 
 setInterval(() => {
   broadcastGameState();

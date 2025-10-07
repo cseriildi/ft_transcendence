@@ -1,68 +1,7 @@
+import { Paddle, Ball, Field, GameServer } from "./gameTypes";
 
-export class Field {
-  width: number;
-  height: number;
-  constructor() {
-    this.width = 4000;
-    this.height = 2000;
-  }
-}
 
-export class Ball {
-  x: number;
-  y: number;
-  radius: number;
-  speedX: number;
-  speedY: number;
-  constructor(field: Field) {
-    this.x = field.width / 2;
-    this.y = field.height / 2;
-    this.radius = 40;
-    this.speedX = (Math.random() - 0.5) * 2 * 40;
-    this.speedY = (Math.random() - 0.5) * 2 * 40;
-  }
-}
-
-export class Paddle {
-  cx: number;
-  cy: number;
-  length: number;
-  width: number;
-  speed: number;
-  ySpeed: number;
-  private _capsule: { x1: number; y1: number; x2: number; y2: number; R: number } | null = null;
-  private _lastCy: number = -1;
-
-  constructor(pos: number, field: Field) {
-    this.cy = field.height / 2;                 // center y
-    this.length = field.height / 5;             // total length
-    this.width = 80;                            // thickness of paddle
-    this.cx = pos === 1 ? this.width * 2 : field.width - this.width * 2; // center x
-    this.speed = 20;
-    this.ySpeed = 0;
-  }
-
-  getCapsule() {
-    // Cache capsule if position hasn't changed
-    if (this._capsule && this._lastCy === this.cy) {
-      return this._capsule;
-    }
-    
-    const halfLen = this.length / 2 - this.width / 2;
-    this._capsule = {
-      x1: this.cx,
-      y1: this.cy - halfLen,
-      x2: this.cx,
-      y2: this.cy + halfLen,
-      R: this.width / 2
-    };
-    this._lastCy = this.cy;
-    
-    return this._capsule;
-  }
-}
-
-function closestPointOnSegment(paddle: Paddle, ball: Ball) {
+export function closestPointOnSegment(paddle: Paddle, ball: Ball) {
   const capsule = paddle.getCapsule();
   // Vector from (x1, y1) to (x2, y2)
   const abx = capsule.x2 - capsule.x1;
@@ -131,3 +70,27 @@ export function collideBallWithWalls(ball: Ball, field: Field) {
     ball.speedY *= -1;
   }
 }
+
+function updateGameState(game: GameServer) {
+  // Update ball position
+  game.Ball.x += game.Ball.speedX;
+  game.Ball.y += game.Ball.speedY;
+
+  // Check wall collisions
+  collideBallWithWalls(game.Ball, game.Field);
+
+  // Check paddle collisions
+  collideBallCapsule(game.Paddle1, game.Ball);
+  collideBallCapsule(game.Paddle2, game.Ball);
+  
+  // Update paddle positions (apply ySpeed)
+  game.Paddle1.cy += game.Paddle1.ySpeed;
+  game.Paddle2.cy += game.Paddle2.ySpeed;
+
+  // Keep paddles within bounds
+  const paddleHalfLength1 = game.Paddle1.length / 2;
+  const paddleHalfLength2 = game.Paddle2.length / 2;
+  game.Paddle1.cy = Math.max(paddleHalfLength1, Math.min(game.Paddle1.cy, game.Field.height - paddleHalfLength1));
+  game.Paddle2.cy = Math.max(paddleHalfLength2, Math.min(game.Paddle2.cy, game.Field.height - paddleHalfLength2));
+}
+
