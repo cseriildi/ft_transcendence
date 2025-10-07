@@ -66,8 +66,15 @@ export class GameServer {
   Paddle1: Paddle;
   Paddle2: Paddle;
   clients = new Set<any>();
-  physicsLoop: number;
-  renderLoop: number;
+  physicsInterval: number;
+  renderInterval: number;
+  private physicsLoopId?: NodeJS.Timeout;
+  private renderLoopId?: NodeJS.Timeout;
+  private isRunning: boolean = false;
+
+  // Callbacks for game loops (injected from outside)
+  private onPhysicsUpdate?: (game: GameServer) => void;
+  private onRender?: (game: GameServer) => void;
 
   constructor(
     width: number, 
@@ -75,13 +82,113 @@ export class GameServer {
     ballRadius: number, 
     ballSpeed: number, 
     paddleSpeed: number, 
-    physicsLoop: number, 
-    renderLoop: number) {
+    physicsInterval: number, 
+    renderInterval: number) {
     this.Field = new Field(width, height);
     this.Ball = new Ball(this.Field, ballRadius, ballSpeed);
     this.Paddle1 = new Paddle(1, this.Field, paddleSpeed);
     this.Paddle2 = new Paddle(2, this.Field, paddleSpeed);
-    this.physicsLoop = physicsLoop;
-    this.renderLoop = renderLoop;
+    this.physicsInterval = physicsInterval;
+    this.renderInterval = renderInterval;
+  }
+
+  // Set callback functions
+  setUpdateCallback(callback: (game: GameServer) => void) {
+    this.onPhysicsUpdate = callback;
+  }
+
+  setRenderCallback(callback: (game: GameServer) => void) {
+    this.onRender = callback;
+  }
+
+  // Start the game loops
+  start() {
+    if (this.isRunning) {
+      console.warn('⚠️  Game loops already running');
+      return;
+    }
+
+    if (!this.onPhysicsUpdate || !this.onRender) {
+      throw new Error('❌ Callbacks not set. Call setUpdateCallback() and setRenderCallback() first.');
+    }
+
+    console.log('▶️  Starting game loops...');
+    
+    // Start physics loop
+    this.physicsLoopId = setInterval(() => {
+      this.onPhysicsUpdate!(this);
+    }, this.physicsInterval);
+
+    // Start render loop
+    this.renderLoopId = setInterval(() => {
+      this.onRender!(this);
+    }, this.renderInterval);
+
+    this.isRunning = true;
+    console.log(`✅ Game loops started (Physics: ${this.physicsInterval}ms, Render: ${this.renderInterval}ms)`);
+  }
+
+  // Stop the game loops
+  stop() {
+    if (!this.isRunning) {
+      console.warn('⚠️  Game loops not running');
+      return;
+    }
+
+    console.log('⏸️  Stopping game loops...');
+    
+    if (this.physicsLoopId) {
+      clearInterval(this.physicsLoopId);
+      this.physicsLoopId = undefined;
+    }
+
+    if (this.renderLoopId) {
+      clearInterval(this.renderLoopId);
+      this.renderLoopId = undefined;
+    }
+
+    this.isRunning = false;
+    console.log('✅ Game loops stopped');
+  }
+
+  // Get current state
+  getState() {
+    const paddle1Capsule = this.Paddle1.getCapsule();
+    const paddle2Capsule = this.Paddle2.getCapsule();
+    
+    return {
+      field: {
+        width: this.Field.width,
+        height: this.Field.height
+      },
+      ball: {
+        x: this.Ball.x,
+        y: this.Ball.y,
+        radius: this.Ball.radius,
+        speedX: this.Ball.speedX,
+        speedY: this.Ball.speedY
+      },
+      paddle1: {
+        cx: this.Paddle1.cx,
+        cy: this.Paddle1.cy,
+        length: this.Paddle1.length,
+        width: this.Paddle1.width,
+        radius: paddle1Capsule.R,
+        capsule: paddle1Capsule
+      },
+      paddle2: {
+        cx: this.Paddle2.cx,
+        cy: this.Paddle2.cy,
+        length: this.Paddle2.length,
+        width: this.Paddle2.width,
+        radius: paddle2Capsule.R,
+        capsule: paddle2Capsule
+      }
+    };
+  }
+
+  // Check if game is running
+  running() {
+    return this.isRunning;
   }
 }

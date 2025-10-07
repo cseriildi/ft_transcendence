@@ -10,67 +10,32 @@ const fastify: FastifyInstance = Fastify({ logger: true });
 
 await fastify.register(import('@fastify/websocket'));
 
-export function setupGameServer() {
-  
+// Factory function to create and start a game instance
+export function createGame(): GameServer {
+  const game = new GameServer(
+    GAME_CONFIG.width,
+    GAME_CONFIG.height,
+    GAME_CONFIG.ballRadius,
+    GAME_CONFIG.ballSpeed,
+    GAME_CONFIG.paddleSpeed,
+    PHYSICS_INTERVAL,
+    RENDER_INTERVAL
+  );
+
+  // Set up callbacks
+  game.setUpdateCallback(updateGameState);
+  game.setRenderCallback(broadcastGameState);
+
+  // Start the game loops
+  game.start();
+
+  return game;
 }
-// Initialize game instance
-const game = new GameServer(
-  GAME_CONFIG.width,
-  GAME_CONFIG.height,
-  GAME_CONFIG.ballRadius,
-  GAME_CONFIG.ballSpeed,
-  GAME_CONFIG.paddleSpeed,
-  PHYSICS_INTERVAL,
-  RENDER_INTERVAL
-);
 
-console.log('✅ Game server initialized');
+// Create the main game instance
+const game = createGame();
 
-// Start physics update loop (high frequency)
-const physicsLoop = setInterval(() => {
-  updateGameState(game);
-}, PHYSICS_INTERVAL);
-
-// Start network broadcast loop (lower frequency to reduce network load)
-const renderLoop = setInterval(() => {
-  broadcastGameState(game);
-}, RENDER_INTERVAL);
-
-// Game state (initial state for new connections)
-function getInitialGameState(game: GameServer) {
-  const paddle1Capsule = game.Paddle1.getCapsule();
-  const paddle2Capsule = game.Paddle2.getCapsule();
-  
-  return {
-    field: {
-      width: game.Field.width,
-      height: game.Field.height
-    },
-    ball: {
-      x: game.Ball.x,
-      y: game.Ball.y,
-      radius: game.Ball.radius,
-      speedX: game.Ball.speedX,
-      speedY: game.Ball.speedY
-    },
-    paddle1: {
-      cx: game.Paddle1.cx,
-      cy: game.Paddle1.cy,
-      length: game.Paddle1.length,
-      width: game.Paddle1.width,
-      radius: paddle1Capsule.R,
-      capsule: paddle1Capsule
-    },
-    paddle2: {
-      cx: game.Paddle2.cx,
-      cy: game.Paddle2.cy,
-      length: game.Paddle2.length,
-      width: game.Paddle2.width,
-      radius: paddle2Capsule.R,
-      capsule: paddle2Capsule
-    }
-  };
-}
+// No longer needed - use game.getState() directly
 
 // WebSocket route for game
 fastify.register(async function (fastify) {
@@ -83,7 +48,7 @@ fastify.register(async function (fastify) {
     // Send initial game state
     connection.send(JSON.stringify({
       type: 'gameState',
-      data: getInitialGameState()
+      data: game.getState()
     }));
 
     connection.on('message', (message: any) => {
@@ -144,8 +109,7 @@ fastify.listen({ port: PORT, host: '0.0.0.0' }, (err: Error | null, address: str
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('🛑 Shutting down gracefully...');
-  clearInterval(physicsLoop);
-  clearInterval(renderLoop);
+  game.stop();
   fastify.close(() => {
     console.log('✅ Server closed');
     process.exit(0);
@@ -154,8 +118,7 @@ process.on('SIGTERM', () => {
 
 process.on('SIGINT', () => {
   console.log('\n🛑 Shutting down gracefully...');
-  clearInterval(physicsLoop);
-  clearInterval(renderLoop);
+  game.stop();
   fastify.close(() => {
     console.log('✅ Server closed');
     process.exit(0);
