@@ -394,6 +394,7 @@
         let lobbyWs = null;
         let chatWs = null;
         let currentUsername = '';
+        let currentToken = '';
         let currentChatUser = null;
         let currentChatId = null;
 
@@ -409,11 +410,12 @@
             loginButton.textContent = 'Connecting...';
 
             currentUsername = username;
+            currentToken = 'secret-token-' + username;
             connectToLobby();
         }
 
         function connectToLobby() {
-            lobbyWs = new WebSocket(`ws://localhost:3002/lobby?username=${currentUsername}`);
+            lobbyWs = new WebSocket(`ws://localhost:3002/lobby?token=${currentToken}?username=${currentUsername}`);
 
             lobbyWs.onopen = () => {
                 console.log('Connected to lobby');

@@ -2,7 +2,7 @@
 export const config = {
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT || "3000"),
+    port: parseInt(process.env.PORT || "3002"),
     host: process.env.HOST || "::",
     env: process.env.NODE_ENV || "development",
   },

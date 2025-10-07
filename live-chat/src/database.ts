@@ -35,7 +35,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
             username TEXT UNIQUE NOT NULL,
             online_status INTEGER DEFAULT 0,
             token TEXT UNIQUE NOT NULL,
-            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             `,
           (err) => {
