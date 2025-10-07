@@ -39,4 +39,5 @@ RUN mkdir -p /app/data
 EXPOSE $PORT
 
 # Start the application
-CMD ["npm", "run", "start"]
+# CMD ["npm", "run", "start"]
+CMD ["npx", "tsx", "src/main.ts"]
