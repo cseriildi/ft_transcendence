@@ -66,15 +66,22 @@ export class GameServer {
   Paddle1: Paddle;
   Paddle2: Paddle;
   clients = new Set<any>();
-  updateInterval: number;
-  renderInterval: number;
+  physicsLoop: number;
+  renderLoop: number;
 
-  constructor(width: number, height: number, ballRadius: number, ballSpeed: number, paddleSpeed: number, updateInterval: number, renderInterval: number) {
+  constructor(
+    width: number, 
+    height: number, 
+    ballRadius: number, 
+    ballSpeed: number, 
+    paddleSpeed: number, 
+    physicsLoop: number, 
+    renderLoop: number) {
     this.Field = new Field(width, height);
     this.Ball = new Ball(this.Field, ballRadius, ballSpeed);
     this.Paddle1 = new Paddle(1, this.Field, paddleSpeed);
     this.Paddle2 = new Paddle(2, this.Field, paddleSpeed);
-    this.updateInterval = updateInterval;
-    this.renderInterval = renderInterval;
+    this.physicsLoop = physicsLoop;
+    this.renderLoop = renderLoop;
   }
 }

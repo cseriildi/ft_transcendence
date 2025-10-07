@@ -1,5 +1,3 @@
-import 'dotenv/config';
-
 // Game Configuration
 export const GAME_CONFIG = {
   width: Number(process.env.GAME_WIDTH) || 4000,

@@ -71,7 +71,7 @@ export function collideBallWithWalls(ball: Ball, field: Field) {
   }
 }
 
-function updateGameState(game: GameServer) {
+export function updateGameState(game: GameServer) {
   // Update ball position
   game.Ball.x += game.Ball.speedX;
   game.Ball.y += game.Ball.speedY;
