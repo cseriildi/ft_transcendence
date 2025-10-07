@@ -24,6 +24,28 @@ const chatHistory = new Map<string, Array<{
 
 const MAX_MESSAGES = 20;
 
+app.register(async (fastify) => {
+    fastify.get('/health', async (request, reply) => {
+        return { status: 'ok' };
+    });
+
+    fastify.get('/ready', async (request, reply) => {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const db = await fastify.db;
+                db.get('SELECT 1', (err) => {
+                    if (err) {
+                        reject(err);
+                    }
+                    resolve(true);
+                });
+            } catch (err) {
+                reject (err);
+            }
+        });
+    });
+});
+
 // Main lobby connection - users connect here first
 app.register(async (fastify) => {
     fastify.get('/lobby', { websocket: true }, async (connection, req) => {
