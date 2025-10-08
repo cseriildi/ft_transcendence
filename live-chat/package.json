@@ -10,6 +10,8 @@
     "dev": "tsx watch src/main.ts"
   },
   "dependencies": {
+    "@fastify/helmet": "^13.0.2",
+    "@fastify/rate-limit": "^10.3.0",
     "@fastify/static": "^8.2.0",
     "@fastify/websocket": "^11.2.0",
     "ajv": "^8.17.1",

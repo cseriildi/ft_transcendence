@@ -32,7 +32,6 @@
             overflow: hidden;
         }
 
-        /* Login Screen */
         .login-screen {
             width: 100%;
             display: flex;
@@ -91,7 +90,6 @@
             transform: none;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 300px;
             background: #f8f9fa;
@@ -151,6 +149,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            position: relative;
         }
 
         .user-item:hover {
@@ -191,7 +190,6 @@
             margin-left: auto;
         }
 
-        /* Chat Area */
         .chat-area {
             flex: 1;
             display: flex;
@@ -210,6 +208,24 @@
         .chat-header h3 {
             font-size: 18px;
             color: #333;
+            flex: 1;
+        }
+
+        .block-button {
+            padding: 8px 16px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .block-button:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
         }
 
         .chat-messages {
@@ -261,6 +277,14 @@
             font-size: 13px;
             margin: 10px 0;
             font-style: italic;
+        }
+
+        .error-message {
+            text-align: center;
+            color: #ef4444;
+            font-size: 13px;
+            margin: 10px 0;
+            font-weight: 600;
         }
 
         .chat-input {
@@ -339,20 +363,28 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+
+        .error-banner {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px 20px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Login Screen -->
         <div class="login-screen" id="loginScreen">
             <h1>💬 Chat App</h1>
             <div class="login-form">
                 <input type="text" id="usernameInput" placeholder="Enter your username" autocomplete="off">
+                <input type="password" id="tokenInput" placeholder="Enter your token" autocomplete="off">
                 <button onclick="login()" id="loginButton">Join Chat</button>
             </div>
         </div>
 
-        <!-- Chat Interface -->
         <div class="sidebar hidden" id="sidebar">
             <div class="sidebar-header">
                 <h2 id="currentUsername">User</h2>
@@ -371,9 +403,10 @@
         <div class="chat-area hidden" id="chatArea">
             <div class="chat-header">
                 <div class="user-avatar" id="chatAvatar">?</div>
-                <div>
+                <div style="flex: 1;">
                     <h3 id="chatUsername">Select a user to start chatting</h3>
                 </div>
+                <button class="block-button hidden" id="blockButton" onclick="blockUser()">Block User</button>
             </div>
             <div class="chat-messages" id="chatMessages">
                 <div class="empty-state">
@@ -400,8 +433,10 @@
 
         function login() {
             const username = document.getElementById('usernameInput').value.trim();
-            if (!username) {
-                alert('Please enter a username');
+            const token = document.getElementById('tokenInput').value.trim();
+            
+            if (!username || !token) {
+                alert('Please enter both username and token');
                 return;
             }
 
@@ -410,12 +445,12 @@
             loginButton.textContent = 'Connecting...';
 
             currentUsername = username;
-            currentToken = 'secret-token-' + username;
+            currentToken = token;
             connectToLobby();
         }
 
         function connectToLobby() {
-            lobbyWs = new WebSocket(`ws://localhost:3002/lobby?token=${currentToken}?username=${currentUsername}`);
+            lobbyWs = new WebSocket(`ws://localhost:3002/lobby?username=${encodeURIComponent(currentUsername)}&token=${encodeURIComponent(currentToken)}`);
 
             lobbyWs.onopen = () => {
                 console.log('Connected to lobby');
@@ -442,11 +477,18 @@
             lobbyWs.onclose = () => {
                 console.log('Disconnected from lobby');
                 updateConnectionStatus(false);
+                
+                setTimeout(() => {
+                    if (currentToken) {
+                        console.log('Attempting to reconnect to lobby...');
+                        connectToLobby();
+                    }
+                }, 3000);
             };
 
             lobbyWs.onerror = (error) => {
                 console.error('Lobby WebSocket error:', error);
-                alert('Failed to connect to chat service. Please try again.');
+                alert('Failed to connect to chat service. Please check your credentials and try again.');
                 document.getElementById('loginButton').disabled = false;
                 document.getElementById('loginButton').textContent = 'Join Chat';
             };
@@ -470,7 +512,6 @@
                 return;
             }
 
-            // Close existing chat connection
             if (chatWs) {
                 chatWs.close();
             }
@@ -478,20 +519,17 @@
             currentChatUser = otherUsername;
             currentChatId = [currentUsername, otherUsername].sort().join('-');
 
-            // Update chat header
             document.getElementById('chatUsername').textContent = otherUsername;
             document.getElementById('chatAvatar').textContent = otherUsername.charAt(0).toUpperCase();
+            document.getElementById('blockButton').classList.remove('hidden');
 
-            // Clear messages
             const messagesDiv = document.getElementById('chatMessages');
             messagesDiv.innerHTML = '<div class="system-message">Loading chat...</div>';
 
-            // Disable input until connected
             document.getElementById('messageInput').disabled = true;
             document.getElementById('sendButton').disabled = true;
 
-            // Connect to chat WebSocket
-            chatWs = new WebSocket(`ws://localhost:3002/chats/${currentChatId}?username=${currentUsername}`);
+            chatWs = new WebSocket(`ws://localhost:3002/chats/${currentChatId}?username=${encodeURIComponent(currentUsername)}`);
 
             chatWs.onopen = () => {
                 console.log('Connected to chat:', currentChatId);
@@ -503,10 +541,8 @@
                 const data = JSON.parse(event.data);
                 
                 if (data.type === 'chat_connected') {
-                    // Clear loading message
                     messagesDiv.innerHTML = '';
                     
-                    // Load history if available
                     if (data.history && data.history.length > 0) {
                         data.history.forEach(msg => {
                             displayMessage(msg.username, msg.message, msg.timestamp);
@@ -516,6 +552,8 @@
                     displaySystemMessage(data.message);
                 } else if (data.type === 'message') {
                     displayMessage(data.username, data.message, data.timestamp);
+                } else if (data.type === 'error') {
+                    displayErrorMessage(data.message);
                 }
             };
 
@@ -529,7 +567,6 @@
                 console.error('Chat WebSocket error:', error);
             };
 
-            // Update active user in sidebar
             document.querySelectorAll('.user-item').forEach(item => {
                 item.classList.remove('active');
                 if (item.dataset.username === otherUsername) {
@@ -595,6 +632,15 @@
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
+        function displayErrorMessage(message) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'error-message';
+            messageDiv.textContent = message;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
         function sendMessage() {
             const input = document.getElementById('messageInput');
             const message = input.value.trim();
@@ -608,13 +654,63 @@
             input.value = '';
         }
 
+        async function blockUser() {
+            if (!currentChatUser) {
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to block ${currentChatUser}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3002/block', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        blocker: currentUsername,
+                        blocked: currentChatUser
+                    })
+                });
+
+                if (response.ok) {
+                    alert(`${currentChatUser} has been blocked`);
+                    
+                    if (chatWs) {
+                        chatWs.close();
+                    }
+                    
+                    currentChatUser = null;
+                    currentChatId = null;
+                    
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div class="empty-state">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            <p>Select a user from the sidebar to start chatting</p>
+                        </div>
+                    `;
+                    document.getElementById('blockButton').classList.add('hidden');
+                    document.getElementById('chatUsername').textContent = 'Select a user to start chatting';
+                } else {
+                    const error = await response.json();
+                    alert(`Failed to block user: ${error.error || 'Unknown error'}`);
+                }
+            } catch (error) {
+                console.error('Error blocking user:', error);
+                alert('Failed to block user. Please try again.');
+            }
+        }
+
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Enter key to send message
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('messageInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
@@ -624,12 +720,17 @@
 
             document.getElementById('usernameInput').addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
+                    document.getElementById('tokenInput').focus();
+                }
+            });
+
+            document.getElementById('tokenInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
                     login();
                 }
             });
         });
 
-        // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             if (lobbyWs) lobbyWs.close();
             if (chatWs) chatWs.close();
