@@ -1,5 +1,5 @@
-import { Paddle, Ball,GameServer } from "./gameTypes.js";
-import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
+import { Paddle, Ball, GameServer } from "./gameTypes.js";
+import { config} from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
 
 // Factory function to create and start a game instance

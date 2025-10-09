@@ -1,4 +1,4 @@
-import { Field, GameServer } from "./gameTypes.js";
+import {GameServer } from "./gameTypes.js";
 
 export function broadcastGameState(game : GameServer) {
   const gameState = {

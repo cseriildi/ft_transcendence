@@ -93,10 +93,10 @@ export class Pong {
         };
     }
 
-    private updateCapsule(paddle: { cx?: number; cy?: number; length?: number; capsule: Capsule }) {
-        if (paddle.cx === undefined || paddle.cy === undefined || paddle.length === undefined) return;
+    private updateCapsule(paddle: { cx?: number; cy?: number; capsule: Capsule }, length: number) {
+        if (paddle.cx === undefined || paddle.cy === undefined || length === undefined) return;
         
-        const halfLength = paddle.length / 2;
+        const halfLength = length / 2;
         paddle.capsule.x1 = paddle.cx;
         paddle.capsule.y1 = paddle.cy - halfLength;
         paddle.capsule.x2 = paddle.cx;
