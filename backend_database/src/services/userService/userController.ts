@@ -24,6 +24,13 @@ export const userController = {
       const valid = UserSchemaValidator.validateUserParams(request.params);
       if (!valid) throw errors.validation("Invalid request parameters");
       const { id } = request.params;
+      const tokenUserId = request.user?.id;
+
+      // Ensure the user can only access their own data
+      if (tokenUserId !== parseInt(id)) {
+        throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
+      }
+      
       const user = await db.get<User>(
         "SELECT id,username,email,created_at FROM users WHERE id = ?",
         [id]

@@ -8,10 +8,7 @@ ctrl+shift+p
 Dev Containers: Reopen Folder Locally to exit container or click bottom left
 
 test post route:
-curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d '{"username": "john_doe", "email": "john@example.com"}'
-
-test get route:
-curl http://localhost:3000/users/john_doe
+curl -X POST http://localhost:3000/users -H "Content-Type: application/json" -d '{"username": "john_doe", "email": "john@example.com", password: "securepassword" , confirmPassword: "securepassword"}'
 
 test rate limiter:
 seq 1 15 | xargs -n 1 -P 15 -I {} sh -c 'curl -w "Request {}: %{http_code} - %{time_total}s\n" -s http://localhost:3000/health'

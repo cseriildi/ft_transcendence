@@ -30,6 +30,7 @@ export async function build(opts: BuildOptions = {}) {
     }
     await app.register(dbConnector, { path: database?.path ?? appConfig.database.path });
     await app.register(errorHandler);
+    await app.register(import("@fastify/cookie")); // Add this line
     await app.register(routes);
 
     return app;

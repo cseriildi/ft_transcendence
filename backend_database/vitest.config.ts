@@ -5,7 +5,8 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
-    setupFiles: [],
+    //this is needed to set env vars before tests run because config file is already loaded
+    setupFiles: ['./tests/env-setup.ts'],
     coverage: {
       reporter: ['text', 'lcov'],
     },
