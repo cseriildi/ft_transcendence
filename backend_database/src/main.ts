@@ -4,6 +4,7 @@ import dbConnector from "./database.ts";
 import { config as appConfig, validateConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
+import cors from '@fastify/cors';
 
 // Validate configuration on startup
 validateConfig();
@@ -17,6 +18,11 @@ export type BuildOptions = {
 export async function build(opts: BuildOptions = {}) {
   const { logger = { level: appConfig.logging.level }, database, disableRateLimit } = opts;
   const app = fastify({ logger });
+
+    await app.register(cors, {
+        origin: 'http://localhost:4200',
+        credentials: true
+    });
 
   try {
     if (!disableRateLimit) {
