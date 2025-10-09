@@ -13,8 +13,21 @@ await app.register(rateLimit, {
   max: 5,
   timeWindow: "1 second",
 });
-await app.register(helmet, { global: true });
+//await app.register(helmet, { global: true });
 await app.register(dbConnector, { path: config.database.path });
+
+app.addHook("onRequest", async (request, reply) => {
+  reply.header("Access-Control-Allow-Origin", "*");
+  reply.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
+  reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (request.method === "OPTIONS") {
+    reply.code(200).send();
+  }
+});
 
 // Store active connections per chat room
 const chatRooms = new Map<string, Map<any, string>>();
@@ -34,7 +47,7 @@ const chatHistory = new Map<
 
 const MAX_MESSAGES = 20;
 
-app.register(async (fastify) => {
+await app.register(async (fastify) => {
   fastify.get("/health", async (request, reply) => {
     return { status: "ok" };
   });
@@ -42,7 +55,7 @@ app.register(async (fastify) => {
   fastify.get("/ready", async (request, reply) => {
     return new Promise(async (resolve, reject) => {
       try {
-        const db = await fastify.db;
+        const db = await request.server.db;
         db.get("SELECT 1", (err) => {
           if (err) {
             reject(err);
@@ -54,10 +67,60 @@ app.register(async (fastify) => {
       }
     });
   });
+
+  fastify.post("/block", async (request, reply) => {
+    const { blocker, blocked } = request.body as {
+      blocker: string;
+      blocked: string;
+    };
+    if (!blocker || !blocked) {
+      return reply
+        .status(400)
+        .send({ error: "Missing blocker or blocked username" });
+    }
+
+    if (!userLobbyConnections.has(blocker)) {
+      return reply
+        .status(401)
+        .send({ error: "Blocking user is not authorized" });
+    }
+
+    // Add to in-memory ban list
+    if (!banList.has(blocker)) {
+      banList.set(blocker, new Set());
+    }
+    banList.get(blocker)!.add({ banned: blocked });
+
+    // Persist to database
+    try {
+      const db = await request.server.db;
+      return new Promise((resolve, reject) => {
+        db.run(
+          "INSERT INTO blocks (blocker, blocked_user) VALUES (?, ?)",
+          [blocker, blocked],
+          (err) => {
+            if (err) {
+              fastify.log.error(
+                "Error blocking user %s for %s: %s",
+                blocked,
+                blocker,
+                err.message
+              );
+              reject (err);
+            }
+            resolve({ success: true });
+          }
+        );
+      });
+    } catch (err) {
+      fastify.log.error("Database connection error: %s", String(err));
+      return reply.status(500).send({ error: "Database connection error" });
+    }
+  });
 });
 
 // Main lobby connection - users connect here first
-app.register(async (fastify) => {
+await app.register(async (fastify) => {
   fastify.get("/lobby", { websocket: true }, async (connection, req) => {
     const username = req.query.username as string;
     const token = req.query.token as string;
@@ -68,27 +131,27 @@ app.register(async (fastify) => {
     }
 
     // Track user in lobby
-    try {
-      const upstream = await fetch(`http://localhost:3000/api/users/1`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      if (!upstream.ok) {
-        connection.close();
-        return;
-      }
-      const json = await upstream.json();
-      if (!json || !json.valid) {
-        connection.close();
-        return;
-      }
-    } catch (err) {
-      fastify.log.error(err);
-      connection.close();
-      return;
-    }
+    // try {
+    //   const upstream = await fetch(`http://localhost:3000/api/users/${userId}`, {
+    //     method: "GET",
+    //     headers: {
+    //       authorization: `Bearer ${token}`,
+    //     },
+    //   });
+    //   if (!upstream.ok) {
+    //     connection.close();
+    //     return;
+    //   }
+    //   const json = await upstream.json();
+    //   if (!json || !json.valid) {
+    //     connection.close();
+    //     return;
+    //   }
+    // } catch (err) {
+    //   fastify.log.error(err);
+    //   connection.close();
+    //   return;
+    // }
 
     lobbyConnections.set(connection, username);
     if (!userLobbyConnections.has(username)) {
@@ -170,54 +233,6 @@ app.register(async (fastify) => {
     });
   });
 
-  fastify.post("/block", async (request, reply) => {
-    const { blocker, blocked } = request.body as {
-      blocker: string;
-      blocked: string;
-    };
-    if (!blocker || !blocked) {
-      return reply
-        .status(400)
-        .send({ error: "Missing blocker or blocked username" });
-    }
-
-    if (!userLobbyConnections.has(blocker)) {
-      return reply
-        .status(401)
-        .send({ error: "Blocking user is not authorized" });
-    }
-
-    // Add to in-memory ban list
-    if (!banList.has(blocker)) {
-      banList.set(blocker, new Set());
-    }
-    banList.get(blocker)!.add({ banned: blocked });
-
-    // Persist to database
-    try {
-      const db = await fastify.db;
-      db.run(
-        "INSERT INTO blocks (blocker, blocked_user) VALUES (?, ?)",
-        [blocker, blocked],
-        (err) => {
-          if (err) {
-            fastify.log.error(
-              "Error blocking user %s for %s: %s",
-              blocked,
-              blocker,
-              err.message
-            );
-            return reply.status(500).send({ error: "Database error" });
-          }
-          return reply.send({ success: true });
-        }
-      );
-    } catch (err) {
-      fastify.log.error("Database connection error: %s", String(err));
-      return reply.status(500).send({ error: "Database connection error" });
-    }
-  });
-
   // Individual chat rooms
   fastify.get("/chats/:chatid", { websocket: true }, (connection, req) => {
     const chatId = req.params.chatid;
@@ -279,6 +294,29 @@ app.register(async (fastify) => {
     }
 
     connection.on("message", (message) => {
+      // Check if sender is blocked by anyone in the room
+      for (const [client, clientUsername] of room) {
+        if (client !== connection) {
+          if (banList.has(clientUsername)) {
+            const bans = banList.get(clientUsername)!;
+            const isBlocked = Array.from(bans).some(
+              (ban) => ban.banned === username
+            );
+            if (isBlocked) {
+              // Sender is blocked, don't save or broadcast
+              connection.send(
+                JSON.stringify({
+                  type: "error",
+                  message:
+                    "You are blocked by this user and cannot send messages.",
+                })
+              );
+              return;
+            }
+          }
+        }
+      }
+
       // Save message to history
       if (!chatHistory.has(chatId)) {
         chatHistory.set(chatId, []);
@@ -290,10 +328,10 @@ app.register(async (fastify) => {
         timestamp: Date.now(),
       });
       if (history.length > MAX_MESSAGES) {
-        history.shift(); // Remove oldest message
+        history.shift();
       }
 
-      // Broadcast incoming message to all connected clients in the same room
+      // Broadcast to all in room
       for (const [client, clientUsername] of room) {
         if (client !== connection) {
           client.send(
