@@ -1,9 +1,6 @@
 import { GameServer } from "./gameTypes";
 
 export function broadcastGameState(game : GameServer) {
-  const paddle1Capsule = game.Paddle1.getCapsule();
-  const paddle2Capsule = game.Paddle2.getCapsule();
-
   const gameState = {
     field: {
       width: game.Field.width,

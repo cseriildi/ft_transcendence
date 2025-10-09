@@ -17,11 +17,11 @@ import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from 
 export const authController = {
   verifyToken: createHandler<{}>(
     async (request, { db }) => {
-      const dbUSer = await db.get<User>(
+      const dbUser = await db.get<User>(
         "SELECT id, username, email, created_at FROM users WHERE id = ?",
         [request.user!.id]
       );
-      if (!dbUSer) {
+      if (!dbUser) {
         throw errors.notFound("User not found");
       }
       return ApiResponseHelper.success(

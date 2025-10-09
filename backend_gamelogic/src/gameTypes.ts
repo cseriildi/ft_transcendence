@@ -157,40 +157,6 @@ export class GameServer {
   }
 
   // Get current state
-  // getState() {
-  //   const paddle1Capsule = this.Paddle1.getCapsule();
-  //   const paddle2Capsule = this.Paddle2.getCapsule();
-    
-  //   return {
-  //     field: {
-  //       width: this.Field.width,
-  //       height: this.Field.height
-  //     },
-  //     ball: {
-  //       x: this.Ball.x,
-  //       y: this.Ball.y,
-  //       radius: this.Ball.radius,
-  //       speedX: this.Ball.speedX,
-  //       speedY: this.Ball.speedY
-  //     },
-  //     paddle1: {
-  //       cx: this.Paddle1.cx,
-  //       cy: this.Paddle1.cy,
-  //       length: this.Paddle1.length,
-  //       width: this.Paddle1.width,
-  //       radius: paddle1Capsule.R,
-  //       capsule: paddle1Capsule
-  //     },
-  //     paddle2: {
-  //       cx: this.Paddle2.cx,
-  //       cy: this.Paddle2.cy,
-  //       length: this.Paddle2.length,
-  //       width: this.Paddle2.width,
-  //       radius: paddle2Capsule.R,
-  //       capsule: paddle2Capsule
-  //     }
-  //   };
-  // }
 
   // Check if game is running
   running() {

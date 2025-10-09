@@ -89,18 +89,19 @@ export function resetBall(game: GameServer) {
   game.Ball.x = game.Field.width / 2;
   game.Ball.y = game.Field.height / 2;
   const angle = (Math.random() - 0.5) * Math.PI / 2; // -45 to +45 degrees
-  game.Ball.speedX = Math.cos(angle) * game.Ball.speedX;
-  game.Ball.speedY = Math.sin(angle) * game.Ball.speedY;
+  const speed = config.game.ballSpeed;
+  game.Ball.speedX = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1); // randomize left/right
+  game.Ball.speedY = Math.sin(angle) * speed;
 }
 
 export function collideBallWithWalls(game: GameServer) {
   const { Ball: ball, Field: field} = game;
   if (ball.x - ball.radius < 0){
-    game.score1 += 1;
+    game.score2 += 1;
     resetBall(game);
   }
   else if (ball.x + ball.radius > field.width) {
-    game.score2 += 1;
+    game.score1 += 1;
     resetBall(game);
   }
   if (ball.y - ball.radius < 0 || ball.y + ball.radius > field.height) {
