@@ -14,7 +14,8 @@ export async function handleLoginFormSubmit(e: Event) {
         const data = await response.json();
         if (response.ok) {
             if (data.data?.tokens?.accessToken) {
-                document.cookie = `accessToken=${data.data.tokens.accessToken}; Path=/; SameSite=Strict; Secure`;
+                const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
+                document.cookie = `accessToken=${data.data.tokens.accessToken}; Path=/; SameSite=Strict${secureFlag}`;
             }
             console.log('accessToken', document.cookie.match(/(?:^|; )accessToken=([^;]*)/))
             console.log('Login successful', data);
