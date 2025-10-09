@@ -1,4 +1,4 @@
-import { Paddle, Ball, Field, GameServer } from "./gameTypes";
+import { Paddle, Ball,GameServer } from "./gameTypes.js";
 import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
 

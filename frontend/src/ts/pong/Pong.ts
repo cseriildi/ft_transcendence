@@ -1,8 +1,8 @@
 export interface GameState {
     field: { width: number; height: number };
     ball: { x: number; y: number; radius: number };
-    paddle1: { capsule: Capsule };
-    paddle2: { capsule: Capsule };
+    paddle1: { cx?: number; cy?: number; capsule: Capsule };
+    paddle2: { cx?: number; cy?: number; capsule: Capsule };
 }
 
 interface Capsule {
@@ -48,8 +48,24 @@ export class Pong {
         this.ws.onmessage = (event: MessageEvent) => {
             try {
                 const message = JSON.parse(event.data);
-                if (message.type === "gameState") {
+                
+                if (message.type === "gameSetup") {
+                    // Store initial full state
                     this.gameState = message.data;
+                    console.log("📦 Received game setup:", this.gameState);
+                } else if (message.type === "gameState") {
+                    // Merge updates with existing state
+                    if (this.gameState) {
+                        this.gameState.ball.x = message.data.ball.x;
+                        this.gameState.ball.y = message.data.ball.y;
+                        this.gameState.paddle1.cx = message.data.paddle1.cx;
+                        this.gameState.paddle1.cy = message.data.paddle1.cy;
+                        this.gameState.paddle2.cx = message.data.paddle2.cx;
+                        this.gameState.paddle2.cy = message.data.paddle2.cy;
+                        // Update capsules based on new positions
+                        this.updateCapsule(this.gameState.paddle1);
+                        this.updateCapsule(this.gameState.paddle2);
+                    }
                 }
             } catch (err) {
                 console.error("Error parsing game state:", err);
@@ -64,6 +80,16 @@ export class Pong {
         this.ws.onerror = (err) => {
             console.error("WebSocket error:", err);
         };
+    }
+
+    private updateCapsule(paddle: { cx?: number; cy?: number; length?: number; capsule: Capsule }) {
+        if (paddle.cx === undefined || paddle.cy === undefined || paddle.length === undefined) return;
+        
+        const halfLength = paddle.length / 2;
+        paddle.capsule.x1 = paddle.cx;
+        paddle.capsule.y1 = paddle.cy - halfLength;
+        paddle.capsule.x2 = paddle.cx;
+        paddle.capsule.y2 = paddle.cy + halfLength;
     }
 
     private setupInputHandlers() {
