@@ -15,8 +15,6 @@ const fastify: FastifyInstance = Fastify({
   }
 });
 
-await fastify.register(import('@fastify/websocket'));
-
 // Register plugins
 await fastify.register(errorHandlerPlugin);
 await fastify.register(import('@fastify/websocket'));

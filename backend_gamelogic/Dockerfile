@@ -13,6 +13,9 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Build TypeScript code
+RUN npm run build
+
 # Set default environment variables (can be overridden)
 ENV NODE_ENV=production
 ENV PORT=3001
