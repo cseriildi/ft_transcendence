@@ -1,7 +1,7 @@
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
-import { signAccessToken, signRefreshToken, createJti } from "../../utils/authutils.ts";
+import { signAccessToken, signRefreshToken, createJti } from "../../utils/authUtils.ts";
 import {
   getGitHubConfig,
   packStateCookie,
@@ -21,16 +21,16 @@ export const oauthController = {
   // Step 1: Redirect to GitHub
   initiateGitHub: createHandler(async (request, context) => {
     const { reply } = context;
-    const config = getGitHubConfig();
+    const githubConfig = getGitHubConfig();
 
-    if (!config.clientId || !config.clientSecret) {
+    if (!githubConfig.clientId || !githubConfig.clientSecret) {
       throw errors.internal("GitHub OAuth not configured");
     }
 
     const state = crypto.randomUUID();
     const authUrl =
-      `${config.authUrl}?client_id=${config.clientId}` +
-      `&redirect_uri=${encodeURIComponent(config.redirectUri)}` +
+      `${githubConfig.authUrl}?client_id=${githubConfig.clientId}` +
+      `&redirect_uri=${encodeURIComponent(githubConfig.redirectUri)}` +
       `&scope=${encodeURIComponent("user:email")}` +
       `&state=${encodeURIComponent(state)}`;
 
@@ -39,7 +39,7 @@ export const oauthController = {
       httpOnly: true,
       secure: IS_PROD,
       sameSite: "lax",
-      path: "/oauth",
+      path: config.routes.oauth,
       maxAge: 10 * 60, // 10 minutes
     });
 
@@ -65,11 +65,11 @@ export const oauthController = {
     }
 
     // Clear state cookie
-    reply.clearCookie("oauth_state", { path: "/oauth" });
+    reply.clearCookie("oauth_state", { path: config.routes.oauth });
 
     // Exchange code for token and fetch user info
-    const config = getGitHubConfig();
-    const tokenData = await exchangeCodeForToken(config, code);
+    const githubConfig = getGitHubConfig();
+    const tokenData = await exchangeCodeForToken(githubConfig, code);
     const userInfo = await fetchGitHubUserInfo(tokenData.access_token);
 
     // Find existing user by OAuth provider+id

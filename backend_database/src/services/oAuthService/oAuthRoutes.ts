@@ -4,11 +4,11 @@ import { oauthController } from "./oAuthController.ts";
 
 async function oauthRoutes(fastify: FastifyInstance) {
   // Initiate GitHub OAuth flow
-  fastify.get("/oauth/github", oauthController.initiateGitHub);
+  fastify.get("/github", oauthController.initiateGitHub);
 
   // Handle GitHub OAuth callback
   fastify.get<{ Querystring: { code: string; state: string } }>(
-    "/oauth/github/callback",
+    "/github/callback",
     oauthController.handleGitHubCallback
   );
 }

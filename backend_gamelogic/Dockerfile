@@ -8,19 +8,22 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Create dist directory
-RUN mkdir -p dist
+# Build TypeScript code
+RUN npm run build
 
-# Build TypeScript (compile to JS)
-RUN npx tsc
+# Set default environment variables (can be overridden)
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV HOST=0.0.0.0
+ENV LOG_LEVEL=info
 
-# Expose port
-EXPOSE 3000
+# Expose port (use environment variable)
+EXPOSE $PORT
 
 # Start the application
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "run", "start"]

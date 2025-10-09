@@ -1,160 +1,36 @@
 import Fastify from 'fastify';
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { Field, Ball, Paddle, collideBallCapsule, collideBallWithWalls } from './game.js';
+import { FastifyInstance } from 'fastify';
+import { config, validateConfig} from './config.js';
+import { createGame } from './gameUtils.js';
+import {broadcastGameState, broadcastGameSetup} from './networkUtils.js';
+import errorHandlerPlugin from './plugins/errorHandlerPlugin.js';
 
-const fastify: FastifyInstance = Fastify({ logger: true });
+// Validate configuration on startup
+validateConfig();
 
-// Register WebSocket plugin
+const fastify: FastifyInstance = Fastify({ 
+  logger: {
+    level: config.logging.level,
+  }
+});
+
+// Register plugins
+await fastify.register(errorHandlerPlugin);
 await fastify.register(import('@fastify/websocket'));
 
-
-// Initialize game objects
-const field = new Field();
-const ball = new Ball(field);
-const paddle1 = new Paddle(1, field); // Left paddle
-const paddle2 = new Paddle(2, field); // Right paddle
-
-// Store connected clients
-const clients = new Set<any>();
-
-// Game loop variables
-const PHYSICS_FPS = 60;  // Physics updates
-const RENDER_FPS = 30;   // Network updates (reduce network load)
-const PHYSICS_INTERVAL = 1000 / PHYSICS_FPS;
-const RENDER_INTERVAL = 1000 / RENDER_FPS;
-
-// Game state update function
-function updateGameState() {
-  // Update ball position
-  ball.x += ball.speedX;
-  ball.y += ball.speedY;
-  
-  // Check wall collisions
-  collideBallWithWalls(ball, field);
-  
-  // Check paddle collisions
-  collideBallCapsule(paddle1, ball);
-  collideBallCapsule(paddle2, ball);
-  
-  // Update paddle positions (apply ySpeed)
-  paddle1.cy += paddle1.ySpeed;
-  paddle2.cy += paddle2.ySpeed;
-  
-  // Keep paddles within bounds
-  const paddleHalfLength = paddle1.length / 2;
-  paddle1.cy = Math.max(paddleHalfLength, Math.min(paddle1.cy, field.height - paddleHalfLength));
-  paddle2.cy = Math.max(paddleHalfLength, Math.min(paddle2.cy, field.height - paddleHalfLength));
-}
-
-// Broadcast game state to all connected clients
-function broadcastGameState() {
-  const paddle1Capsule = paddle1.getCapsule();
-  const paddle2Capsule = paddle2.getCapsule();
-  
-  const gameState = {
-    field: {
-      width: field.width,
-      height: field.height
-    },
-    ball: {
-      x: ball.x,
-      y: ball.y,
-      radius: ball.radius,
-      speedX: ball.speedX,
-      speedY: ball.speedY
-    },
-    paddle1: {
-      cx: paddle1.cx,
-      cy: paddle1.cy,
-      length: paddle1.length,
-      width: paddle1.width,
-      radius: paddle1Capsule.R,
-      capsule: paddle1Capsule
-    },
-    paddle2: {
-      cx: paddle2.cx,
-      cy: paddle2.cy,
-      length: paddle2.length,
-      width: paddle2.width,
-      radius: paddle2Capsule.R,
-      capsule: paddle2Capsule
-    }
-  };
-
-  const message = JSON.stringify({
-    type: 'gameState',
-    data: gameState
-  });
-
-  // Send to all connected clients
-  for (const client of clients) {
-    try {
-      client.send(message);
-    } catch (err) {
-      // Remove client if sending fails
-      clients.delete(client);
-    }
-  }
-}
-
-// Start game loops
-setInterval(() => {
-  updateGameState();
-}, PHYSICS_INTERVAL);
-
-setInterval(() => {
-  broadcastGameState();
-}, RENDER_INTERVAL);
-
-// Game state (initial state for new connections)
-function getInitialGameState() {
-  const paddle1Capsule = paddle1.getCapsule();
-  const paddle2Capsule = paddle2.getCapsule();
-  
-  return {
-    field: {
-      width: field.width,
-      height: field.height
-    },
-    ball: {
-      x: ball.x,
-      y: ball.y,
-      radius: ball.radius,
-      speedX: ball.speedX,
-      speedY: ball.speedY
-    },
-    paddle1: {
-      cx: paddle1.cx,
-      cy: paddle1.cy,
-      length: paddle1.length,
-      width: paddle1.width,
-      radius: paddle1Capsule.R,
-      capsule: paddle1Capsule
-    },
-    paddle2: {
-      cx: paddle2.cx,
-      cy: paddle2.cy,
-      length: paddle2.length,
-      width: paddle2.width,
-      radius: paddle2Capsule.R,
-      capsule: paddle2Capsule
-    }
-  };
-}
+// Create the main game instance
+const game = createGame();
 
 // WebSocket route for game
 fastify.register(async function (fastify) {
   fastify.get('/game', { websocket: true }, (connection, req) => {
     console.log('Client connected');
     
-    // Add client to connected clients set
-    clients.add(connection);
+    // Add client to game's connected clients set
+    game.clients.add(connection);
     
     // Send initial game state
-    connection.send(JSON.stringify({
-      type: 'gameState',
-      data: getInitialGameState()
-    }));
+    broadcastGameSetup(game);
 
     connection.on('message', (message: any) => {
       try {
@@ -177,7 +53,7 @@ fastify.register(async function (fastify) {
 
     connection.on('close', () => {
       console.log('Client disconnected');
-      clients.delete(connection);
+      game.clients.delete(connection);
     });
   });
 });
@@ -185,7 +61,7 @@ fastify.register(async function (fastify) {
 // Handle player input
 function handlePlayerInput(input: { player: number, action: string }) {
   const { player, action } = input;
-  const targetPaddle = player === 1 ? paddle1 : paddle2;
+  const targetPaddle = player === 1 ? game.Paddle1 : game.Paddle2;
   
   switch (action) {
     case 'up':
@@ -201,8 +77,30 @@ function handlePlayerInput(input: { player: number, action: string }) {
 }
 
 // Start server
-fastify.listen({ port: 3000, host: '0.0.0.0' }, (err: Error | null, address: string) => {
-  if (err) throw err;
-  console.log(`Server running at ${address}`);
-  console.log(`WebSocket available at ws://localhost:3000/game`);
+fastify.listen({ port: config.server.port, host: config.server.host }, (err: Error | null, address: string) => {
+  if (err) {
+    console.error('❌ Failed to start server:', err);
+    process.exit(1);
+  }
+  console.log(`🎮 Game server running at ${address}`);
+  console.log(`🔌 WebSocket available at ws://localhost:${config.server.port}/game`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('🛑 Shutting down gracefully...');
+  game.stop();
+  fastify.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\n🛑 Shutting down gracefully...');
+  game.stop();
+  fastify.close(() => {
+    console.log('✅ Server closed');
+    process.exit(0);
+  });
 });
