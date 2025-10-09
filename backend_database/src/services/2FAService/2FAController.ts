@@ -13,7 +13,7 @@ import type {
 
 export const twoFAController = {
 
-  setup2FA: createHandler<{ Params:{userId :string} },  Setup2FAResponse>(
+  setup2FA: createHandler<{ Params:{userId :string} }>(
     async (request, { db, reply}) => {
       const userId = parseInt(request.params.userId);
 
@@ -58,7 +58,7 @@ export const twoFAController = {
     }
   ),
 
-  verify2FA: createHandler<{Body: Verify2FARequest}, Verify2FAResponse>(
+  verify2FA: createHandler<{Body: Verify2FARequest}>(
     async (request, {db}) =>{
       const {userId, token} = request.body;
 
@@ -89,7 +89,7 @@ export const twoFAController = {
     }
   ),
 
-  enable2FA: createHandler<{Body : Enable2FARequest}, {enabled: boolean} >(
+  enable2FA: createHandler<{Body : Enable2FARequest}>(
     async (request, {db, reply}) =>{
       const { userId, token } = request.body;
       const user = await db.get<{ twofa_secret: string, twofa_enabled: number }>(
@@ -130,7 +130,7 @@ export const twoFAController = {
     }
   ),
 
-  disable2FA: createHandler<{Body: Disable2FARequest}, {disabled: boolean}>(
+  disable2FA: createHandler<{Body: Disable2FARequest}>(
     async (request, {db}) =>{
         const { userId, token } = request.body;
       const user = await db.get<{ twofa_secret: string, twofa_enabled: number }>(

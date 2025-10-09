@@ -15,6 +15,21 @@ import bcrypt from "bcrypt";
 import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authUtils.ts";
 
 export const authController = {
+  verifyToken: createHandler<{}>(
+    async (request, { db }) => {
+      const dbUser = await db.get<User>(
+        "SELECT id, username, email, created_at FROM users WHERE id = ?",
+        [request.user!.id]
+      );
+      if (!dbUser) {
+        throw errors.notFound("User not found");
+      }
+      return ApiResponseHelper.success(
+        { verified: true },
+        "Token is valid and user exists"
+      );
+    }
+  ),
 
   refresh: createHandler<{}, UserLoginResponse>(
     async (request, context) => {
