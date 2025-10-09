@@ -1,6 +1,19 @@
 <div class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black py-8 font-orbitron">
     <div class="max-w-4xl mx-auto px-4">
         <h1 class="text-5xl font-bold text-center mb-8 text-neon-pink drop-shadow-neon">Pong Game</h1>
+        
+        <div class="flex justify-center gap-16 mb-6">
+            <div class="text-center">
+                <p class="text-neon-green text-sm mb-1">Player 1</p>
+                <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
+            </div>
+            <div class="text-neon-cyan text-4xl font-bold self-center">:</div>
+            <div class="text-center">
+                <p class="text-neon-green text-sm mb-1">Player 2</p>
+                <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
+            </div>
+        </div>
+
         <div class="flex flex-col text-center justify-center mb-8">
             <canvas
                     id="pong-canvas"

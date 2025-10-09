@@ -1,3 +1,5 @@
+import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
+
 export class Field {
   width: number;
   height: number;
@@ -10,15 +12,16 @@ export class Field {
 export class Ball {
   x: number;
   y: number;
-  radius: number;
+  radius: number = config.game.ballRadius;
   speedX: number;
   speedY: number;
-  constructor(field: Field, radius: number, speed: number) {
+  constructor(field: Field) {
+    const angle = (Math.random() - 0.5) * Math.PI / 2;
     this.x = field.width / 2;
     this.y = field.height / 2;
-    this.radius = radius;
-    this.speedX = (Math.random() - 0.5) * speed;
-    this.speedY = (Math.random() - 0.5) * speed;
+    this.radius = config.game.ballRadius;
+    this.speedX = Math.cos(angle) * config.game.ballSpeed * (Math.random() < 0.5 ? 1 : -1);
+    this.speedY = Math.sin(angle) * config.game.ballSpeed;
   }
 }
 
@@ -79,22 +82,14 @@ export class GameServer {
   private onPhysicsUpdate?: (game: GameServer) => void;
   private onRender?: (game: GameServer) => void;
 
-  constructor(
-    width: number, 
-    height: number,
-    maxScore: number,
-    ballRadius: number, 
-    ballSpeed: number, 
-    paddleSpeed: number, 
-    physicsInterval: number, 
-    renderInterval: number) {
-    this.Field = new Field(width, height);
-    this.Ball = new Ball(this.Field, ballRadius, ballSpeed);
-    this.Paddle1 = new Paddle(1, this.Field, paddleSpeed);
-    this.Paddle2 = new Paddle(2, this.Field, paddleSpeed);
-    this.maxScore = maxScore;
-    this.physicsInterval = physicsInterval;
-    this.renderInterval = renderInterval;
+  constructor() {
+    this.Field = new Field(config.game.width, config.game.height);
+    this.Ball = new Ball(this.Field);
+    this.Paddle1 = new Paddle(1, this.Field, config.game.paddleSpeed);
+    this.Paddle2 = new Paddle(2, this.Field, config.game.paddleSpeed);
+    this.maxScore = config.game.maxScore;
+    this.physicsInterval = PHYSICS_INTERVAL;
+    this.renderInterval = RENDER_INTERVAL;
   }
 
   // Set callback functions
