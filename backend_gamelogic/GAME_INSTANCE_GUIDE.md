@@ -1,6 +1,7 @@
 # Game Instance Management Guide
 
 ## Overview
+
 The `GameServer` class now manages its own game loops internally. You can easily create multiple game instances that run independently.
 
 ## Usage
@@ -8,7 +9,7 @@ The `GameServer` class now manages its own game loops internally. You can easily
 ### Creating a Single Game Instance
 
 ```typescript
-import { createGame } from './server.js';
+import { createGame } from "./server.js";
 
 // Create and start a game
 const game = createGame();
@@ -21,10 +22,10 @@ const game = createGame();
 ### Creating Multiple Game Instances
 
 ```typescript
-import { GameServer } from './gameTypes.js';
-import { updateGameState } from './gameUtils.js';
-import { broadcastGameState } from './networkUtils.js';
-import { GAME_CONFIG, PHYSICS_INTERVAL, RENDER_INTERVAL } from './config.js';
+import { GameServer } from "./gameTypes.js";
+import { updateGameState } from "./gameUtils.js";
+import { broadcastGameState } from "./networkUtils.js";
+import { GAME_CONFIG, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
 
 // Create multiple game instances
 const games: Map<string, GameServer> = new Map();
@@ -54,9 +55,9 @@ function createNewGame(gameId: string): GameServer {
 }
 
 // Example: Create 3 independent games
-const game1 = createNewGame('room-1');
-const game2 = createNewGame('room-2');
-const game3 = createNewGame('room-3');
+const game1 = createNewGame("room-1");
+const game2 = createNewGame("room-2");
+const game3 = createNewGame("room-3");
 
 // Each game runs independently with its own loops!
 ```
@@ -66,7 +67,7 @@ const game3 = createNewGame('room-3');
 ```typescript
 // Check if game is running
 if (game.running()) {
-  console.log('Game is active');
+  console.log("Game is active");
 }
 
 // Stop a game
@@ -77,7 +78,7 @@ game.start();
 
 // Get current game state
 const state = game.getState();
-console.log('Ball position:', state.ball.x, state.ball.y);
+console.log("Ball position:", state.ball.x, state.ball.y);
 ```
 
 ### WebSocket Room-Based Games
@@ -86,9 +87,9 @@ console.log('Ball position:', state.ball.x, state.ball.y);
 const games: Map<string, GameServer> = new Map();
 
 fastify.register(async function (fastify) {
-  fastify.get('/game/:roomId', { websocket: true }, (connection, req) => {
+  fastify.get("/game/:roomId", { websocket: true }, (connection, req) => {
     const roomId = (req.params as any).roomId;
-    
+
     // Get or create game for this room
     let game = games.get(roomId);
     if (!game) {
@@ -100,23 +101,25 @@ fastify.register(async function (fastify) {
     game.clients.add(connection);
 
     // Send initial state
-    connection.send(JSON.stringify({
-      type: 'gameState',
-      data: game.getState()
-    }));
+    connection.send(
+      JSON.stringify({
+        type: "gameState",
+        data: game.getState(),
+      })
+    );
 
-    connection.on('message', (message: any) => {
+    connection.on("message", (message: any) => {
       const data = JSON.parse(message.toString());
-      
+
       // Handle input for this specific game
-      if (data.type === 'playerInput') {
+      if (data.type === "playerInput") {
         handlePlayerInput(game, data.data);
       }
     });
 
-    connection.on('close', () => {
+    connection.on("close", () => {
       game!.clients.delete(connection);
-      
+
       // Clean up empty games
       if (game!.clients.size === 0) {
         console.log(`🧹 Cleaning up empty game: ${roomId}`);
@@ -127,18 +130,21 @@ fastify.register(async function (fastify) {
   });
 });
 
-function handlePlayerInput(game: GameServer, input: { player: number, action: string }) {
+function handlePlayerInput(
+  game: GameServer,
+  input: { player: number; action: string }
+) {
   const { player, action } = input;
   const targetPaddle = player === 1 ? game.Paddle1 : game.Paddle2;
-  
+
   switch (action) {
-    case 'up':
+    case "up":
       targetPaddle.ySpeed = -targetPaddle.speed;
       break;
-    case 'down':
+    case "down":
       targetPaddle.ySpeed = targetPaddle.speed;
       break;
-    case 'stop':
+    case "stop":
       targetPaddle.ySpeed = 0;
       break;
   }
@@ -148,6 +154,7 @@ function handlePlayerInput(game: GameServer, input: { player: number, action: st
 ## GameServer API
 
 ### Constructor
+
 ```typescript
 new GameServer(
   width: number,
@@ -163,21 +170,27 @@ new GameServer(
 ### Methods
 
 #### `setUpdateCallback(callback: (game: GameServer) => void)`
+
 Set the physics update callback (called every physics tick).
 
 #### `setRenderCallback(callback: (game: GameServer) => void)`
+
 Set the render/broadcast callback (called every render tick).
 
 #### `start()`
+
 Start the game loops. Throws error if callbacks are not set.
 
 #### `stop()`
+
 Stop the game loops cleanly.
 
 #### `getState()`
+
 Get the current game state (ball, paddles, field).
 
 #### `running()`
+
 Returns `true` if game loops are running, `false` otherwise.
 
 ### Properties
@@ -214,7 +227,7 @@ const activeMatches: Map<string, Match> = new Map();
 
 function createMatch(player1Id: string, player2Id: string): Match {
   const matchId = `${player1Id}-${player2Id}-${Date.now()}`;
-  
+
   const game = new GameServer(
     GAME_CONFIG.width,
     GAME_CONFIG.height,
@@ -234,11 +247,11 @@ function createMatch(player1Id: string, player2Id: string): Match {
     game,
     player1Id,
     player2Id,
-    createdAt: new Date()
+    createdAt: new Date(),
   };
 
   activeMatches.set(matchId, match);
-  
+
   console.log(`🎮 Match created: ${matchId}`);
   return match;
 }

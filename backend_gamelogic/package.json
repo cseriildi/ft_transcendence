@@ -5,19 +5,19 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "node --env-file=.env.gamelogic --loader ts-node/esm src/server.ts",
+    "dev": "node --loader ts-node/esm src/server.ts",
     "build": "tsc",
-    "start:prod": "node --env-file=.env.gamelogic dist/server.js"
+    "start:prod": "node dist/server.js"
   },
   "dependencies": {
     "@fastify/static": "^8.2.0",
     "@fastify/websocket": "^11.2.0",
+    "dotenv": "17.2.1",
     "fastify": "5.5.0",
     "fastify-plugin": "5.0.1"
   },
   "devDependencies": {
     "@types/node": "24.3.0",
-    "dotenv": "17.2.1",
     "nodemon": "3.1.10",
     "ts-node": "10.9.2",
     "typescript": "^5.9.2"

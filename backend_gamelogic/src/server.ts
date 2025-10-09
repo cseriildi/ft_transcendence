@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.gamelogic' });
 
 import Fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
@@ -34,8 +36,6 @@ export function createGame(): GameServer {
 
 // Create the main game instance
 const game = createGame();
-
-// No longer needed - use game.getState() directly
 
 // WebSocket route for game
 fastify.register(async function (fastify) {
