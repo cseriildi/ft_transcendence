@@ -1,6 +1,5 @@
 import { GameServer } from "./gameTypes";
 
-
 export function broadcastGameState(game : GameServer) {
   const paddle1Capsule = game.Paddle1.getCapsule();
   const paddle2Capsule = game.Paddle2.getCapsule();
@@ -13,7 +12,47 @@ export function broadcastGameState(game : GameServer) {
     ball: {
       x: game.Ball.x,
       y: game.Ball.y,
-      radius: game.Ball.radius,
+      speedX: game.Ball.speedX,
+      speedY: game.Ball.speedY
+    },
+    paddle1: {
+      cx: game.Paddle1.cx,
+      cy: game.Paddle1.cy,
+    },
+    paddle2: {
+      cx: game.Paddle2.cx,
+      cy: game.Paddle2.cy,
+    },
+    score: {
+      player1: game.score1,
+      player2: game.score2
+    }
+  };
+
+  const message = JSON.stringify({
+    type: 'gameState',
+    data: gameState
+  });
+
+  // Send to all connected clients
+  for (const client of game.clients) {
+    try {
+      client.send(message);
+    } catch (err) {
+      // Remove client if sending fails
+      game.clients.delete(client);
+    }
+  }
+}
+
+export function broadcastGameSetup(game : GameServer) {
+  const paddle1Capsule = game.Paddle1.getCapsule();
+  const paddle2Capsule = game.Paddle2.getCapsule();
+
+  const gameState = {
+    ball: {
+      x: game.Ball.x,
+      y: game.Ball.y,
       speedX: game.Ball.speedX,
       speedY: game.Ball.speedY
     },
@@ -32,11 +71,15 @@ export function broadcastGameState(game : GameServer) {
       width: game.Paddle2.width,
       radius: paddle2Capsule.R,
       capsule: paddle2Capsule
+    },
+    score: {
+      player1: game.score1,
+      player2: game.score2
     }
   };
 
   const message = JSON.stringify({
-    type: 'gameState',
+    type: 'gameSetup',
     data: gameState
   });
 

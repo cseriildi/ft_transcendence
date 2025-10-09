@@ -65,6 +65,9 @@ export class GameServer {
   Ball: Ball;
   Paddle1: Paddle;
   Paddle2: Paddle;
+  score1: number = 0;
+  score2: number = 0;
+  maxScore: number;
   clients = new Set<any>();
   physicsInterval: number;
   renderInterval: number;
@@ -78,7 +81,8 @@ export class GameServer {
 
   constructor(
     width: number, 
-    height: number, 
+    height: number,
+    maxScore: number,
     ballRadius: number, 
     ballSpeed: number, 
     paddleSpeed: number, 
@@ -88,6 +92,7 @@ export class GameServer {
     this.Ball = new Ball(this.Field, ballRadius, ballSpeed);
     this.Paddle1 = new Paddle(1, this.Field, paddleSpeed);
     this.Paddle2 = new Paddle(2, this.Field, paddleSpeed);
+    this.maxScore = maxScore;
     this.physicsInterval = physicsInterval;
     this.renderInterval = renderInterval;
   }
@@ -152,40 +157,40 @@ export class GameServer {
   }
 
   // Get current state
-  getState() {
-    const paddle1Capsule = this.Paddle1.getCapsule();
-    const paddle2Capsule = this.Paddle2.getCapsule();
+  // getState() {
+  //   const paddle1Capsule = this.Paddle1.getCapsule();
+  //   const paddle2Capsule = this.Paddle2.getCapsule();
     
-    return {
-      field: {
-        width: this.Field.width,
-        height: this.Field.height
-      },
-      ball: {
-        x: this.Ball.x,
-        y: this.Ball.y,
-        radius: this.Ball.radius,
-        speedX: this.Ball.speedX,
-        speedY: this.Ball.speedY
-      },
-      paddle1: {
-        cx: this.Paddle1.cx,
-        cy: this.Paddle1.cy,
-        length: this.Paddle1.length,
-        width: this.Paddle1.width,
-        radius: paddle1Capsule.R,
-        capsule: paddle1Capsule
-      },
-      paddle2: {
-        cx: this.Paddle2.cx,
-        cy: this.Paddle2.cy,
-        length: this.Paddle2.length,
-        width: this.Paddle2.width,
-        radius: paddle2Capsule.R,
-        capsule: paddle2Capsule
-      }
-    };
-  }
+  //   return {
+  //     field: {
+  //       width: this.Field.width,
+  //       height: this.Field.height
+  //     },
+  //     ball: {
+  //       x: this.Ball.x,
+  //       y: this.Ball.y,
+  //       radius: this.Ball.radius,
+  //       speedX: this.Ball.speedX,
+  //       speedY: this.Ball.speedY
+  //     },
+  //     paddle1: {
+  //       cx: this.Paddle1.cx,
+  //       cy: this.Paddle1.cy,
+  //       length: this.Paddle1.length,
+  //       width: this.Paddle1.width,
+  //       radius: paddle1Capsule.R,
+  //       capsule: paddle1Capsule
+  //     },
+  //     paddle2: {
+  //       cx: this.Paddle2.cx,
+  //       cy: this.Paddle2.cy,
+  //       length: this.Paddle2.length,
+  //       width: this.Paddle2.width,
+  //       radius: paddle2Capsule.R,
+  //       capsule: paddle2Capsule
+  //     }
+  //   };
+  // }
 
   // Check if game is running
   running() {

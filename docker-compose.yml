@@ -4,11 +4,11 @@ services:
   databank:
     build:
       context: ./backend_database
-    container_name: databank
+    container_name: database
     volumes:
       - ./backend_database/database:/app/data
     ports:
-      - "3001:3000"
+      - "3000:3000"
     restart: unless-stopped
     networks:
       - transendence
@@ -16,9 +16,9 @@ services:
   backend:
     build:
       context: ./backend_gamelogic
-    container_name: backend
+    container_name: game
     ports:
-      - "3000:3000"
+      - "3001:3001"
     restart: unless-stopped
     networks:
       - transendence

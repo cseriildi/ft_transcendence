@@ -1,4 +1,29 @@
 import { Paddle, Ball, Field, GameServer } from "./gameTypes";
+import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
+import { broadcastGameState } from "./networkUtils.js";
+
+// Factory function to create and start a game instance
+export function createGame(): GameServer {
+  const game = new GameServer(
+    config.game.width,
+    config.game.height,
+    config.game.maxScore,
+    config.game.ballRadius,
+    config.game.ballSpeed,
+    config.game.paddleSpeed,
+    PHYSICS_INTERVAL,
+    RENDER_INTERVAL
+  );
+
+  // Set up callbacks
+  game.setUpdateCallback(updateGameState);
+  game.setRenderCallback(broadcastGameState);
+
+  // Start the game loops
+  game.start();
+
+  return game;
+}
 
 
 export function closestPointOnSegment(paddle: Paddle, ball: Ball) {
@@ -60,10 +85,23 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
   return true;
 }
 
-export function collideBallWithWalls(ball: Ball, field: Field) {
-  if (ball.x - ball.radius < 0 || ball.x + ball.radius > field.width) {
-    ball.x = Math.max(ball.radius, Math.min(ball.x, field.width - ball.radius));
-    ball.speedX *= -1;
+export function resetBall(game: GameServer) {
+  game.Ball.x = game.Field.width / 2;
+  game.Ball.y = game.Field.height / 2;
+  const angle = (Math.random() - 0.5) * Math.PI / 2; // -45 to +45 degrees
+  game.Ball.speedX = Math.cos(angle) * game.Ball.speedX;
+  game.Ball.speedY = Math.sin(angle) * game.Ball.speedY;
+}
+
+export function collideBallWithWalls(game: GameServer) {
+  const { Ball: ball, Field: field} = game;
+  if (ball.x - ball.radius < 0){
+    game.score1 += 1;
+    resetBall(game);
+  }
+  else if (ball.x + ball.radius > field.width) {
+    game.score2 += 1;
+    resetBall(game);
   }
   if (ball.y - ball.radius < 0 || ball.y + ball.radius > field.height) {
     ball.y = Math.max(ball.radius, Math.min(ball.y, field.height - ball.radius));
@@ -77,7 +115,13 @@ export function updateGameState(game: GameServer) {
   game.Ball.y += game.Ball.speedY;
 
   // Check wall collisions
-  collideBallWithWalls(game.Ball, game.Field);
+  collideBallWithWalls(game);
+
+  if (game.score1 >= game.maxScore || game.score2 >= game.maxScore) {
+    game.score1 = 0;
+    game.score2 = 0;
+    resetBall(game);
+  }
 
   // Check paddle collisions
   collideBallCapsule(game.Paddle1, game.Ball);

@@ -1,9 +1,8 @@
 import Fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
-import { GameServer } from "./gameTypes.js";
-import { config, validateConfig, PHYSICS_INTERVAL, RENDER_INTERVAL } from './config.js';
-import { updateGameState } from './gameUtils.js';
-import { broadcastGameState } from './networkUtils.js';
+import { config, validateConfig} from './config.js';
+import { createGame } from './gameUtils.js';
+import {broadcastGameState, broadcastGameSetup} from './networkUtils.js';
 import errorHandlerPlugin from './plugins/errorHandlerPlugin.js';
 
 // Validate configuration on startup
@@ -19,28 +18,6 @@ const fastify: FastifyInstance = Fastify({
 await fastify.register(errorHandlerPlugin);
 await fastify.register(import('@fastify/websocket'));
 
-// Factory function to create and start a game instance
-export function createGame(): GameServer {
-  const game = new GameServer(
-    config.game.width,
-    config.game.height,
-    config.game.ballRadius,
-    config.game.ballSpeed,
-    config.game.paddleSpeed,
-    PHYSICS_INTERVAL,
-    RENDER_INTERVAL
-  );
-
-  // Set up callbacks
-  game.setUpdateCallback(updateGameState);
-  game.setRenderCallback(broadcastGameState);
-
-  // Start the game loops
-  game.start();
-
-  return game;
-}
-
 // Create the main game instance
 const game = createGame();
 
@@ -53,10 +30,7 @@ fastify.register(async function (fastify) {
     game.clients.add(connection);
     
     // Send initial game state
-    connection.send(JSON.stringify({
-      type: 'gameState',
-      data: game.getState()
-    }));
+    broadcastGameSetup(game);
 
     connection.on('message', (message: any) => {
       try {

@@ -16,6 +16,7 @@ export const config = {
   game: {
     width: parseInt(process.env.GAME_WIDTH || "4000"),
     height: parseInt(process.env.GAME_HEIGHT || "2000"),
+    maxScore: parseInt(process.env.MAX_SCORE || "5"),
     ballRadius: parseInt(process.env.BALL_RADIUS || "40"),
     ballSpeed: parseInt(process.env.BALL_SPEED || "40"),
     paddleSpeed: parseInt(process.env.PADDLE_SPEED || "40"),
