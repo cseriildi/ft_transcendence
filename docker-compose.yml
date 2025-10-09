@@ -1,0 +1,41 @@
+name: transendence
+
+services:
+  databank:
+    build:
+      context: ./backend_database
+    container_name: databank
+    volumes:
+      - ./backend_database/database:/app/data
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    networks:
+      - transendence
+
+  backend:
+    build:
+      context: ./backend_gamelogic
+    container_name: backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    networks:
+      - transendence
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "4200:4200"
+    restart: unless-stopped
+    networks:
+      - transendence
+
+volumes:
+  databank-data:
+
+networks:
+  transendence:
+    driver: bridge
