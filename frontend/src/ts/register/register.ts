@@ -16,7 +16,8 @@ export async function handleRegisterFormSubmit(e: Event) {
         const data = await response.json();
         if (response.ok) {
             if (data.accessToken) {
-                document.cookie = `accessToken=${data.accessToken}; Path=/; SameSite=Strict; Secure`;
+                const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
+                document.cookie = `accessToken=${data.accessToken}; Path=/; SameSite=Strict${secureFlag}`;
             }
             console.log('accessToken', document.cookie.match(/(?:^|; )accessToken=([^;]*)/))
             console.log('Register successful', data);
