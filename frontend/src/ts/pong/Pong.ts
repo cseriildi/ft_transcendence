@@ -3,6 +3,7 @@ export interface GameState {
     ball: { x: number; y: number; radius: number };
     paddle1: { cx?: number; cy?: number; capsule: Capsule };
     paddle2: { cx?: number; cy?: number; capsule: Capsule };
+    score?: { player1: number; player2: number };
 }
 
 interface Capsule {
@@ -53,6 +54,7 @@ export class Pong {
                     // Store initial full state
                     this.gameState = message.data;
                     console.log("📦 Received game setup:", this.gameState);
+                    this.updateScoreDisplay();
                 } else if (message.type === "gameState") {
                     // Merge updates with existing state
                     if (this.gameState) {
@@ -65,6 +67,15 @@ export class Pong {
                         // Update capsules based on new positions
                         this.updateCapsule(this.gameState.paddle1);
                         this.updateCapsule(this.gameState.paddle2);
+                        // Update scores
+                        if (message.data.score) {
+                            if (!this.gameState.score) {
+                                this.gameState.score = { player1: 0, player2: 0 };
+                            }
+                            this.gameState.score.player1 = message.data.score.player1;
+                            this.gameState.score.player2 = message.data.score.player2;
+                            this.updateScoreDisplay();
+                        }
                     }
                 }
             } catch (err) {
@@ -90,6 +101,16 @@ export class Pong {
         paddle.capsule.y1 = paddle.cy - halfLength;
         paddle.capsule.x2 = paddle.cx;
         paddle.capsule.y2 = paddle.cy + halfLength;
+    }
+
+    private updateScoreDisplay() {
+        if (!this.gameState?.score) return;
+        
+        const score1El = document.getElementById('score-player1');
+        const score2El = document.getElementById('score-player2');
+        
+        if (score1El) score1El.textContent = this.gameState.score.player1.toString();
+        if (score2El) score2El.textContent = this.gameState.score.player2.toString();
     }
 
     private setupInputHandlers() {
@@ -141,7 +162,7 @@ export class Pong {
         if (!this.gameState) return;
 
         const { width, height } = this.canvas;
-        const { field, ball, paddle1, paddle2 } = this.gameState;
+        const { field, ball, paddle1, paddle2, score } = this.gameState;
 
         // Clear canvas
         this.ctx.fillStyle = "#000";
@@ -171,6 +192,16 @@ export class Pong {
         this.ctx.fillStyle = "#39ff14";
         this.drawCapsule(paddle1.capsule, scale);
         this.drawCapsule(paddle2.capsule, scale);
+
+        // Draw scores
+        if (score) {
+            this.ctx.fillStyle = "#fff";
+            this.ctx.font = "bold 24px Arial";
+            this.ctx.textAlign = "center";
+            this.ctx.textBaseline = "middle";
+            this.ctx.fillText(score.player1.toString(), width / 4, 30);
+            this.ctx.fillText(score.player2.toString(), (3 * width) / 4, 30);
+        }
     }
 
     private drawCapsule(capsule: Capsule, scale: number) {
