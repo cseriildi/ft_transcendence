@@ -1,25 +1,34 @@
-import dotenv from 'dotenv';
-dotenv.config({ path: '.env.gamelogic' });
-
 import Fastify from 'fastify';
 import { FastifyInstance } from 'fastify';
 import { GameServer } from "./gameTypes.js";
-import { GAME_CONFIG, PHYSICS_INTERVAL, RENDER_INTERVAL } from './config.js';
+import { config, validateConfig, PHYSICS_INTERVAL, RENDER_INTERVAL } from './config.js';
 import { updateGameState } from './gameUtils.js';
 import { broadcastGameState } from './networkUtils.js';
+import errorHandlerPlugin from './plugins/errorHandlerPlugin.js';
 
-const fastify: FastifyInstance = Fastify({ logger: true });
+// Validate configuration on startup
+validateConfig();
 
+const fastify: FastifyInstance = Fastify({ 
+  logger: {
+    level: config.logging.level,
+  }
+});
+
+await fastify.register(import('@fastify/websocket'));
+
+// Register plugins
+await fastify.register(errorHandlerPlugin);
 await fastify.register(import('@fastify/websocket'));
 
 // Factory function to create and start a game instance
 export function createGame(): GameServer {
   const game = new GameServer(
-    GAME_CONFIG.width,
-    GAME_CONFIG.height,
-    GAME_CONFIG.ballRadius,
-    GAME_CONFIG.ballSpeed,
-    GAME_CONFIG.paddleSpeed,
+    config.game.width,
+    config.game.height,
+    config.game.ballRadius,
+    config.game.ballSpeed,
+    config.game.paddleSpeed,
     PHYSICS_INTERVAL,
     RENDER_INTERVAL
   );
@@ -96,14 +105,13 @@ function handlePlayerInput(input: { player: number, action: string }) {
 }
 
 // Start server
-const PORT = 3000;
-fastify.listen({ port: PORT, host: '0.0.0.0' }, (err: Error | null, address: string) => {
+fastify.listen({ port: config.server.port, host: config.server.host }, (err: Error | null, address: string) => {
   if (err) {
     console.error('❌ Failed to start server:', err);
     process.exit(1);
   }
   console.log(`🎮 Game server running at ${address}`);
-  console.log(`🔌 WebSocket available at ws://localhost:${PORT}/game`);
+  console.log(`🔌 WebSocket available at ws://localhost:${config.server.port}/game`);
 });
 
 // Graceful shutdown
