@@ -1,19 +1,10 @@
-import { Paddle, Ball, Field, GameServer } from "./gameTypes";
-import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
+import { Paddle, Ball, GameServer } from "./gameTypes.js";
+import { config} from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
 
 // Factory function to create and start a game instance
 export function createGame(): GameServer {
-  const game = new GameServer(
-    config.game.width,
-    config.game.height,
-    config.game.maxScore,
-    config.game.ballRadius,
-    config.game.ballSpeed,
-    config.game.paddleSpeed,
-    PHYSICS_INTERVAL,
-    RENDER_INTERVAL
-  );
+  const game = new GameServer();
 
   // Set up callbacks
   game.setUpdateCallback(updateGameState);

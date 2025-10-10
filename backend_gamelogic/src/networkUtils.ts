@@ -1,11 +1,7 @@
-import { GameServer } from "./gameTypes";
+import {GameServer } from "./gameTypes.js";
 
 export function broadcastGameState(game : GameServer) {
   const gameState = {
-    field: {
-      width: game.Field.width,
-      height: game.Field.height
-    },
     ball: {
       x: game.Ball.x,
       y: game.Ball.y,
@@ -15,10 +11,12 @@ export function broadcastGameState(game : GameServer) {
     paddle1: {
       cx: game.Paddle1.cx,
       cy: game.Paddle1.cy,
+      speed: game.Paddle1.speed
     },
     paddle2: {
       cx: game.Paddle2.cx,
       cy: game.Paddle2.cy,
+      speed: game.Paddle2.speed
     },
     score: {
       player1: game.score1,
@@ -47,9 +45,14 @@ export function broadcastGameSetup(game : GameServer) {
   const paddle2Capsule = game.Paddle2.getCapsule();
 
   const gameState = {
+    field: {
+      width: game.Field.width,
+      height: game.Field.height
+    },
     ball: {
       x: game.Ball.x,
       y: game.Ball.y,
+      radius: game.Ball.radius,
       speedX: game.Ball.speedX,
       speedY: game.Ball.speedY
     },
