@@ -1,6 +1,7 @@
 .env
 .env.*.local
 !.env.example
+.db
 
 .certs/
 !.certs/.gitkeep
