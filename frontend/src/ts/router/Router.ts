@@ -19,7 +19,7 @@ class Router {
   }
 
   private async loadTemplates() {
-    const templateFiles = ['home', 'pong', 'auth', '404'];
+    const templateFiles = ['home', 'pong', 'login', 'register', '404'];
     
     for (const template of templateFiles) {
       try {
