@@ -1,0 +1,45 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches-ignore: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  secrets-check:
+    uses: ./.github/workflows/secrets.yml
+
+  unit-tests:
+    needs: secrets-check
+    uses: ./.github/workflows/unit-tests.yml
+
+  security-quality:
+    needs: secrets-check
+    uses: ./.github/workflows/security-quality.yml
+
+  integration-tests:
+    needs: [unit-tests, security-quality]
+    uses: ./.github/workflows/integration-tests.yml
+
+  ci-success:
+    needs: [secrets-check, unit-tests, security-quality, integration-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all jobs status
+        run: |
+          if [[ "${{ needs.secrets-check.result }}" == "success" && 
+                "${{ needs.unit-tests.result }}" == "success" && 
+                "${{ needs.security-quality.result }}" == "success" && 
+                "${{ needs.integration-tests.result }}" == "success" ]]; then
+            echo "All CI checks passed!"
+          else
+            echo "Some CI checks failed:"
+            echo "  Secrets Check: ${{ needs.secrets-check.result }}"
+            echo "  Unit Tests: ${{ needs.unit-tests.result }}"
+            echo "  Security & Quality: ${{ needs.security-quality.result }}"
+            echo "  Integration Tests: ${{ needs.integration-tests.result }}"
+            exit 1
+          fi

@@ -1,0 +1,16 @@
+name: Integration Tests
+
+on:
+  push:
+    branches-ignore: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+    dummy-job:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Dummy step
+          run: echo "This is a placeholder for integration tests."
