@@ -1,4 +1,4 @@
-name: transendence
+name: transcendence
 
 services:
   databank:
@@ -9,7 +9,7 @@ services:
       - ./backend_database/database:/app/data
     restart: unless-stopped
     networks:
-      - transendence
+      - transcendence
 
   backend:
     build:
@@ -19,7 +19,7 @@ services:
     #   - ./backend_gamelogic/.env.game
     restart: unless-stopped
     networks:
-      - transendence
+      - transcendence
 
   frontend:
     build:
@@ -27,13 +27,12 @@ services:
     container_name: frontend
     restart: unless-stopped
     networks:
-      - transendence
+      - transcendence
 
   nginx:
     image: nginx:alpine
     container_name: nginx-proxy
     ports:
-      - "80:80"
       - "443:443"
     volumes:
       - ./ops/nginx.conf:/etc/nginx/nginx.conf:ro
@@ -44,11 +43,11 @@ services:
       - backend
     restart: unless-stopped
     networks:
-      - transendence
+      - transcendence
 
 volumes:
   databank-data:
 
 networks:
-  transendence:
+  transcendence:
     driver: bridge
