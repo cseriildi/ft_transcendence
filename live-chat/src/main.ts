@@ -13,7 +13,8 @@ await app.register(rateLimit, {
   max: 5,
   timeWindow: "1 second",
 });
-//await app.register(helmet, { global: true });
+
+await app.register(helmet, { global: true });
 await app.register(dbConnector, { path: config.database.path });
 
 app.addHook("onRequest", async (request, reply) => {
