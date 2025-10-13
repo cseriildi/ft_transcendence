@@ -23,7 +23,7 @@ const initPongPage = () => {
 
   const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
   if (canvas) {
-    currentPong = new Pong("pong-canvas", "ws://localhost/ws/game");
+    currentPong = new Pong("pong-canvas", "wss://localhost:8443/ws/game");
   } else {
     console.error("❌ Pong canvas not found");
   }
