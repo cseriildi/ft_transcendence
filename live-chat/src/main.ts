@@ -131,28 +131,28 @@ await app.register(async (fastify) => {
       return;
     }
 
-    // Track user in lobby
-    // try {
-    //   const upstream = await fetch(`http://localhost:3000/api/users/${userId}`, {
-    //     method: "GET",
-    //     headers: {
-    //       authorization: `Bearer ${token}`,
-    //     },
-    //   });
-    //   if (!upstream.ok) {
-    //     connection.close();
-    //     return;
-    //   }
-    //   const json = await upstream.json();
-    //   if (!json || !json.valid) {
-    //     connection.close();
-    //     return;
-    //   }
-    // } catch (err) {
-    //   fastify.log.error(err);
-    //   connection.close();
-    //   return;
-    // }
+    //Track user in lobby
+    try {
+      const upstream = await fetch(`http://localhost:3000/api/users/1`, {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      if (!upstream.ok) {
+        connection.close();
+        return;
+      }
+      // const json = await upstream.json();
+      // if (!json || !json.valid) {
+      //   connection.close();
+      //   return;
+      // }
+    } catch (err) {
+      fastify.log.error(err);
+      connection.close();
+      return;
+    }
 
     lobbyConnections.set(connection, username);
     if (!userLobbyConnections.has(username)) {
