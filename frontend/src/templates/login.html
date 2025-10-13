@@ -3,24 +3,27 @@
         <h1 class="text-5xl font-bold text-center mb-8 text-neon-green drop-shadow-neon break-words">
             Authentication
         </h1>
-        <div class="bg-black p-6 rounded-lg shadow-neon border-2 border-neon-pink">
-            <form id="auth-form" class="space-y-4">
+        <div class="bg-black p-6 rounded-lg shadow-neon border-2 border-neon-pink mb-10">
+            <form id="login-form" class="space-y-4">
                 <div>
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-input" placeholder="Enter your email">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" name="email" class="form-input" placeholder="Enter your email">
                 </div>
                 <div>
-                    <label class="form-label">Password</label>
-                    <input type="password" class="form-input" placeholder="Enter your password">
+                    <label class="form-label" for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-input" placeholder="Enter your password">
                 </div>
                 <button type="submit" class="w-full bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition">
                     Sign In
                 </button>
             </form>
         </div>
-        <div class="text-center mt-6">
+        <div class="text-center space-x-4">
             <button id="back-btn" class="bg-neon-pink hover:bg-neon-green text-white font-bold py-2 px-4 rounded shadow-neon transition">
                 Back to Home
+            </button>
+            <button id="register-btn" class="bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition">
+                Register
             </button>
         </div>
     </div>
