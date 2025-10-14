@@ -13,9 +13,6 @@ export interface JwtPayload {
 export interface LoginTokens {
   accessToken: string;
 }
-export interface RefreshBody {
-  // Empty - refresh token comes from cookie
-}
 
 export interface RefreshResponse {
   id: number;
@@ -31,13 +28,6 @@ export interface CreateUserBody {
   email: string;
   password: string;
   confirmPassword: string;
-  avatar_url?: string; // Optional avatar URL (will be populated by file upload)
-}
-
-export interface UpdateUserBody {
-  username?: string;
-  email?: string;
-  password?: string;
 }
 
 export interface UserLoginBody {

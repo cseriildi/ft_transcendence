@@ -3,6 +3,7 @@ import { userController } from "./userController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./userSchemas.ts";
 import { UserParams, GetUserResponse, GetUsersResponse, uploadAvatar, uploadAvatarResponse } from "./userTypes.ts";
+import { CreateUserResponse } from "../authService/authTypes.ts";
 
 async function userRoutes(fastify: FastifyInstance) {
   // GET /users/:id - Get single user (protected)
@@ -40,7 +41,8 @@ async function userRoutes(fastify: FastifyInstance) {
       preHandler: requireAuth,
       schema: {
         tags: ["users"],
-        description: "Upload avatar image (requires authentication, multipart/form-data). After upload, avatars are publicly accessible at /uploads/avatars/{filename}",
+        description: "Upload avatar image (requires authentication, multipart/form-data).\
+          After upload, avatars are publicly accessible at /uploads/avatars/{filename}",
         security: [{ bearerAuth: [] }],
         consumes: ["multipart/form-data"],
         ...UserSchemas.uploadAvatar
@@ -48,6 +50,36 @@ async function userRoutes(fastify: FastifyInstance) {
     },
     userController.uploadAvatar
   );
+
+  // PATCH /users/:id/email - Change user email (protected)
+  fastify.patch<{ Params: UserParams; Reply: GetUserResponse }>(
+    "/users/:id/email",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Change user email (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.changeEmail
+      }
+    },
+    userController.changeEmail
+  );
+
+  // PATCH /users/:id/username - Change username (protected)
+  fastify.patch<{ Params: UserParams; Reply: GetUserResponse }>(
+    "/users/:id/username",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Change username (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.changeUsername
+      }
+    },
+    userController.changeUsername
+  )
 }
 
 export default userRoutes;

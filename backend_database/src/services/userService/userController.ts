@@ -130,5 +130,80 @@ export const userController = {
     }
   ),
 
+  changeEmail: createHandler<{ Params: UserParams }, GetUserResponse>(
+    async (request, { db }) => {
+      const { id } = request.params;
+      const tokenUserId = request.user?.id;
+      const { email } = request.body as { email: string };
 
+      // Ensure the user can only update their own data
+      if (tokenUserId !== parseInt(id)) {
+        throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
+      }
+
+      // Schema already validates email format and required field
+      // Check if email is already in use by another user
+      const existingEmail = await db.get<User>(
+        "SELECT id FROM users WHERE email = ? AND id != ?",
+        [email.trim(), id]
+      );
+      if (existingEmail) {
+        throw errors.conflict("Email is already in use by another account");
+      }
+
+      // Update email
+      await db.run(
+        "UPDATE users SET email = ? WHERE id = ?",
+        [email.trim(), id]
+      );
+
+      const updatedUser = await db.get<User>(
+        "SELECT id, username, email, created_at FROM users WHERE id = ?",
+        [id]
+      );
+      if (!updatedUser) {
+        throw errors.notFound("User");
+      }
+
+      return ApiResponseHelper.success(updatedUser, "Email updated successfully");
+    }
+  ),
+
+  changeUsername: createHandler<{ Params: UserParams }, GetUserResponse>(
+    async (request, { db }) => {
+      const { id } = request.params;
+      const tokenUserId = request.user?.id;
+      const { username } = request.body as { username: string };
+
+      // Ensure the user can only update their own data
+      if (tokenUserId !== parseInt(id)) {
+        throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
+      }
+      
+      // Check if username is already in use by another user
+      const existingUsername = await db.get<User>(
+        "SELECT id FROM users WHERE username = ? AND id != ?",
+        [username.trim(), id]
+      );
+      if (existingUsername) {
+        throw errors.conflict("Username is already in use by another account");
+      }
+
+      // Update username
+      await db.run(
+        "UPDATE users SET username = ? WHERE id = ?",
+        [username.trim(), id]
+      );
+
+      const updatedUser = await db.get<User>(
+        "SELECT id, username, email, created_at FROM users WHERE id = ?",
+        [id]
+      );
+      if (!updatedUser) {
+        throw errors.notFound("User");
+      }
+
+      return ApiResponseHelper.success(updatedUser, "Username updated successfully");
+    }
+  )
 };

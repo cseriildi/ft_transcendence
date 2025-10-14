@@ -1,0 +1,56 @@
+-2FA
+⚠️ Backup codes: If user loses phone, they're locked out forever
+⚠️ Password verification: Anyone with userId can disable 2FA currently
+⚠️ Rate limiting: No protection against brute-force token guessing (1/1,000,000 chance per attempt)
+⚠️ Login integration: 2FA setup exists but isn't enforced during actual login
+
+        (optinal) add rate limiting
+            Industry Best Practice for 2FA:
+            Your Setup vs Production:
+            Feature	Your Setup	Typical Production
+                Global rate limit	✅ 5/sec per IP	✅ 100/sec per IP
+                Per-user 2FA limit	❌ None	        ✅ 5 per 15 min
+                Account lockout	    ❌ None	        ✅ After 5 fails
+            Failed attempt logging	❌ None	        ✅ Logged + alerted
+
+-test real Oauth for github
+
+-Protect more routes (figure what routes should be protected how)
+
+-Protect websocket connection -> other conatiners (chat and game) should "foreward" access tokens upon websocket conenction to DB service for authentication
+
+-Add post routes to GameLogic to post gamescore upon completion
+
+-Gamelogic should automatically close game and sockets on game end
+
+-Gamelogic should extract player Ids from JWT after authentication
+
+-Gamelogic should automatically assign players (max 2) to individual games
+
+-update routes and DB manipulation:
+
+    ✅ Users can securely subscribe to the website.
+    ✅ Registered users can securely log in.
+    ✅ Users can select a unique display name to participate in tournaments.
+    ✅ Users can update their information.
+    ✅ Users can upload an avatar, with a default option if none is provided.
+    ? Users can add others as friends and view their online status.
+    ? User profiles display stats, such as wins and losses.
+    ? Each user has a Match History including 1v1 games, dates, and relevant
+    details, accessible to logged-in users.
+
+-Features to implement:
+User can play local 2 player (no login) or against Ai
+User can register and post an avatar
+User can change avatar
+User can access global (and individual?) chat
+User can block other users
+User can invite other players via chat
+Players can accept invite
+? Invites are only valid while inviting player is "online"
+Game disconnection handled?
+Tournament mode ->local simple version
+Players can join a game from defferent pcs in the same local network
+? Users can delete account
+Users can see past games
+? Users can see other players profiles

@@ -6,7 +6,6 @@ export interface User {
   username: string;
   email: string;
   created_at: string;
-  password_hash?: string; // Optional, not returned in responses
 }
 export interface uploadAvatar {
   username: string;
@@ -17,6 +16,14 @@ export interface uploadAvatar {
 // URL parameters for user routes
 export interface UserParams {
   id: string;
+}
+
+export interface ChangeEmailBody {
+  email: string;
+}
+
+export interface ChangeUsernameBody {
+  username: string;
 }
 
 // Response types
