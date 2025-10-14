@@ -12,6 +12,12 @@ async function errorHandler(fastify: FastifyInstance) {
       method: request.method,
     });
 
+    // Handle Fastify validation errors
+    if (error.validation) {
+      reply.status(400);
+      return ApiResponseHelper.error("VALIDATION_ERROR", error.message);
+    }
+
     // Handle known errors
     if (error instanceof AppError) {
       reply.status(error.statusCode);

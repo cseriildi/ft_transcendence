@@ -22,7 +22,14 @@ export const AuthSchemas = {
             properties: {
               id: { type: "number" },
               username: { type: "string" },
-              email: { type: "string" }
+              email: { type: "string" },
+              created_at: { type: "string" },
+              tokens: {
+                type: "object",
+                properties: {
+                  accessToken: { type: "string" }
+                }
+              }
             }
           },
           message: { type: "string" },
@@ -67,8 +74,16 @@ export const AuthSchemas = {
           data: {
             type: "object",
             properties: {
-              accessToken: { type: "string" },
-              refreshToken: { type: "string" }
+              id: { type: "number" },
+              username: { type: "string" },
+              email: { type: "string" },
+              created_at: { type: "string" },
+              tokens: {
+                type: "object",
+                properties: {
+                  accessToken: { type: "string" }
+                }
+              }
             }
           },
           message: { type: "string" },
