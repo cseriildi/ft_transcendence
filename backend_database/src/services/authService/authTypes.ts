@@ -31,6 +31,7 @@ export interface CreateUserBody {
   email: string;
   password: string;
   confirmPassword: string;
+  avatar_url?: string; // Optional avatar URL (will be populated by file upload)
 }
 
 export interface UpdateUserBody {

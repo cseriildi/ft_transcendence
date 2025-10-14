@@ -59,14 +59,31 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
     await run(`
       CREATE TABLE IF NOT EXISTS matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        winner TEXT NOT NULL,
-        loser TEXT NOT NULL,
+        winner_name TEXT NOT NULL,
+        loser_name TEXT NOT NULL,
         winner_score INTEGER NOT NULL,
         loser_score INTEGER NOT NULL,
         played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (winner) REFERENCES users(username),
-        FOREIGN KEY (loser) REFERENCES users(username)
+        FOREIGN KEY (winner) REFERENCES users(username) ON DELETE NULL,
+        FOREIGN KEY (loser) REFERENCES users(username) ON DELETE NULL
       )`);
+    
+    await run(`
+      CREATE TABLE IF NOT EXISTS avatars (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        file_path TEXT NOT NULL,
+        file_url TEXT NOT NULL,
+        file_name TEXT NOT NULL,
+        mime_type TEXT NOT NULL,
+        file_size INTEGER NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`);
+    
+    await run(`CREATE INDEX IF NOT EXISTS idx_avatars_user_id ON avatars(user_id)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_avatars_active ON avatars(user_id, is_active)`);
+    
     fastify.log.info("Database schema initialized");
   };
 
