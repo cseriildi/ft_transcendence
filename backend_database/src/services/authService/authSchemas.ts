@@ -1,52 +1,190 @@
-import Ajv from 'ajv';
-// plugin that speaks for itself
-import addFormats from "ajv-formats";
+export const AuthSchemas = {
+  // POST /auth/register
+  register: {
+    body: {
+      type: "object" as const,
+      properties: {
+        username: { type: "string", minLength: 3, maxLength: 15 },
+        email: { type: "string", format: "email" },
+        password: { type: "string", minLength: 8, maxLength: 20 },
+        confirmPassword: { type: "string", minLength: 8 }
+      },
+      required: ["username", "email", "password", "confirmPassword"],
+      additionalProperties: false
+    },
+    response: {
+      201: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "object",
+            properties: {
+              id: { type: "number" },
+              username: { type: "string" },
+              email: { type: "string" }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      400: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      409: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  },
 
-const ajv = new Ajv({coerceTypes: true, allErrors: true}); // options can be passed, e.g. to allow coercion of types
-addFormats(ajv);
+  // POST /auth/login
+  login: {
+    body: {
+      type: "object" as const,
+      properties: {
+        email: { type: "string", format: "email" },
+        password: { type: "string", minLength: 8 }
+      },
+      required: ["email", "password"],
+      additionalProperties: false
+    },
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "object",
+            properties: {
+              accessToken: { type: "string" },
+              refreshToken: { type: "string" }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      401: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  },
 
-// Just need to specify what is expected from a schema,
-// then compile a validator for that schema into a function
-// which takes the schema you want to compare as a parameter
-const CreateUserSchema = {
-	type: "object",
-	properties: {
-		username: {type: "string", minLength: 3, maxLength: 15},
-		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, maxLength: 20},
-		confirmPassword: {type: "string", minLength: 8}
-	},
-	required: ["username", "email", "password", "confirmPassword"], // all properties required
-	additionalProperties: false
-}
+// POST /auth/refresh
+  refresh: {
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "object",
+            properties: {
+              id: { type: "number" },
+              username: { type: "string" },
+              email: { type: "string" },
+              created_at: { type: "string" },
+              tokens: {
+                type: "object",
+                properties: {
+                  accessToken: { type: "string" }
+                }
+              }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      401: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  },
 
-const UpdateUserSchema = {
-	type: "object",
-	properties: {
-		username: {type: "string", minLength: 3},
-		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8, maxLength: 20 }
-	},
-	required: [], //all properties optional
-	additionalProperties: false
-}
+  // POST /auth/logout
+  logout: {
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "object",
+            properties: {
+              message: { type: "string" }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      401: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  },
 
-const UserLoginSchema = {
-	type: "object",
-	properties: {
-		email: {type: "string", format: "email"},
-		password: {type: "string", minLength: 8}
-	},
-	required: ["email", "password"], // all properties required
-	additionalProperties: false
-}
+  // GET /auth/verify
+  verify: {
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "object",
+            properties: {
+              verified: { type: "boolean" }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      401: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      404: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  }
+};
 
-// each schema needs to be compiled once
-export const AuthSchemaValidator = {
-	validateCreateUser:
-		ajv.compile(CreateUserSchema),
-	validateUpdateUser:
-		ajv.compile(UpdateUserSchema),
-	validateUserLogin:
-		ajv.compile(UserLoginSchema)
-}

@@ -9,7 +9,6 @@ import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
-import { UserSchemaValidator } from "./userSchemas.ts";
 
 export const userController = {
 
@@ -21,8 +20,6 @@ export const userController = {
   // ),
   getUserById: createHandler<{ Params: UserParams }, GetUserResponse>(
     async (request, { db }) => {
-      const valid = UserSchemaValidator.validateUserParams(request.params);
-      if (!valid) throw errors.validation("Invalid request parameters");
       const { id } = request.params;
       const tokenUserId = request.user?.id;
 
