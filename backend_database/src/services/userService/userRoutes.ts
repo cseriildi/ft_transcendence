@@ -40,7 +40,7 @@ async function userRoutes(fastify: FastifyInstance) {
       preHandler: requireAuth,
       schema: {
         tags: ["users"],
-        description: "Upload avatar image (requires authentication, multipart/form-data)",
+        description: "Upload avatar image (requires authentication, multipart/form-data). After upload, avatars are publicly accessible at /uploads/avatars/{filename}",
         security: [{ bearerAuth: [] }],
         consumes: ["multipart/form-data"],
         ...UserSchemas.uploadAvatar
@@ -48,8 +48,6 @@ async function userRoutes(fastify: FastifyInstance) {
     },
     userController.uploadAvatar
   );
-
-  fastify.get('/users/avatar/:filename', userController.serveAvatar);
 }
 
 export default userRoutes;

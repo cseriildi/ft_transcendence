@@ -110,7 +110,7 @@ export const UserSchemas = {
                 type: "object",
                 properties: {
                   username: { type: "string" },
-                  avatar_url: { type: "string" },
+                  avatar_url: { type: "string", description: "Public URL to access the avatar (e.g., /uploads/avatars/abc123.png)" },
                   created_at: { type: "string" }
                 }
               },
