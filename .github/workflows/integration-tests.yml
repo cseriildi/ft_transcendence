@@ -9,8 +9,117 @@ on:
   workflow_call:
 
 jobs:
-    dummy-job:
-      runs-on: ubuntu-latest
-      steps:
-        - name: Dummy step
-          run: echo "This is a placeholder for integration tests."
+  test-gateway-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate SSL certificates
+        run: |
+          chmod +x ./scripts/certs.sh
+          ./scripts/certs.sh
+
+      - name: Build and start services
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to start..."
+          sleep 30
+
+          # Check if all containers are running
+          docker compose ps
+
+          # Wait for services to be healthy
+          timeout=60
+          while [ $timeout -gt 0 ]; do
+            if curl -k -s https://localhost:8443/api/health > /dev/null 2>&1; then
+              echo "Services are ready!"
+              break
+            fi
+            echo "Waiting for services... ($timeout seconds left)"
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+
+          if [ $timeout -eq 0 ]; then
+            echo "Services failed to start within timeout"
+            docker compose logs
+            exit 1
+          fi
+
+      - name: Test HTTPS frontend access
+        run: |
+          echo "Testing HTTPS frontend access..."
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443)
+          if [ "$response" != "200" ]; then
+            echo "ERROR: HTTPS frontend access failed. Expected 200, got $response"
+            exit 1
+          fi
+          echo "HTTPS frontend accessible (200)"
+
+      - name: Test API routing through gateway
+        run: |
+          echo "Testing API routing..."
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/api/health)
+          if [ "$response" != "200" ]; then
+            echo "ERROR: API routing failed. Expected 200, got $response"
+            exit 1
+          fi
+          echo "API routing working (200)"
+
+      - name: Test Auth routing through gateway
+        run: |
+          echo "Testing Auth routing..."
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' https://localhost:8443/auth/register)
+          if [ "$response" != "400" ]; then
+            echo "ERROR: Auth routing failed. Expected 400 (validation error), got $response"
+            exit 1
+          fi
+          echo "Auth routing working (400 - validation error as expected)"
+
+      - name: Test container health
+        run: |
+          echo "Testing container health..."
+
+          containers=$(docker compose ps --services)
+          for container in $containers; do
+            status=$(docker compose ps -q $container | xargs docker inspect --format='{{.State.Status}}')
+            if [ "$status" != "running" ]; then
+              echo "ERROR: Container $container is not running (status: $status)"
+              exit 1
+            fi
+            echo "Container $container is running"
+          done
+
+      - name: Test service connectivity
+        run: |
+          echo "Testing internal service connectivity..."
+
+          db_response=$(docker compose exec -T databank curl -s http://localhost:3000/health || echo "failed")
+          if [[ "$db_response" == *"healthy"* ]]; then
+            echo "Database service healthy"
+          else
+            echo "ERROR: Database service unhealthy: $db_response"
+            exit 1
+          fi
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== NGINX LOGS ==="
+          docker compose logs nginx
+          echo "=== DATABASE LOGS ==="
+          docker compose logs databank
+          echo "=== GAME LOGS ==="
+          docker compose logs backend
+          echo "=== FRONTEND LOGS ==="
+          docker compose logs frontend
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          docker system prune -f
