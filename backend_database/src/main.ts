@@ -26,7 +26,7 @@ export async function build(opts: BuildOptions = {}) {
 
   try {
     //-------------------------------- Swagger Setup --------------------------------
-  if (appConfig.server.env === 'development') {
+    if (appConfig.server.env === 'development') {
       await app.register(import('@fastify/swagger'), {
         openapi: {
           info: {
@@ -35,7 +35,7 @@ export async function build(opts: BuildOptions = {}) {
             version: '1.0.0'
           },
           servers: [{
-            url: `http://${appConfig.server.host}:${appConfig.server.port}`,
+            url: `http://localhost:${appConfig.server.port}`,
             description: 'Development server'
           }],
           components: {
@@ -56,7 +56,18 @@ export async function build(opts: BuildOptions = {}) {
           ]
         }
       });
-      //------------------------------------
+
+      await app.register(import('@fastify/swagger-ui'), {
+        routePrefix: '/docs',
+        uiConfig: {
+          docExpansion: 'list',
+          deepLinking: true
+        },
+        staticCSP: true
+      });
+    }
+    //------------------------------------
+    
     if (!disableRateLimit) {
       await app.register(rateLimit, { max: 5, timeWindow: "1 second" });
     }
@@ -66,8 +77,7 @@ export async function build(opts: BuildOptions = {}) {
     await app.register(routes);
 
     return app;
-  } 
-  }catch (err) {
+  } catch (err) {
     app.log.error(err);
     throw err;
   }
@@ -78,7 +88,7 @@ const start = async () => {
     const app = await build();
     await app.listen({ port: appConfig.server.port, host: appConfig.server.host });
     if (appConfig.server.env === 'development') {
-        console.log(`📚 Swagger docs available at http://${appConfig.server.host}:${appConfig.server.port}/docs`);
+        console.log(`📚 Swagger docs available at http://localhost:${appConfig.server.port}/docs`);
       }
   } catch (err) {
     console.error(err);
