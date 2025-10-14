@@ -97,5 +97,43 @@ export const UserSchemas = {
         }
       }
     }
+  },
+
+  // Upload avatar
+  uploadAvatar: {
+    response: {
+          200: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              data: {
+                type: "object",
+                properties: {
+                  username: { type: "string" },
+                  avatar_url: { type: "string" },
+                  created_at: { type: "string" }
+                }
+              },
+              message: { type: "string" },
+              timestamp: { type: "string" }
+            }
+          },
+          400: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              timestamp: { type: "string" }
+            }
+          },
+          401: {
+            type: "object",
+            properties: {
+              success: { type: "boolean" },
+              message: { type: "string" },
+              timestamp: { type: "string" }
+            }
+          }
+        }
   }
 };

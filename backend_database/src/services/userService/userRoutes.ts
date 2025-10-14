@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { userController } from "./userController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./userSchemas.ts";
-import { UserParams, GetUserResponse, GetUsersResponse } from "./userTypes.ts";
+import { UserParams, GetUserResponse, GetUsersResponse, uploadAvatar, uploadAvatarResponse } from "./userTypes.ts";
 
 async function userRoutes(fastify: FastifyInstance) {
   // GET /users/:id - Get single user (protected)
@@ -34,7 +34,7 @@ async function userRoutes(fastify: FastifyInstance) {
   );
 
   // POST /users/avatar - Upload avatar (protected)
-  fastify.post<{ Reply: GetUserResponse }>(
+  fastify.post<{ Reply: uploadAvatarResponse }>(
     "/users/avatar",
     {
       preHandler: requireAuth,
@@ -43,44 +43,13 @@ async function userRoutes(fastify: FastifyInstance) {
         description: "Upload avatar image (requires authentication, multipart/form-data)",
         security: [{ bearerAuth: [] }],
         consumes: ["multipart/form-data"],
-        response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  username: { type: "string" },
-                  avatar_url: { type: "string" },
-                  created_at: { type: "string" }
-                }
-              },
-              message: { type: "string" },
-              timestamp: { type: "string" }
-            }
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-              timestamp: { type: "string" }
-            }
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-              timestamp: { type: "string" }
-            }
-          }
-        }
+        ...UserSchemas.uploadAvatar
       }
     },
     userController.uploadAvatar
   );
+
+  fastify.get('/users/avatar/:filename', userController.serveAvatar);
 }
 
 export default userRoutes;

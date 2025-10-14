@@ -43,6 +43,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(oauth_provider, oauth_id)
       )`);
+
     await run(`
       CREATE TABLE IF NOT EXISTS refresh_tokens (
         jti TEXT PRIMARY KEY,
@@ -59,13 +60,13 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
     await run(`
       CREATE TABLE IF NOT EXISTS matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        winner_name TEXT NOT NULL,
-        loser_name TEXT NOT NULL,
+        winner_name TEXT,
+        loser_name TEXT,
         winner_score INTEGER NOT NULL,
         loser_score INTEGER NOT NULL,
         played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (winner) REFERENCES users(username) ON DELETE NULL,
-        FOREIGN KEY (loser) REFERENCES users(username) ON DELETE NULL
+        FOREIGN KEY (winner_name) REFERENCES users(username) ON DELETE SET NULL,
+        FOREIGN KEY (loser_name) REFERENCES users(username) ON DELETE SET NULL
       )`);
     
     await run(`
@@ -82,7 +83,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
       )`);
     
     await run(`CREATE INDEX IF NOT EXISTS idx_avatars_user_id ON avatars(user_id)`);
-    await run(`CREATE INDEX IF NOT EXISTS idx_avatars_active ON avatars(user_id, is_active)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_avatars_active ON avatars(user_id)`);
     
     fastify.log.info("Database schema initialized");
   };

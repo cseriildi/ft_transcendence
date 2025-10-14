@@ -29,7 +29,7 @@ export const matchController = {
 		  }	
 		  try {
 			const result = await db.run(
-			  `INSERT INTO matches (winner, loser, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
+			  `INSERT INTO matches (winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
 			  [winner, loser, winner_score, loser_score]
 			);
 			const match: Match = {
@@ -64,7 +64,8 @@ export const matchController = {
 
 				// Then get their matches
 				const matches = await db.all<Match>(
-					`SELECT * FROM matches WHERE winner = ? OR loser = ? ORDER BY played_at DESC`,
+					`SELECT id, winner_name as winner, loser_name as loser, winner_score, loser_score, played_at 
+					 FROM matches WHERE winner_name = ? OR loser_name = ? ORDER BY played_at DESC`,
 					[username, username]
 				);
 				return ApiResponseHelper.success<Match[]>(matches, "Match retrieved successfully");

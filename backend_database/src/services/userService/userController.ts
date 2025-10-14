@@ -4,6 +4,8 @@ import {
   UserParams,
   GetUserResponse,
   GetUsersResponse,
+  uploadAvatarResponse,
+  uploadAvatar
 } from "./userTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
@@ -50,7 +52,7 @@ export const userController = {
     }
   ),
 
-  uploadAvatar: createHandler<{}, GetUserResponse>(
+  uploadAvatar: createHandler<{}, uploadAvatarResponse>(
     async (request, { db }) => {
       const userId = request.user!.id;
       
@@ -60,55 +62,64 @@ export const userController = {
       }
 
       let avatarUrl: string | undefined;
-      let oldAvatarUrl: string | undefined;
+      let filePath: string | undefined;
+      let oldAvatarUrl: string | null = null;
+      let fileMetadata: { filename: string; mimetype: string; fileSize: number } | undefined;
 
       try {
         // Get current avatar URL (for cleanup)
-        const currentUser = await db.get<User>(
-          "SELECT avatar_url FROM users WHERE id = ?",
+        const existingAvatar = await db.get<{ file_url: string } | undefined>(
+          "SELECT file_url FROM avatars WHERE user_id = ?",
           [userId]
         );
-        
-        if (currentUser?.avatar_url && currentUser.avatar_url.startsWith('/uploads/')) {
-          oldAvatarUrl = currentUser.avatar_url;
-        }
+        oldAvatarUrl = existingAvatar?.file_url || null;
 
         // Process multipart data
         const parts = request.parts();
         
         for await (const part of parts) {
           if (part.type === 'file' && part.fieldname === 'avatar') {
-            avatarUrl = await saveUploadedFile(part as MultipartFile);
+            const file = part as MultipartFile;
+            avatarUrl = await saveUploadedFile(file);
+            // Convert URL path to file system path
+            filePath = avatarUrl.replace(/^\/uploads\/avatars\//, '');
+            fileMetadata = {
+              filename: file.filename,
+              mimetype: file.mimetype,
+              fileSize: (file as any).file?.bytesRead || 0
+            };
             break; // Only process first avatar file
           }
         }
 
-        if (!avatarUrl) {
+        if (!avatarUrl || !fileMetadata || !filePath) {
           throw errors.validation("No avatar file provided in request");
         }
 
-        // Update user's avatar_url
-        await db.run(
-          "UPDATE users SET avatar_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-          [avatarUrl, userId]
-        );
-
-        // Delete old avatar file if it exists
+        // Update or insert avatar record
         if (oldAvatarUrl) {
+          await db.run(
+            "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
+            [filePath, avatarUrl, fileMetadata.filename, fileMetadata.mimetype, fileMetadata.fileSize, userId]
+          );
           await deleteUploadedFile(oldAvatarUrl);
+        } else {
+          await db.run(
+            "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [userId, filePath, avatarUrl, fileMetadata.filename, fileMetadata.mimetype, fileMetadata.fileSize]
+          );
         }
 
-        // Fetch updated user
-        const updatedUser = await db.get<User>(
-          "SELECT id, username, email, avatar_url, created_at FROM users WHERE id = ?",
+        const result = await db.get<uploadAvatar>(
+          "SELECT u.username, a.file_url as avatar_url, a.created_at FROM users u JOIN avatars a ON u.id = a.user_id WHERE u.id = ?",
           [userId]
         );
 
-        if (!updatedUser) {
-          throw errors.notFound("User");
+        if (!result) {
+          throw errors.internal("Failed to retrieve uploaded avatar information");
         }
 
-        return ApiResponseHelper.success(updatedUser, "Avatar uploaded successfully");
+        return ApiResponseHelper.success(result, "Avatar uploaded successfully");
       } catch (err: any) {
         // Clean up newly uploaded file if update fails
         if (avatarUrl) {
