@@ -25,12 +25,55 @@ export async function build(opts: BuildOptions = {}) {
     });
 
   try {
+    //-------------------------------- Swagger Setup --------------------------------
+    if (appConfig.server.env === 'development') {
+      await app.register(import('@fastify/swagger'), {
+        openapi: {
+          info: {
+            title: 'Fastify API',
+            description: 'API documentation for Fastify backend',
+            version: '1.0.0'
+          },
+          servers: [{
+            url: `http://localhost:${appConfig.server.port}`,
+            description: 'Development server'
+          }],
+          components: {
+            securitySchemes: {
+              bearerAuth: {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT'
+              }
+            }
+          },
+          tags: [
+            { name: 'health', description: 'Health check endpoints' },
+            { name: 'auth', description: 'Authentication endpoints' },
+            { name: 'oauth', description: 'OAuth (GitHub) endpoints' },
+            { name: 'users', description: 'User management endpoints' },
+            { name: 'matches', description: 'Match endpoints' }
+          ]
+        }
+      });
+
+      await app.register(import('@fastify/swagger-ui'), {
+        routePrefix: '/docs',
+        uiConfig: {
+          docExpansion: 'list',
+          deepLinking: true
+        },
+        staticCSP: true
+      });
+    }
+    //------------------------------------
+    
     if (!disableRateLimit) {
       await app.register(rateLimit, { max: 5, timeWindow: "1 second" });
     }
     await app.register(dbConnector, { path: database?.path ?? appConfig.database.path });
     await app.register(errorHandler);
-    await app.register(import("@fastify/cookie")); // Add this line
+    await app.register(import("@fastify/cookie"));
     await app.register(routes);
 
     return app;
@@ -38,12 +81,15 @@ export async function build(opts: BuildOptions = {}) {
     app.log.error(err);
     throw err;
   }
-}
+};
 
 const start = async () => {
   try {
     const app = await build();
     await app.listen({ port: appConfig.server.port, host: appConfig.server.host });
+    if (appConfig.server.env === 'development') {
+        console.log(`📚 Swagger docs available at http://localhost:${appConfig.server.port}/docs`);
+      }
   } catch (err) {
     console.error(err);
     process.exit(1);

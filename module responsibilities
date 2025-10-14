@@ -1,0 +1,36 @@
+silas:
+MAJ ✅ Use Framwork to do the backend
+MIN ✅ Use Database and more
+MAJ ✅❌ Standart User Management
+MAJ ✅❌ Remote Authentication (not tested)
+MAJ ✅ 2FA and JWT
+MAJ ✅❌ Backend Pong (half done needs scaling for multiplayer)
+COR ✅ Game Core
+COR ✅ Backend
+
+Tim:
+MIN ✅ Use a Framework for Frontend
+COR ✅ SPA
+MIN ❌ Stats and Dashboard (w silas-User management)
+MAJ ❌ Introduce AI Opponent
+
+Dimash:
+MAJ ❌ Blockchain
+MAJ ✅❌ Microservices (already in place who does conenction Daniel/Dimash)
+MAJ ✅ Livechat
+
+Daniel:
+MAJ ✅❌ Remote players
+MAJ ✅❌ Multiple players
+COR ✅ Containerization
+
+Ildi:
+MIN ✅❌ Support on all devices
+MIN ✅❌ Expanding Browser capability
+MIN ✅❌ Multiple Language support
+MIN ✅❌ Accessablity
+COR ✅❌ tournament System
+COR ✅❌ Security QA
+
+14,5 modules
+11 Maj and 7 Minor

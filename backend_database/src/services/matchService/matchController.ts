@@ -10,13 +10,11 @@ import {
 	  CreateMatchResponse,
 	  GetMatchesQuery,
 } from "./matchTypes.ts";
-import { MatchSchemaValidator } from "./matchSchemas.ts";
 
 export const matchController = {
 	  createMatch: createHandler<{ Body: CreateMatchBody }, CreateMatchResponse>(
 		async (request, { db, reply }) => {
-		  const valid = MatchSchemaValidator.validateCreateMatch(request.body);
-		  if (!valid) throw errors.validation("Invalid request body");
+		  // ✅ Validation now handled by Fastify schema
 		  const { winner, loser, winner_score, loser_score } = request.body;
 		  try {
 			const playersExist = await db.get<{ count: number }>(
@@ -52,8 +50,7 @@ export const matchController = {
 
 	  getMatches: createHandler<{ Params: GetMatchesQuery }, GetMatchesResponse>(
 		async (request, { db }) => {
-			const valid = MatchSchemaValidator.validateMatchQuery(request.params);
-			if (!valid) throw errors.validation("Invalid query parameters");
+			// ✅ Validation now handled by Fastify schema
 			const {username} = request.params;
 			try {
 				// First check if the user exists

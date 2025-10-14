@@ -1,27 +1,37 @@
-// src/routes/users.ts
-import { FastifyInstance, FastifyReply } from "fastify";
-import {
-  UserParams,
-  GetUserResponse,
-  GetUsersResponse,
-  UserErrorResponse,
-} from "./userTypes.ts";
-import "../../types/fastifyTypes.ts";
+import { FastifyInstance } from "fastify";
 import { userController } from "./userController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
-
+import { UserSchemas } from "./userSchemas.ts";
+import { UserParams, GetUserResponse, GetUsersResponse } from "./userTypes.ts";
 
 async function userRoutes(fastify: FastifyInstance) {
-  fastify.get<{
-    Params: UserParams;
-    Reply: GetUserResponse | UserErrorResponse;
-  }>("/users/:id",
-      { preHandler: requireAuth },
-       userController.getUserById);
+  // GET /users/:id - Get single user (protected)
+  fastify.get<{ Params: UserParams; Reply: GetUserResponse }>(
+    "/users/:id",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Get user by ID (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.getUser
+      }
+    },
+    userController.getUserById
+  );
 
-  fastify.get<{
-    Reply: GetUsersResponse | UserErrorResponse;
-  }>("/users", userController.getUsers);
+  // GET /users - Get all users
+  fastify.get<{ Reply: GetUsersResponse }>(
+    "/users",
+    {
+      schema: {
+        tags: ["users"],
+        description: "Get all users",
+        ...UserSchemas.getUsers
+      }
+    },
+    userController.getUsers
+  );
 }
 
 export default userRoutes;

@@ -1,25 +1,101 @@
-import Ajv from 'ajv';
-// plugin that speaks for itself
-import addFormats from "ajv-formats";
+export const UserSchemas = {
+  // User params validation
+  userParams: {
+    type: "object" as const,
+    properties: {
+      id: { type: "number", minimum: 1 }
+    },
+    required: ["id"]
+  },
 
+  // User object for responses
+  userObject: {
+    type: "object" as const,
+    properties: {
+      id: { type: "number" },
+      username: { type: "string" },
+      email: { type: "string" },
+      created_at: { type: "string", format: "date-time" }
+    }
+  },
 
-const ajv = new Ajv({coerceTypes: true, allErrors: true}); // options can be passed, e.g. to allow coercion of types
-addFormats(ajv);
-// Just need to specify what is expected from a schema,
-// then compile a validator for that schema into a function
-// which takes the schema you want to compare as a parameter
+  // Get user by ID
+  getUser: {
+    params: {
+      type: "object" as const,
+      properties: {
+        id: { type: "number", minimum: 1 }
+      },
+      required: ["id"]
+    },
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "object",
+            properties: {
+              id: { type: "number" },
+              username: { type: "string" },
+              email: { type: "string" },
+              created_at: { type: "string" }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      401: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      403: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      },
+      404: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  },
 
-const UserParamSchema = {
-	type: "object",
-	properties: {
-		id: {type: "number", minimum: 1},
-	},
-	required: ["id"],
-	additionalProperties: false
-}
-
-// each schema needs to be compiled once
-export const UserSchemaValidator = {
-	validateUserParams:
-		ajv.compile(UserParamSchema),
-}
+  // Get all users
+  getUsers: {
+    response: {
+      200: {
+        type: "object",
+        properties: {
+          success: { type: "boolean" },
+          data: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: { type: "number" },
+                username: { type: "string" },
+                email: { type: "string" },
+                created_at: { type: "string" }
+              }
+            }
+          },
+          message: { type: "string" },
+          timestamp: { type: "string" }
+        }
+      }
+    }
+  }
+};

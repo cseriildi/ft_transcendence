@@ -1,37 +1,76 @@
-import { FastifyInstance, FastifyReply } from "fastify";
-import "../../types/fastifyTypes.ts";
+import { FastifyInstance } from "fastify";
 import { authController } from "./authController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
-import {
-  CreateUserBody,
-  CreateUserResponse,
-  UserErrorResponse,
-  UserLoginBody,
-  UserLoginResponse,
-} from "./authTypes.ts";
+import { AuthSchemas } from "./authSchemas.ts";
+import { CreateUserBody, CreateUserResponse, UserLoginBody, UserLoginResponse } from "./authTypes.ts";
 
 async function authRoutes(fastify: FastifyInstance) {
-  fastify.post<{
-    Body: CreateUserBody;
-    Reply: CreateUserResponse | UserErrorResponse;
-  }>("/register", authController.createUser);
+  // POST /auth/register
+  fastify.post<{ Body: CreateUserBody; Reply: CreateUserResponse }>(
+    "/register",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Register a new user account",
+        ...AuthSchemas.register
+      }
+    },
+    authController.createUser
+  );
 
-  fastify.post<{
-    Body: UserLoginBody;
-    Reply: UserLoginResponse | UserErrorResponse;
-  }>("/login", authController.loginUser);
+  // POST /auth/login
+  fastify.post<{ Body: UserLoginBody; Reply: UserLoginResponse }>(
+    "/login",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Login with email and password",
+        ...AuthSchemas.login
+      }
+    },
+    authController.loginUser
+  );
 
-  fastify.post<{
-    Reply: UserLoginResponse | UserErrorResponse;
-  }>("/refresh", authController.refresh);
+  // POST /auth/refresh
+  fastify.post<{ Reply: UserLoginResponse }>(
+    "/refresh",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Refresh access token using refresh token cookie",
+        ...AuthSchemas.refresh
+      }
+    },
+    authController.refresh
+  );
 
-  fastify.get<{
-    Reply: {verified : boolean};
-  }>("/verify",
-    { preHandler: requireAuth }
-    , authController.verifyToken);
+  // POST /auth/logout
+  fastify.post(
+    "/logout",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Logout user and revoke refresh token",
+        ...AuthSchemas.logout
+      }
+    },
+    authController.logout
+  );
 
-  fastify.post("/logout", authController.logout);
+  // GET /auth/verify
+  fastify.get(
+    "/verify",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["auth"],
+        description: "Verify access token validity (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...AuthSchemas.verify
+      }
+    },
+    authController.verifyToken
+  );
 }
 
 export default authRoutes;
