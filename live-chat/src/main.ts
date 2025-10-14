@@ -3,6 +3,7 @@ import { config, validateConfig } from "./config.ts";
 import dbConnector from "./database.ts";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
+import cors from "@fastify/cors";
 
 validateConfig();
 
@@ -17,17 +18,9 @@ await app.register(rateLimit, {
 await app.register(helmet, { global: true });
 await app.register(dbConnector, { path: config.database.path });
 
-app.addHook("onRequest", async (request, reply) => {
-  reply.header("Access-Control-Allow-Origin", "*");
-  reply.header(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  if (request.method === "OPTIONS") {
-    reply.code(200).send();
-  }
+await app.register(cors, {
+  origin: 'http://localhost:4200',
+  credentials: true
 });
 
 // Store active connections per chat room
@@ -69,7 +62,7 @@ await app.register(async (fastify) => {
     });
   });
 
-  fastify.post("/block", async (request, reply) => {
+  fastify.post("/lobby/block", async (request, reply) => {
     const { blocker, blocked } = request.body as {
       blocker: string;
       blocked: string;
@@ -123,17 +116,21 @@ await app.register(async (fastify) => {
 // Main lobby connection - users connect here first
 await app.register(async (fastify) => {
   fastify.get("/lobby", { websocket: true }, async (connection, req) => {
-    const username = req.query.username as string;
-    const token = req.query.token as string;
+    const {userId, username} = req.body as {
+      userId: number,
+      username: string,
+    };
+    const access = req.headers.authorization as string;
+    const token = access.substring(7);
 
-    if (!token || !username) {
+    if (!token || !username || !userID) {
       connection.close();
       return;
     }
 
     //Track user in lobby
     try {
-      const upstream = await fetch(`http://localhost:3000/api/users/1`, {
+      const upstream = await fetch(`http://localhost:3000/api/users/${userId}`, {
         method: "GET",
         headers: {
           authorization: `Bearer ${token}`,
@@ -143,11 +140,6 @@ await app.register(async (fastify) => {
         connection.close();
         return;
       }
-      // const json = await upstream.json();
-      // if (!json || !json.valid) {
-      //   connection.close();
-      //   return;
-      // }
     } catch (err) {
       fastify.log.error(err);
       connection.close();
@@ -288,7 +280,7 @@ await app.register(async (fastify) => {
         client.send(
           JSON.stringify({
             type: "system",
-            message: `${username} opened the chat.`,
+            message: `${username} is online.`,
           })
         );
       }
@@ -355,7 +347,7 @@ await app.register(async (fastify) => {
         client.send(
           JSON.stringify({
             type: "system",
-            message: `${username} closed the chat.`,
+            message: `${username} has left.`,
           })
         );
       }

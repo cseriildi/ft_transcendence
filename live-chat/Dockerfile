@@ -27,7 +27,7 @@ COPY . .
 
 # Set default environment variables (can be overridden)
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=3002
 ENV HOST=0.0.0.0
 ENV DATABASE_PATH=/app/data/database.db
 ENV LOG_LEVEL=info

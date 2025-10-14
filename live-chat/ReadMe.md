@@ -1,10 +1,96 @@
 # Simple chat setup:
-## How to test:
-### just run `npm run dev` and open `index.html` file in `src/www/` directory. Client will prompt you to enter your username and connect you to lobby route from where you can see other connected users (open multiple tabs to test).
-### Right now only local memory is utilized and message history is retrieved for every chat, so even if you open a new tab with the same username, chats with other users will be shown.
+## Integration
+### Initial request to connect user to lobby by front-end should be done using WS
+```javascript
+{
+    method: 'GET'
+    headers: {
+        'Content-type': 'application/json'
+        'Authorization': 'Bearer ${token}',
+    }
+    body: {
+        userId: number,
+        username: string,
+    },
+}
+```
 
+### In return Front End receives a list of all active users to output in the lobby
+```javascript
+{
+    type: "lobby_connected",
+    allUsers: string[],
+}
+```
 
-## ToDo:
-### 1. Setup the database to update user connections and token check upon connection.
-### 2. Manage blocked users.
-### 3. Use one websocket to manage all connections per client.
+### Already active users receive another message
+```javascript
+{
+    type: "user_list_update",
+    allUsers: string[],
+}
+```
+
+# One WS should be enough to communicate.
+
+## Chat connection
+### Clients connect to chat using /chats/:chatid route, in which 'chatid' is a string containing sorted usernames of users separated by dash. ("chats/user1-user2"). 
+### After connection is successful, Client receives a message 
+```javascript
+{
+    type: "chat_connected",
+    message: `Connected to chat ${chatId}`,
+    history: {
+        username: string,
+        message: string,
+        timestamp: number,
+    }[],
+}
+``` 
+
+### If a Client is blocked by another user, Client receives
+```javascript
+{
+    type: "error",
+    message: "You are blocked by this user and can not send messages",
+}
+```
+
+### Common messages are constructed in a following way and are not received by a sender, because front end can take care of outputting a message on a sender page before it reaches the receiver.
+```javascript
+{
+    type: "message",
+    username: string,
+    message: string,
+    timestamp: number,
+}
+```
+
+### When Client leaves the chatroom, other user will receive a message
+```javascript
+{
+    type: "system",
+    message: `${username} has left`
+}
+```
+### this should stop user from sending any messages to offline user.
+
+### When user opens the chat window the other user will receive
+```javascript
+{
+    type: "system",
+    message: `${username} is online`
+}
+```
+
+## Blocking
+### Clients should be able to block each other using route /lobby/block using POST request and request body
+```javascript
+{
+    blocker: string,
+    blocked: string,
+}
+```
+### Whether or not to pass access token for this request is not decided for now.
+
+### Client receives OK on successful block.
