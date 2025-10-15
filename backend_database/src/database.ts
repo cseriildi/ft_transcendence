@@ -79,17 +79,21 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         mime_type TEXT NOT NULL,
         file_size INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )`);
 
       await run(`CREATE TABLE IF NOT EXISTS friendships (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inviter_id INTEGER NOT NULL,
         user_id INTEGER NOT NULL,
         friend_id INTEGER NOT NULL,
-        status TEXT CHECK(status IN ('pending', 'accepted', 'blocked')) DEFAULT 'pending',
+        status TEXT CHECK(status IN ('pending', 'accepted', 'declined')) DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(user_id, friend_id)
         )`);
         
@@ -98,7 +102,6 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
     await run(`CREATE INDEX IF NOT EXISTS idx_friendships_user ON friendships(user_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friendships_friend ON friendships(friend_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friendships_status ON friendships(status)`);
-    // await run(`CREATE INDEX IF NOT EXISTS idx_avatars_active ON avatars(user_id)`);
     
     fastify.log.info("Database schema initialized");
   };

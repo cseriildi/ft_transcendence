@@ -2,8 +2,8 @@ import { FastifyInstance } from "fastify";
 import { userController } from "./userController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./userSchemas.ts";
-import { UserParams, GetUserResponse, GetUsersResponse, uploadAvatar, uploadAvatarResponse } from "./userTypes.ts";
-import { CreateUserResponse } from "../authService/authTypes.ts";
+import { UserParams, GetUserResponse, GetUsersResponse, uploadAvatarResponse, manageFriendsResponse } from "./userTypes.ts";
+
 
 async function userRoutes(fastify: FastifyInstance) {
   // GET /users/:id - Get single user (protected)
@@ -79,6 +79,62 @@ async function userRoutes(fastify: FastifyInstance) {
       }
     },
     userController.changeUsername
+  )
+
+  fastify.post<{ Params: UserParams; Reply: manageFriendsResponse }>(
+    "/users/friends/:id",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Add a user as a friend (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.manageFriends
+      }
+    },
+    userController.addFriend
+  )
+
+    fastify.patch<{ Params: UserParams; Reply: manageFriendsResponse }>(
+    "/users/friends/:id/accept",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Accept a friend request (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.manageFriends
+      }
+    },
+    userController.acceptFriend
+  )
+
+      fastify.patch<{ Params: UserParams; Reply: manageFriendsResponse }>(
+    "/users/friends/:id/decline",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Accept a friend request (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.manageFriends
+      }
+    },
+    userController.declineFriend
+  )
+
+  fastify.delete<{ Params: UserParams; Reply: manageFriendsResponse }>(
+    "/users/friends/:id",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Delete a friend from friends (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.manageFriends
+      }
+    },
+    userController.removeFriend
   )
 }
 

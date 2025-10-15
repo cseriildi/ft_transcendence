@@ -34,9 +34,9 @@
     ✅ Users can select a unique display name to participate in tournaments.
     ✅ Users can update their information.
     ✅ Users can upload an avatar, with a default option if none is provided.
-    ? Users can add others as friends and view their online status.
+    ✅ Users can add others as friends and view their online status. (tests missing)
     ? User profiles display stats, such as wins and losses.
-    ? Each user has a Match History including 1v1 games, dates, and relevant
+    ✅ Each user has a Match History including 1v1 games, dates, and relevant
     details, accessible to logged-in users.
 
 -Features to implement:
@@ -51,6 +51,4 @@ Players can accept invite
 Game disconnection handled?
 Tournament mode ->local simple version
 Players can join a game from defferent pcs in the same local network
-? Users can delete account
-Users can see past games
 ? Users can see other players profiles

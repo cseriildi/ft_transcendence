@@ -26,7 +26,16 @@ export interface ChangeUsernameBody {
   username: string;
 }
 
+export interface manageFriendsBody {
+  user1_Id: string;
+  user2_Id: string;
+  action: "add" | "accept" | "decline" | "remove";
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Response types
+export type manageFriendsResponse = ApiResponse<manageFriendsBody>;
 export type uploadAvatarResponse = ApiResponse<uploadAvatar>;
 export type GetUserResponse = ApiResponse<User>;
 export type GetUsersResponse = ApiResponse<User[]>;
