@@ -116,14 +116,18 @@ await app.register(async (fastify) => {
 // Main lobby connection - users connect here first
 await app.register(async (fastify) => {
   fastify.get("/lobby", { websocket: true }, async (connection, req) => {
-    const {userId, username} = req.body as {
+    const {userId, username} = req.query as {
       userId: number,
       username: string,
     };
     const access = req.headers.authorization as string;
+    if (!access || !access.startsWith("Bearer ")) {
+      connection.close();
+      return;
+    }
     const token = access.substring(7);
 
-    if (!token || !username || !userID) {
+    if (!token || !username || !userId) {
       connection.close();
       return;
     }
