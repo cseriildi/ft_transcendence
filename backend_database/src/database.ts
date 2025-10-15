@@ -38,7 +38,6 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         password_hash TEXT,
         oauth_provider TEXT,
         oauth_id TEXT,
-        avatar_url TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(oauth_provider, oauth_id)

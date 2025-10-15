@@ -146,13 +146,13 @@ export const authController = {
         throw errors.validation("Passwords do not match");
       }
 
-      const { username, email, avatar_url } = request.body || {};
+      const { username, email } = request.body || {};
 
       try {
         const hash = await bcrypt.hash(request.body.password, 10);
         const result = await db.run(
-          "INSERT INTO users (username, email, password_hash, avatar_url) VALUES (?, ?, ?, ?)",
-          [username.trim(), email.trim(), hash, avatar_url || null]
+          "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+          [username.trim(), email.trim(), hash]
         );
 
         const accessToken = await signAccessToken(result.lastID);
@@ -180,7 +180,6 @@ export const authController = {
             id: result.lastID,
             username: username.trim(),
             email: email.trim(),
-            avatar_url: avatar_url,
             created_at: new Date().toISOString(),
             tokens: { accessToken },
           },
