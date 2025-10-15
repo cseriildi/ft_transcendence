@@ -26,11 +26,11 @@ export const MatchSchemas = {
 						type: "object",
 						properties: {
 							id: { type: "number" },
-							user1_id: { type: "number" },
-							user2_id: { type: "number" },
+							winner: { type: "string" },
+							loser: { type: "string" },
 							winner_score: { type: "number" },
 							loser_score: { type: "number" },
-							created_at: { type: "string" }
+							played_at: { type: "string" }
 						}
 					},
 					message: { type: "string" },
@@ -77,11 +77,11 @@ export const MatchSchemas = {
 							type: "object",
 							properties: {
 								id: { type: "number" },
-								user1_id: { type: "number" },
-								user2_id: { type: "number" },
+								winner: { type: "string" },
+								loser: { type: "string" },
 								winner_score: { type: "number" },
 								loser_score: { type: "number" },
-								created_at: { type: "string" }
+								played_at: { type: "string" }
 							}
 						}
 					},

@@ -138,4 +138,331 @@ describe('User Routes', () => {
     expect(body.success).toBe(true)
     expect(body.data.length).toBe(3)
   })
+
+  // =========== EMAIL UPDATE TESTS ===========
+
+  it('PATCH /users/:id/email should successfully update user email', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        email: 'newemail@example.com'
+      }
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as any
+    expect(body.success).toBe(true)
+    expect(body.data.email).toBe('newemail@example.com')
+    expect(body.data.username).toBe('testuser')
+    expect(body.message).toContain('Email updated successfully')
+  })
+
+  it('PATCH /users/:id/email should return 400 for email with whitespace', async () => {
+    // Schema validation rejects emails with leading/trailing whitespace
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        email: '  email@example.com  '
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/email should return 400 for invalid email format', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        email: 'invalid-email'
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/email should return 400 for missing email', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {}
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/email should return 401 without access token', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/email`,
+      payload: {
+        email: 'newemail@example.com'
+      }
+    })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('Access token required')
+  })
+
+  it('PATCH /users/:id/email should return 403 when updating another user', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/99999/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        email: 'newemail@example.com'
+      }
+    })
+    expect(res.statusCode).toBe(403)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('does not match')
+  })
+
+  it('PATCH /users/:id/email should return 409 when email already exists', async () => {
+    // Create another user with a different email
+    await app.inject({
+      method: 'POST',
+      url: `${AUTH_PREFIX}/register`,
+      payload: {
+        username: 'otheruser',
+        email: 'existing@example.com',
+        password: 'password123',
+        confirmPassword: 'password123',
+      }
+    })
+
+    // Try to update current user's email to the existing email
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        email: 'existing@example.com'
+      }
+    })
+    expect(res.statusCode).toBe(409)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('already in use')
+  })
+
+  // =========== USERNAME UPDATE TESTS ===========
+
+  it('PATCH /users/:id/username should successfully update username', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: 'newusername'
+      }
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as any
+    expect(body.success).toBe(true)
+    expect(body.data.username).toBe('newusername')
+    expect(body.data.email).toBe('test@example.com')
+    expect(body.message).toContain('Username updated successfully')
+  })
+
+  it('PATCH /users/:id/username should return 400 for username with whitespace', async () => {
+    // Schema validation rejects usernames with leading/trailing whitespace
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: '  username  '
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/username should accept valid username formats', async () => {
+    const validUsernames = ['user123', 'user_name', 'user-name', 'User123', 'ABC']
+    
+    for (const username of validUsernames) {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/username`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        },
+        payload: { username }
+      })
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as any
+      expect(body.success).toBe(true)
+      expect(body.data.username).toBe(username)
+    }
+  })
+
+  it('PATCH /users/:id/username should return 400 for username too short', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: 'ab'
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/username should return 400 for username too long', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: 'a'.repeat(51) // 51 characters, exceeds max of 50
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/username should return 400 for invalid characters', async () => {
+    const invalidUsernames = ['user@name', 'user name', 'user!name', 'user#name', 'user$name']
+    
+    for (const username of invalidUsernames) {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/username`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        },
+        payload: { username }
+      })
+      expect(res.statusCode).toBe(400)
+      const body = res.json() as any
+      expect(body.success).toBe(false)
+    }
+  })
+
+  it('PATCH /users/:id/username should return 400 for missing username', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {}
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('PATCH /users/:id/username should return 401 without access token', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      payload: {
+        username: 'newusername'
+      }
+    })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('Access token required')
+  })
+
+  it('PATCH /users/:id/username should return 403 when updating another user', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/99999/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: 'newusername'
+      }
+    })
+    expect(res.statusCode).toBe(403)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('does not match')
+  })
+
+  it('PATCH /users/:id/username should return 409 when username already exists', async () => {
+    // Create another user with a different username
+    await app.inject({
+      method: 'POST',
+      url: `${AUTH_PREFIX}/register`,
+      payload: {
+        username: 'existinguser',
+        email: 'existing@example.com',
+        password: 'password123',
+        confirmPassword: 'password123',
+      }
+    })
+
+    // Try to update current user's username to the existing username
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: 'existinguser'
+      }
+    })
+    expect(res.statusCode).toBe(409)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('already in use')
+  })
+
+  it('PATCH /users/:id/username should return 400 for invalid user id', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: `${API_PREFIX}/users/invalid/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      },
+      payload: {
+        username: 'newusername'
+      }
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
 })

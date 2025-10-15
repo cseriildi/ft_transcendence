@@ -10,6 +10,7 @@ import {
 	  CreateMatchResponse,
 	  GetMatchesQuery,
 } from "./matchTypes.ts";
+import { User } from "../userService/userTypes.ts";
 
 export const matchController = {
 	  createMatch: createHandler<{ Body: CreateMatchBody }, CreateMatchResponse>(
@@ -29,7 +30,7 @@ export const matchController = {
 		  }	
 		  try {
 			const result = await db.run(
-			  `INSERT INTO matches (winner, loser, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
+			  `INSERT INTO matches (winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
 			  [winner, loser, winner_score, loser_score]
 			);
 			const match: Match = {
@@ -50,21 +51,21 @@ export const matchController = {
 
 	  getMatches: createHandler<{ Params: GetMatchesQuery }, GetMatchesResponse>(
 		async (request, { db }) => {
-			// ✅ Validation now handled by Fastify schema
 			const {username} = request.params;
 			try {
 				// First check if the user exists
-				const userExists = await db.get<{ count: number }>(
-					`SELECT COUNT(*) as count FROM users WHERE username = ?`,
+				const user = await db.get<User>(
+					`SELECT * FROM users WHERE username = ?`,
 					[username]
 				);
-				if (!userExists || userExists.count === 0) {
+				if (!user) {
 					throw errors.notFound("User not found");
 				}
 
 				// Then get their matches
 				const matches = await db.all<Match>(
-					`SELECT * FROM matches WHERE winner = ? OR loser = ? ORDER BY played_at DESC`,
+					`SELECT id, winner_name as winner, loser_name as loser, winner_score, loser_score, played_at 
+					 FROM matches WHERE winner_name = ? OR loser_name = ? ORDER BY played_at DESC`,
 					[username, username]
 				);
 				return ApiResponseHelper.success<Match[]>(matches, "Match retrieved successfully");

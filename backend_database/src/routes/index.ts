@@ -5,6 +5,7 @@ import checkRoutes from "./healthRoutes.ts";
 import matchRoutes from "../services/matchService/matchRoutes.ts";
 import oauthRoutes from "../services/oAuthService/oAuthRoutes.ts";
 import { config } from "../config.ts";
+import friendRoutes from "../services/friendService/friendRoutes.ts";
 
 async function routes(fastify: FastifyInstance) {
 
@@ -14,6 +15,7 @@ async function routes(fastify: FastifyInstance) {
   await fastify.register(oauthRoutes, { prefix: config.routes.oauth });
   await fastify.register(userRoutes, { prefix: config.routes.api });
   await fastify.register(matchRoutes, { prefix: config.routes.api });
+  await fastify.register(friendRoutes, { prefix: config.routes.api });
 }
 
 export default routes;
