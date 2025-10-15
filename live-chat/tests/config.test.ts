@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { config, validateConfig } from "./config.ts";
+import { config, validateConfig } from "../src/config.ts";
 
 describe("Config Module", () => {
   let originalEnv: NodeJS.ProcessEnv;
@@ -48,7 +48,7 @@ describe("Config Module", () => {
       process.env.LOG_LEVEL = "info";
 
       // Re-import to get fresh config with new env vars
-      const { config: freshConfig } = require("./config.ts");
+      const { config: freshConfig } = require("../src/config.ts");
 
       expect(freshConfig.server.port).toBe(4000);
       expect(freshConfig.server.host).toBe("localhost");

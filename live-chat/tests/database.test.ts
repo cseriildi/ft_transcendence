@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import Fastify, { FastifyInstance } from "fastify";
-import dbConnector from "./database.ts";
+import dbConnector from "../src/database.ts";
 import fs from "fs";
 import path from "path";
 
