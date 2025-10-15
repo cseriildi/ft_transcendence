@@ -52,7 +52,7 @@
 ```javascript
 {
     type: "error",
-    message: "You are blocked by this user and can not send messages",
+    message: "You are blocked by this user and cannot send messages",
 }
 ```
 
