@@ -85,21 +85,21 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
       await run(`CREATE TABLE IF NOT EXISTS friendships (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inviter_id INTEGER NOT NULL,
-        user_id INTEGER NOT NULL,
-        friend_id INTEGER NOT NULL,
+        user1_id INTEGER NOT NULL,
+        user2_id INTEGER NOT NULL,
         status TEXT CHECK(status IN ('pending', 'accepted', 'declined')) DEFAULT 'pending',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-        FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (user2_id) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE,
-        UNIQUE(user_id, friend_id)
+        UNIQUE(user_id, user2_id)
         )`);
         
     await run(`CREATE INDEX IF NOT EXISTS idx_avatars_user_id ON avatars(user_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_avatars_file_name ON avatars(file_name)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friendships_user ON friendships(user_id)`);
-    await run(`CREATE INDEX IF NOT EXISTS idx_friendships_friend ON friendships(friend_id)`);
+    await run(`CREATE INDEX IF NOT EXISTS idx_friendships_friend ON friendships(user2_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friendships_status ON friendships(status)`);
     
     fastify.log.info("Database schema initialized");

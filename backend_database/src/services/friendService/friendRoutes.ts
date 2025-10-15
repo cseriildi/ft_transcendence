@@ -41,7 +41,7 @@ async function friendRoutes(fastify: FastifyInstance) {
       preHandler: requireAuth,
       schema: {
         tags: ["friend"],
-        description: "Accept a friend request (requires authentication)",
+        description: "Decline a friend request (requires authentication)",
         security: [{ bearerAuth: [] }],
         ...UserSchemas.manageFriends
       }

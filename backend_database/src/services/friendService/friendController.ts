@@ -8,8 +8,6 @@ import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
-import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
-import { MultipartFile } from "@fastify/multipart";
 
 export const friendController = {
   addFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
@@ -161,7 +159,7 @@ export const friendController = {
         action: "decline" as const,
         updated_at
       };
-      return ApiResponseHelper.success(responseBody, "Friend request accepted");
+      return ApiResponseHelper.success(responseBody, "Friend request declined");
     }
   ),
 
@@ -191,7 +189,7 @@ export const friendController = {
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users");
       }
-      if (existingRequest.status == 'declined' && existingRequest.inviter_id === user1_Id) {
+      if (existingRequest.status === 'declined' && existingRequest.inviter_id === user1_Id) {
         throw errors.conflict("You cannot delete a friend request you sent yourself that has been declined");
       }
 
