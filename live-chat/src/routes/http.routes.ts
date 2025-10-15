@@ -12,19 +12,20 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
 
   // Readiness check endpoint (includes database check)
   fastify.get("/ready", async (request, reply) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const db = await request.server.db;
+    try {
+      const db = await request.server.db;
+      return new Promise((resolve, reject) => {
         db.get("SELECT 1", (err) => {
           if (err) {
             reject(err);
+          } else {
+            resolve(true);
           }
-          resolve(true);
         });
-      } catch (err) {
-        reject(err);
-      }
-    });
+      });
+    } catch (err) {
+      return Promise.reject(err);
+    }
   });
 
   // Block user endpoint
