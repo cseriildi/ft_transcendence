@@ -10,7 +10,7 @@ export const lobbyConnections = new Map<any, string>(); // connection -> usernam
 export const userLobbyConnections = new Map<string, Set<any>>(); // username -> lobby connections
 
 // Ban list per user
-export const banList = new Map<string, Set<{ banned: string }>>();
+export const banList = new Map<string, Set<string>>();
 
 // Chat history
 export const chatHistory = new Map<
