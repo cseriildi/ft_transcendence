@@ -1,7 +1,11 @@
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
-import { signAccessToken, signRefreshToken, createJti } from "../../utils/authUtils.ts";
+import { 
+  signAccessToken, 
+  setRefreshTokenCookie, 
+  generateAndStoreRefreshToken 
+} from "../../utils/authUtils.ts";
 import {
   getGitHubConfig,
   packStateCookie,
@@ -9,9 +13,8 @@ import {
   exchangeCodeForToken,
   fetchGitHubUserInfo,
 } from "../../utils/oauthUtils.ts";
-import { UserLoginResponse } from "../authService/authTypes.ts";
-import { User } from "../userService/userTypes.ts";
-import bcrypt from "bcrypt";
+import { AuthUserData } from "../authService/authTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 import crypto from "node:crypto";
 import { config } from "../../config.ts";
 
@@ -49,7 +52,7 @@ export const oauthController = {
   // Step 2: Handle GitHub callback
   handleGitHubCallback: createHandler<
     { Querystring: { code: string; state: string } },
-    UserLoginResponse
+    ApiResponse<AuthUserData>
   >(async (request, context) => {
     const { code, state } = request.query;
     const { db, reply } = context;
@@ -162,24 +165,8 @@ export const oauthController = {
 
     // Issue JWT tokens (same as regular login)
     const accessToken = await signAccessToken(user.id);
-    const jti = createJti();
-    const refreshToken = await signRefreshToken(user.id, jti);
-    const refreshHash = await bcrypt.hash(refreshToken, 10);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-    await db.run(
-      "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-      [jti, user.id, refreshHash, expiresAt]
-    );
-
-    // Set refresh token cookie
-    reply.setCookie("refresh_token", refreshToken, {
-      httpOnly: true,
-      secure: IS_PROD,
-      sameSite: "lax",
-      path: "/auth",
-      maxAge: 7 * 24 * 60 * 60,
-    });
+    const refreshToken = await generateAndStoreRefreshToken(db, user.id);
+    setRefreshTokenCookie(reply, refreshToken);
 
     return ApiResponseHelper.success(
       {

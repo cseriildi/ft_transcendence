@@ -10,7 +10,12 @@ import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import bcrypt from "bcrypt";
-import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authUtils.ts";
+import { 
+  signAccessToken, 
+  verifyRefreshToken, 
+  setRefreshTokenCookie, 
+  generateAndStoreRefreshToken 
+} from "../../utils/authUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(
@@ -69,24 +74,10 @@ export const authController = {
 
         const accessToken = await signAccessToken(user.id);
         
-        const newJti = createJti();
-        const newRefreshToken = await signRefreshToken(user.id, newJti);
-        const refreshHash = await bcrypt.hash(newRefreshToken, 10);
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
+        // Delete old refresh token and generate new one
         await db.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
-        await db.run(
-          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [newJti, user.id, refreshHash, expiresAt]
-        );
-
-        reply.setCookie("refresh_token", newRefreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        const newRefreshToken = await generateAndStoreRefreshToken(db, user.id);
+        setRefreshTokenCookie(reply, newRefreshToken);
 
         return ApiResponseHelper.success(
           {
@@ -99,6 +90,7 @@ export const authController = {
           "Token refreshed successfully"
         );
       } catch (err: any) {
+        reply.clearCookie("refresh_token", { path: "/auth" });
         throw err;
       }
     }
@@ -155,23 +147,8 @@ export const authController = {
         );
 
         const accessToken = await signAccessToken(result.lastID);
-        const jti = createJti();
-        const refreshToken = await signRefreshToken(result.lastID, jti);
-        const refreshHash = await bcrypt.hash(refreshToken, 10);
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-           await db.run(
-          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [jti, result.lastID, refreshHash, expiresAt]
-        );
-
-        reply.setCookie("refresh_token", refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-        });
+        const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
+        setRefreshTokenCookie(reply, refreshToken);
 
         reply.status(201);
         return ApiResponseHelper.success(
@@ -209,25 +186,9 @@ export const authController = {
           throw errors.unauthorized("Invalid password");
         }
         
-         const accessToken = await signAccessToken(result.id);
-        const jti = createJti();
-        const refreshToken = await signRefreshToken(result.id, jti);
-        const refreshHash = await bcrypt.hash(refreshToken, 10);
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
-         await db.run(
-          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [jti, result.id, refreshHash, expiresAt]
-        );
-
-        // Set refresh token as HttpOnly cookie
-        reply.setCookie("refresh_token", refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-        });
+        const accessToken = await signAccessToken(result.id);
+        const refreshToken = await generateAndStoreRefreshToken(db, result.id);
+        setRefreshTokenCookie(reply, refreshToken);
 
 
         reply.status(200);
@@ -241,8 +202,8 @@ export const authController = {
           },
           "User logged in successfully"
         );
-    } catch (err: any) {
-        throw err; // Re-throw other database errors
+      } catch (err: any) {
+        throw err;
       }
     }
   ),
