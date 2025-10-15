@@ -8,7 +8,7 @@ import { UserParams, manageFriendsResponse } from "./friendTypes.ts";
 async function friendRoutes(fastify: FastifyInstance) {
  
   fastify.post<{ Params: UserParams; Reply: manageFriendsResponse }>(
-    "/users/friends/:id",
+    "/friends/:id",
     {
       preHandler: requireAuth,
       schema: {
@@ -22,7 +22,7 @@ async function friendRoutes(fastify: FastifyInstance) {
   )
 
     fastify.patch<{ Params: UserParams; Reply: manageFriendsResponse }>(
-    "/users/friends/:id/accept",
+    "/friends/:id/accept",
     {
       preHandler: requireAuth,
       schema: {
@@ -36,7 +36,7 @@ async function friendRoutes(fastify: FastifyInstance) {
   )
 
       fastify.patch<{ Params: UserParams; Reply: manageFriendsResponse }>(
-    "/users/friends/:id/decline",
+    "/friends/:id/decline",
     {
       preHandler: requireAuth,
       schema: {
@@ -50,7 +50,7 @@ async function friendRoutes(fastify: FastifyInstance) {
   )
 
   fastify.delete<{ Params: UserParams; Reply: manageFriendsResponse }>(
-    "/users/friends/:id",
+    "/friends/:id",
     {
       preHandler: requireAuth,
       schema: {

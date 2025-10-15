@@ -19,7 +19,8 @@ export const UserSchemas = {
               user1_id: { type: "string" },
               user2_id: { type: "string" },
               action: { type: "string", enum: ["add", "accept", "decline", "remove"] },
-              created_at: { type: "string" }
+              created_at: { type: "string" },
+              updated_at: { type: "string" }
             }
           },
           message: { type: "string" },

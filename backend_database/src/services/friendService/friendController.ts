@@ -46,8 +46,8 @@ export const friendController = {
       );
 
       const responseBody = {
-        user1_Id: user1_Id.toString(),
-        user2_Id: user2_Id.toString(),
+        user1_id: user1_Id.toString(),
+        user2_id: user2_Id.toString(),
         action: "add" as const,
         created_at
       };
@@ -100,8 +100,8 @@ export const friendController = {
       );
 
       const responseBody = {
-        user1_Id: user1_Id.toString(),
-        user2_Id: user2_Id.toString(),
+        user1_id: user1_Id.toString(),
+        user2_id: user2_Id.toString(),
         action: "accept" as const,
         updated_at
       };
@@ -154,8 +154,8 @@ export const friendController = {
       );
 
       const responseBody = {
-        user1_Id: user1_Id.toString(),
-        user2_Id: user2_Id.toString(),
+        user1_id: user1_Id.toString(),
+        user2_id: user2_Id.toString(),
         action: "decline" as const,
         updated_at
       };
@@ -201,8 +201,8 @@ export const friendController = {
       
 
       const responseBody = {
-        user1_Id: user1_Id.toString(),
-        user2_Id: user2_Id.toString(),
+        user1_id: user1_Id.toString(),
+        user2_id: user2_Id.toString(),
         action: "remove" as const,
         updated_at
       };

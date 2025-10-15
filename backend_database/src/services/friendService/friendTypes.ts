@@ -14,8 +14,8 @@ export interface UserParams {
 }
 
 export interface manageFriendsBody {
-  user1_Id: string;
-  user2_Id: string;
+  user1_id: string;
+  user2_id: string;
   action: "add" | "accept" | "decline" | "remove";
   created_at?: string;
   updated_at?: string;
