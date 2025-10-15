@@ -1,16 +1,16 @@
 // src/services/friendService/friendController.ts
 import {
-  User,
   UserParams,
-  manageFriendsResponse
+  ManageFriendsBody
 } from "./friendTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 
 export const friendController = {
-  addFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  addFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
       const tokenUserId = request.user!.id;
@@ -55,7 +55,7 @@ export const friendController = {
     }
   ),
 
-  acceptFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  acceptFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
       const tokenUserId = request.user!.id;
@@ -109,7 +109,7 @@ export const friendController = {
     }
   ),
 
-  declineFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  declineFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
       const tokenUserId = request.user!.id;
@@ -163,7 +163,7 @@ export const friendController = {
     }
   ),
 
-  removeFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  removeFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
       const tokenUserId = request.user!.id;

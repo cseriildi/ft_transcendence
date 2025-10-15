@@ -2,11 +2,12 @@ import { FastifyInstance } from "fastify";
 import { authController } from "./authController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { AuthSchemas } from "./authSchemas.ts";
-import { CreateUserBody, CreateUserResponse, UserLoginBody, UserLoginResponse } from "./authTypes.ts";
+import { CreateUserBody, UserLoginBody, AuthUserData } from "./authTypes.ts";
+import { ApiResponse } from "../../types/commonTypes.ts";
 
 async function authRoutes(fastify: FastifyInstance) {
   // POST /auth/register
-  fastify.post<{ Body: CreateUserBody; Reply: CreateUserResponse }>(
+  fastify.post<{ Body: CreateUserBody; Reply: ApiResponse<AuthUserData> }>(
     "/register",
     {
       schema: {
@@ -19,7 +20,7 @@ async function authRoutes(fastify: FastifyInstance) {
   );
 
   // POST /auth/login
-  fastify.post<{ Body: UserLoginBody; Reply: UserLoginResponse }>(
+  fastify.post<{ Body: UserLoginBody; Reply: ApiResponse<AuthUserData> }>(
     "/login",
     {
       schema: {
@@ -32,7 +33,7 @@ async function authRoutes(fastify: FastifyInstance) {
   );
 
   // POST /auth/refresh
-  fastify.post<{ Reply: UserLoginResponse }>(
+  fastify.post<{ Reply: ApiResponse<AuthUserData> }>(
     "/refresh",
     {
       schema: {

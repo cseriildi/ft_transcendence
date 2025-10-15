@@ -1,11 +1,10 @@
 // src/routes/users.ts
 import {
   CreateUserBody,
-  CreateUserResponse,
-  UserLoginResponse,
   UserLoginBody,
+  AuthUserData,
 } from "./authTypes.ts";
-import { User } from "../userService/userTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
@@ -30,7 +29,7 @@ export const authController = {
     }
   ),
 
-  refresh: createHandler<{}, UserLoginResponse>(
+  refresh: createHandler<{}, ApiResponse<AuthUserData>>(
     async (request, context) => {
       const { db, reply } = context;
       
@@ -139,7 +138,7 @@ export const authController = {
     }
   ),
 
-  createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
+  createUser: createHandler<{ Body: CreateUserBody }, ApiResponse<AuthUserData>>(
       async (request, { db, reply }) => {
 
       if (request.body.password !== request.body.confirmPassword) {
@@ -194,7 +193,7 @@ export const authController = {
     }
   ),
 
-  loginUser: createHandler<{ Body: UserLoginBody }, UserLoginResponse>(
+  loginUser: createHandler<{ Body: UserLoginBody }, ApiResponse<AuthUserData>>(
       async (request, { db, reply }) => {
       const { email, password } = request.body || {};
       try {

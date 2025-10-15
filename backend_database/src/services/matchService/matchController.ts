@@ -5,15 +5,12 @@ import { createHandler } from "../../utils/handlerUtils.ts";
 import {
 	  Match,
 	  CreateMatchBody,
-	  GetMatchResponse,
-	  GetMatchesResponse,
-	  CreateMatchResponse,
 	  GetMatchesQuery,
 } from "./matchTypes.ts";
-import { User } from "../userService/userTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 
 export const matchController = {
-	  createMatch: createHandler<{ Body: CreateMatchBody }, CreateMatchResponse>(
+	  createMatch: createHandler<{ Body: CreateMatchBody }, ApiResponse<Match>>(
 		async (request, { db, reply }) => {
 		  // ✅ Validation now handled by Fastify schema
 		  const { winner, loser, winner_score, loser_score } = request.body;
@@ -49,7 +46,7 @@ export const matchController = {
 		}
 	  ),
 
-	  getMatches: createHandler<{ Params: GetMatchesQuery }, GetMatchesResponse>(
+	  getMatches: createHandler<{ Params: GetMatchesQuery }, ApiResponse<Match[]>>(
 		async (request, { db }) => {
 			const {username} = request.params;
 			try {

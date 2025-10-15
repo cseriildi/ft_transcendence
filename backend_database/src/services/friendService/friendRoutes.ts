@@ -2,12 +2,13 @@ import { FastifyInstance } from "fastify";
 import { friendController } from "./friendController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./friendSchemas.ts";
-import { UserParams, manageFriendsResponse } from "./friendTypes.ts";
+import { UserParams, ManageFriendsBody } from "./friendTypes.ts";
+import { ApiResponse } from "../../types/commonTypes.ts";
 
 
 async function friendRoutes(fastify: FastifyInstance) {
  
-  fastify.post<{ Params: UserParams; Reply: manageFriendsResponse }>(
+  fastify.post<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id",
     {
       preHandler: requireAuth,
@@ -21,7 +22,7 @@ async function friendRoutes(fastify: FastifyInstance) {
     friendController.addFriend
   )
 
-    fastify.patch<{ Params: UserParams; Reply: manageFriendsResponse }>(
+    fastify.patch<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id/accept",
     {
       preHandler: requireAuth,
@@ -35,7 +36,7 @@ async function friendRoutes(fastify: FastifyInstance) {
     friendController.acceptFriend
   )
 
-      fastify.patch<{ Params: UserParams; Reply: manageFriendsResponse }>(
+      fastify.patch<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id/decline",
     {
       preHandler: requireAuth,
@@ -49,7 +50,7 @@ async function friendRoutes(fastify: FastifyInstance) {
     friendController.declineFriend
   )
 
-  fastify.delete<{ Params: UserParams; Reply: manageFriendsResponse }>(
+  fastify.delete<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id",
     {
       preHandler: requireAuth,

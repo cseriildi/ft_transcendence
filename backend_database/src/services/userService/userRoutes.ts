@@ -2,12 +2,13 @@ import { FastifyInstance } from "fastify";
 import { userController } from "./userController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./userSchemas.ts";
-import { UserParams, GetUserResponse, GetUsersResponse, uploadAvatarResponse} from "./userTypes.ts";
+import { UserParams, UploadAvatarData } from "./userTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 
 
 async function userRoutes(fastify: FastifyInstance) {
   // GET /users/:id - Get single user (protected)
-  fastify.get<{ Params: UserParams; Reply: GetUserResponse }>(
+  fastify.get<{ Params: UserParams; Reply: ApiResponse<User> }>(
     "/users/:id",
     {
       preHandler: requireAuth,
@@ -22,7 +23,7 @@ async function userRoutes(fastify: FastifyInstance) {
   );
 
   // GET /users - Get all users
-  fastify.get<{ Reply: GetUsersResponse }>(
+  fastify.get<{ Reply: ApiResponse<User[]> }>(
     "/users",
     {
       schema: {
@@ -35,7 +36,7 @@ async function userRoutes(fastify: FastifyInstance) {
   );
 
   // POST /users/avatar - Upload avatar (protected)
-  fastify.post<{ Reply: uploadAvatarResponse }>(
+  fastify.post<{ Reply: ApiResponse<UploadAvatarData> }>(
     "/users/avatar",
     {
       preHandler: requireAuth,
@@ -52,7 +53,7 @@ async function userRoutes(fastify: FastifyInstance) {
   );
 
   // PATCH /users/:id/email - Change user email (protected)
-  fastify.patch<{ Params: UserParams; Reply: GetUserResponse }>(
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<User> }>(
     "/users/:id/email",
     {
       preHandler: requireAuth,
@@ -67,7 +68,7 @@ async function userRoutes(fastify: FastifyInstance) {
   );
 
   // PATCH /users/:id/username - Change username (protected)
-  fastify.patch<{ Params: UserParams; Reply: GetUserResponse }>(
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<User> }>(
     "/users/:id/username",
     {
       preHandler: requireAuth,
