@@ -90,8 +90,10 @@ export const authController = {
           "Token refreshed successfully"
         );
       } catch (err: any) {
-        reply.clearCookie("refresh_token", { path: "/auth" });
         throw err;
+      } finally {
+        // Always clear the old refresh token cookie
+        reply.clearCookie("refresh_token", { path: "/auth" });
       }
     }
   ),
