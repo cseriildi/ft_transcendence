@@ -1,3 +1,5 @@
+import { createResponseSchema } from "../../utils/schemaUtils.ts";
+
 export const UserSchemas = {
   // Manage friends (add, accept, decline, remove)
   manageFriends: {
@@ -8,57 +10,15 @@ export const UserSchemas = {
       },
       required: ["id"]
     },
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              user1_id: { type: "string" },
-              user2_id: { type: "string" },
-              action: { type: "string", enum: ["add", "accept", "decline", "remove"] },
-              created_at: { type: "string" },
-              updated_at: { type: "string" }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      400: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Invalid request data" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Missing or invalid access token" },
-          timestamp: { type: "string" }
-        }
-      },
-      403: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Cannot manage another user's friends" },
-          timestamp: { type: "string" }
-        }
-      },
-      404: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "User not found" },
-          timestamp: { type: "string" }
-        }
+    response: createResponseSchema(200, {
+      type: "object" as const,
+      properties: {
+        user1_id: { type: "string" as const },
+        user2_id: { type: "string" as const },
+        action: { type: "string" as const, enum: ["add", "accept", "decline", "remove"] },
+        created_at: { type: "string" as const },
+        updated_at: { type: "string" as const }
       }
-    }
+    }, [400, 401, 403, 404])
   }
 };

@@ -1,24 +1,6 @@
+import { createResponseSchema, commonDataSchemas } from "../../utils/schemaUtils.ts";
+
 export const UserSchemas = {
-  // User params validation
-  userParams: {
-    type: "object" as const,
-    properties: {
-      id: { type: "number", minimum: 1 }
-    },
-    required: ["id"]
-  },
-
-  // User object for responses
-  userObject: {
-    type: "object" as const,
-    properties: {
-      id: { type: "number" },
-      username: { type: "string" },
-      email: { type: "string" },
-      created_at: { type: "string", format: "date-time" }
-    }
-  },
-
   // Get user by ID
   getUser: {
     params: {
@@ -28,113 +10,27 @@ export const UserSchemas = {
       },
       required: ["id"]
     },
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              username: { type: "string" },
-              email: { type: "string" },
-              created_at: { type: "string" }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      403: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      404: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(200, commonDataSchemas.user, [401, 403, 404])
   },
 
   // Get all users
   getUsers: {
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                id: { type: "number" },
-                username: { type: "string" },
-                email: { type: "string" },
-                created_at: { type: "string" }
-              }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(200, commonDataSchemas.userArray, [])
   },
 
   // Upload avatar
   uploadAvatar: {
-    response: {
-          200: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              data: {
-                type: "object",
-                properties: {
-                  username: { type: "string" },
-                  avatar_url: { type: "string", description: "Public URL to access the avatar (e.g., /uploads/avatars/abc123.png)" },
-                  created_at: { type: "string" }
-                }
-              },
-              message: { type: "string" },
-              timestamp: { type: "string" }
-            }
-          },
-          400: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-              timestamp: { type: "string" }
-            }
-          },
-          401: {
-            type: "object",
-            properties: {
-              success: { type: "boolean" },
-              message: { type: "string" },
-              timestamp: { type: "string" }
-            }
-          }
-        }
+    response: createResponseSchema(200, {
+      type: "object" as const,
+      properties: {
+        username: { type: "string" as const },
+        avatar_url: { 
+          type: "string" as const, 
+          description: "Public URL to access the avatar (e.g., /uploads/avatars/abc123.png)" 
+        },
+        created_at: { type: "string" as const }
+      }
+    }, [400, 401])
   },
 
   changeEmail: {
@@ -157,57 +53,7 @@ export const UserSchemas = {
       },
       required: ["id"]
     },
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              username: { type: "string" },
-              email: { type: "string" },
-              created_at: { type: "string" }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      400: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Invalid email format" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Missing or invalid access token" },
-          timestamp: { type: "string" }
-        }
-      },
-      403: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Cannot update another user's email" },
-          timestamp: { type: "string" }
-        }
-      },
-      409: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Email already in use" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(200, commonDataSchemas.user, [400, 401, 403, 409])
   },
 
   changeUsername: {
@@ -232,56 +78,6 @@ export const UserSchemas = {
       },
       required: ["id"]
     },
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              username: { type: "string" },
-              email: { type: "string" },
-              created_at: { type: "string" }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      400: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Invalid username format or length" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Missing or invalid access token" },
-          timestamp: { type: "string" }
-        }
-      },
-      403: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Cannot update another user's username" },
-          timestamp: { type: "string" }
-        }
-      },
-      409: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string", description: "Username already in use" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(200, commonDataSchemas.user, [400, 401, 403, 409])
   },
 };
