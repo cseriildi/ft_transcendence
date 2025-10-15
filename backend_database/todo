@@ -15,18 +15,6 @@
 
 -test real Oauth for github
 
--Protect more routes (figure what routes should be protected how)
-
--Protect websocket connection -> other conatiners (chat and game) should "foreward" access tokens upon websocket conenction to DB service for authentication
-
--Add post routes to GameLogic to post gamescore upon completion
-
--Gamelogic should automatically close game and sockets on game end
-
--Gamelogic should extract player Ids from JWT after authentication
-
--Gamelogic should automatically assign players (max 2) to individual games
-
 -update routes and DB manipulation:
 
     ✅ Users can securely subscribe to the website.
@@ -38,17 +26,3 @@
     ? User profiles display stats, such as wins and losses.
     ✅ Each user has a Match History including 1v1 games, dates, and relevant
     details, accessible to logged-in users.
-
--Features to implement:
-User can play local 2 player (no login) or against Ai
-User can register and post an avatar
-User can change avatar
-User can access global (and individual?) chat
-User can block other users
-User can invite other players via chat
-Players can accept invite
-? Invites are only valid while inviting player is "online"
-Game disconnection handled?
-Tournament mode ->local simple version
-Players can join a game from defferent pcs in the same local network
-? Users can see other players profiles

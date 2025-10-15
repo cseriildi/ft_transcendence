@@ -1,38 +1,26 @@
 // src/services/friendService/friendController.ts
 import {
-  User,
   UserParams,
-  manageFriendsResponse
+  ManageFriendsBody
 } from "./friendTypes.ts";
+import { ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
+import { ensureDifferentUsers, ensureUsersExist, getFriendshipRecord } from "./friendUtils.ts";
 
 export const friendController = {
-  addFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  addFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user!.id;
+      const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
-      const user1_Id = tokenUserId;
 
-      if (user1_Id === user2_Id) {
-        throw errors.validation("Tokenuser ID and Param ID cannot be the same");
-      }
+      ensureDifferentUsers(user1_Id, user2_Id);
+      await ensureUsersExist(db, user1_Id, user2_Id);
 
-      // Check if users exist
-      const user1 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user1_Id]);
-      const user2 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user2_Id]);
-      if (!user1 || !user2) {
-        throw errors.notFound("One or both users not found");
-      }
-
-      // Check if a friend request already exists
-      const existingRequest = await db.get(
-        "SELECT * FROM friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
-        [user1_Id, user2_Id, user2_Id, user1_Id]
-      );
+      const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (existingRequest) {
         throw errors.conflict("A friend request already exists between these users");
       }
@@ -55,29 +43,16 @@ export const friendController = {
     }
   ),
 
-  acceptFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  acceptFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user!.id;
+      const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
-      const user1_Id = tokenUserId;
 
-      if (user1_Id === user2_Id) {
-        throw errors.validation("Tokenuser ID and Param ID cannot be the same");
-      }
+      ensureDifferentUsers(user1_Id, user2_Id);
+      await ensureUsersExist(db, user1_Id, user2_Id);
 
-      // Check if users exist
-      const user1 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user1_Id]);
-      const user2 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user2_Id]);
-      if (!user1 || !user2) {
-        throw errors.notFound("One or both users not found");
-      }
-
-      // Check if a friend request already exists
-      const existingRequest = await db.get(
-        "SELECT * FROM friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
-        [user1_Id, user2_Id, user2_Id, user1_Id]
-      );
+      const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users");
       }
@@ -109,29 +84,16 @@ export const friendController = {
     }
   ),
 
-  declineFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  declineFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user!.id;
+      const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
-      const user1_Id = tokenUserId;
 
-      if (user1_Id === user2_Id) {
-        throw errors.validation("Tokenuser ID and Param ID cannot be the same");
-      }
+      ensureDifferentUsers(user1_Id, user2_Id);
+      await ensureUsersExist(db, user1_Id, user2_Id);
 
-      // Check if users exist
-      const user1 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user1_Id]);
-      const user2 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user2_Id]);
-      if (!user1 || !user2) {
-        throw errors.notFound("One or both users not found");
-      }
-
-      // Check if a friend request already exists
-      const existingRequest = await db.get(
-        "SELECT * FROM friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
-        [user1_Id, user2_Id, user2_Id, user1_Id]
-      );
+      const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users");
       }
@@ -163,29 +125,16 @@ export const friendController = {
     }
   ),
 
-  removeFriend: createHandler<{ Params: UserParams }, manageFriendsResponse>(
+  removeFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user!.id;
+      const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
-      const user1_Id = tokenUserId;
 
-      if (user1_Id === user2_Id) {
-        throw errors.validation("Tokenuser ID and Param ID cannot be the same");
-      }
+      ensureDifferentUsers(user1_Id, user2_Id);
+      await ensureUsersExist(db, user1_Id, user2_Id);
 
-      // Check if users exist
-      const user1 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user1_Id]);
-      const user2 = await db.get<User>("SELECT id FROM users WHERE id = ?", [user2_Id]);
-      if (!user1 || !user2) {
-        throw errors.notFound("One or both users not found");
-      }
-
-      // Check if a friend request already exists
-      const existingRequest = await db.get(
-        "SELECT * FROM friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
-        [user1_Id, user2_Id, user2_Id, user1_Id]
-      );
+      const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users");
       }

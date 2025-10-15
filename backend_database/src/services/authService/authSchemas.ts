@@ -1,3 +1,5 @@
+import { createResponseSchema, commonDataSchemas } from "../../utils/schemaUtils.ts";
+
 export const AuthSchemas = {
   // POST /auth/register
   register: {
@@ -12,47 +14,7 @@ export const AuthSchemas = {
       required: ["username", "email", "password", "confirmPassword"],
       additionalProperties: false
     },
-    response: {
-      201: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              username: { type: "string" },
-              email: { type: "string" },
-              created_at: { type: "string" },
-              tokens: {
-                type: "object",
-                properties: {
-                  accessToken: { type: "string" }
-                }
-              }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      400: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      409: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(201, commonDataSchemas.userWithTokens, [400, 409])
   },
 
   // POST /auth/login
@@ -66,140 +28,32 @@ export const AuthSchemas = {
       required: ["email", "password"],
       additionalProperties: false
     },
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              username: { type: "string" },
-              email: { type: "string" },
-              created_at: { type: "string" },
-              tokens: {
-                type: "object",
-                properties: {
-                  accessToken: { type: "string" }
-                }
-              }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401])
   },
 
-// POST /auth/refresh
+  // POST /auth/refresh
   refresh: {
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              id: { type: "number" },
-              username: { type: "string" },
-              email: { type: "string" },
-              created_at: { type: "string" },
-              tokens: {
-                type: "object",
-                properties: {
-                  accessToken: { type: "string" }
-                }
-              }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      }
-    }
+    response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401])
   },
 
   // POST /auth/logout
   logout: {
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              message: { type: "string" }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
+    response: createResponseSchema(200, {
+      type: "object" as const,
+      properties: {
+        message: { type: "string" as const }
       }
-    }
+    }, [401])
   },
 
   // GET /auth/verify
   verify: {
-    response: {
-      200: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          data: {
-            type: "object",
-            properties: {
-              verified: { type: "boolean" }
-            }
-          },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      401: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
-      },
-      404: {
-        type: "object",
-        properties: {
-          success: { type: "boolean" },
-          message: { type: "string" },
-          timestamp: { type: "string" }
-        }
+    response: createResponseSchema(200, {
+      type: "object" as const,
+      properties: {
+        verified: { type: "boolean" as const }
       }
-    }
+    }, [401, 404])
   }
 };
 

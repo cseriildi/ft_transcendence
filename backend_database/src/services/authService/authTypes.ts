@@ -1,5 +1,4 @@
-import { ApiResponse, ErrorResponse } from "../../types/commonTypes.ts";
-import { User } from "../userService/userTypes.ts";
+import { User, TokenPair } from "../../types/commonTypes.ts";
 
 export interface JwtPayload {
   sub: string;
@@ -10,19 +9,7 @@ export interface JwtPayload {
   aud: string;
 }
 
-export interface LoginTokens {
-  accessToken: string;
-}
-
-export interface RefreshResponse {
-  id: number;
-  username: string;
-  email: string;
-  created_at: string;
-  tokens: LoginTokens;
-}
-
-// Request body for creating a user
+// Request bodies
 export interface CreateUserBody {
   username: string;
   email: string;
@@ -35,15 +22,7 @@ export interface UserLoginBody {
   password: string;
 }
 
-export interface UserLogin{
-  id: number;
-  username: string;
-  email: string;
-  created_at: string;
-  tokens: LoginTokens;
+// Response data shapes (used with ApiResponse<T>)
+export interface AuthUserData extends User {
+  tokens: TokenPair;
 }
-
-// Response types
-export type CreateUserResponse = ApiResponse<User>;
-export type UserLoginResponse = ApiResponse<UserLogin>;
-export type UserErrorResponse = ErrorResponse;

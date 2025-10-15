@@ -1,18 +1,16 @@
 // src/routes/users.ts
 import {
-  User,
   UserParams,
-  GetUserResponse,
-  GetUsersResponse,
-  uploadAvatarResponse,
-  uploadAvatar
+  UploadAvatarData
 } from "./userTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 import { MultipartFile } from "@fastify/multipart";
+import { ensureUserOwnership } from "../../utils/authUtils.ts";
 
 export const userController = {
 
@@ -22,15 +20,10 @@ export const userController = {
   //     // handler logic
   //   }
   // ),
-  getUserById: createHandler<{ Params: UserParams }, GetUserResponse>(
+  getUserById: createHandler<{ Params: UserParams }, ApiResponse<User>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user?.id;
-
-      // Ensure the user can only access their own data
-      if (tokenUserId !== parseInt(id)) {
-        throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
-      }
+      ensureUserOwnership(request.user!.id, id);
       
       const user = await db.get<User>(
         "SELECT id,username,email,created_at FROM users WHERE id = ?",
@@ -43,7 +36,7 @@ export const userController = {
     }
   ),
 
-   getUsers: createHandler<{}, GetUsersResponse>(
+   getUsers: createHandler<{}, ApiResponse<User[]>>(
     async (request, { db }) => {
       const users = await db.all<User>(
         "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
@@ -52,7 +45,7 @@ export const userController = {
     }
   ),
 
-  uploadAvatar: createHandler<{}, uploadAvatarResponse>(
+  uploadAvatar: createHandler<{}, ApiResponse<UploadAvatarData>>(
     async (request, { db }) => {
       const userId = request.user!.id;
       
@@ -110,7 +103,7 @@ export const userController = {
           );
         }
 
-        const result = await db.get<uploadAvatar>(
+        const result = await db.get<UploadAvatarData>(
           "SELECT u.username, a.file_url as avatar_url, a.created_at FROM users u JOIN avatars a ON u.id = a.user_id WHERE u.id = ?",
           [userId]
         );
@@ -130,16 +123,11 @@ export const userController = {
     }
   ),
 
-  changeEmail: createHandler<{ Params: UserParams }, GetUserResponse>(
+  changeEmail: createHandler<{ Params: UserParams }, ApiResponse<User>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user?.id;
+      ensureUserOwnership(request.user!.id, id);
       const { email } = request.body as { email: string };
-
-      // Ensure the user can only update their own data
-      if (tokenUserId !== parseInt(id)) {
-        throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
-      }
 
       // Schema already validates email format and required field
       // Check if email is already in use by another user
@@ -169,16 +157,11 @@ export const userController = {
     }
   ),
 
-  changeUsername: createHandler<{ Params: UserParams }, GetUserResponse>(
+  changeUsername: createHandler<{ Params: UserParams }, ApiResponse<User>>(
     async (request, { db }) => {
       const { id } = request.params;
-      const tokenUserId = request.user?.id;
+      ensureUserOwnership(request.user!.id, id);
       const { username } = request.body as { username: string };
-
-      // Ensure the user can only update their own data
-      if (tokenUserId !== parseInt(id)) {
-        throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
-      }
       
       // Check if username is already in use by another user
       const existingUsername = await db.get<User>(
