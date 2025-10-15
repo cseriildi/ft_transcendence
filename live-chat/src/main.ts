@@ -362,7 +362,7 @@ await app.register(async (fastify) => {
 
 const start = async () => {
   try {
-    await app.listen({ port: 3002, host: "::" });
+    await app.listen({ port: config.server.port, host: config.server.host });
     console.log(
       `Server is running on ${config.server.host}:${config.server.port}`
     );
