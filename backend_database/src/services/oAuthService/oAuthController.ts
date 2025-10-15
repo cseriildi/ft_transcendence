@@ -78,6 +78,28 @@ export const oauthController = {
       ["github", userInfo.id]
     );
 
+    // If OAuth user exists, update their avatar if provided
+    if (user && userInfo.avatar_url) {
+      const existingAvatar = await db.get<{ id: number }>(
+        "SELECT id FROM avatars WHERE user_id = ?",
+        [user.id]
+      );
+
+      if (existingAvatar) {
+        // Update existing avatar with latest OAuth URL
+        await db.run(
+          "UPDATE avatars SET file_url = ?, file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+          [userInfo.avatar_url, userInfo.avatar_url, user.id]
+        );
+      } else {
+        // Insert new avatar record
+        await db.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [user.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+        );
+      }
+    }
+
     // If not found, try to link by email or create new
     if (!user) {
       const existingByEmail = await db.get<User>(
@@ -88,15 +110,37 @@ export const oauthController = {
       if (existingByEmail) {
         // Link OAuth to existing account
         await db.run(
-          "UPDATE users SET oauth_provider = ?, oauth_id = ?, avatar_url = ? WHERE id = ?",
-          ["github", userInfo.id, userInfo.avatar_url || null, existingByEmail.id]
+          "UPDATE users SET oauth_provider = ?, oauth_id = ? WHERE id = ?",
+          ["github", userInfo.id, existingByEmail.id]
         );
         user = existingByEmail;
+
+        // Handle OAuth avatar - update or insert into avatars table
+        if (userInfo.avatar_url) {
+          const existingAvatar = await db.get<{ id: number }>(
+            "SELECT id FROM avatars WHERE user_id = ?",
+            [existingByEmail.id]
+          );
+
+          if (existingAvatar) {
+            // Update existing avatar with OAuth URL
+            await db.run(
+              "UPDATE avatars SET file_url = ?, file_path = ?, file_name = ?, mime_type = ?, file_size = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+              [userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0, existingByEmail.id]
+            );
+          } else {
+            // Insert new avatar record
+            await db.run(
+              "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+              [existingByEmail.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+            );
+          }
+        }
       } else {
         // Create new user
         const result = await db.run(
-          "INSERT INTO users (username, email, oauth_provider, oauth_id, avatar_url) VALUES (?, ?, ?, ?, ?)",
-          [userInfo.name, userInfo.email, "github", userInfo.id, userInfo.avatar_url || null]
+          "INSERT INTO users (username, email, oauth_provider, oauth_id) VALUES (?, ?, ?, ?)",
+          [userInfo.name, userInfo.email, "github", userInfo.id]
         );
 
         user = {
@@ -105,6 +149,14 @@ export const oauthController = {
           email: userInfo.email,
           created_at: new Date().toISOString(),
         };
+
+        // Save OAuth avatar to avatars table
+        if (userInfo.avatar_url) {
+          await db.run(
+            "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [result.lastID, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+          );
+        }
       }
     }
 
