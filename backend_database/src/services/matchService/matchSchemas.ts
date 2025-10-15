@@ -1,33 +1,102 @@
-import Ajv from 'ajv';
-import addFormats from "ajv-formats";
+/**
+ * Fastify JSON Schemas for Match routes
+ * These provide both validation AND Swagger documentation
+ */
 
-const ajv = new Ajv({coerceTypes: true, allErrors: true});
-addFormats(ajv);
-
-const CreateMatchSchema = {
-	type: "object",
-	properties: {
-		winner: {type: "string", minLength: 3},
-		loser: {type: "string", minLength: 3},
-		winner_score: {type: "number", minimum: 0},
-		loser_score: {type: "number", minimum: 0}
+export const MatchSchemas = {
+	// POST /matches - Create match
+	createMatch: {
+		body: {
+			type: "object" as const,
+			properties: {
+				winner: { type: "string", minLength: 3 },
+				loser: { type: "string", minLength: 3 },
+				winner_score: { type: "number", minimum: 0 },
+				loser_score: { type: "number", minimum: 0 }
+			},
+			required: ["winner", "loser", "winner_score", "loser_score"],
+			additionalProperties: false
+		},
+		response: {
+			201: {
+				type: "object",
+				properties: {
+					success: { type: "boolean" },
+					data: {
+						type: "object",
+						properties: {
+							id: { type: "number" },
+							user1_id: { type: "number" },
+							user2_id: { type: "number" },
+							winner_score: { type: "number" },
+							loser_score: { type: "number" },
+							created_at: { type: "string" }
+						}
+					},
+					message: { type: "string" },
+					timestamp: { type: "string" }
+				}
+			},
+			400: {
+				type: "object",
+				properties: {
+					success: { type: "boolean" },
+					message: { type: "string" },
+					timestamp: { type: "string" }
+				}
+			},
+			404: {
+				type: "object",
+				properties: {
+					success: { type: "boolean" },
+					message: { type: "string" },
+					timestamp: { type: "string" }
+				}
+			}
+		}
 	},
-	required: ["winner", "loser", "winner_score", "loser_score"],
-	additionalProperties: false
-};
 
-const MatchQuerySchema = {
-	type: "object",
-	properties: {
-		username: {type: "string", minLength: 3},
-	},
-	required: ["username"],
-	additionalProperties: false
-};
-
-export const MatchSchemaValidator = {
-	validateCreateMatch:
-		ajv.compile(CreateMatchSchema),
-	validateMatchQuery:
-		ajv.compile(MatchQuerySchema)
+	// GET /matches/:username - Get user matches
+	getUserMatches: {
+		params: {
+			type: "object" as const,
+			properties: {
+				username: { type: "string", minLength: 3 }
+			},
+			required: ["username"],
+			additionalProperties: false
+		},
+		response: {
+			200: {
+				type: "object",
+				properties: {
+					success: { type: "boolean" },
+					data: {
+						type: "array",
+						items: {
+							type: "object",
+							properties: {
+								id: { type: "number" },
+								user1_id: { type: "number" },
+								user2_id: { type: "number" },
+								winner_score: { type: "number" },
+								loser_score: { type: "number" },
+								created_at: { type: "string" }
+							}
+						}
+					},
+					message: { type: "string" },
+					timestamp: { type: "string" }
+				}
+			},
+			404: {
+				type: "object",
+				properties: {
+					success: { type: "boolean" },
+					message: { type: "string" },
+					timestamp: { type: "string" }
+				}
+			}
+		}
+	}
 };

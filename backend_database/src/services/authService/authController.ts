@@ -10,7 +10,6 @@ import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
-import { AuthSchemaValidator } from "./authSchemas.ts";
 import bcrypt from "bcrypt";
 import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authUtils.ts";
 
@@ -142,8 +141,7 @@ export const authController = {
 
   createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
       async (request, { db, reply }) => {
-      const valid = AuthSchemaValidator.validateCreateUser(request.body);
-      if (!valid) throw errors.validation("Invalid request body");
+
       if (request.body.password !== request.body.confirmPassword) {
         throw errors.validation("Passwords do not match");
       }
@@ -198,8 +196,6 @@ export const authController = {
 
   loginUser: createHandler<{ Body: UserLoginBody }, UserLoginResponse>(
       async (request, { db, reply }) => {
-      const valid = AuthSchemaValidator.validateUserLogin(request.body);
-      if (!valid) throw errors.validation("Invalid request body");
       const { email, password } = request.body || {};
       try {
         const result = await db.get<User & { password_hash: string }>(
