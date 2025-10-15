@@ -1,4 +1,4 @@
-// src/routes/users.ts
+// src/services/friendService/friendController.ts
 import {
   User,
   UserParams,

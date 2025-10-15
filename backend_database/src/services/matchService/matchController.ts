@@ -10,6 +10,7 @@ import {
 	  CreateMatchResponse,
 	  GetMatchesQuery,
 } from "./matchTypes.ts";
+import { User } from "../userService/userTypes.ts";
 
 export const matchController = {
 	  createMatch: createHandler<{ Body: CreateMatchBody }, CreateMatchResponse>(
@@ -53,7 +54,7 @@ export const matchController = {
 			const {username} = request.params;
 			try {
 				// First check if the user exists
-				const user = await db.get<{ count: number }>(
+				const user = await db.get<User>(
 					`SELECT * FROM users WHERE username = ?`,
 					[username]
 				);
