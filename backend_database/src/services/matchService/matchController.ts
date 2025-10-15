@@ -50,15 +50,14 @@ export const matchController = {
 
 	  getMatches: createHandler<{ Params: GetMatchesQuery }, GetMatchesResponse>(
 		async (request, { db }) => {
-			// ✅ Validation now handled by Fastify schema
 			const {username} = request.params;
 			try {
 				// First check if the user exists
-				const userExists = await db.get<{ count: number }>(
-					`SELECT COUNT(*) as count FROM users WHERE username = ?`,
+				const user = await db.get<{ count: number }>(
+					`SELECT * FROM users WHERE username = ?`,
 					[username]
 				);
-				if (!userExists || userExists.count === 0) {
+				if (!user) {
 					throw errors.notFound("User not found");
 				}
 
