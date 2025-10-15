@@ -2,17 +2,31 @@
 ## Integration
 ### Initial request to connect user to lobby by front-end should be done using WS
 ```javascript
-{
-    method: 'GET'
-    headers: {
-        'Content-type': 'application/json'
-        'Authorization': 'Bearer ${token}',
-    }
-    body: {
-        userId: number,
-        username: string,
-    },
-}
+// Example using JavaScript (browser environment)
+// Pass userId and username as query parameters, and token via Authorization header (if using a library that supports headers)
+
+const userId = 123;
+const username = "alice";
+const token = "<token>";
+
+// Construct the WebSocket URL with query parameters
+const wsUrl = `ws://host/lobby?userId=${userId}&username=${encodeURIComponent(username)}`;
+
+// Native browser WebSocket does not support custom headers.
+// If you need to send the Authorization header, use a library like 'ws' (Node.js) or 'socket.io'.
+// Example with 'ws' (Node.js):
+/*
+const WebSocket = require('ws');
+const ws = new WebSocket(wsUrl, {
+  headers: {
+    'Authorization': `Bearer ${token}`
+  }
+});
+*/
+
+// For browser, you may need to pass the token as a query parameter if the server supports it:
+// const wsUrl = `ws://host/lobby?userId=${userId}&username=${encodeURIComponent(username)}&token=${token}`;
+// const ws = new WebSocket(wsUrl);
 ```
 
 ### In return Front End receives a list of all active users to output in the lobby
