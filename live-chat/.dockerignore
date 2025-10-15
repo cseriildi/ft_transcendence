@@ -1,0 +1,59 @@
+# Node modules (will be installed in container)
+node_modules/
+npm-debug.log
+
+# Build output (will be generated in container)
+dist/
+
+# Test files
+*.test.ts
+vitest.config.ts
+TEST_SUITE.md
+TESTING_GUIDE.md
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+ReadMe.md
+WEBSOCKET_AUTHENTICATION.md
+
+# Dev container
+.devcontainer/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Database (will be created in container)
+src/database/*.db
+*.db
+*.db-journal
+
+# Test database
+test-*.db
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
