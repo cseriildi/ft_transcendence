@@ -2,55 +2,23 @@
 
 ## Quick guide to running Transendence
 
-### 1. Generate certs:
+### 🚀 One-command setup:
 
-``` bash
-chmod +x ./scripts/certs.sh && ./scripts/certs.sh
+```bash
+make
 ```
 
-### 2. Start all the containers:
+This will automatically:
+- Generate SSL certificates
+- Build all containers
+- Start all services
 
-``` bash
-docker compose up -d --build
-```
+### 🌐 Access the application:
 
-### 3. Access the services:
-
-* Frontend: http://localhost:4200
-* Backend: http://localhost:3000
-* Databank: http://localhost:3001
-
-### 4. Stop everything:
-
-``` bash
-docker compose down
-```
+https://localhost:8443
 
 ### Other usefull commands:
 
 ``` bash
-# start prebuilt containers (detached)
-docker compose up -d
-
-# rebuild when Dockerfiles/code change
-docker compose up -d --build
-
-# view logs (all services)
-docker compose logs -f
-
-# view logs (one service)
-docker compose logs -f backend
-
-# stop without removing
-docker compose stop
-
-# stop and remove containers/networks
-docker compose down
-
-# remove everything + named volumes (⚠️ deletes data)
-docker compose down -v
-
-# shell into a running container
-docker compose exec backend bash
+make help
 ```
-
