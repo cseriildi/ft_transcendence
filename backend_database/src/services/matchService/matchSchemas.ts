@@ -3,6 +3,8 @@
  * These provide both validation AND Swagger documentation
  */
 
+import { createResponseSchema, commonDataSchemas } from "../../utils/schemaUtils.ts";
+
 export const MatchSchemas = {
 	// POST /matches - Create match
 	createMatch: {
@@ -17,43 +19,7 @@ export const MatchSchemas = {
 			required: ["winner", "loser", "winner_score", "loser_score"],
 			additionalProperties: false
 		},
-		response: {
-			201: {
-				type: "object",
-				properties: {
-					success: { type: "boolean" },
-					data: {
-						type: "object",
-						properties: {
-							id: { type: "number" },
-							user1_id: { type: "number" },
-							user2_id: { type: "number" },
-							winner_score: { type: "number" },
-							loser_score: { type: "number" },
-							created_at: { type: "string" }
-						}
-					},
-					message: { type: "string" },
-					timestamp: { type: "string" }
-				}
-			},
-			400: {
-				type: "object",
-				properties: {
-					success: { type: "boolean" },
-					message: { type: "string" },
-					timestamp: { type: "string" }
-				}
-			},
-			404: {
-				type: "object",
-				properties: {
-					success: { type: "boolean" },
-					message: { type: "string" },
-					timestamp: { type: "string" }
-				}
-			}
-		}
+		response: createResponseSchema(201, commonDataSchemas.match, [400, 404])
 	},
 
 	// GET /matches/:username - Get user matches
@@ -66,37 +32,6 @@ export const MatchSchemas = {
 			required: ["username"],
 			additionalProperties: false
 		},
-		response: {
-			200: {
-				type: "object",
-				properties: {
-					success: { type: "boolean" },
-					data: {
-						type: "array",
-						items: {
-							type: "object",
-							properties: {
-								id: { type: "number" },
-								user1_id: { type: "number" },
-								user2_id: { type: "number" },
-								winner_score: { type: "number" },
-								loser_score: { type: "number" },
-								created_at: { type: "string" }
-							}
-						}
-					},
-					message: { type: "string" },
-					timestamp: { type: "string" }
-				}
-			},
-			404: {
-				type: "object",
-				properties: {
-					success: { type: "boolean" },
-					message: { type: "string" },
-					timestamp: { type: "string" }
-				}
-			}
-		}
+		response: createResponseSchema(200, commonDataSchemas.matchArray, [404])
 	}
 };

@@ -167,6 +167,18 @@ describe(`OAuth Routes`, () => {
       expect(users).toHaveLength(1)
       expect(users[0].oauth_provider).toBe(`github`)
       expect(users[0].oauth_id).toBe(`123456`)
+
+      // Verify OAuth avatar was saved to avatars table
+      const avatars = await new Promise<any[]>((resolve, reject) => {
+        app.db.all(`SELECT * FROM avatars WHERE user_id = ?`, [users[0].id], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows)
+        })
+      })
+      expect(avatars).toHaveLength(1)
+      expect(avatars[0].file_url).toBe(`https://avatars.githubusercontent.com/u/123456`)
+      expect(avatars[0].file_path).toBe(`https://avatars.githubusercontent.com/u/123456`)
+      expect(avatars[0].file_name).toBe(`oauth_avatar`)
     })
 
     it(`should link OAuth to existing user with same email`, async () => {
@@ -232,6 +244,16 @@ describe(`OAuth Routes`, () => {
       expect(users[0].oauth_provider).toBe(`github`)
       expect(users[0].oauth_id).toBe(`789012`)
       expect(users[0].username).toBe(`existinguser`) // Original username preserved
+
+      // Verify OAuth avatar was saved/updated in avatars table
+      const avatars = await new Promise<any[]>((resolve, reject) => {
+        app.db.all(`SELECT * FROM avatars WHERE user_id = ?`, [users[0].id], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows)
+        })
+      })
+      expect(avatars).toHaveLength(1)
+      expect(avatars[0].file_url).toBe(`https://avatars.githubusercontent.com/u/789012`)
     })
 
     it(`should login existing OAuth user`, async () => {
@@ -303,6 +325,16 @@ describe(`OAuth Routes`, () => {
         })
       })
       expect(users).toHaveLength(1)
+
+      // Verify avatar was saved and is still present
+      const avatars = await new Promise<any[]>((resolve, reject) => {
+        app.db.all(`SELECT * FROM avatars WHERE user_id = ?`, [users[0].id], (err, rows) => {
+          if (err) reject(err)
+          else resolve(rows)
+        })
+      })
+      expect(avatars).toHaveLength(1)
+      expect(avatars[0].file_url).toBe(`https://avatars.githubusercontent.com/u/111222`)
     })
 
     it(`should handle GitHub token exchange failure`, async () => {

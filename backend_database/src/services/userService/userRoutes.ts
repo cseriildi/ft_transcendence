@@ -2,11 +2,13 @@ import { FastifyInstance } from "fastify";
 import { userController } from "./userController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./userSchemas.ts";
-import { UserParams, GetUserResponse, GetUsersResponse } from "./userTypes.ts";
+import { UserParams, UploadAvatarData } from "./userTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
+
 
 async function userRoutes(fastify: FastifyInstance) {
   // GET /users/:id - Get single user (protected)
-  fastify.get<{ Params: UserParams; Reply: GetUserResponse }>(
+  fastify.get<{ Params: UserParams; Reply: ApiResponse<User> }>(
     "/users/:id",
     {
       preHandler: requireAuth,
@@ -21,7 +23,7 @@ async function userRoutes(fastify: FastifyInstance) {
   );
 
   // GET /users - Get all users
-  fastify.get<{ Reply: GetUsersResponse }>(
+  fastify.get<{ Reply: ApiResponse<User[]> }>(
     "/users",
     {
       schema: {
@@ -32,6 +34,53 @@ async function userRoutes(fastify: FastifyInstance) {
     },
     userController.getUsers
   );
+
+  // POST /users/avatar - Upload avatar (protected)
+  fastify.post<{ Reply: ApiResponse<UploadAvatarData> }>(
+    "/users/avatar",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Upload avatar image (requires authentication, multipart/form-data).\
+          After upload, avatars are publicly accessible at /uploads/avatars/{filename}",
+        security: [{ bearerAuth: [] }],
+        consumes: ["multipart/form-data"],
+        ...UserSchemas.uploadAvatar
+      }
+    },
+    userController.uploadAvatar
+  );
+
+  // PATCH /users/:id/email - Change user email (protected)
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<User> }>(
+    "/users/:id/email",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Change user email (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.changeEmail
+      }
+    },
+    userController.changeEmail
+  );
+
+  // PATCH /users/:id/username - Change username (protected)
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<User> }>(
+    "/users/:id/username",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Change username (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.changeUsername
+      }
+    },
+    userController.changeUsername
+  )
 }
 
 export default userRoutes;

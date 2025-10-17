@@ -2,16 +2,16 @@ import { FastifyInstance } from "fastify";
 import "../../types/fastifyTypes.ts";
 import {
 	  CreateMatchBody,
-	  GetMatchResponse,
-	  GetMatchesResponse,
+	  Match,
 	  GetMatchesQuery
 } from "./matchTypes.ts";
+import { ApiResponse } from "../../types/commonTypes.ts";
 import { matchController } from "./matchController.ts";
 import { MatchSchemas } from "./matchSchemas.ts";
 
 async function matchRoutes(fastify: FastifyInstance) {
 	// POST /matches - Create a new match
-	fastify.post<{ Body: CreateMatchBody; Reply: GetMatchResponse }>(
+	fastify.post<{ Body: CreateMatchBody; Reply: ApiResponse<Match> }>(
 		"/matches",
 		{
 			schema: {
@@ -24,7 +24,7 @@ async function matchRoutes(fastify: FastifyInstance) {
 	);
 	
 	// GET /matches/:username - Get user's matches
-	fastify.get<{ Params: GetMatchesQuery; Reply: GetMatchesResponse }>(
+	fastify.get<{ Params: GetMatchesQuery; Reply: ApiResponse<Match[]> }>(
 		"/matches/:username",
 		{
 			schema: {

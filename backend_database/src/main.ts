@@ -74,6 +74,24 @@ export async function build(opts: BuildOptions = {}) {
     await app.register(dbConnector, { path: database?.path ?? appConfig.database.path });
     await app.register(errorHandler);
     await app.register(import("@fastify/cookie"));
+    
+    // Register multipart for file uploads
+    await app.register(import("@fastify/multipart"), {
+      limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB max file size
+        files: 1 // Max 1 file per request
+      }
+    });
+    
+    // Register static file serving for uploaded avatars
+    await app.register(import("@fastify/static"), {
+      root: appConfig.server.env === 'production' 
+        ? '/app/uploads' 
+        : `${process.cwd()}/uploads`,
+      prefix: '/uploads/',
+      decorateReply: false
+    });
+    
     await app.register(routes);
 
     return app;
