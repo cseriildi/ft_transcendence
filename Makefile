@@ -89,7 +89,8 @@ logs:
 		docker compose logs -f "$$SERVICE"; \
 	else \
 		echo "❌ Invalid service. Available services: $(SERVICES)"; \
-		echo "Usage: make logs [service]"; \
+		echo "Usage: make logs <service>"; \
+		exit 1; \
 	fi
 
 # Open shell in container - usage: make shell [service]
@@ -102,9 +103,9 @@ shell:
 	else \
 		echo "❌ Invalid service. Available services: $(SERVICES)"; \
 		echo "Usage: make shell [service]"; \
+		exit 1; \
 	fi
 
-# Default target
 help:
 	@echo "Available Commands"
 	@echo ""
