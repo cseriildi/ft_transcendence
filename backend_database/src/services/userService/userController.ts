@@ -40,14 +40,18 @@ export const userController = {
   ),
 
    getUsers: createHandler<{}, ApiResponse<User[]>>(
-    async (request, { db }) => {
+    async (request, { db }) => {     
       const users = await db.all<User>(
-        "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
+        `SELECT 
+          u.id, 
+          u.username, 
+          u.email, 
+          u.created_at,
+          a.file_url as avatar_url
+        FROM users u
+        LEFT JOIN avatars a ON u.id = a.user_id
+        ORDER BY u.created_at DESC`
       );
-      // Retrieve avatar URLs for all users using helper
-      for (const user of users) {
-        user.avatar_url = await db.getAvatarUrl(user.id);
-      }
       return ApiResponseHelper.success(users, "Users retrieved");
     }
   ),
