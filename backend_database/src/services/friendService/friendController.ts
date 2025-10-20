@@ -1,7 +1,9 @@
 // src/services/friendService/friendController.ts
 import {
   UserParams,
-  ManageFriendsBody
+  ManageFriendsBody,
+  FriendStatus,
+  FriendsStatusResponse
 } from "./friendTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
@@ -156,6 +158,55 @@ export const friendController = {
         updated_at
       };
       return ApiResponseHelper.success(responseBody, "Friend removed successfully");
+    }
+  ),
+
+  getFriendsStatus: createHandler<{}, ApiResponse<FriendsStatusResponse>>(
+    async (request, { db }) => {
+      const userId = request.user!.id;
+      
+      // Online threshold: 2 minutes (configurable)
+      const ONLINE_THRESHOLD_MINUTES = 2;
+      
+      // Get all accepted friends for the current user
+      const friends = await db.all<FriendStatus>(
+        `SELECT 
+          CASE 
+            WHEN f.user1_id = ? THEN f.user2_id 
+            ELSE f.user1_id 
+          END as user_id,
+          u.username,
+          u.last_seen,
+          CASE 
+            WHEN u.last_seen IS NULL THEN 0
+            WHEN (julianday('now') - julianday(u.last_seen)) * 24 * 60 <= ? THEN 1
+            ELSE 0
+          END as is_online
+        FROM friends f
+        JOIN users u ON (
+          CASE 
+            WHEN f.user1_id = ? THEN u.id = f.user2_id 
+            ELSE u.id = f.user1_id 
+          END
+        )
+        WHERE (f.user1_id = ? OR f.user2_id = ?)
+          AND f.status = 'accepted'
+        ORDER BY is_online DESC, u.username ASC`,
+        [userId, ONLINE_THRESHOLD_MINUTES, userId, userId, userId]
+      );
+
+      // Convert is_online from 0/1 to boolean
+      const friendsWithStatus: FriendStatus[] = friends.map(f => ({
+        ...f,
+        is_online: Boolean(f.is_online)
+      }));
+
+      const response: FriendsStatusResponse = {
+        friends: friendsWithStatus,
+        online_threshold_minutes: ONLINE_THRESHOLD_MINUTES
+      };
+
+      return ApiResponseHelper.success(response, "Friends status retrieved");
     }
   ),
 

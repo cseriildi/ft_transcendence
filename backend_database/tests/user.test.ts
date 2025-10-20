@@ -579,5 +579,140 @@ describe('User Routes', () => {
     expect(body.data.username).toBe('trimmeduser')
     expect(body.data.username).not.toContain(' ')
   })
+
+  describe('PATCH /users/:id/heartbeat', () => {
+    it('should update user last_seen timestamp', async () => {
+      const beforeTime = new Date().toISOString()
+
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/heartbeat`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        }
+      })
+
+      const afterTime = new Date().toISOString()
+
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as any
+      expect(body.success).toBe(true)
+      expect(body.message).toBe('Heartbeat updated')
+      expect(body.data).toHaveProperty('last_seen')
+      expect(body.data.last_seen).toBeDefined()
+      expect(body.data.last_seen).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+      
+      // Verify timestamp is within expected range
+      expect(body.data.last_seen >= beforeTime).toBe(true)
+      expect(body.data.last_seen <= afterTime).toBe(true)
+    })
+
+    it('should reject heartbeat without authentication', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/heartbeat`
+      })
+
+      expect(res.statusCode).toBe(401)
+      const body = res.json() as any
+      expect(body.success).toBe(false)
+    })
+
+    it('should reject heartbeat for different user', async () => {
+      // Create another user
+      const otherUserPayload = {
+        username: 'otheruser',
+        email: 'other@example.com',
+        password: 'password123',
+        confirmPassword: 'password123'
+      }
+      const otherUserRes = await app.inject({
+        method: 'POST',
+        url: `${AUTH_PREFIX}/register`,
+        payload: otherUserPayload
+      })
+      const otherUserId = otherUserRes.json().data.id
+
+      // Try to update other user's heartbeat
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${otherUserId}/heartbeat`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        }
+      })
+
+      expect(res.statusCode).toBe(403)
+      const body = res.json() as any
+      expect(body.success).toBe(false)
+    })
+
+    it('should allow multiple consecutive heartbeats', async () => {
+      // First heartbeat
+      const res1 = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/heartbeat`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        }
+      })
+      expect(res1.statusCode).toBe(200)
+      const firstTimestamp = res1.json().data.last_seen
+
+      // Small delay
+      await new Promise(resolve => setTimeout(resolve, 50))
+
+      // Second heartbeat
+      const res2 = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/heartbeat`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        }
+      })
+      expect(res2.statusCode).toBe(200)
+      const secondTimestamp = res2.json().data.last_seen
+
+      // Timestamps should be valid and second should be later
+      expect(firstTimestamp).toBeDefined()
+      expect(secondTimestamp).toBeDefined()
+      expect(secondTimestamp >= firstTimestamp).toBe(true)
+    })
+
+    it('should reject heartbeat for non-existent user', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/99999/heartbeat`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        }
+      })
+
+      expect(res.statusCode).toBe(403)
+      const body = res.json() as any
+      expect(body.success).toBe(false)
+    })
+
+    it('should return valid ISO 8601 timestamp format', async () => {
+      const res = await app.inject({
+        method: 'PATCH',
+        url: `${API_PREFIX}/users/${userId}/heartbeat`,
+        headers: {
+          authorization: `Bearer ${accessToken}`
+        }
+      })
+
+      expect(res.statusCode).toBe(200)
+      const body = res.json() as any
+      const timestamp = body.data.last_seen
+
+      // Verify ISO 8601 format
+      expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/)
+      
+      // Verify it's a valid date
+      const date = new Date(timestamp)
+      expect(date.toString()).not.toBe('Invalid Date')
+    })
+  })
 })
 

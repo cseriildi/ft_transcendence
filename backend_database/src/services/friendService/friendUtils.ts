@@ -4,6 +4,7 @@
 
 import { errors } from "../../utils/errorUtils.ts";
 import type { User } from "../../types/commonTypes.ts";
+import type { DatabaseHelper } from "../../utils/databaseUtils.ts";
 
 /**
  * Validates that two user IDs are different (can't friend yourself)
@@ -15,11 +16,10 @@ export function ensureDifferentUsers(userId1: number, userId2: number) {
 }
 
 /**
- * Verifies that both users exist in the database
- * Throws notFound error if either user doesn't exist
+ * Validates that both users exist in the database
  */
 export async function ensureUsersExist(
-  db: any,
+  db: DatabaseHelper,
   userId1: number,
   userId2: number
 ): Promise<void> {
@@ -36,7 +36,7 @@ export async function ensureUsersExist(
  * Returns the relationship record or null
  */
 export async function getFriendshipRecord(
-  db: any,
+  db: DatabaseHelper,
   userId1: number,
   userId2: number
 ): Promise<any | null> {

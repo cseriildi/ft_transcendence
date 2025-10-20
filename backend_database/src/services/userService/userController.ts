@@ -199,5 +199,21 @@ export const userController = {
 
       return ApiResponseHelper.success(updatedUser, "Username updated successfully");
     }
+  ),
+
+  updateHeartbeat: createHandler<{ Params: UserParams }, ApiResponse<{ last_seen: string }>>(
+    async (request, { db }) => {
+      const { id } = request.params;
+      ensureUserOwnership(request.user!.id, id);
+      
+      const last_seen = new Date().toISOString();
+      
+      await db.run(
+        "UPDATE users SET last_seen = ? WHERE id = ?",
+        [last_seen, id]
+      );
+
+      return ApiResponseHelper.success({ last_seen }, "Heartbeat updated");
+    }
   )
 };
