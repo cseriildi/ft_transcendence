@@ -37,6 +37,9 @@ export async function handleJoinLobby(
         },
       });
       if (!upstream.ok) {
+        connection.send(
+          JSON.stringify({ type: "error", message: "Authentication failed" })
+        );
         connection.close();
         return;
       }
