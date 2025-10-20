@@ -16,7 +16,7 @@ import {
   setRefreshTokenCookie, 
   generateAndStoreRefreshToken 
 } from "../../utils/authUtils.ts";
-import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
+import { copyDefaultAvatar, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(
@@ -155,10 +155,16 @@ export const authController = {
 
         // Copy default avatar for new user
         const avatar = await copyDefaultAvatar(result.lastID);
-        await db.run(
+        const insert = await  db.run(
           "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
           [result.lastID, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
         );
+        if (!insert) {
+          await deleteUploadedFile(avatar.fileUrl);
+          await db.run("DELETE FROM users WHERE id = ?", [result.lastID]);
+          throw errors.internal("Failed to assign default avatar to new user, registration rolled back, please retry");
+        }
+
 
         reply.status(201);
         return ApiResponseHelper.success(
@@ -167,6 +173,7 @@ export const authController = {
             username: username.trim(),
             email: email.trim(),
             created_at: new Date().toISOString(),
+            avatarUrl: avatar.fileUrl,
             tokens: { accessToken },
           },
           "User created"
