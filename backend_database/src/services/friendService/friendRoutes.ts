@@ -2,7 +2,7 @@ import { FastifyInstance } from "fastify";
 import { friendController } from "./friendController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
 import { UserSchemas } from "./friendSchemas.ts";
-import { UserParams, ManageFriendsBody } from "./friendTypes.ts";
+import { UserParams, ManageFriendsBody, FriendsStatusResponse } from "./friendTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 
 
@@ -62,7 +62,21 @@ async function friendRoutes(fastify: FastifyInstance) {
       }
     },
     friendController.removeFriend
-  )
+  );
+
+  fastify.get<{ Reply: ApiResponse<FriendsStatusResponse> }>(
+    "/friends/status",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["friend"],
+        description: "Get online status of all friends (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.getFriendsStatus
+      }
+    },
+    friendController.getFriendsStatus
+  );
 }
 
 export default friendRoutes;

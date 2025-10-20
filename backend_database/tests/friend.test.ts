@@ -866,4 +866,498 @@ describe('Friend Routes', () => {
       expect(body.data.created_at <= afterTime).toBe(true)
     })
   })
+
+  describe('Friend Online Status Tracking', () => {
+    const USERS_PREFIX = `${config.routes.api}/users`
+
+    describe('PATCH /users/:id/heartbeat (Update Online Status)', () => {
+      it('should update user last_seen timestamp on heartbeat', async () => {
+        const beforeTime = new Date().toISOString()
+
+        const res = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user1Id}/heartbeat`,
+          headers: {
+            authorization: `Bearer ${user1Token}`,
+          },
+        })
+
+        const afterTime = new Date().toISOString()
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        expect(body.success).toBe(true)
+        expect(body.message).toBe('Heartbeat updated')
+        expect(body.data.last_seen).toBeDefined()
+        expect(body.data.last_seen).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
+        expect(body.data.last_seen >= beforeTime).toBe(true)
+        expect(body.data.last_seen <= afterTime).toBe(true)
+      })
+
+      it('should reject heartbeat without authentication', async () => {
+        const res = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user1Id}/heartbeat`,
+        })
+
+        expect(res.statusCode).toBe(401)
+        const body = res.json() as any
+        expect(body.success).toBe(false)
+      })
+
+      it('should reject heartbeat for different user', async () => {
+        const res = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: {
+            authorization: `Bearer ${user1Token}`,
+          },
+        })
+
+        expect(res.statusCode).toBe(403)
+        const body = res.json() as any
+        expect(body.success).toBe(false)
+      })
+
+      it('should allow multiple heartbeats and update timestamp each time', async () => {
+        // First heartbeat
+        const res1 = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user1Id}/heartbeat`,
+          headers: {
+            authorization: `Bearer ${user1Token}`,
+          },
+        })
+        expect(res1.statusCode).toBe(200)
+        const firstTimestamp = res1.json().data.last_seen
+
+        // Wait a bit
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Second heartbeat
+        const res2 = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user1Id}/heartbeat`,
+          headers: {
+            authorization: `Bearer ${user1Token}`,
+          },
+        })
+        expect(res2.statusCode).toBe(200)
+        const secondTimestamp = res2.json().data.last_seen
+
+        // Second timestamp should be later than first
+        expect(secondTimestamp > firstTimestamp).toBe(true)
+      })
+    })
+
+    describe('GET /friends/status (Get Friends Online Status)', () => {
+      beforeEach(async () => {
+        // Set up friendships for testing
+        // User1 -> User2: accepted
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 -> User3: accepted
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user3Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user3Token}` },
+        })
+      })
+
+      it('should return friends status with empty last_seen by default', async () => {
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: {
+            authorization: `Bearer ${user1Token}`,
+          },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        expect(body.success).toBe(true)
+        expect(body.message).toBe('Friends status retrieved')
+        expect(body.data).toBeDefined()
+        expect(body.data.friends).toBeDefined()
+        expect(Array.isArray(body.data.friends)).toBe(true)
+        expect(body.data.friends.length).toBe(2)
+        expect(body.data.online_threshold_minutes).toBe(2)
+
+        // Check structure of friend status
+        const friend = body.data.friends[0]
+        expect(friend).toHaveProperty('user_id')
+        expect(friend).toHaveProperty('username')
+        expect(friend).toHaveProperty('is_online')
+        expect(friend).toHaveProperty('last_seen')
+        
+        // Initially, no one has sent heartbeat, so all offline
+        expect(friend.is_online).toBe(false)
+        expect(friend.last_seen).toBeNull()
+      })
+
+      it('should show friend as online after recent heartbeat', async () => {
+        // User2 sends heartbeat
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 checks friends status
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        
+        const user2Status = body.data.friends.find((f: any) => f.user_id === user2Id)
+        expect(user2Status).toBeDefined()
+        expect(user2Status.is_online).toBe(true)
+        expect(user2Status.last_seen).not.toBeNull()
+        expect(user2Status.username).toBe('bob')
+      })
+
+      it('should show multiple friends with different online statuses', async () => {
+        // User2 sends heartbeat (will be online)
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User3 doesn't send heartbeat (will be offline)
+
+        // User1 checks friends status
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        expect(body.data.friends.length).toBe(2)
+
+        const user2Status = body.data.friends.find((f: any) => f.user_id === user2Id)
+        const user3Status = body.data.friends.find((f: any) => f.user_id === user3Id)
+
+        expect(user2Status.is_online).toBe(true)
+        expect(user2Status.last_seen).not.toBeNull()
+
+        expect(user3Status.is_online).toBe(false)
+        expect(user3Status.last_seen).toBeNull()
+      })
+
+      it('should reject friends status request without authentication', async () => {
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+        })
+
+        expect(res.statusCode).toBe(401)
+        const body = res.json() as any
+        expect(body.success).toBe(false)
+      })
+
+      it('should return empty friends array for user with no friends', async () => {
+        // Create a new user with no friends
+        const newUserPayload = {
+          username: 'loner',
+          email: 'loner@example.com',
+          password: 'password123',
+          confirmPassword: 'password123',
+        }
+        const newUserRes = await app.inject({
+          method: 'POST',
+          url: `${AUTH_PREFIX}/register`,
+          payload: newUserPayload,
+        })
+        const newUserBody = newUserRes.json() as any
+        const newUserToken = newUserBody.data.tokens.accessToken
+
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${newUserToken}` },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        expect(body.success).toBe(true)
+        expect(body.data.friends).toEqual([])
+      })
+
+      it('should only return accepted friends, not pending or declined', async () => {
+        // Create user4
+        const user4Payload = {
+          username: 'dave',
+          email: 'dave@example.com',
+          password: 'password123',
+          confirmPassword: 'password123',
+        }
+        const user4Res = await app.inject({
+          method: 'POST',
+          url: `${AUTH_PREFIX}/register`,
+          payload: user4Payload,
+        })
+        const user4Body = user4Res.json() as any
+        const user4Id = user4Body.data.id
+        const user4Token = user4Body.data.tokens.accessToken
+
+        // User1 -> User4: pending (not accepted)
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user4Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // User1 checks friends status (should only see user2 and user3, not user4)
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        expect(body.data.friends.length).toBe(2)
+        
+        const friendIds = body.data.friends.map((f: any) => f.user_id)
+        expect(friendIds).toContain(user2Id)
+        expect(friendIds).toContain(user3Id)
+        expect(friendIds).not.toContain(user4Id)
+      })
+
+      it('should show friends sorted by online status first, then alphabetically', async () => {
+        // User3 sends heartbeat (charlie will be online)
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user3Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user3Token}` },
+        })
+
+        // User2 doesn't send heartbeat (bob will be offline)
+
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        const friends = body.data.friends
+
+        // First friend should be online (charlie)
+        expect(friends[0].is_online).toBe(true)
+        expect(friends[0].username).toBe('charlie')
+
+        // Second friend should be offline (bob)
+        expect(friends[1].is_online).toBe(false)
+        expect(friends[1].username).toBe('bob')
+      })
+
+      it('should update last_seen timestamp correctly across multiple heartbeats', async () => {
+        // First heartbeat
+        const firstHeartbeat = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+        const firstTimestamp = firstHeartbeat.json().data.last_seen
+
+        // Check status
+        const firstStatus = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        const user2FirstStatus = firstStatus.json().data.friends.find((f: any) => f.user_id === user2Id)
+        expect(user2FirstStatus.last_seen).toBe(firstTimestamp)
+        expect(user2FirstStatus.is_online).toBe(true)
+
+        // Wait and send another heartbeat
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        const secondHeartbeat = await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+        const secondTimestamp = secondHeartbeat.json().data.last_seen
+
+        // Check status again
+        const secondStatus = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        const user2SecondStatus = secondStatus.json().data.friends.find((f: any) => f.user_id === user2Id)
+        expect(user2SecondStatus.last_seen).toBe(secondTimestamp)
+        expect(user2SecondStatus.last_seen > user2FirstStatus.last_seen).toBe(true)
+        expect(user2SecondStatus.is_online).toBe(true)
+      })
+    })
+
+    describe('Online Status Integration Tests', () => {
+      it('should handle real-world scenario: two friends, one online, checking each other', async () => {
+        // Make User1 and User2 friends
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 sends heartbeat (becomes online)
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user1Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // User2 checks status and sees User1 online
+        const user2Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+        const user2View = user2Check.json().data.friends.find((f: any) => f.user_id === user1Id)
+        expect(user2View.is_online).toBe(true)
+        expect(user2View.username).toBe('alice')
+
+        // User1 checks status and sees User2 offline
+        const user1Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        const user1View = user1Check.json().data.friends.find((f: any) => f.user_id === user2Id)
+        expect(user1View.is_online).toBe(false)
+        expect(user1View.username).toBe('bob')
+
+        // User2 sends heartbeat (also becomes online)
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 checks again and now sees User2 online
+        const user1CheckAgain = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        const user1ViewAgain = user1CheckAgain.json().data.friends.find((f: any) => f.user_id === user2Id)
+        expect(user1ViewAgain.is_online).toBe(true)
+      })
+
+      it('should not show removed friends in status even if they are online', async () => {
+        // User1 and User2 are friends
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User2 sends heartbeat (online)
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 removes friendship
+        await app.inject({
+          method: 'DELETE',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // User1 checks status (should not see User2)
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        expect(res.statusCode).toBe(200)
+        const body = res.json() as any
+        expect(body.data.friends.length).toBe(0)
+      })
+
+      it('should handle bidirectional friendship status checks', async () => {
+        // User1 and User2 are friends
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // Both send heartbeats
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user1Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${USERS_PREFIX}/${user2Id}/heartbeat`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 sees User2 online
+        const user1Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        const user1View = user1Check.json().data.friends[0]
+        expect(user1View.user_id).toBe(user2Id)
+        expect(user1View.is_online).toBe(true)
+
+        // User2 sees User1 online
+        const user2Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+        const user2View = user2Check.json().data.friends[0]
+        expect(user2View.user_id).toBe(user1Id)
+        expect(user2View.is_online).toBe(true)
+      })
+    })
+  })
 })

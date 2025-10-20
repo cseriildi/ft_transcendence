@@ -24,5 +24,6 @@
     ✅ Users can upload an avatar, with a default option if none is provided.
     ✅ Users can add others as friends and view their online status. (tests missing)
     ? User profiles display stats, such as wins and losses.
+    ? disply friends route
     ✅ Each user has a Match History including 1v1 games, dates, and relevant
     details, accessible to logged-in users.

@@ -11,3 +11,14 @@ export interface ManageFriendsBody {
   updated_at?: string;
 }
 
+export interface FriendStatus {
+  user_id: number;
+  username: string;
+  is_online: boolean;
+  last_seen: string | null;
+}
+
+export interface FriendsStatusResponse {
+  friends: FriendStatus[];
+  online_threshold_minutes: number;
+}

@@ -80,4 +80,24 @@ export const UserSchemas = {
     },
     response: createResponseSchema(200, commonDataSchemas.user, [400, 401, 403, 409])
   },
+
+  heartbeat: {
+    params: {
+      type: "object" as const,
+      properties: {
+        id: { type: "number", minimum: 1 }
+      },
+      required: ["id"]
+    },
+    response: createResponseSchema(200, {
+      type: "object" as const,
+      properties: {
+        last_seen: { 
+          type: "string", 
+          format: "date-time",
+          description: "ISO 8601 timestamp of last heartbeat" 
+        }
+      }
+    }, [401, 403])
+  },
 };

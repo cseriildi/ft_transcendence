@@ -40,6 +40,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         oauth_id TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_seen DATETIME,
         UNIQUE(oauth_provider, oauth_id)
       )`);
 

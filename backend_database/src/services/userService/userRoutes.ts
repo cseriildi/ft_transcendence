@@ -80,7 +80,22 @@ async function userRoutes(fastify: FastifyInstance) {
       }
     },
     userController.changeUsername
-  )
+  );
+
+  // PATCH /users/:id/heartbeat - Update user's online status (protected)
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<{ last_seen: string }> }>(
+    "/users/:id/heartbeat",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["users"],
+        description: "Update user's last seen timestamp (requires authentication)",
+        security: [{ bearerAuth: [] }],
+        ...UserSchemas.heartbeat
+      }
+    },
+    userController.updateHeartbeat
+  );
 }
 
 export default userRoutes;
