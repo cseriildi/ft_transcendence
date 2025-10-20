@@ -65,6 +65,7 @@ export const commonDataSchemas = {
       id: { type: "number" as const },
       username: { type: "string" as const },
       email: { type: "string" as const },
+      avatar_url: { type: "string" as const },
       created_at: { type: "string" as const }
     }
   },
@@ -76,6 +77,7 @@ export const commonDataSchemas = {
       id: { type: "number" as const },
       username: { type: "string" as const },
       email: { type: "string" as const },
+      avatar_url: { type: "string" as const },
       created_at: { type: "string" as const },
       tokens: {
         type: "object" as const,
@@ -95,6 +97,7 @@ export const commonDataSchemas = {
         id: { type: "number" as const },
         username: { type: "string" as const },
         email: { type: "string" as const },
+        avatar_url: { type: "string" as const },
         created_at: { type: "string" as const }
       }
     }

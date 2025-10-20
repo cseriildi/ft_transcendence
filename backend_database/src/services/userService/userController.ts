@@ -32,21 +32,25 @@ export const userController = {
       if (!user) {
         throw errors.notFound("User");
       }
-      const avatarUrl = await db.get<{ file_url: string }>(
-        "SELECT file_url FROM avatars WHERE user_id = ?",
-        [id]
-      );
-      if (avatarUrl) {
-        user.avatar_url = avatarUrl.file_url;
-      }
+      // Retrieve avatar URL using helper (throws error if not found)
+      user.avatar_url = await db.getAvatarUrl(user.id);
+      
       return ApiResponseHelper.success(user, "User found");
     }
   ),
 
    getUsers: createHandler<{}, ApiResponse<User[]>>(
-    async (request, { db }) => {
+    async (request, { db }) => {     
       const users = await db.all<User>(
-        "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
+        `SELECT 
+          u.id, 
+          u.username, 
+          u.email, 
+          u.created_at,
+          a.file_url as avatar_url
+        FROM users u
+        LEFT JOIN avatars a ON u.id = a.user_id
+        ORDER BY u.created_at DESC`
       );
       return ApiResponseHelper.success(users, "Users retrieved");
     }

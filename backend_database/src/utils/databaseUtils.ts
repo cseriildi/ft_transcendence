@@ -3,6 +3,26 @@ import { errors } from "./errorUtils.ts";
 
 export class DatabaseHelper {
   constructor(private db: Database) {}
+
+  /**
+   * Retrieves the avatar URL for a given user ID.
+   * Throws an error if no avatar is found for the user.
+   * @param userId - The ID of the user whose avatar to retrieve
+   * @returns The avatar URL string
+   * @throws {AppError} If no avatar is found for the user
+   */
+  async getAvatarUrl(userId: number): Promise<string> {
+    const avatar = await this.get<{ file_url: string }>(
+      "SELECT file_url FROM avatars WHERE user_id = ?",
+      [userId]
+    );
+    
+    if (!avatar || !avatar.file_url) {
+      throw errors.notFound(`Avatar not found for user ${userId}`);
+    }
+    
+    return avatar.file_url;
+  }
   
   //here T is the type of the row returned
   // :Promise<T | null> means it will return a promis of that type
