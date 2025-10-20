@@ -16,6 +16,7 @@ import {
   setRefreshTokenCookie, 
   generateAndStoreRefreshToken 
 } from "../../utils/authUtils.ts";
+import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(
@@ -151,6 +152,13 @@ export const authController = {
         const accessToken = await signAccessToken(result.lastID);
         const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
         setRefreshTokenCookie(reply, refreshToken);
+
+        // Copy default avatar for new user
+        const avatar = await copyDefaultAvatar(result.lastID);
+        await db.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [result.lastID, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
+        );
 
         reply.status(201);
         return ApiResponseHelper.success(

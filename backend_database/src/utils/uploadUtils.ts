@@ -8,6 +8,8 @@ import { randomBytes } from "crypto";
 // Upload configuration
 export const UPLOAD_CONFIG = {
   uploadsDir: path.join(process.cwd(), "uploads", "avatars"),
+  defaultAvatarPath: path.join(process.cwd(), "uploads", "avatars", "default", "default-avatar.png"),
+  defaultAvatarUrl: "/uploads/avatars/default/default-avatar.png",
   maxFileSize: 5 * 1024 * 1024, // 5MB
   allowedMimeTypes: ["image/jpeg", "image/png"],
   allowedExtensions: [".jpg", ".jpeg", ".png"],
@@ -79,9 +81,50 @@ export async function saveUploadedFile(file: MultipartFile): Promise<string> {
   return `/uploads/avatars/${uniqueFilename}`;
 }
 
+// Copy default avatar for new user
+export async function copyDefaultAvatar(userId: number): Promise<{ 
+  filePath: string; 
+  fileUrl: string; 
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+}> {
+  await ensureUploadsDirExists();
+  
+  // Check if default avatar exists
+  try {
+    await fs.access(UPLOAD_CONFIG.defaultAvatarPath);
+  } catch (error) {
+    throw errors.internal("Default avatar file not found. Please ensure default-avatar.png exists in uploads/avatars/default/");
+  }
+
+  // Generate unique filename for this user's copy
+  const uniqueFilename = `user-${userId}-${randomBytes(8).toString("hex")}.png`;
+  const destinationPath = path.join(UPLOAD_CONFIG.uploadsDir, uniqueFilename);
+  
+  // Copy the default avatar
+  await fs.copyFile(UPLOAD_CONFIG.defaultAvatarPath, destinationPath);
+  
+  // Get file stats for metadata
+  const stats = await fs.stat(destinationPath);
+  
+  return {
+    filePath: uniqueFilename,
+    fileUrl: `/uploads/avatars/${uniqueFilename}`,
+    fileName: "default-avatar.png",
+    mimeType: "image/png",
+    fileSize: stats.size
+  };
+}
+
 // Delete uploaded file (for cleanup)
 export async function deleteUploadedFile(avatarUrl: string): Promise<void> {
   try {
+    // Don't delete the default avatar
+    if (avatarUrl === UPLOAD_CONFIG.defaultAvatarUrl) {
+      return;
+    }
+    
     // Extract filename from URL
     const filename = path.basename(avatarUrl);
     const filePath = path.join(UPLOAD_CONFIG.uploadsDir, filename);
