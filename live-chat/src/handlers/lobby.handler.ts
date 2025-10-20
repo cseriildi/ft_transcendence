@@ -29,7 +29,8 @@ export async function handleJoinLobby(
   
   // Verify token and get user ID
   try {
-      const upstream = await fetch(`http://localhost:3000/api/users/${userId}`, {
+      const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://localhost:3000";
+      const upstream = await fetch(`${authServiceUrl}/api/users/${userId}`, {
         method: "GET",
         headers: {
           authorization: `Bearer ${token}`,
