@@ -80,12 +80,16 @@ export const authController = {
         const newRefreshToken = await generateAndStoreRefreshToken(db, user.id);
         setRefreshTokenCookie(reply, newRefreshToken);
 
+        // Retrieve avatar URL using helper
+        const avatar_url = await db.getAvatarUrl(user.id);
+
         return ApiResponseHelper.success(
           {
             id: user.id,
             username: user.username,
             email: user.email,
             created_at: user.created_at,
+            avatar_url,
             tokens: { accessToken },
           },
           "Token refreshed successfully"
@@ -165,6 +169,8 @@ export const authController = {
           throw errors.internal("Failed to assign default avatar to new user, registration rolled back, please retry");
         }
 
+        // Retrieve avatar URL using helper
+        const avatar_url = await db.getAvatarUrl(result.lastID);
 
         reply.status(201);
         return ApiResponseHelper.success(
@@ -173,7 +179,7 @@ export const authController = {
             username: username.trim(),
             email: email.trim(),
             created_at: new Date().toISOString(),
-            avatarUrl: avatar.fileUrl,
+            avatar_url,
             tokens: { accessToken },
           },
           "User created"
@@ -207,6 +213,8 @@ export const authController = {
         const refreshToken = await generateAndStoreRefreshToken(db, result.id);
         setRefreshTokenCookie(reply, refreshToken);
 
+        // Retrieve avatar URL using helper
+        const avatar_url = await db.getAvatarUrl(result.id);
 
         reply.status(200);
         return ApiResponseHelper.success(
@@ -215,6 +223,7 @@ export const authController = {
             username: result.username,
             email: email.trim(),
             created_at: result.created_at,
+            avatar_url,
             tokens: { accessToken },
           },
           "User logged in successfully"

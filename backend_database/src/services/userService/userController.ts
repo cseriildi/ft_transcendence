@@ -32,13 +32,9 @@ export const userController = {
       if (!user) {
         throw errors.notFound("User");
       }
-      const avatarUrl = await db.get<{ file_url: string }>(
-        "SELECT file_url FROM avatars WHERE user_id = ?",
-        [id]
-      );
-      if (avatarUrl) {
-        user.avatar_url = avatarUrl.file_url;
-      }
+      // Retrieve avatar URL using helper (throws error if not found)
+      user.avatar_url = await db.getAvatarUrl(user.id);
+      
       return ApiResponseHelper.success(user, "User found");
     }
   ),
@@ -48,6 +44,10 @@ export const userController = {
       const users = await db.all<User>(
         "SELECT id, username, email, created_at FROM users ORDER BY created_at DESC"
       );
+      // Retrieve avatar URLs for all users using helper
+      for (const user of users) {
+        user.avatar_url = await db.getAvatarUrl(user.id);
+      }
       return ApiResponseHelper.success(users, "Users retrieved");
     }
   ),

@@ -146,13 +146,6 @@ export const oauthController = {
           [userInfo.name, userInfo.email, "github", userInfo.id]
         );
 
-        user = {
-          id: result.lastID,
-          username: userInfo.name,
-          email: userInfo.email,
-          created_at: new Date().toISOString(),
-        };
-
         // Save OAuth avatar to avatars table
         if (userInfo.avatar_url) {
           await db.run(
@@ -160,7 +153,20 @@ export const oauthController = {
             [result.lastID, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
           );
         }
+
+        user = {
+          id: result.lastID,
+          username: userInfo.name,
+          email: userInfo.email,
+          created_at: new Date().toISOString(),
+          avatar_url: "", // Will be fetched later using helper
+        };
       }
+    }
+
+    // At this point, user should always be defined
+    if (!user) {
+      throw errors.internal("Failed to create or retrieve user during OAuth flow");
     }
 
     // Issue JWT tokens (same as regular login)
@@ -168,12 +174,16 @@ export const oauthController = {
     const refreshToken = await generateAndStoreRefreshToken(db, user.id);
     setRefreshTokenCookie(reply, refreshToken);
 
+    // Retrieve avatar URL using helper (throws error if not found)
+    const avatar_url = await db.getAvatarUrl(user.id);
+
     return ApiResponseHelper.success(
       {
         id: user.id,
         username: user.username,
         email: user.email,
         created_at: user.created_at,
+        avatar_url,
         tokens: { accessToken },
       },
       "GitHub OAuth login successful"

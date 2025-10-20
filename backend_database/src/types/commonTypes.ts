@@ -28,7 +28,7 @@ export interface User {
   username: string;
   email: string;
   created_at: string;
-  avatar_url?: string;
+  avatar_url: string;
 }
 
 export interface TokenPair {
