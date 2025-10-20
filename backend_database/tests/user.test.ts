@@ -145,7 +145,7 @@ describe('User Routes', () => {
     const body = res.json() as any
     expect(body.success).toBe(true)
     expect(body.data.length).toBe(3)
-    // Each user should have avatar_url property (null if no avatar uploaded)
+    // Each user should have avatar_url property set to a default image on registration (unless a custom avatar is uploaded)
     body.data.forEach((user: any) => {
       expect(user).toHaveProperty('avatar_url')
     })
@@ -552,7 +552,7 @@ describe('User Routes', () => {
         authorization: `Bearer ${accessToken}`
       },
       payload: {
-        email: 'trimmed@example.com'
+        email: '    trimmed@example.com     '
       }
     })
     expect(res.statusCode).toBe(200)
@@ -570,7 +570,7 @@ describe('User Routes', () => {
         authorization: `Bearer ${accessToken}`
       },
       payload: {
-        username: 'trimmeduser'
+        username: '     trimmeduser           '
       }
     })
     expect(res.statusCode).toBe(200)

@@ -122,14 +122,10 @@ export async function copyDefaultAvatar(userId: number): Promise<{
       };
     } catch (error) {
       attempts++;
-      if (attempts >= maxAttempts) {
-        throw errors.internal(`Failed to copy default avatar after ${maxAttempts} attempts: ${error}`);
-      }
       // Wait a bit before retrying
       await new Promise(resolve => setTimeout(resolve, 10));
     }
   }
-  
   throw errors.internal("Failed to copy default avatar");
 }
 

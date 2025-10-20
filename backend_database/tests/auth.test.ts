@@ -335,6 +335,7 @@ describe('Auth Routes', () => {
     }
     const registerRes = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
     const registerBody = registerRes.json() as any
+    expect(registerBody.success).toBe(true)
     const accessToken = registerBody.data?.tokens?.accessToken
 
     const res = await app.inject({ 
