@@ -43,7 +43,11 @@ describe('User Routes', () => {
     expect(body.data[0]).toHaveProperty('id')
     expect(body.data[0]).toHaveProperty('username')
     expect(body.data[0]).toHaveProperty('email')
+    expect(body.data[0]).toHaveProperty('avatar_url')
     expect(body.data[0]).not.toHaveProperty('password_hash')
+    // Users get a default avatar on registration
+    expect(body.data[0].avatar_url).toBeTruthy()
+    expect(body.data[0].avatar_url).toContain('/uploads/avatars/')
   })
 
   it('GET /users should return empty array when no users exist', async () => {
@@ -71,7 +75,11 @@ describe('User Routes', () => {
     expect(body.data?.username).toBe('testuser')
     expect(body.data?.email).toBe('test@example.com')
     expect(body.data).toHaveProperty('created_at')
+    expect(body.data).toHaveProperty('avatar_url')
     expect(body.data).not.toHaveProperty('password_hash')
+    // User automatically gets a default avatar on registration
+    expect(body.data.avatar_url).toBeTruthy()
+    expect(body.data.avatar_url).toContain('/uploads/avatars/')
   })
 
   it('GET /users/:id should return 403 when accessing another user', async () => {
@@ -137,6 +145,10 @@ describe('User Routes', () => {
     const body = res.json() as any
     expect(body.success).toBe(true)
     expect(body.data.length).toBe(3)
+    // Each user should have avatar_url property (null if no avatar uploaded)
+    body.data.forEach((user: any) => {
+      expect(user).toHaveProperty('avatar_url')
+    })
   })
 
   // =========== EMAIL UPDATE TESTS ===========

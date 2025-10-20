@@ -32,6 +32,8 @@ describe('Auth Routes', () => {
     expect(body.success).toBe(true)
     expect(body.data?.username).toBe(payload.username)
     expect(body.data?.email).toBe(payload.email)
+    // Registration does not return avatar_url (not part of AuthUserData)
+    expect(body.data?.tokens?.accessToken).toBeDefined()
   })
 
   it('POST /auth/register should reject duplicate email', async () => {
@@ -62,6 +64,8 @@ describe('Auth Routes', () => {
     const body = res.json() as any
     expect(body.success).toBe(true)
     expect(body.data?.email).toBe(payload.email)
+    expect(body.data?.username).toBe(payload.username)
+    expect(body.data?.tokens?.accessToken).toBeDefined()
   })
 
   it('POST /login should reject wrong password', async () => {
