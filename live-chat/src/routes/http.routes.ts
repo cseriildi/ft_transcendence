@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { userLobbyConnections, banList } from "../services/state.ts";
+import { userLobbyConnections, banList } from "../services/state.js";
 
 /**
  * Register HTTP routes
@@ -51,7 +51,7 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
     if (!banList.has(blocker)) {
       banList.set(blocker, new Set());
     }
-    banList.get(blocker)!.add({ banned: blocked });
+    banList.get(blocker)!.add(blocked);
 
     // Persist to database
     try {
