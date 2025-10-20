@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { lobbyConnections, userLobbyConnections } from "../services/state.ts";
+import { lobbyConnections, userLobbyConnections } from "../services/state.js";
 
 /**
  * Handle join_lobby action
@@ -25,9 +25,9 @@ export async function handleJoinLobby(
   inLobby.value = true;
 
   // Send welcome message with all online users
-  const allUsersList = Array.from(
-    new Set(userLobbyConnections.keys())
-  ).filter((u) => u !== username);
+  const allUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(
+    (u) => u !== username
+  );
 
   connection.send(
     JSON.stringify({
@@ -62,9 +62,7 @@ export async function handleLeaveLobby(
   inLobby: { value: boolean }
 ) {
   if (!inLobby.value) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Not in lobby" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Not in lobby" }));
     return;
   }
 
@@ -81,9 +79,7 @@ export async function handleLeaveLobby(
   }
 
   // Broadcast to all lobby users
-  const updatedUsersList = Array.from(
-    new Set(userLobbyConnections.keys())
-  );
+  const updatedUsersList = Array.from(new Set(userLobbyConnections.keys()));
   for (const [otherConn, otherUsername] of lobbyConnections) {
     otherConn.send(
       JSON.stringify({

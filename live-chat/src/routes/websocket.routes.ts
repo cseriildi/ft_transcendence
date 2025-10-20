@@ -1,16 +1,16 @@
 import type { FastifyInstance } from "fastify";
-import { banList } from "../services/state.ts";
+import { banList } from "../services/state.js";
 import {
   handleJoinLobby,
   handleLeaveLobby,
   cleanupLobbyConnection,
-} from "../handlers/lobby.handler.ts";
+} from "../handlers/lobby.handler.js";
 import {
   handleJoinChat,
   handleLeaveChat,
   handleSendMessage,
   cleanupChatConnections,
-} from "../handlers/chat.handler.ts";
+} from "../handlers/chat.handler.js";
 
 /**
  * Register WebSocket route
@@ -75,7 +75,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
             return;
           }
           for (const row of rows) {
-            banList.get(username)!.add({ banned: row.blocked_user });
+            banList.get(username)!.add(row.blocked_user);
           }
         }
       );

@@ -1,11 +1,11 @@
 import Fastify from "fastify";
-import { config, validateConfig } from "./config.ts";
-import dbConnector from "./database.ts";
+import { config, validateConfig } from "./config.js";
+import dbConnector from "./database.js";
 import rateLimit from "@fastify/rate-limit";
 import helmet from "@fastify/helmet";
 import cors from "@fastify/cors";
-import { registerHttpRoutes } from "./routes/http.routes.ts";
-import { registerWebSocketRoute } from "./routes/websocket.routes.ts";
+import { registerHttpRoutes } from "./routes/http.routes.js";
+import { registerWebSocketRoute } from "./routes/websocket.routes.js";
 
 validateConfig();
 
@@ -22,8 +22,8 @@ await app.register(helmet, { global: true });
 await app.register(dbConnector, { path: config.database.path });
 
 await app.register(cors, {
-  origin: ['http://localhost:4200', 'http://localhost:8080'],
-  credentials: true
+  origin: ["http://localhost:4200", "http://localhost:8080"],
+  credentials: true,
 });
 
 // Register routes
