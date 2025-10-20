@@ -80,7 +80,8 @@ After establishing the WebSocket connection, send a join_lobby action:
 
 ```javascript
 ws.send(JSON.stringify({
-  action: "join_lobby"
+  action: "join_lobby",
+  token: "access-token"
 }));
 ```
 

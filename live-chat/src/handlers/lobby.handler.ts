@@ -1,19 +1,71 @@
 import type { FastifyInstance } from "fastify";
 import { lobbyConnections, userLobbyConnections } from "../services/state.js";
-
+import { banList } from "../services/state.js";
 /**
  * Handle join_lobby action
  */
 export async function handleJoinLobby(
   connection: any,
   username: string,
-  inLobby: { value: boolean }
+  userId: number,
+  inLobby: { value: boolean },
+  token: string,
+  fastify: FastifyInstance
 ) {
   if (inLobby.value) {
     connection.send(
       JSON.stringify({ type: "error", message: "Already in lobby" })
     );
     return;
+  }
+
+  if (!token) {
+    connection.send(
+      JSON.stringify({ type: "error", message: "Missing authentication token" })
+    );
+    connection.close();
+    return;
+  }
+  
+  // Verify token and get user ID
+  try {
+      const upstream = await fetch(`http://localhost:3000/api/users/${userId}`, {
+        method: "GET",
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+      });
+      if (!upstream.ok) {
+        connection.close();
+        return;
+      }
+    } catch (err) {
+      fastify.log.error(err);
+      connection.close();
+      return;
+  }
+
+  // Load ban list from database
+  if (!banList.has(username)) {
+    banList.set(username, new Set());
+    const db = await fastify.db;
+    db.all(
+      "SELECT blocked_user FROM blocks WHERE blocker = ?",
+      [username],
+      (err, rows: any[]) => {
+        if (err) {
+          fastify.log.error(
+            "Error fetching ban list for %s: %s",
+            username,
+            err.message
+          );
+          return;
+        }
+        for (const row of rows) {
+          banList.get(username)!.add(row.blocked_user);
+        }
+      }
+    );
   }
 
   // Add to lobby
