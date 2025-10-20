@@ -6,6 +6,7 @@ import {
   setRefreshTokenCookie, 
   generateAndStoreRefreshToken 
 } from "../../utils/authUtils.ts";
+import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
 import {
   getGitHubConfig,
   packStateCookie,
@@ -81,24 +82,32 @@ export const oauthController = {
       ["github", userInfo.id]
     );
 
-    // If OAuth user exists, update their avatar if provided
-    if (user && userInfo.avatar_url) {
+    // If OAuth user exists, ensure they have an avatar
+    if (user) {
       const existingAvatar = await db.get<{ id: number }>(
         "SELECT id FROM avatars WHERE user_id = ?",
         [user.id]
       );
 
-      if (existingAvatar) {
-        // Update existing avatar with latest OAuth URL
-        await db.run(
-          "UPDATE avatars SET file_url = ?, file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
-          [userInfo.avatar_url, userInfo.avatar_url, user.id]
-        );
-      } else {
-        // Insert new avatar record
+      if (userInfo.avatar_url) {
+        // Update with OAuth avatar
+        if (existingAvatar) {
+          await db.run(
+            "UPDATE avatars SET file_url = ?, file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+            [userInfo.avatar_url, userInfo.avatar_url, user.id]
+          );
+        } else {
+          await db.run(
+            "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [user.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+          );
+        }
+      } else if (!existingAvatar) {
+        // OAuth didn't provide avatar and user has none - use default
+        const defaultAvatar = await copyDefaultAvatar(user.id);
         await db.run(
           "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-          [user.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+          [user.id, defaultAvatar.fileUrl, defaultAvatar.filePath, defaultAvatar.fileName, defaultAvatar.mimeType, defaultAvatar.fileSize]
         );
       }
     }
@@ -118,26 +127,32 @@ export const oauthController = {
         );
         user = existingByEmail;
 
-        // Handle OAuth avatar - update or insert into avatars table
-        if (userInfo.avatar_url) {
-          const existingAvatar = await db.get<{ id: number }>(
-            "SELECT id FROM avatars WHERE user_id = ?",
-            [existingByEmail.id]
-          );
+        // Handle OAuth avatar - ensure user has an avatar
+        const existingAvatar = await db.get<{ id: number }>(
+          "SELECT id FROM avatars WHERE user_id = ?",
+          [existingByEmail.id]
+        );
 
+        if (userInfo.avatar_url) {
+          // Update with OAuth avatar
           if (existingAvatar) {
-            // Update existing avatar with OAuth URL
             await db.run(
               "UPDATE avatars SET file_url = ?, file_path = ?, file_name = ?, mime_type = ?, file_size = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
               [userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0, existingByEmail.id]
             );
           } else {
-            // Insert new avatar record
             await db.run(
               "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
               [existingByEmail.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
             );
           }
+        } else if (!existingAvatar) {
+          // OAuth didn't provide avatar and user has none - use default
+          const defaultAvatar = await copyDefaultAvatar(existingByEmail.id);
+          await db.run(
+            "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [existingByEmail.id, defaultAvatar.fileUrl, defaultAvatar.filePath, defaultAvatar.fileName, defaultAvatar.mimeType, defaultAvatar.fileSize]
+          );
         }
       } else {
         // Create new user
@@ -146,11 +161,18 @@ export const oauthController = {
           [userInfo.name, userInfo.email, "github", userInfo.id]
         );
 
-        // Save OAuth avatar to avatars table
+        // Save avatar to avatars table (OAuth or default)
         if (userInfo.avatar_url) {
           await db.run(
             "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
             [result.lastID, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+          );
+        } else {
+          // OAuth didn't provide avatar - use default
+          const defaultAvatar = await copyDefaultAvatar(result.lastID);
+          await db.run(
+            "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [result.lastID, defaultAvatar.fileUrl, defaultAvatar.filePath, defaultAvatar.fileName, defaultAvatar.mimeType, defaultAvatar.fileSize]
           );
         }
 
