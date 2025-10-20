@@ -32,6 +32,8 @@ describe('Auth Routes', () => {
     expect(body.success).toBe(true)
     expect(body.data?.username).toBe(payload.username)
     expect(body.data?.email).toBe(payload.email)
+    // Registration does not return avatar_url (not part of AuthUserData)
+    expect(body.data?.tokens?.accessToken).toBeDefined()
   })
 
   it('POST /auth/register should reject duplicate email', async () => {
@@ -62,6 +64,8 @@ describe('Auth Routes', () => {
     const body = res.json() as any
     expect(body.success).toBe(true)
     expect(body.data?.email).toBe(payload.email)
+    expect(body.data?.username).toBe(payload.username)
+    expect(body.data?.tokens?.accessToken).toBeDefined()
   })
 
   it('POST /login should reject wrong password', async () => {
@@ -169,6 +173,237 @@ describe('Auth Routes', () => {
 
   it('POST /logout should fail without refresh cookie', async () => {
     const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/logout` })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  // =========== REGISTRATION VALIDATION TESTS ===========
+
+  it('POST /auth/register should reject duplicate username', async () => {
+    const payload = {
+      username: 'sameuser',
+      email: 'user1@example.com',
+      password: 'securepassword123',
+      confirmPassword: 'securepassword123',
+    }
+    await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
+    
+    const res = await app.inject({ 
+      method: 'POST', 
+      url: `${AUTH_PREFIX}/register`, 
+      payload: { ...payload, email: 'different@example.com' } 
+    })
+    expect(res.statusCode).toBe(409)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('already exists')
+  })
+
+  it('POST /auth/register should reject password mismatch', async () => {
+    const payload = {
+      username: 'mismatchuser',
+      email: 'mismatch@example.com',
+      password: 'securepassword123',
+      confirmPassword: 'differentpassword123',
+    }
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('Passwords do not match')
+  })
+
+  it('POST /auth/register should reject weak password', async () => {
+    const payload = {
+      username: 'weakuser',
+      email: 'weak@example.com',
+      password: 'weak',
+      confirmPassword: 'weak',
+    }
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('POST /auth/register should reject invalid email format', async () => {
+    const payload = {
+      username: 'invalidemailuser',
+      email: 'not-an-email',
+      password: 'securepassword123',
+      confirmPassword: 'securepassword123',
+    }
+    const res = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('POST /auth/register should reject missing required fields', async () => {
+    const res = await app.inject({ 
+      method: 'POST', 
+      url: `${AUTH_PREFIX}/register`, 
+      payload: { username: 'test' } 
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('POST /auth/register should reject invalid username format', async () => {
+    const invalidUsernames = ['a', 'user@name', 'user name', 'a'.repeat(51)]
+    
+    for (const username of invalidUsernames) {
+      const res = await app.inject({
+        method: 'POST',
+        url: `${AUTH_PREFIX}/register`,
+        payload: {
+          username,
+          email: `${username.substring(0, 5)}@example.com`,
+          password: 'securepassword123',
+          confirmPassword: 'securepassword123',
+        }
+      })
+      expect(res.statusCode).toBe(400)
+      const body = res.json() as any
+      expect(body.success).toBe(false)
+    }
+  })
+
+  // =========== LOGIN VALIDATION TESTS ===========
+
+  it('POST /auth/login should reject non-existent email', async () => {
+    const res = await app.inject({ 
+      method: 'POST', 
+      url: `${AUTH_PREFIX}/login`, 
+      payload: { 
+        email: 'nonexistent@example.com', 
+        password: 'password123' 
+      } 
+    })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('Invalid email')
+  })
+
+  it('POST /auth/login should reject missing email', async () => {
+    const res = await app.inject({ 
+      method: 'POST', 
+      url: `${AUTH_PREFIX}/login`, 
+      payload: { password: 'password123' } 
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('POST /auth/login should reject missing password', async () => {
+    const res = await app.inject({ 
+      method: 'POST', 
+      url: `${AUTH_PREFIX}/login`, 
+      payload: { email: 'test@example.com' } 
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('POST /auth/login should reject invalid email format', async () => {
+    const res = await app.inject({ 
+      method: 'POST', 
+      url: `${AUTH_PREFIX}/login`, 
+      payload: { 
+        email: 'not-an-email', 
+        password: 'password123' 
+      } 
+    })
+    expect(res.statusCode).toBe(400)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  // =========== TOKEN VERIFY TESTS ===========
+
+  it('GET /auth/verify should verify valid access token', async () => {
+    const payload = {
+      username: 'verifyuser',
+      email: 'verify@example.com',
+      password: 'securepassword123',
+      confirmPassword: 'securepassword123',
+    }
+    const registerRes = await app.inject({ method: 'POST', url: `${AUTH_PREFIX}/register`, payload })
+    const registerBody = registerRes.json() as any
+    expect(registerBody.success).toBe(true)
+    const accessToken = registerBody.data?.tokens?.accessToken
+
+    const res = await app.inject({ 
+      method: 'GET', 
+      url: `${AUTH_PREFIX}/verify`,
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as any
+    expect(body.success).toBe(true)
+    expect(body.data?.verified).toBe(true)
+  })
+
+  it('GET /auth/verify should reject without access token', async () => {
+    const res = await app.inject({ method: 'GET', url: `${AUTH_PREFIX}/verify` })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+    expect(body.message).toContain('Access token required')
+  })
+
+  it('GET /auth/verify should reject invalid access token', async () => {
+    const res = await app.inject({ 
+      method: 'GET', 
+      url: `${AUTH_PREFIX}/verify`,
+      headers: {
+        authorization: 'Bearer invalid-token-here'
+      }
+    })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('GET /auth/verify should reject malformed authorization header', async () => {
+    const res = await app.inject({ 
+      method: 'GET', 
+      url: `${AUTH_PREFIX}/verify`,
+      headers: {
+        authorization: 'InvalidFormat token'
+      }
+    })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  // =========== REFRESH TOKEN EDGE CASES ===========
+
+  it('POST /refresh should reject with invalid refresh token', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `${AUTH_PREFIX}/refresh`,
+      cookies: { refresh_token: 'invalid-token-value' }
+    })
+    expect(res.statusCode).toBe(401)
+    const body = res.json() as any
+    expect(body.success).toBe(false)
+  })
+
+  it('POST /refresh should reject with malformed refresh token', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: `${AUTH_PREFIX}/refresh`,
+      cookies: { refresh_token: 'not.a.jwt' }
+    })
     expect(res.statusCode).toBe(401)
     const body = res.json() as any
     expect(body.success).toBe(false)

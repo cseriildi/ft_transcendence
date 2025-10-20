@@ -98,23 +98,35 @@ export async function copyDefaultAvatar(userId: number): Promise<{
     throw errors.internal("Default avatar file not found. Please ensure default-avatar.png exists in uploads/avatars/default/");
   }
 
-  // Generate unique filename for this user's copy
-  const uniqueFilename = `user-${userId}-${randomBytes(8).toString("hex")}.png`;
-  const destinationPath = path.join(UPLOAD_CONFIG.uploadsDir, uniqueFilename);
+  // Generate unique filename for this user's copy with retry logic
+  let attempts = 0;
+  const maxAttempts = 3;
   
-  // Copy the default avatar
-  await fs.copyFile(UPLOAD_CONFIG.defaultAvatarPath, destinationPath);
-  
-  // Get file stats for metadata
-  const stats = await fs.stat(destinationPath);
-  
-  return {
-    filePath: uniqueFilename,
-    fileUrl: `/uploads/avatars/${uniqueFilename}`,
-    fileName: "default-avatar.png",
-    mimeType: "image/png",
-    fileSize: stats.size
-  };
+  while (attempts < maxAttempts) {
+    try {
+      const uniqueFilename = `user-${userId}-${randomBytes(8).toString("hex")}.png`;
+      const destinationPath = path.join(UPLOAD_CONFIG.uploadsDir, uniqueFilename);
+      
+      // Copy the default avatar
+      await fs.copyFile(UPLOAD_CONFIG.defaultAvatarPath, destinationPath);
+      
+      // Get file stats for metadata
+      const stats = await fs.stat(destinationPath);
+      
+      return {
+        filePath: uniqueFilename,
+        fileUrl: `/uploads/avatars/${uniqueFilename}`,
+        fileName: "default-avatar.png",
+        mimeType: "image/png",
+        fileSize: stats.size
+      };
+    } catch (error) {
+      attempts++;
+      // Wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  }
+  throw errors.internal("Failed to copy default avatar");
 }
 
 // Delete uploaded file (for cleanup)

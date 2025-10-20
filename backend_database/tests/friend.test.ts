@@ -40,6 +40,9 @@ describe('Friend Routes', () => {
       payload: user1Payload,
     })
     const user1Body = user1Res.json() as any
+    if (!user1Body.success || !user1Body.data) {
+      throw new Error(`Failed to create user1: ${JSON.stringify(user1Body)}`)
+    }
     user1Id = user1Body.data.id
     user1Token = user1Body.data.tokens.accessToken
 
@@ -55,6 +58,9 @@ describe('Friend Routes', () => {
       payload: user2Payload,
     })
     const user2Body = user2Res.json() as any
+    if (!user2Body.success || !user2Body.data) {
+      throw new Error(`Failed to create user2: ${JSON.stringify(user2Body)}`)
+    }
     user2Id = user2Body.data.id
     user2Token = user2Body.data.tokens.accessToken
 
@@ -70,6 +76,9 @@ describe('Friend Routes', () => {
       payload: user3Payload,
     })
     const user3Body = user3Res.json() as any
+    if (!user3Body.success || !user3Body.data) {
+      throw new Error(`Failed to create user3: ${JSON.stringify(user3Body)}`)
+    }
     user3Id = user3Body.data.id
     user3Token = user3Body.data.tokens.accessToken
   })

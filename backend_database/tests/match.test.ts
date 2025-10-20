@@ -33,6 +33,9 @@ describe('Match Routes', () => {
       }
     })
     const body1 = res1.json() as any
+    if (!body1.success || !body1.data) {
+      throw new Error(`Failed to create player1: ${JSON.stringify(body1)}`)
+    }
     user1 = { id: body1.data.id, username: body1.data.username }
 
     const res2 = await app.inject({
@@ -46,6 +49,9 @@ describe('Match Routes', () => {
       }
     })
     const body2 = res2.json() as any
+    if (!body2.success || !body2.data) {
+      throw new Error(`Failed to create player2: ${JSON.stringify(body2)}`)
+    }
     user2 = { id: body2.data.id, username: body2.data.username }
   })
 
