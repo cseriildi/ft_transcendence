@@ -32,6 +32,13 @@ export const userController = {
       if (!user) {
         throw errors.notFound("User");
       }
+      const avatarUrl = await db.get<{ file_url: string }>(
+        "SELECT file_url FROM avatars WHERE user_id = ?",
+        [id]
+      );
+      if (avatarUrl) {
+        user.avatar_url = avatarUrl.file_url;
+      }
       return ApiResponseHelper.success(user, "User found");
     }
   ),
