@@ -17,69 +17,18 @@ import {
  */
 export async function registerWebSocketRoute(fastify: FastifyInstance) {
   fastify.get("/ws", { websocket: true }, async (connection, req) => {
-    const { userId, username } = req.query as {
-      userId: number;
-      username: string;
-    };
+    const username = req.query.username as string;
 
     // Basic validation
-    if (!username || !userId) {
+    if (!username) {
       connection.close();
       return;
     }
-
-    // Authentication disabled for testing
-    // In production, validate token from query params or cookies
-    // const access = req.headers.authorization as string;
-    // if (!access || !access.startsWith("Bearer ")) {
-    //   connection.close();
-    //   return;
-    // }
-    // const token = access.substring(7);
-    // try {
-    //   const upstream = await fetch(`http://localhost:3000/api/users/${userId}`, {
-    //     method: "GET",
-    //     headers: {
-    //       authorization: `Bearer ${token}`,
-    //     },
-    //   });
-    //   if (!upstream.ok) {
-    //     connection.close();
-    //     return;
-    //   }
-    // } catch (err) {
-    //   fastify.log.error(err);
-    //   connection.close();
-    //   return;
-    // }
 
     // Track which chat rooms this connection is in
     const userChatRooms = new Set<string>();
     // Use object wrapper to allow mutation in handlers
     const inLobby = { value: false };
-
-    // Load ban list from database
-    if (!banList.has(username)) {
-      banList.set(username, new Set());
-      const db = await fastify.db;
-      db.all(
-        "SELECT blocked_user FROM blocks WHERE blocker = ?",
-        [username],
-        (err, rows: any[]) => {
-          if (err) {
-            fastify.log.error(
-              "Error fetching ban list for %s: %s",
-              username,
-              err.message
-            );
-            return;
-          }
-          for (const row of rows) {
-            banList.get(username)!.add(row.blocked_user);
-          }
-        }
-      );
-    }
 
     // Handle incoming messages with action-based routing
     connection.on("message", async (message) => {
@@ -88,7 +37,13 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
 
         switch (data.action) {
           case "join_lobby":
-            await handleJoinLobby(connection, username, inLobby);
+            await handleJoinLobby(
+              connection,
+              username,
+              inLobby,
+              data.token,
+              fastify
+            );
             break;
 
           case "leave_lobby":
