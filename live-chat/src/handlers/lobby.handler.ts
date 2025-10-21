@@ -54,23 +54,30 @@ export async function handleJoinLobby(
   if (!banList.has(username)) {
     banList.set(username, new Set());
     const db = await fastify.db;
-    db.all(
-      "SELECT blocked_user FROM blocks WHERE blocker = ?",
-      [username],
-      (err, rows: any[]) => {
-        if (err) {
-          fastify.log.error(
-            "Error fetching ban list for %s: %s",
-            username,
-            err.message
-          );
-          return;
-        }
-        for (const row of rows) {
-          banList.get(username)!.add(row.blocked_user);
-        }
+    try {
+      const rows: any[] = await new Promise((resolve, reject) => {
+        db.all(
+          "SELECT blocked_user FROM blocks WHERE blocker = ?",
+          [username],
+          (err, rows: any[]) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(rows);
+            }
+          }
+        );
+      });
+      for (const row of rows) {
+        banList.get(username)!.add(row.blocked_user);
       }
-    );
+    } catch (err: any) {
+      fastify.log.error(
+        "Error fetching ban list for %s: %s",
+        username,
+        err.message
+      );
+    }
   }
 
   // Add to lobby
