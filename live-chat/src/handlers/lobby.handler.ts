@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { lobbyConnections, userLobbyConnections } from "../services/state.js";
 import { banList } from "../services/state.js";
-import { config } from "../config.js";
+
 /**
  * Handle join_lobby action
  */
@@ -26,27 +26,28 @@ export async function handleJoinLobby(
     connection.close();
     return;
   }
-  
+
   // Verify token
   try {
-      const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://localhost:3000";
-      const upstream = await fetch(`${authServiceUrl}/auth/verify`, {
-        method: "GET",
-        headers: {
-          authorization: `Bearer ${token}`,
-        },
-      });
-      if (!upstream.ok) {
-        connection.send(
-          JSON.stringify({ type: "error", message: "Authentication failed" })
-        );
-        connection.close();
-        return;
-      }
-    } catch (err) {
-      fastify.log.error(err);
+    const authServiceUrl =
+      process.env.AUTH_SERVICE_URL || "http://localhost:3000";
+    const upstream = await fetch(`${authServiceUrl}/auth/verify`, {
+      method: "GET",
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+    if (!upstream.ok) {
+      connection.send(
+        JSON.stringify({ type: "error", message: "Authentication failed" })
+      );
       connection.close();
       return;
+    }
+  } catch (err) {
+    fastify.log.error(err);
+    connection.close();
+    return;
   }
 
   // Load ban list from database

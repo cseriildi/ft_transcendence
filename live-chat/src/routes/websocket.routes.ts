@@ -17,7 +17,7 @@ import {
  */
 export async function registerWebSocketRoute(fastify: FastifyInstance) {
   fastify.get("/ws", { websocket: true }, async (connection, req) => {
-    const username  = req.query as string;
+    const username = req.query.username as string;
 
     // Basic validation
     if (!username) {
@@ -37,7 +37,13 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
 
         switch (data.action) {
           case "join_lobby":
-            await handleJoinLobby(connection, username, inLobby, data.token, fastify);
+            await handleJoinLobby(
+              connection,
+              username,
+              inLobby,
+              data.token,
+              fastify
+            );
             break;
 
           case "leave_lobby":
