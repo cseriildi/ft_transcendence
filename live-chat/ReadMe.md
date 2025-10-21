@@ -20,11 +20,10 @@ This chat application uses a **single unified WebSocket endpoint** (`/ws`) with 
 // Browser WebSocket API does NOT support custom headers
 // Authentication should use cookies (recommended) or query parameters
 
-const userId = 123;
 const username = "alice";
 
 // Connect to unified WebSocket endpoint
-const ws = new WebSocket(`ws://host/ws?userId=${userId}&username=${encodeURIComponent(username)}`);
+const ws = new WebSocket(`ws://host/ws?username=${encodeURIComponent(username)}`);
 
 ws.onopen = () => {
   console.log("WebSocket connected");
@@ -49,11 +48,10 @@ ws.onclose = () => {
 // Node.js 'ws' library supports custom headers
 const WebSocket = require('ws');
 
-const userId = 123;
 const username = "alice";
 const token = "<your-token>";
 
-const ws = new WebSocket(`ws://host/ws?userId=${userId}&username=${encodeURIComponent(username)}`, {
+const ws = new WebSocket(`ws://host/ws?username=${encodeURIComponent(username)}`, {
   headers: {
     'Authorization': `Bearer ${token}`
   }

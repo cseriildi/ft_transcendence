@@ -1,13 +1,13 @@
 import type { FastifyInstance } from "fastify";
 import { lobbyConnections, userLobbyConnections } from "../services/state.js";
 import { banList } from "../services/state.js";
+import { config } from "../config.js";
 /**
  * Handle join_lobby action
  */
 export async function handleJoinLobby(
   connection: any,
   username: string,
-  userId: number,
   inLobby: { value: boolean },
   token: string,
   fastify: FastifyInstance
@@ -27,10 +27,10 @@ export async function handleJoinLobby(
     return;
   }
   
-  // Verify token and get user ID
+  // Verify token
   try {
       const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://localhost:3000";
-      const upstream = await fetch(`${authServiceUrl}/api/users/${userId}`, {
+      const upstream = await fetch(`${authServiceUrl}/auth/verify`, {
         method: "GET",
         headers: {
           authorization: `Bearer ${token}`,

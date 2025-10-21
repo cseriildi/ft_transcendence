@@ -17,13 +17,10 @@ import {
  */
 export async function registerWebSocketRoute(fastify: FastifyInstance) {
   fastify.get("/ws", { websocket: true }, async (connection, req) => {
-    const { userId, username } = req.query as {
-      userId: number;
-      username: string;
-    };
+    const username  = req.query as string;
 
     // Basic validation
-    if (!username || !userId) {
+    if (!username) {
       connection.close();
       return;
     }
@@ -40,7 +37,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
 
         switch (data.action) {
           case "join_lobby":
-            await handleJoinLobby(connection, username, userId, inLobby, data.token, fastify);
+            await handleJoinLobby(connection, username, inLobby, data.token, fastify);
             break;
 
           case "leave_lobby":
