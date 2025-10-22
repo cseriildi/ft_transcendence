@@ -1,7 +1,7 @@
 import sqlite3, { Database } from "sqlite3";
 import fp from "fastify-plugin";
 import { FastifyInstance } from "fastify";
-import { config } from "./config.ts";
+import { config } from "./config.js";
 
 interface DatabaseOptions {
   path?: string;
