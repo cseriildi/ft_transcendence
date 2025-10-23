@@ -1,51 +1,81 @@
+// Helper function to get required environment variable
+function getEnvVar(name: string, defaultValue?: string): string {
+  const value = process.env[name] || defaultValue;
+  if (!value) {
+    throw new Error(`❌ Required environment variable ${name} is not set`);
+  }
+  return value;
+}
+
+// Helper function to parse integer with validation
+function parsePort(value: string | undefined, defaultValue: number): number {
+  const port = parseInt(value || String(defaultValue), 10);
+  if (Number.isNaN(port) || port <= 0 || port > 65535) {
+    throw new Error(`❌ Invalid PORT: ${value}. Must be between 1 and 65535`);
+  }
+  return port;
+}
+
 // Environment configuration
 export const config = {
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT || "3000"),
-    host: process.env.HOST || "::",
-    env: process.env.NODE_ENV || "development",
+    port: parsePort(process.env.PORT, 3000),
+    host: getEnvVar("HOST", "::"),
+    env: getEnvVar("NODE_ENV", "production"),
   },
 
   // Database configuration
   database: {
-    path: process.env.DATABASE_PATH || "./src/database/database.db",
+    path: getEnvVar("DATABASE_PATH", "/app/data/database.db"),
   },
 
   // Logging
   logging: {
-    level: process.env.LOG_LEVEL || "error",
+    level: getEnvVar("LOG_LEVEL", "info"),
   },
 
   // Route prefixes
   routes: {
-    auth: process.env.AUTH_PREFIX || "/auth",
-    oauth: process.env.OAUTH_PREFIX || "/oauth",
-    api: process.env.API_PREFIX || "/api",
+    auth: getEnvVar("AUTH_PREFIX", "/auth"),
+    oauth: getEnvVar("OAUTH_PREFIX", "/oauth"),
+    api: getEnvVar("API_PREFIX", "/api"),
   },
 
   // JWT config
   jwt: {
-    issuer: process.env.JWT_ISSUER || "ping-pong-api",
-    audience: process.env.JWT_AUDIENCE || "ping-pong-clients",
-    accessSecret: process.env.JWT_ACCESS_SECRET || "dev-access-secret-change-me",
-    refreshSecret: process.env.JWT_REFRESH_SECRET || "dev-refresh-secret-change-me",
-    accessTtl: process.env.JWT_ACCESS_TTL || "15m",
-    refreshTtl: process.env.JWT_REFRESH_TTL || "7d",
+    issuer: getEnvVar("JWT_ISSUER", "ping-pong-api"),
+    audience: getEnvVar("JWT_AUDIENCE", "ping-pong-clients"),
+    accessSecret: getEnvVar("JWT_ACCESS_SECRET", "dev-access-secret-change-me"),
+    refreshSecret: getEnvVar(
+      "JWT_REFRESH_SECRET",
+      "dev-refresh-secret-change-me"
+    ),
+    accessTtl: getEnvVar("JWT_ACCESS_TTL", "15m"),
+    refreshTtl: getEnvVar("JWT_REFRESH_TTL", "7d"),
   },
 
   // OAuth config
   oauth: {
-    stateSecret: process.env.OAUTH_STATE_SECRET || process.env.JWT_REFRESH_SECRET || "dev-oauth-state-secret-change-me",
+    stateSecret: getEnvVar(
+      "OAUTH_STATE_SECRET",
+      process.env.JWT_REFRESH_SECRET || "dev-oauth-state-secret-change-me"
+    ),
     github: {
-      clientId: process.env.GITHUB_CLIENT_ID || "",
-      clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-      redirectUri: process.env.GITHUB_REDIRECT_URI || "http://localhost:3000/oauth/github/callback",
+      clientId: getEnvVar("GITHUB_CLIENT_ID", ""),
+      clientSecret: getEnvVar("GITHUB_CLIENT_SECRET", ""),
+      redirectUri: getEnvVar(
+        "GITHUB_REDIRECT_URI",
+        "http://localhost:3000/oauth/github/callback"
+      ),
     },
     google: {
-      clientId: process.env.GOOGLE_CLIENT_ID || "",
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      redirectUri: process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/oauth/google/callback",
+      clientId: getEnvVar("GOOGLE_CLIENT_ID", ""),
+      clientSecret: getEnvVar("GOOGLE_CLIENT_SECRET", ""),
+      redirectUri: getEnvVar(
+        "GOOGLE_REDIRECT_URI",
+        "http://localhost:3000/oauth/google/callback"
+      ),
     },
   },
 } as const;
@@ -60,10 +90,4 @@ export const validateConfig = () => {
     logLevel: config.logging.level,
     routePrefixes: config.routes,
   });
-
-  // Validate port is a valid number
-  if (isNaN(config.server.port) || config.server.port <= 0) {
-    console.error("❌ Invalid PORT environment variable");
-    process.exit(1);
-  }
 };
