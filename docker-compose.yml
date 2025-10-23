@@ -49,8 +49,21 @@ services:
     build:
       context: ./live-chat
     container_name: live-chat
+    environment:
+      # Server config
+      - PORT=${LIVECHAT_PORT:-3002}
+      - HOST=${LIVECHAT_HOST:-0.0.0.0}
+      - NODE_ENV=${NODE_ENV:-production}
+      # Database config
+      - DATABASE_PATH=${LIVECHAT_DATABASE_PATH:-/app/data/database.db}
+      # Auth service URL (internal Docker network)
+      - AUTH_SERVICE_URL=${AUTH_SERVICE_URL:-http://databank:3000}
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     ports:
-      - "3002:3002"
+      - "${LIVECHAT_PORT:-3002}:${LIVECHAT_PORT:-3002}"
+    volumes:
+      - ./live-chat/data:/app/data
     depends_on:
       - databank
     restart: unless-stopped
