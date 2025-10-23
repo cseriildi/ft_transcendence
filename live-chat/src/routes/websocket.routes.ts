@@ -17,7 +17,7 @@ import {
  */
 export async function registerWebSocketRoute(fastify: FastifyInstance) {
   fastify.get("/ws", { websocket: true }, async (connection, req) => {
-    const username = req.query.username as string;
+    const { username } = req.query as { username: string };
 
     // Basic validation
     if (!username) {
