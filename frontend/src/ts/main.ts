@@ -1,15 +1,10 @@
 import { Router } from "./router/Router.js";
 import { Pong } from "./pong/Pong.js";
-import { handleLoginFormSubmit } from "./login/login.js";
-import { handleRegisterFormSubmit } from "./register/register.js";
-
-const initHomePage = () => {
-  const pongBtn = document.getElementById("pong-btn");
-  const authBtn = document.getElementById("login-btn");
-
-  pongBtn?.addEventListener("click", () => router.navigate("/pong"));
-  authBtn?.addEventListener("click", () => router.navigate("/login"));
-};
+import { Login } from "./login/Login.js";
+import { Register } from "./register/Register.js";
+import { Home } from "./home/Home.js";
+import { Profile } from "./profile/Profile.js";
+import { Edit } from "./edit/Edit.js";
 
 let currentPong: Pong | null = null;
 
@@ -29,35 +24,42 @@ const initPongPage = () => {
   }
 };
 
-const initLoginPage = () => {
-  const backBtn = document.getElementById("back-btn");
-  const form = document.getElementById("login-form");
-  const registerBtn = document.getElementById("register-btn"); // Add this line
-
-  backBtn?.addEventListener("click", () => router.navigate("/"));
-  form?.addEventListener("submit", handleLoginFormSubmit);
-  registerBtn?.addEventListener("click", () => router.navigate("/register")); // Add this line
-};
-
-const initRegisterPage = () => {
-  const backBtn = document.getElementById("back-btn");
-  const form = document.getElementById("register-form");
-  const loginBtn = document.getElementById("login-btn");
-
-  backBtn?.addEventListener("click", () => router.navigate("/"));
-  form?.addEventListener("submit", handleRegisterFormSubmit);
-  loginBtn?.addEventListener("click", () => router.navigate("/login"));
-};
-
 const initNotFoundPage = () => {
   const homeBtn = document.getElementById("home-btn");
   homeBtn?.addEventListener("click", () => router.navigate("/"));
 };
 
 const router = new Router();
+const loginPage = new Login(router);
+const registerPage = new Register(router);
+const homePage = new Home(router);
+const profilePage = new Profile(router);
+const editPage = new Edit(router);
 
-router.addRoute("/", "home", initHomePage);
+router.addRoute("/", "home", () => homePage.initPage());
 router.addRoute("/pong", "pong", initPongPage);
-router.addRoute("/login", "login", initLoginPage);
-router.addRoute("/register", "register", initRegisterPage);
+router.addRoute("/login", "login", () => loginPage.initPage());
+router.addRoute("/register", "register", () => registerPage.initPage());
+router.addRoute("/profile", "profile", () => profilePage.initPage());
+router.addRoute("/edit", "edit", () => editPage.initPage());
 router.addRoute("/404", "404", initNotFoundPage);
+
+const createPopup = () => {
+  const popup = document.getElementById("error-popup");
+  if (!popup) {
+    console.error("Popup element not found in the HTML.");
+  }
+};
+
+export const showErrorPopup = (message: string) => {
+  const popup = document.getElementById("error-popup");
+  if (popup) {
+    popup.textContent = message;
+    popup.style.display = "block";
+    setTimeout(() => {
+      popup.style.display = "none";
+    }, 5000);
+  }
+};
+
+createPopup();

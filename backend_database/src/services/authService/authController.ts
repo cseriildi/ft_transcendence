@@ -96,9 +96,6 @@ export const authController = {
         );
       } catch (err: any) {
         throw err;
-      } finally {
-        // Always clear the old refresh token cookie
-        reply.clearCookie("refresh_token", { path: "/auth" });
       }
     }
   ),

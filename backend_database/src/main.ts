@@ -20,8 +20,9 @@ export async function build(opts: BuildOptions = {}) {
   const app = fastify({ logger });
 
     await app.register(cors, {
-        origin: 'http://localhost:4200',
-        credentials: true
+      origin: 'http://localhost:4200',
+      credentials: true,
+      methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     });
 
   try {
@@ -69,7 +70,7 @@ export async function build(opts: BuildOptions = {}) {
     //------------------------------------
     
     if (!disableRateLimit) {
-      await app.register(rateLimit, { max: 5, timeWindow: "1 second" });
+      await app.register(rateLimit, { max: 20, timeWindow: "1 second" });
     }
     await app.register(dbConnector, { path: database?.path ?? appConfig.database.path });
     await app.register(errorHandler);
