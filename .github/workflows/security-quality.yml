@@ -21,28 +21,28 @@ jobs:
           echo "Checking docker-compose.yml for exposed backend ports..."
 
           # Check that backend services don't expose ports directly
-          if grep -A 5 "databank:" docker-compose.yml | grep -E "^\s+ports:"; then
+          if grep -A 20 "databank:" docker-compose.yml | grep -E "^\s+ports:"; then
             echo "ERROR: Database service (databank) should not expose ports directly"
             exit 1
           fi
 
-          if grep -A 5 "backend:" docker-compose.yml | grep -E "^\s+ports:"; then
+          if grep -A 20 "backend:" docker-compose.yml | grep -E "^\s+ports:"; then
             echo "ERROR: Game service (backend) should not expose ports directly"
             exit 1
           fi
 
-          if grep -A 5 "frontend:" docker-compose.yml | grep -E "^\s+ports:"; then
+          if grep -A 20 "frontend:" docker-compose.yml | grep -E "^\s+ports:"; then
             echo "ERROR: Frontend service should not expose ports directly"
             exit 1
           fi
 
-          if grep -A 5 "live-chat:" docker-compose.yml | grep -E "^\s+ports:"; then
+          if grep -A 20 "live-chat:" docker-compose.yml | grep -E "^\s+ports:"; then
             echo "ERROR: Live-chat service should not expose ports directly"
             exit 1
           fi
 
           # Verify only nginx exposes ports
-          if ! grep -A 5 "nginx:" docker-compose.yml | grep -E "^\s+ports:"; then
+          if ! grep -A 20 "nginx:" docker-compose.yml | grep -E "^\s+ports:"; then
             echo "ERROR: NGINX must expose ports for gateway functionality"
             exit 1
           fi
