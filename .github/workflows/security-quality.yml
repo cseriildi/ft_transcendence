@@ -1,16 +1,279 @@
-name: Security & Quality
+security-quality.yml
+
+name: Security & Quality Checks
 
 on:
   push:
-    branches-ignore: ["main"]
+    branches: ["main", "TRAN-71-gateway"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
   workflow_call:
 
 jobs:
-  dummy-job:
+  security-audit:
     runs-on: ubuntu-latest
     steps:
-      - name: Dummy step
-        run: echo "This is a placeholder for security and quality checks."
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Check for exposed backend ports
+        run: |
+          echo "Checking docker-compose.yml for exposed backend ports..."
+          
+          # Check that backend services don't expose ports directly
+          if grep -A 5 "databank:" docker-compose.yml | grep -E "^\s+ports:"; then
+            echo "ERROR: Database service (databank) should not expose ports directly"
+            exit 1
+          fi
+
+          if grep -A 5 "backend:" docker-compose.yml | grep -E "^\s+ports:"; then
+            echo "ERROR: Game service (backend) should not expose ports directly"
+            exit 1
+          fi
+
+          if grep -A 5 "frontend:" docker-compose.yml | grep -E "^\s+ports:"; then
+            echo "ERROR: Frontend service should not expose ports directly"
+            exit 1
+          fi
+
+          if grep -A 5 "live-chat:" docker-compose.yml | grep -E "^\s+ports:"; then
+            echo "ERROR: Live-chat service should not expose ports directly"
+            exit 1
+          fi
+
+          # Verify only nginx exposes ports
+          if ! grep -A 5 "nginx:" docker-compose.yml | grep -E "^\s+ports:"; then
+            echo "ERROR: NGINX must expose ports for gateway functionality"
+            exit 1
+          fi
+
+          echo "✓ Backend services properly hidden behind nginx gateway"
+
+      - name: Check SSL/TLS configuration
+        run: |
+          echo "Checking nginx SSL configuration..."
+
+          if ! grep -q "ssl_certificate" ops/nginx.conf.template; then
+            echo "ERROR: SSL certificate not configured in nginx.conf.template"
+            exit 1
+          fi
+
+          if ! grep -q "ssl_certificate_key" ops/nginx.conf.template; then
+            echo "ERROR: SSL certificate key not configured in nginx.conf.template"
+            exit 1
+          fi
+
+          if ! grep -q "TLSv1.2\|TLSv1.3" ops/nginx.conf.template; then
+            echo "ERROR: TLS protocols not properly configured"
+            exit 1
+          fi
+
+          # Check for HTTPS redirect
+          if ! grep -q "return 301 https" ops/nginx.conf.template; then
+            echo "WARNING: HTTP to HTTPS redirect not found"
+          fi
+
+          echo "✓ SSL/TLS properly configured"
+
+      - name: Check for secrets in repository
+        run: |
+          echo "Checking for committed secrets..."
+
+          # Check for .env files (excluding .env.example)
+          if find . -name ".env" -not -name ".env.example" -not -path "./.git/*" | grep -q .; then
+            echo "ERROR: .env files found in repository"
+            find . -name ".env" -not -name ".env.example" -not -path "./.git/*"
+            exit 1
+          fi
+
+          # Check .gitignore includes .env
+          if ! grep -q "^\.env$" .gitignore; then
+            echo "ERROR: .env not found in .gitignore"
+            exit 1
+          fi
+
+          # Check for hardcoded secrets (more targeted)
+          echo "Scanning for potential hardcoded secrets..."
+          if grep -r -E "(password|secret|token|api_key|apikey)[\s]*[=:][\s]*['\"][^'\"]{20,}['\"]" \
+              --include="*.ts" --include="*.js" --include="*.json" \
+              --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . ; then
+            echo "ERROR: Potential hardcoded secrets detected"
+            exit 1
+          fi
+
+          echo "✓ No secrets found in repository"
+
+      - name: Check environment variable configuration
+        run: |
+          echo "Checking environment variable setup..."
+
+          # Check that .env.example exists in root
+          if [ ! -f ".env.example" ]; then
+            echo "ERROR: Missing .env.example in root directory"
+            exit 1
+          fi
+
+          # Verify sensitive variables are not hardcoded
+          for var in JWT_SECRET OAUTH_CLIENT_SECRET SESSION_SECRET; do
+            if grep -q "^${var}=.*[A-Za-z0-9]" .env.example 2>/dev/null; then
+              echo "WARNING: ${var} should not have a real value in .env.example"
+            fi
+          done
+
+          echo "✓ Environment configuration validated"
+
+      - name: Check security headers and middleware
+        run: |
+          echo "Checking for security middleware..."
+
+          # Check for rate limiting
+          if ! grep -r "rate.*limit" backend_database/src/ --include="*.ts" | grep -qi "import\|register"; then
+            echo "WARNING: Rate limiting not found in backend_database"
+          fi
+
+          # Check for CORS configuration
+          if ! grep -r "cors" backend_database/src/main.ts --include="*.ts"; then
+            echo "WARNING: CORS not configured in backend_database"
+          fi
+
+          # Check for helmet in live-chat
+          if ! grep -r "helmet" live-chat/src/ --include="*.ts" | grep -qi "import\|register"; then
+            echo "WARNING: Helmet security headers not found in live-chat"
+          fi
+
+          echo "✓ Security middleware check completed"
+
+      - name: Check WebSocket security
+        run: |
+          echo "Checking WebSocket security configuration..."
+
+          # Verify WebSocket routes use proper configuration
+          if grep -r "/ws/" ops/nginx.conf.template; then
+            echo "Found WebSocket routes in nginx config"
+          else
+            echo "WARNING: No WebSocket routes found"
+          fi
+
+          # Check for WebSocket authentication in services
+          if [ -d "backend_gamelogic/src" ]; then
+            if ! grep -r "authentication\|auth" backend_gamelogic/src/ --include="*.ts" | head -1; then
+              echo "WARNING: Consider adding authentication to WebSocket handlers"
+            fi
+          fi
+
+          echo "✓ WebSocket security check completed"
+
+      - name: Audit npm dependencies
+        run: |
+          echo "Auditing npm dependencies for vulnerabilities..."
+
+          services=("backend_database" "backend_gamelogic" "frontend" "live-chat")
+          has_vulnerabilities=false
+
+          for service in "${services[@]}"; do
+            echo "Auditing ${service}..."
+            if [ -f "${service}/package.json" ]; then
+              cd "${service}"
+              if ! npm audit --audit-level=high; then
+                echo "⚠ Vulnerabilities found in ${service}"
+                has_vulnerabilities=true
+              else
+                echo "✓ No high/critical vulnerabilities in ${service}"
+              fi
+              cd ..
+            else
+              echo "WARNING: No package.json found in ${service}"
+            fi
+          done
+
+          if [ "$has_vulnerabilities" = true ]; then
+            echo "WARNING: Some services have npm vulnerabilities"
+            # Don't fail the build, just warn
+          fi
+
+          echo "✓ Security audit completed"
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Check TypeScript compilation
+        run: |
+          echo "Checking TypeScript compilation..."
+
+          services=("backend_database" "backend_gamelogic" "frontend" "live-chat")
+          has_errors=false
+
+          for service in "${services[@]}"; do
+            if [ -f "${service}/tsconfig.json" ]; then
+              echo "Checking ${service}..."
+              cd "${service}"
+              npm install
+              if ! npx tsc --noEmit; then
+                echo "⚠ TypeScript issues in ${service}"
+                has_errors=true
+              else
+                echo "✓ ${service} TypeScript compilation successful"
+              fi
+              cd ..
+            else
+              echo "WARNING: No tsconfig.json found in ${service}"
+            fi
+          done
+
+          if [ "$has_errors" = true ]; then
+            echo "WARNING: Some services have TypeScript compilation issues"
+          fi
+
+          echo "✓ TypeScript check completed"
+
+      - name: Check Docker configuration
+        run: |
+          echo "Validating Docker configuration..."
+
+          # Check if all required Dockerfiles exist
+          services=("backend_database" "backend_gamelogic" "frontend" "live-chat" "ops")
+          for service in "${services[@]}"; do
+            if [ ! -f "$service/Dockerfile" ]; then
+              echo "ERROR: Missing Dockerfile for $service"
+              exit 1
+            fi
+          done
+
+          # Validate docker-compose.yml
+          docker compose config > /dev/null
+          echo "✓ Docker configuration valid"
+
+      - name: Check Docker security best practices
+        run: |
+          echo "Checking Docker security best practices..."
+
+          # Check for non-root users in Dockerfiles
+          for dockerfile in */Dockerfile; do
+            if grep -q "^USER" "$dockerfile"; then
+              echo "✓ $dockerfile uses non-root user"
+            else
+              echo "WARNING: $dockerfile may be running as root"
+            fi
+          done
+
+          # Check for .dockerignore
+          if [ ! -f ".dockerignore" ]; then
+            echo "WARNING: No .dockerignore file found"
+          fi
+
+          echo "✓ Docker security check completed"
+
