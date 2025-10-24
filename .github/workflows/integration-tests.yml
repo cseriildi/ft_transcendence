@@ -124,7 +124,7 @@ jobs:
               });
             }).on('error', () => { console.log('failed'); process.exit(1); });
           " 2>&1)
-          
+
           if [[ "$db_response" == *"healthy"* ]]; then
             echo "✓ Database service healthy"
           else
