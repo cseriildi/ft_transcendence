@@ -16,3 +16,4 @@ envsubst '${NGINX_INTERNAL_PORT} ${NGINX_HOST} ${FRONTEND_PORT} ${DATABANK_PORT}
 
 echo "Generated nginx configuration from template"
 
+exec nginx -g "daemon off;"
