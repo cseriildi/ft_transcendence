@@ -1,10 +1,6 @@
 name: Security & Quality Checks
 
 on:
-  push:
-    branches: ["main", "TRAN-71-gateway"]
-  pull_request:
-    branches: ["main"]
   workflow_dispatch:
   workflow_call:
 
@@ -23,7 +19,7 @@ jobs:
       - name: Check for exposed backend ports
         run: |
           echo "Checking docker-compose.yml for exposed backend ports..."
-          
+
           # Check that backend services don't expose ports directly
           if grep -A 5 "databank:" docker-compose.yml | grep -E "^\s+ports:"; then
             echo "ERROR: Database service (databank) should not expose ports directly"
@@ -274,4 +270,3 @@ jobs:
           fi
 
           echo "✓ Docker security check completed"
-
