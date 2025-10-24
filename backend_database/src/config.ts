@@ -7,6 +7,11 @@ function getEnvVar(name: string, defaultValue?: string): string {
   return value;
 }
 
+// Helper function to get optional environment variable
+function getOptionalEnvVar(name: string, defaultValue: string = ""): string {
+  return process.env[name] || defaultValue;
+}
+
 // Helper function to parse integer with validation
 function parsePort(value: string | undefined, defaultValue: number): number {
   const port = parseInt(value || String(defaultValue), 10);
@@ -62,17 +67,17 @@ export const config = {
       process.env.JWT_REFRESH_SECRET || "dev-oauth-state-secret-change-me"
     ),
     github: {
-      clientId: getEnvVar("GITHUB_CLIENT_ID", ""),
-      clientSecret: getEnvVar("GITHUB_CLIENT_SECRET", ""),
-      redirectUri: getEnvVar(
+      clientId: getOptionalEnvVar("GITHUB_CLIENT_ID"),
+      clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET"),
+      redirectUri: getOptionalEnvVar(
         "GITHUB_REDIRECT_URI",
         "http://localhost:3000/oauth/github/callback"
       ),
     },
     google: {
-      clientId: getEnvVar("GOOGLE_CLIENT_ID", ""),
-      clientSecret: getEnvVar("GOOGLE_CLIENT_SECRET", ""),
-      redirectUri: getEnvVar(
+      clientId: getOptionalEnvVar("GOOGLE_CLIENT_ID"),
+      clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET"),
+      redirectUri: getOptionalEnvVar(
         "GOOGLE_REDIRECT_URI",
         "http://localhost:3000/oauth/google/callback"
       ),
