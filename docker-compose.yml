@@ -53,14 +53,16 @@ services:
     env_file:
       - .env
     environment:
-      NGINX_INTERNAL_PORT: 8443
+      NGINX_HTTPS_PORT: ${NGINX_HTTPS_PORT:-8443}
+      NGINX_HTTP_PORT: ${NGINX_HTTP_PORT:-8080}
       NGINX_HOST: ${NGINX_HOST:-localhost}
       FRONTEND_PORT: ${FRONTEND_PORT:-4200}
       DATABANK_PORT: ${DATABANK_PORT:-3000}
       GAMELOGIC_PORT: ${GAMELOGIC_PORT:-3001}
       LIVECHAT_PORT: ${LIVECHAT_PORT:-3002}
     ports:
-      - "${NGINX_PORT:-8443}:8443"
+      - "${NGINX_HTTPS_PORT:-8443}:${NGINX_HTTPS_PORT:-8443}"
+      - "${NGINX_HTTP_PORT:-8080}:${NGINX_HTTP_PORT:-8080}"
     volumes:
       - ./.certs:/etc/nginx/certs:ro
     depends_on:

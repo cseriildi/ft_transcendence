@@ -1,5 +1,13 @@
+# HTTP server - redirect all traffic to HTTPS with 301 Moved Permanently
 server {
-    listen ${NGINX_INTERNAL_PORT} ssl;
+    listen ${NGINX_HTTP_PORT};
+    server_name ${NGINX_HOST};
+    return 301 https://$host:${NGINX_HTTPS_PORT}$request_uri;
+}
+
+# HTTPS server - main application
+server {
+    listen ${NGINX_HTTPS_PORT} ssl;
     server_name ${NGINX_HOST};
 
     ssl_certificate     /etc/nginx/certs/cert.pem;

@@ -1,5 +1,15 @@
+# Port configuration (use: sudo make ports=privileged up)
+# privileged: 443/80 (requires sudo), school: 8443/8080 (default)
+ifeq ($(ports),privileged)
+	HTTPS_PORT = 443
+	HTTP_PORT = 80
+else
+	HTTPS_PORT = 8443
+	HTTP_PORT = 8080
+endif
+
 SERVICES = backend frontend databank nginx
-URL = https://localhost:8443
+URL = https://localhost:$(HTTPS_PORT)
 
 # Setup everything from scratch
 all: env certs build up
@@ -28,13 +38,17 @@ build:
 # Start all services (detached)
 up:
 	@echo "🚀 Starting all services..."
-	@docker compose up -d
+	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
+	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		docker compose up -d
 	@echo "✅ Services started. Access the app at $(URL)"
 
 # Start services with logs visible
 dev:
 	@echo "🔧 Starting services in development mode..."
-	@docker compose up
+	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
+	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		docker compose up
 
 # Stop and remove containers
 down:
@@ -120,26 +134,30 @@ help:
 	@echo "Available Commands"
 	@echo ""
 	@echo "Setup & Build:"
-	@echo "  make           - Setup .env, generate certificates, and build all containers"
-	@echo "  make env       - Create .env file from .env.example (if not exists)"
-	@echo "  make certs     - Generate SSL certificates"
-	@echo "  make build     - Build all Docker containers"
+	@echo "  make                  - Setup .env, generate certificates, and build all containers"
+	@echo "  make env              - Create .env file from .env.example (if not exists)"
+	@echo "  make certs            - Generate SSL certificates"
+	@echo "  make build            - Build all Docker containers"
 	@echo ""
 	@echo "Running:"
-	@echo "  make up        - Start all services (detached)"
-	@echo "  make dev       - Start all services with logs visible"
-	@echo "  make down      - Stop and remove all containers"
-	@echo "  make stop      - Stop containers without removing them"
-	@echo "  make restart   - Stop and start all services"
+	@echo "  make up               - Start all services (detached)"
+	@echo "  make dev              - Start all services with logs visible"
+	@echo "  make down             - Stop and remove all containers"
+	@echo "  make stop             - Stop containers without removing them"
+	@echo "  make restart          - Stop and start all services"
+	@echo ""
+	@echo "Port Configuration:"
+	@echo "  make ports=privileged up    - Use ports 443/80 (requires sudo)"
+	@echo "  make up                     - Use ports 8443/8080 (default, no sudo)"
 	@echo ""
 	@echo "Development:"
 	@echo "  make logs <service>   - Show logs (all services or specific: ${SERVICES})"
 	@echo "  make shell [service]  - Open shell (${SERVICES})"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  make clean     - Remove containers, networks, and volumes"
-	@echo "  make fclean    - Deep clean: remove everything including images"
-	@echo "  make re        - Full rebuild (clean + all)"
+	@echo "  make clean            - Remove containers, networks, and volumes"
+	@echo "  make fclean           - Deep clean: remove everything including images"
+	@echo "  make re               - Full rebuild (clean + all)"
 
 ${SERVICES}:
 	@:
