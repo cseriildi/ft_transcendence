@@ -3,13 +3,19 @@
 ifeq ($(ports),privileged)
 	HTTPS_PORT = 443
 	HTTP_PORT = 80
+	# For standard ports, don't include port in URL
+	PUBLIC_API_URL = https://localhost/api
+	PUBLIC_WS_URL = wss://localhost/ws
 else
 	HTTPS_PORT = 8443
 	HTTP_PORT = 8080
+	# For non-standard ports, include port in URL
+	PUBLIC_API_URL = https://localhost:8443/api
+	PUBLIC_WS_URL = wss://localhost:8443/ws
 endif
 
 SERVICES = backend frontend databank nginx
-URL = https://localhost:$(HTTPS_PORT)
+URL = https://localhost$(if $(filter 443,$(HTTPS_PORT)),,\:$(HTTPS_PORT))
 
 # Setup everything from scratch
 all: env certs build up
@@ -40,6 +46,7 @@ up:
 	@echo "🚀 Starting all services..."
 	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
 	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
 		docker compose up -d
 	@echo "✅ Services started. Access the app at $(URL)"
 
@@ -48,6 +55,7 @@ dev:
 	@echo "🔧 Starting services in development mode..."
 	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
 	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
 		docker compose up
 
 # Stop and remove containers
