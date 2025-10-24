@@ -57,7 +57,7 @@ See `.env.example` for the complete list. Key variables:
 
 | Variable           | Default                | Description                               |
 | ------------------ | ---------------------- | ----------------------------------------- |
-| `NODE_ENV`         | `prod`                 | Environment mode                          |
+| `NODE_ENV`         | `production`           | Environment mode                          |
 | `LOG_LEVEL`        | `info`                 | Logging verbosity (error/warn/info/debug) |
 | `SESSION_SECRET`   | (example value)        | **CHANGE THIS** for evaluation            |
 | `LIVECHAT_PORT`    | `3002`                 | Live chat service port                    |
