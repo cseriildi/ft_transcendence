@@ -75,13 +75,14 @@ jobs:
         run: |
           echo "Testing API routing through gateway..."
           # Test that API routes are accessible through nginx
-          # We expect 401 for unauthorized access to protected endpoints
-          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/api/users)
+          # /api/users is public (returns 200), so test a protected endpoint
+          # /api/users/1 requires authentication and should return 401
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/api/users/1)
           if [ "$response" != "401" ]; then
             echo "ERROR: API routing failed. Expected 401 (unauthorized), got $response"
             exit 1
           fi
-          echo "API routing working (401 - unauthorized as expected)"
+          echo "✓ API routing working (401 - unauthorized as expected)"
 
       - name: Test Auth routing through gateway
         run: |
