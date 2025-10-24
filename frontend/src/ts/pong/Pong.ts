@@ -93,9 +93,14 @@ export class Pong {
         };
     }
 
-    private updateCapsule(paddle: { cx?: number; cy?: number; capsule: Capsule }, length: number) {
-        if (paddle.cx === undefined || paddle.cy === undefined || length === undefined) return;
-        
+    private updateCapsule(paddle: { cx?: number; cy?: number; capsule: Capsule }) {
+        const cap = paddle.capsule;
+        const dx = cap.x2 - cap.x1;
+        const dy = cap.y2 - cap.y1;
+        const length = Math.sqrt(dx * dx + dy * dy);
+
+        if (paddle.cx === undefined || paddle.cy === undefined || !isFinite(length) || length === 0) return;
+
         const halfLength = length / 2;
         paddle.capsule.x1 = paddle.cx;
         paddle.capsule.y1 = paddle.cy - halfLength;

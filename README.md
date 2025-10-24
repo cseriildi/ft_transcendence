@@ -2,55 +2,40 @@
 
 ## Quick guide to running Transendence
 
-### 1. Generate certs:
+### 🚀 One-command setup:
 
-``` bash
-chmod +x ./scripts/certs.sh && ./scripts/certs.sh
+**42 PCs (ports 8443/8080):**
+
+```bash
+make
 ```
 
-### 2. Start all the containers:
+**Privileged ports for VMs/Private Machines (ports 443/80):**
 
-``` bash
-docker compose up -d --build
+```bash
+make ports=privileged up
 ```
 
-### 3. Access the services:
+This will automatically:
 
-* Frontend: http://localhost:4200
-* Backend: http://localhost:3000
-* Databank: http://localhost:3001
+- Generate SSL certificates
+- Build all containers
+- Start all services
 
-### 4. Stop everything:
+### 🌐 Access the application:
 
-``` bash
-docker compose down
-```
+**42 PCs (non-privileged ports):**
+
+- **HTTPS**: https://localhost:8443
+- **HTTP**: http://localhost:8080 (redirects to HTTPS)
+
+**Production (privileged ports):**
+
+- **HTTPS**: https://localhost (port 443 is default)
+- **HTTP**: http://localhost (redirects to HTTPS)
 
 ### Other usefull commands:
 
-``` bash
-# start prebuilt containers (detached)
-docker compose up -d
-
-# rebuild when Dockerfiles/code change
-docker compose up -d --build
-
-# view logs (all services)
-docker compose logs -f
-
-# view logs (one service)
-docker compose logs -f backend
-
-# stop without removing
-docker compose stop
-
-# stop and remove containers/networks
-docker compose down
-
-# remove everything + named volumes (⚠️ deletes data)
-docker compose down -v
-
-# shell into a running container
-docker compose exec backend bash
+```bash
+make help
 ```
-

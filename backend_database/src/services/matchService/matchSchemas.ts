@@ -1,33 +1,37 @@
-import Ajv from 'ajv';
-import addFormats from "ajv-formats";
+/**
+ * Fastify JSON Schemas for Match routes
+ * These provide both validation AND Swagger documentation
+ */
 
-const ajv = new Ajv({coerceTypes: true, allErrors: true});
-addFormats(ajv);
+import { createResponseSchema, commonDataSchemas } from "../../utils/schemaUtils.ts";
 
-const CreateMatchSchema = {
-	type: "object",
-	properties: {
-		winner: {type: "string", minLength: 3},
-		loser: {type: "string", minLength: 3},
-		winner_score: {type: "number", minimum: 0},
-		loser_score: {type: "number", minimum: 0}
+export const MatchSchemas = {
+	// POST /matches - Create match
+	createMatch: {
+		body: {
+			type: "object" as const,
+			properties: {
+				winner: { type: "string", minLength: 3 },
+				loser: { type: "string", minLength: 3 },
+				winner_score: { type: "number", minimum: 0 },
+				loser_score: { type: "number", minimum: 0 }
+			},
+			required: ["winner", "loser", "winner_score", "loser_score"],
+			additionalProperties: false
+		},
+		response: createResponseSchema(201, commonDataSchemas.match, [400, 404])
 	},
-	required: ["winner", "loser", "winner_score", "loser_score"],
-	additionalProperties: false
-};
 
-const MatchQuerySchema = {
-	type: "object",
-	properties: {
-		username: {type: "string", minLength: 3},
-	},
-	required: ["username"],
-	additionalProperties: false
-};
-
-export const MatchSchemaValidator = {
-	validateCreateMatch:
-		ajv.compile(CreateMatchSchema),
-	validateMatchQuery:
-		ajv.compile(MatchQuerySchema)
+	// GET /matches/:username - Get user matches
+	getUserMatches: {
+		params: {
+			type: "object" as const,
+			properties: {
+				username: { type: "string", minLength: 3 }
+			},
+			required: ["username"],
+			additionalProperties: false
+		},
+		response: createResponseSchema(200, commonDataSchemas.matchArray, [404])
+	}
 };

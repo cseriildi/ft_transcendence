@@ -4,16 +4,17 @@ import { errors } from "../../utils/errorUtils.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import type {
-  Setup2FAResponse,
+  Setup2FAData,
   Verify2FARequest,
   Enable2FARequest,
   Disable2FARequest,
-  Verify2FAResponse,
+  Verify2FAData,
 } from "./2FATypes";
+import { ApiResponse } from "../../types/commonTypes.ts";
 
 export const twoFAController = {
 
-  setup2FA: createHandler<{ Params:{userId :string} }>(
+  setup2FA: createHandler<{ Params:{userId :string} }, ApiResponse<Setup2FAData>>(
     async (request, { db, reply}) => {
       const userId = parseInt(request.params.userId);
 
@@ -58,7 +59,7 @@ export const twoFAController = {
     }
   ),
 
-  verify2FA: createHandler<{Body: Verify2FARequest}>(
+  verify2FA: createHandler<{Body: Verify2FARequest}, ApiResponse<Verify2FAData>>(
     async (request, {db}) =>{
       const {userId, token} = request.body;
 
@@ -89,7 +90,7 @@ export const twoFAController = {
     }
   ),
 
-  enable2FA: createHandler<{Body : Enable2FARequest}>(
+  enable2FA: createHandler<{Body : Enable2FARequest}, ApiResponse<{ enabled: boolean }>>(
     async (request, {db, reply}) =>{
       const { userId, token } = request.body;
       const user = await db.get<{ twofa_secret: string, twofa_enabled: number }>(
@@ -130,7 +131,7 @@ export const twoFAController = {
     }
   ),
 
-  disable2FA: createHandler<{Body: Disable2FARequest}>(
+  disable2FA: createHandler<{Body: Disable2FARequest}, ApiResponse<{ enabled: boolean }>>(
     async (request, {db}) =>{
         const { userId, token } = request.body;
       const user = await db.get<{ twofa_secret: string, twofa_enabled: number }>(

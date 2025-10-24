@@ -1,18 +1,22 @@
 // src/routes/users.ts
 import {
   CreateUserBody,
-  CreateUserResponse,
-  UserLoginResponse,
   UserLoginBody,
+  AuthUserData,
 } from "./authTypes.ts";
-import { User } from "../userService/userTypes.ts";
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
-import { AuthSchemaValidator } from "./authSchemas.ts";
 import bcrypt from "bcrypt";
-import { signAccessToken, signRefreshToken, createJti, verifyRefreshToken} from "../../utils/authUtils.ts";
+import { 
+  signAccessToken, 
+  verifyRefreshToken, 
+  setRefreshTokenCookie, 
+  generateAndStoreRefreshToken 
+} from "../../utils/authUtils.ts";
+import { copyDefaultAvatar, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(
@@ -31,7 +35,7 @@ export const authController = {
     }
   ),
 
-  refresh: createHandler<{}, UserLoginResponse>(
+  refresh: createHandler<{}, ApiResponse<AuthUserData>>(
     async (request, context) => {
       const { db, reply } = context;
       
@@ -71,24 +75,13 @@ export const authController = {
 
         const accessToken = await signAccessToken(user.id);
         
-        const newJti = createJti();
-        const newRefreshToken = await signRefreshToken(user.id, newJti);
-        const refreshHash = await bcrypt.hash(newRefreshToken, 10);
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-
+        // Delete old refresh token and generate new one
         await db.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
-        await db.run(
-          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [newJti, user.id, refreshHash, expiresAt]
-        );
+        const newRefreshToken = await generateAndStoreRefreshToken(db, user.id);
+        setRefreshTokenCookie(reply, newRefreshToken);
 
-        reply.setCookie("refresh_token", newRefreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000,
-        });
+        // Retrieve avatar URL using helper
+        const avatar_url = await db.getAvatarUrl(user.id);
 
         return ApiResponseHelper.success(
           {
@@ -96,12 +89,16 @@ export const authController = {
             username: user.username,
             email: user.email,
             created_at: user.created_at,
+            avatar_url,
             tokens: { accessToken },
           },
           "Token refreshed successfully"
         );
       } catch (err: any) {
         throw err;
+      } finally {
+        // Always clear the old refresh token cookie
+        reply.clearCookie("refresh_token", { path: "/auth" });
       }
     }
   ),
@@ -140,10 +137,9 @@ export const authController = {
     }
   ),
 
-  createUser: createHandler<{ Body: CreateUserBody }, CreateUserResponse>(
+  createUser: createHandler<{ Body: CreateUserBody }, ApiResponse<AuthUserData>>(
       async (request, { db, reply }) => {
-      const valid = AuthSchemaValidator.validateCreateUser(request.body);
-      if (!valid) throw errors.validation("Invalid request body");
+
       if (request.body.password !== request.body.confirmPassword) {
         throw errors.validation("Passwords do not match");
       }
@@ -158,23 +154,23 @@ export const authController = {
         );
 
         const accessToken = await signAccessToken(result.lastID);
-        const jti = createJti();
-        const refreshToken = await signRefreshToken(result.lastID, jti);
-        const refreshHash = await bcrypt.hash(refreshToken, 10);
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
+        setRefreshTokenCookie(reply, refreshToken);
 
-           await db.run(
-          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [jti, result.lastID, refreshHash, expiresAt]
+        // Copy default avatar for new user
+        const avatar = await copyDefaultAvatar(result.lastID);
+        const insert = await  db.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [result.lastID, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
         );
+        if (!insert) {
+          await deleteUploadedFile(avatar.fileUrl);
+          await db.run("DELETE FROM users WHERE id = ?", [result.lastID]);
+          throw errors.internal("Failed to assign default avatar to new user, registration rolled back, please retry");
+        }
 
-        reply.setCookie("refresh_token", refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-        });
+        // Retrieve avatar URL using helper
+        const avatar_url = await db.getAvatarUrl(result.lastID);
 
         reply.status(201);
         return ApiResponseHelper.success(
@@ -183,6 +179,7 @@ export const authController = {
             username: username.trim(),
             email: email.trim(),
             created_at: new Date().toISOString(),
+            avatar_url,
             tokens: { accessToken },
           },
           "User created"
@@ -196,10 +193,8 @@ export const authController = {
     }
   ),
 
-  loginUser: createHandler<{ Body: UserLoginBody }, UserLoginResponse>(
+  loginUser: createHandler<{ Body: UserLoginBody }, ApiResponse<AuthUserData>>(
       async (request, { db, reply }) => {
-      const valid = AuthSchemaValidator.validateUserLogin(request.body);
-      if (!valid) throw errors.validation("Invalid request body");
       const { email, password } = request.body || {};
       try {
         const result = await db.get<User & { password_hash: string }>(
@@ -214,26 +209,12 @@ export const authController = {
           throw errors.unauthorized("Invalid password");
         }
         
-         const accessToken = await signAccessToken(result.id);
-        const jti = createJti();
-        const refreshToken = await signRefreshToken(result.id, jti);
-        const refreshHash = await bcrypt.hash(refreshToken, 10);
-        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const accessToken = await signAccessToken(result.id);
+        const refreshToken = await generateAndStoreRefreshToken(db, result.id);
+        setRefreshTokenCookie(reply, refreshToken);
 
-         await db.run(
-          "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
-          [jti, result.id, refreshHash, expiresAt]
-        );
-
-        // Set refresh token as HttpOnly cookie
-        reply.setCookie("refresh_token", refreshToken, {
-          httpOnly: true,
-          secure: process.env.NODE_ENV === "production",
-          sameSite: "lax",
-          path: "/auth",
-          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-        });
-
+        // Retrieve avatar URL using helper
+        const avatar_url = await db.getAvatarUrl(result.id);
 
         reply.status(200);
         return ApiResponseHelper.success(
@@ -242,12 +223,13 @@ export const authController = {
             username: result.username,
             email: email.trim(),
             created_at: result.created_at,
+            avatar_url,
             tokens: { accessToken },
           },
           "User logged in successfully"
         );
-    } catch (err: any) {
-        throw err; // Re-throw other database errors
+      } catch (err: any) {
+        throw err;
       }
     }
   ),

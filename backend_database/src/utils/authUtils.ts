@@ -93,3 +93,48 @@ export async function requireAuth(
     throw error;
   }
 }
+
+/**
+ * Validates that the authenticated user matches the requested resource ID
+ * Throws forbidden error if IDs don't match
+ */
+export function ensureUserOwnership(tokenUserId: number, resourceId: string | number) {
+  const numericResourceId = typeof resourceId === "string" ? parseInt(resourceId) : resourceId;
+  if (tokenUserId !== numericResourceId) {
+    throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
+  }
+}
+
+/**
+ * Sets a refresh token cookie with standard secure settings
+ */
+export function setRefreshTokenCookie(reply: FastifyReply, refreshToken: string) {
+  reply.setCookie("refresh_token", refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/auth",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
+  });
+}
+
+/**
+ * Generates new refresh token and stores it in database
+ * Returns the generated refresh token
+ */
+export async function generateAndStoreRefreshToken(
+  db: any,
+  userId: number
+): Promise<string> {
+  const jti = createJti();
+  const refreshToken = await signRefreshToken(userId, jti);
+  const refreshHash = await (await import("bcrypt")).default.hash(refreshToken, 10);
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  await db.run(
+    "INSERT INTO refresh_tokens (jti, user_id, token_hash, expires_at) VALUES (?, ?, ?, ?)",
+    [jti, userId, refreshHash, expiresAt]
+  );
+
+  return refreshToken;
+}
