@@ -15,6 +15,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup environment
+        run: |
+          cp .env.example .env
+          echo "Created .env file from .env.example"
+
       - name: Generate SSL certificates
         run: |
           chmod +x ./scripts/certs.sh
