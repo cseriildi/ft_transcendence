@@ -37,11 +37,13 @@ jobs:
           # Check if all containers are running
           docker compose ps
 
-          # Wait for database service to be healthy (direct container check)
+          # Wait for nginx and services to be ready by checking frontend access
           timeout=60
           while [ $timeout -gt 0 ]; do
-            if docker compose exec -T databank curl -s http://localhost:3000/health > /dev/null 2>&1; then
-              echo "Services are ready!"
+            # Check if we can reach the frontend through nginx
+            # -k: accept self-signed cert, -s: silent, -f: fail on error, -I: HEAD request only
+            if curl -k -s -f -I https://localhost:8443 > /dev/null 2>&1; then
+              echo "✓ Services are ready!"
               break
             fi
             echo "Waiting for services... ($timeout seconds left)"
@@ -50,7 +52,11 @@ jobs:
           done
 
           if [ $timeout -eq 0 ]; then
-            echo "Services failed to start within timeout"
+            echo "ERROR: Services failed to start within timeout"
+            echo "Final container status:"
+            docker compose ps -a
+            echo ""
+            echo "Service logs:"
             docker compose logs
             exit 1
           fi
