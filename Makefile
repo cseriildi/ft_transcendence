@@ -2,7 +2,17 @@ SERVICES = backend frontend databank nginx
 URL = https://localhost:8443
 
 # Setup everything from scratch
-all: certs build up
+all: env certs build up
+
+# Setup environment file
+env:
+	@if [ ! -f .env ]; then \
+		cp .env.example .env && \
+		echo "✅ Created .env file from .env.example"; \
+		echo "⚠️  Please review and customize .env before proceeding"; \
+	else \
+		echo "✅ .env file already exists"; \
+	fi
 
 # Generate SSL certificates
 certs:
@@ -110,7 +120,8 @@ help:
 	@echo "Available Commands"
 	@echo ""
 	@echo "Setup & Build:"
-	@echo "  make           - Generate certificates and build all containers"
+	@echo "  make           - Setup .env, generate certificates, and build all containers"
+	@echo "  make env       - Create .env file from .env.example (if not exists)"
 	@echo "  make certs     - Generate SSL certificates"
 	@echo "  make build     - Build all Docker containers"
 	@echo ""
@@ -136,4 +147,4 @@ ${SERVICES}:
 .DEFAULT:
 	@make help
 
-.PHONY: all certs build up dev down stop restart logs shell clean fclean re db-reset status stats help ${SERVICES}
+.PHONY: all env certs build up dev down stop restart logs shell clean fclean re db-reset status stats help ${SERVICES}
