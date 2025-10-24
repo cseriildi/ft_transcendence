@@ -116,14 +116,23 @@ jobs:
       - name: Show service logs on failure
         if: failure()
         run: |
+          echo "=== CONTAINER STATUS ==="
+          docker compose ps -a
+          echo ""
           echo "=== NGINX LOGS ==="
           docker compose logs nginx
+          echo ""
           echo "=== DATABASE LOGS ==="
           docker compose logs databank
+          echo ""
           echo "=== GAME LOGS ==="
           docker compose logs backend
+          echo ""
           echo "=== FRONTEND LOGS ==="
           docker compose logs frontend
+          echo ""
+          echo "=== LIVE-CHAT LOGS ==="
+          docker compose logs live-chat
 
       - name: Cleanup
         if: always()
