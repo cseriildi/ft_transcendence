@@ -1,5 +1,3 @@
-security-quality.yml
-
 name: Security & Quality Checks
 
 on:
