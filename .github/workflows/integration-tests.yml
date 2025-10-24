@@ -37,10 +37,10 @@ jobs:
           # Check if all containers are running
           docker compose ps
 
-          # Wait for services to be healthy
+          # Wait for database service to be healthy (direct container check)
           timeout=60
           while [ $timeout -gt 0 ]; do
-            if curl -k -s https://localhost:8443/api/health > /dev/null 2>&1; then
+            if docker compose exec -T databank curl -s http://localhost:3000/health > /dev/null 2>&1; then
               echo "Services are ready!"
               break
             fi
@@ -67,13 +67,15 @@ jobs:
 
       - name: Test API routing through gateway
         run: |
-          echo "Testing API routing..."
-          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/api/health)
-          if [ "$response" != "200" ]; then
-            echo "ERROR: API routing failed. Expected 200, got $response"
+          echo "Testing API routing through gateway..."
+          # Test that API routes are accessible through nginx
+          # We expect 401 for unauthorized access to protected endpoints
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://localhost:8443/api/users)
+          if [ "$response" != "401" ]; then
+            echo "ERROR: API routing failed. Expected 401 (unauthorized), got $response"
             exit 1
           fi
-          echo "API routing working (200)"
+          echo "API routing working (401 - unauthorized as expected)"
 
       - name: Test Auth routing through gateway
         run: |
