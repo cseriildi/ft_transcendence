@@ -6,16 +6,17 @@ ifeq ($(ports),privileged)
 	# For standard ports, don't include port in URL
 	PUBLIC_API_URL = https://localhost/api
 	PUBLIC_WS_URL = wss://localhost/ws
+	URL = https://localhost
 else
 	HTTPS_PORT = 8443
 	HTTP_PORT = 8080
 	# For non-standard ports, include port in URL
 	PUBLIC_API_URL = https://localhost:8443/api
 	PUBLIC_WS_URL = wss://localhost:8443/ws
+	URL = https://localhost:8443
 endif
 
 SERVICES = backend frontend databank nginx
-URL = https://localhost$(if $(filter 443,$(HTTPS_PORT)),,\:$(HTTPS_PORT))
 
 # Setup everything from scratch
 all: env certs build up
