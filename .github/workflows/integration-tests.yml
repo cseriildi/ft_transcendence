@@ -112,9 +112,21 @@ jobs:
         run: |
           echo "Testing internal service connectivity..."
 
-          db_response=$(docker compose exec -T databank curl -s http://localhost:3000/health || echo "failed")
+          # Test database service health using node (which is available in the container)
+          db_response=$(docker compose exec -T databank node -e "
+            const http = require('http');
+            http.get('http://localhost:3000/health', (res) => {
+              let data = '';
+              res.on('data', chunk => data += chunk);
+              res.on('end', () => {
+                console.log(data);
+                process.exit(res.statusCode === 200 ? 0 : 1);
+              });
+            }).on('error', () => { console.log('failed'); process.exit(1); });
+          " 2>&1)
+          
           if [[ "$db_response" == *"healthy"* ]]; then
-            echo "Database service healthy"
+            echo "✓ Database service healthy"
           else
             echo "ERROR: Database service unhealthy: $db_response"
             exit 1
