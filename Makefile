@@ -41,7 +41,7 @@ certs:
 setup-dirs:
 	@echo "📁 Setting up data directories..."
 	@mkdir -p backend_database/database || true
-	@mkdir -p live-chat/data || true
+	@mkdir -p app/data || true
 	@echo "✅ Data directories created (permissions will be set by containers)"
 
 # Build all containers
