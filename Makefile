@@ -42,17 +42,7 @@ setup-dirs:
 	@echo "📁 Setting up data directories..."
 	@mkdir -p backend_database/database || true
 	@mkdir -p live-chat/data || true
-	@if [ -w backend_database/database ] && [ -w live-chat/data ]; then \
-		chmod 777 backend_database/database; \
-		chmod 777 live-chat/data; \
-		echo "✅ Data directories created with proper permissions"; \
-	else \
-		echo "⚠️  Data directories exist but owned by root. Fixing permissions..."; \
-		sudo chown -R $$USER:$$USER backend_database/database live-chat/data 2>/dev/null || true; \
-		chmod 777 backend_database/database 2>/dev/null || true; \
-		chmod 777 live-chat/data 2>/dev/null || true; \
-		echo "✅ Permissions fixed. If you see errors, run: sudo make setup-dirs"; \
-	fi
+	@echo "✅ Data directories created (permissions will be set by containers)"
 
 # Build all containers
 build:
