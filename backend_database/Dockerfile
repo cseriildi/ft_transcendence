@@ -1,8 +1,8 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-alpine
 
-# Install SQLite3
-RUN apk add --no-cache sqlite
+# Install SQLite3 and su-exec
+RUN apk add --no-cache sqlite su-exec
 
 # Set working directory
 WORKDIR /app
@@ -35,8 +35,15 @@ ENV LOG_LEVEL=info
 # Create data directory for database
 RUN mkdir -p /app/data
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Expose port (use environment variable)
 EXPOSE $PORT
+
+# Set entrypoint to handle permissions
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Start the application
 # CMD ["npm", "run", "start"]

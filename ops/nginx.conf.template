@@ -19,6 +19,10 @@ server {
         add_header Content-Security-Policy "connect-src 'self';" always;
     }
 
+    location /api/auth/ {
+        proxy_pass http://databank:${DATABANK_PORT}/auth/;
+    }
+
     location /api/ {
         proxy_pass http://databank:${DATABANK_PORT}/api/;
     }
