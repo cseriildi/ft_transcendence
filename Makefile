@@ -1,8 +1,35 @@
+# Port configuration (use: sudo make ports=privileged up)
+# privileged: 443/80 (requires sudo), school: 8443/8080 (default)
+ifeq ($(ports),privileged)
+	HTTPS_PORT = 443
+	HTTP_PORT = 80
+	# For standard ports, don't include port in URL
+	PUBLIC_API_URL = https://localhost/api
+	PUBLIC_WS_URL = wss://localhost/ws
+	URL = https://localhost
+else
+	HTTPS_PORT = 8443
+	HTTP_PORT = 8080
+	# For non-standard ports, include port in URL
+	PUBLIC_API_URL = https://localhost:8443/api
+	PUBLIC_WS_URL = wss://localhost:8443/ws
+	URL = https://localhost:8443
+endif
+
 SERVICES = backend frontend databank nginx
-URL = https://localhost:8443
 
 # Setup everything from scratch
-all: certs build up
+all: env certs build up
+
+# Setup environment file
+env:
+	@if [ ! -f .env ]; then \
+		cp .env.example .env && \
+		echo "✅ Created .env file from .env.example"; \
+		echo "⚠️  Please review and customize .env before proceeding"; \
+	else \
+		echo "✅ .env file already exists"; \
+	fi
 
 # Generate SSL certificates
 certs:
@@ -18,13 +45,19 @@ build:
 # Start all services (detached)
 up:
 	@echo "🚀 Starting all services..."
-	@docker compose up -d
+	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
+	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
+		docker compose up -d
 	@echo "✅ Services started. Access the app at $(URL)"
 
 # Start services with logs visible
 dev:
 	@echo "🔧 Starting services in development mode..."
-	@docker compose up
+	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
+	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
+		docker compose up
 
 # Stop and remove containers
 down:
@@ -110,25 +143,30 @@ help:
 	@echo "Available Commands"
 	@echo ""
 	@echo "Setup & Build:"
-	@echo "  make           - Generate certificates and build all containers"
-	@echo "  make certs     - Generate SSL certificates"
-	@echo "  make build     - Build all Docker containers"
+	@echo "  make                  - Setup .env, generate certificates, and build all containers"
+	@echo "  make env              - Create .env file from .env.example (if not exists)"
+	@echo "  make certs            - Generate SSL certificates"
+	@echo "  make build            - Build all Docker containers"
 	@echo ""
 	@echo "Running:"
-	@echo "  make up        - Start all services (detached)"
-	@echo "  make dev       - Start all services with logs visible"
-	@echo "  make down      - Stop and remove all containers"
-	@echo "  make stop      - Stop containers without removing them"
-	@echo "  make restart   - Stop and start all services"
+	@echo "  make up               - Start all services (detached)"
+	@echo "  make dev              - Start all services with logs visible"
+	@echo "  make down             - Stop and remove all containers"
+	@echo "  make stop             - Stop containers without removing them"
+	@echo "  make restart          - Stop and start all services"
+	@echo ""
+	@echo "Port Configuration:"
+	@echo "  make ports=privileged up    - Use ports 443/80 (requires sudo)"
+	@echo "  make up                     - Use ports 8443/8080 (default, no sudo)"
 	@echo ""
 	@echo "Development:"
 	@echo "  make logs <service>   - Show logs (all services or specific: ${SERVICES})"
 	@echo "  make shell [service]  - Open shell (${SERVICES})"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  make clean     - Remove containers, networks, and volumes"
-	@echo "  make fclean    - Deep clean: remove everything including images"
-	@echo "  make re        - Full rebuild (clean + all)"
+	@echo "  make clean            - Remove containers, networks, and volumes"
+	@echo "  make fclean           - Deep clean: remove everything including images"
+	@echo "  make re               - Full rebuild (clean + all)"
 
 ${SERVICES}:
 	@:
@@ -136,4 +174,4 @@ ${SERVICES}:
 .DEFAULT:
 	@make help
 
-.PHONY: all certs build up dev down stop restart logs shell clean fclean re db-reset status stats help ${SERVICES}
+.PHONY: all env certs build up dev down stop restart logs shell clean fclean re db-reset status stats help ${SERVICES}

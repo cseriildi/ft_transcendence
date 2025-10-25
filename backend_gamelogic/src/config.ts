@@ -1,27 +1,58 @@
+// Helper function to get required environment variable
+function getEnvVar(name: string, defaultValue?: string): string {
+  const value = process.env[name] || defaultValue;
+  if (!value) {
+    throw new Error(`❌ Required environment variable ${name} is not set`);
+  }
+  return value;
+}
+
+// Helper function to parse integer with validation
+function parsePort(value: string | undefined, defaultValue: number): number {
+  const port = parseInt(value || String(defaultValue), 10);
+  if (Number.isNaN(port) || port <= 0 || port > 65535) {
+    throw new Error(`❌ Invalid PORT: ${value}. Must be between 1 and 65535`);
+  }
+  return port;
+}
+
+// Helper function to parse positive integer with validation
+function parsePositiveInt(
+  name: string,
+  value: string | undefined,
+  defaultValue: number
+): number {
+  const parsed = parseInt(value || String(defaultValue), 10);
+  if (Number.isNaN(parsed) || parsed <= 0) {
+    throw new Error(`❌ Invalid ${name}: ${value}. Must be a positive integer`);
+  }
+  return parsed;
+}
+
 // Environment configuration for game logic service
 export const config = {
   // Server configuration
   server: {
-    port: parseInt(process.env.PORT || "3001"),
-    host: process.env.HOST || "::",
-    env: process.env.NODE_ENV || "development",
+    port: parsePort(process.env.PORT, 3001),
+    host: getEnvVar("HOST", "::"),
+    env: getEnvVar("NODE_ENV", "production"),
   },
 
   // Logging
   logging: {
-    level: process.env.LOG_LEVEL || "info",
+    level: getEnvVar("LOG_LEVEL", "info"),
   },
 
   // Game configuration
   game: {
-    width: parseInt(process.env.GAME_WIDTH || "4000"),
-    height: parseInt(process.env.GAME_HEIGHT || "2000"),
-    maxScore: parseInt(process.env.MAX_SCORE || "10"),
-    ballRadius: parseInt(process.env.BALL_RADIUS || "40"),
-    ballSpeed: parseInt(process.env.BALL_SPEED || "40"),
-    paddleSpeed: parseInt(process.env.PADDLE_SPEED || "40"),
-    physicsFPS: parseInt(process.env.PHYSICS_FPS || "60"),
-    renderFPS: parseInt(process.env.RENDER_FPS || "30"),
+    width: parsePositiveInt("GAME_WIDTH", process.env.GAME_WIDTH, 4000),
+    height: parsePositiveInt("GAME_HEIGHT", process.env.GAME_HEIGHT, 2000),
+    maxScore: parsePositiveInt("MAX_SCORE", process.env.MAX_SCORE, 10),
+    ballRadius: parsePositiveInt("BALL_RADIUS", process.env.BALL_RADIUS, 40),
+    ballSpeed: parsePositiveInt("BALL_SPEED", process.env.BALL_SPEED, 40),
+    paddleSpeed: parsePositiveInt("PADDLE_SPEED", process.env.PADDLE_SPEED, 40),
+    physicsFPS: parsePositiveInt("PHYSICS_FPS", process.env.PHYSICS_FPS, 60),
+    renderFPS: parsePositiveInt("RENDER_FPS", process.env.RENDER_FPS, 30),
   },
 } as const;
 
@@ -39,18 +70,12 @@ export const validateConfig = () => {
     gameSettings: config.game,
   });
 
-  console.log(`⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(2)}ms)`);
-  console.log(`📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`);
-
-  // Validate port is a valid number
-  if (isNaN(config.server.port) || config.server.port <= 0) {
-    console.error("❌ Invalid PORT environment variable");
-    process.exit(1);
-  }
-
-  // Validate game settings
-  if (config.game.physicsFPS <= 0 || config.game.renderFPS <= 0) {
-    console.error("❌ Invalid FPS configuration");
-    process.exit(1);
-  }
+  console.log(
+    `⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(
+      2
+    )}ms)`
+  );
+  console.log(
+    `📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`
+  );
 };

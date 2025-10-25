@@ -2,7 +2,7 @@
 set -e
 
 DIR="${CERT_DIR:-.certs}"
-CN="${CN:-localhost.localdomain}"
+CN="${CN:-localhost}"
 DAYS="${DAYS:-825}"
 CONF="${OPENSSL_CONF_FILE:-ops/openssl/dev.cnf}"
 

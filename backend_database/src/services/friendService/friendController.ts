@@ -168,7 +168,7 @@ export const friendController = {
       // Online threshold: 2 minutes (configurable)
       const ONLINE_THRESHOLD_MINUTES = 2;
       
-      // Get all accepted friends for the current user
+      // Get all friend requests for the current user (accepted, pending, declined)
       const friends = await db.all<FriendStatus>(
         `SELECT 
           CASE 
@@ -181,7 +181,16 @@ export const friendController = {
             WHEN u.last_seen IS NULL THEN 0
             WHEN (julianday('now') - julianday(u.last_seen)) * 24 * 60 <= ? THEN 1
             ELSE 0
-          END as is_online
+          END as is_online,
+          f.status,
+          f.inviter_id,
+          inviter.username as inviter_username,
+          CASE 
+            WHEN f.inviter_id = ? THEN 1
+            ELSE 0
+          END as is_inviter,
+          f.created_at,
+          f.updated_at
         FROM friends f
         JOIN users u ON (
           CASE 
@@ -189,16 +198,24 @@ export const friendController = {
             ELSE u.id = f.user1_id 
           END
         )
+        JOIN users inviter ON inviter.id = f.inviter_id
         WHERE (f.user1_id = ? OR f.user2_id = ?)
-          AND f.status = 'accepted'
-        ORDER BY is_online DESC, u.username ASC`,
-        [userId, ONLINE_THRESHOLD_MINUTES, userId, userId, userId]
+        ORDER BY 
+          CASE f.status
+            WHEN 'pending' THEN 1
+            WHEN 'accepted' THEN 2
+            WHEN 'declined' THEN 3
+          END,
+          is_online DESC, 
+          u.username ASC`,
+        [userId, ONLINE_THRESHOLD_MINUTES, userId, userId, userId, userId]
       );
 
-      // Convert is_online from 0/1 to boolean
+      // Convert is_online and is_inviter from 0/1 to boolean
       const friendsWithStatus: FriendStatus[] = friends.map(f => ({
         ...f,
-        is_online: Boolean(f.is_online)
+        is_online: Boolean(f.is_online),
+        is_inviter: Boolean(f.is_inviter)
       }));
 
       const response: FriendsStatusResponse = {
