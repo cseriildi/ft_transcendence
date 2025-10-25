@@ -45,6 +45,18 @@ services:
     networks:
       - transcendence
 
+  live-chat:
+    build:
+      context: ./live-chat
+    container_name: live-chat
+    ports:
+      - "3002:3002"
+    depends_on:
+      - databank
+    restart: unless-stopped
+    networks:
+      - transcendence
+
 volumes:
   databank-data:
 

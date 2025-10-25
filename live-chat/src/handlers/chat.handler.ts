@@ -1,5 +1,10 @@
 import type { FastifyInstance } from "fastify";
-import { chatRooms, chatHistory, banList, MAX_MESSAGES } from "../services/state.ts";
+import {
+  chatRooms,
+  chatHistory,
+  banList,
+  MAX_MESSAGES,
+} from "../services/state.js";
 
 /**
  * Handle join_chat action
@@ -35,7 +40,7 @@ export async function handleJoinChat(
   if (banList.has(secondUser)) {
     const bans = banList.get(secondUser)!;
     for (const ban of bans) {
-      if (ban.banned === username) {
+      if (ban === username) {
         connection.send(
           JSON.stringify({
             type: "error",
@@ -98,9 +103,7 @@ export async function handleLeaveChat(
   }
 
   if (!userChatRooms.has(chatId)) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Not in chat" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Not in chat" }));
     return;
   }
 
@@ -178,7 +181,7 @@ export async function handleSendMessage(
     if (client !== connection) {
       if (banList.has(clientUsername)) {
         const bans = banList.get(clientUsername)!;
-        if (Array.from(bans).some((ban) => ban.banned === username)) {
+        if (Array.from(bans).some((ban) => ban === username)) {
           isBlocked = true;
           break;
         }
