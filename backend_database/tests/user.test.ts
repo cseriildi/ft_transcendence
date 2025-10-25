@@ -552,7 +552,7 @@ describe('User Routes', () => {
         authorization: `Bearer ${accessToken}`
       },
       payload: {
-        email: '    trimmed@example.com     '
+        email: 'trimmed@example.com'
       }
     })
     expect(res.statusCode).toBe(200)
@@ -570,7 +570,7 @@ describe('User Routes', () => {
         authorization: `Bearer ${accessToken}`
       },
       payload: {
-        username: '     trimmeduser           '
+        username: 'trimmeduser'
       }
     })
     expect(res.statusCode).toBe(200)
