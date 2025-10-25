@@ -116,6 +116,7 @@ jobs:
           # Verify sensitive variables are not hardcoded
           for var in JWT_SECRET OAUTH_CLIENT_SECRET SESSION_SECRET; do
             if grep -q "^${var}=.*[A-Za-z0-9]" .env.example 2>/dev/null; then
+              # TODO: Ensure .env.example uses placeholder values (e.g., "your_secret_here")
               echo "WARNING: ${var} should not have a real value in .env.example"
             fi
           done
@@ -127,6 +128,7 @@ jobs:
           echo "Checking for security middleware..."
 
           # Check for rate limiting
+          # TODO: Implement proper rate limiting middleware in backend_database
           if ! grep -r "rate.*limit" backend_database/src/ --include="*.ts" | grep -qi "import\|register"; then
             echo "WARNING: Rate limiting not found in backend_database"
           fi
@@ -137,6 +139,7 @@ jobs:
           fi
 
           # Check for helmet in live-chat
+          # TODO: Add helmet security headers to live-chat service
           if ! grep -r "helmet" live-chat/src/ --include="*.ts" | grep -qi "import\|register"; then
             echo "WARNING: Helmet security headers not found in live-chat"
           fi
@@ -156,6 +159,7 @@ jobs:
 
           # Check for WebSocket authentication in services
           if [ -d "backend_gamelogic/src" ]; then
+            # TODO: Implement proper WebSocket authentication in backend_gamelogic
             if ! grep -r "authentication\|auth" backend_gamelogic/src/ --include="*.ts" | head -1; then
               echo "WARNING: Consider adding authentication to WebSocket handlers"
             fi
@@ -188,6 +192,7 @@ jobs:
 
           if [ "$has_vulnerabilities" = true ]; then
             echo "WARNING: Some services have npm vulnerabilities"
+            # TODO: Fix npm audit vulnerabilities and remove this warning pass-through
             # Don't fail the build, just warn
           fi
 
@@ -230,6 +235,7 @@ jobs:
 
           if [ "$has_errors" = true ]; then
             echo "WARNING: Some services have TypeScript compilation issues"
+            # TODO: Fix all TypeScript compilation errors and make this step fail on errors
           fi
 
           echo "✓ TypeScript check completed"
@@ -269,12 +275,14 @@ jobs:
             if grep -q "^USER" "$dockerfile"; then
               echo "✓ $dockerfile uses non-root user"
             else
+              # TODO: Add non-root USER directive to all Dockerfiles for security best practices
               echo "WARNING: $dockerfile may be running as root"
             fi
           done
 
           # Check for .dockerignore
           if [ ! -f ".dockerignore" ]; then
+            # TODO: Create .dockerignore file to exclude unnecessary files from Docker builds
             echo "WARNING: No .dockerignore file found"
           fi
 
