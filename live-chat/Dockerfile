@@ -1,7 +1,7 @@
 # Use Node.js 18 LTS as base image
 FROM node:18-alpine
 
-# Install SQLite3, su-exec, and other build dependencies
+# Install SQLite3, su-exec and other build dependencies
 RUN apk add --no-cache sqlite python3 make g++ su-exec
 
 # Set working directory
@@ -46,7 +46,7 @@ COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 # Don't switch to non-root user yet - entrypoint will do it
-# This allows us to fix permissions on mounted volumes first
+# USER nodejs
 
 # Expose port (use environment variable)
 EXPOSE $PORT
@@ -55,7 +55,7 @@ EXPOSE $PORT
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://127.0.0.1:${PORT}/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Use entrypoint to handle permissions before starting app
+# Set entrypoint
 ENTRYPOINT ["/entrypoint.sh"]
 
 # Start the application using compiled JavaScript

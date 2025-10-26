@@ -19,7 +19,7 @@ endif
 SERVICES = backend frontend databank nginx
 
 # Setup everything from scratch
-all: env certs build up
+all: env certs setup-dirs build up
 
 # Setup environment file
 env:
@@ -36,6 +36,13 @@ certs:
 	@echo "🔐 Generating SSL certificates..."
 	@chmod +x ./scripts/certs.sh
 	@./scripts/certs.sh
+
+# Setup data directories with proper permissions
+setup-dirs:
+	@echo "📁 Setting up data directories..."
+	@mkdir -p backend_database/database || true
+	@mkdir -p app/data || true
+	@echo "✅ Data directories created (permissions will be set by containers)"
 
 # Build all containers
 build:
@@ -76,7 +83,7 @@ restart: down up
 	@echo "🔄 Services restarted"
 
 # Full rebuild
-re: fclean all
+re: fclean env certs setup-dirs build up
 	@echo "🔄 Full rebuild complete"
 
 # Clean up containers and networks
@@ -143,9 +150,10 @@ help:
 	@echo "Available Commands"
 	@echo ""
 	@echo "Setup & Build:"
-	@echo "  make                  - Setup .env, generate certificates, and build all containers"
+	@echo "  make                  - Setup .env, generate certificates, setup dirs, and build all containers"
 	@echo "  make env              - Create .env file from .env.example (if not exists)"
 	@echo "  make certs            - Generate SSL certificates"
+	@echo "  make setup-dirs       - Create data directories with proper permissions"
 	@echo "  make build            - Build all Docker containers"
 	@echo ""
 	@echo "Running:"
