@@ -1,6 +1,5 @@
 export const isUserAuthorized = (): boolean => {
-    const cookies = document.cookie.split("; ");
-    return cookies.some((cookie) => cookie.startsWith("accessToken="));
+    return sessionStorage.getItem("accessToken") !== null;
 };
 
 export const showError = (message: string): void => {
@@ -12,11 +11,13 @@ export const showError = (message: string): void => {
 };
 
 export const getUserId = (): string | null => {
-    const match = document.cookie.match(/(?:^|; )userId=([^;]*)/);
-    return match ? match[1] : null;
-}
+    return sessionStorage.getItem("userId");
+};
 
-export const getAccessToken = (): string | null =>{
-    const match = document.cookie.match(/(?:^|; )accessToken=([^;]*)/);
-    return match ? match[1] : null;
-}
+export const getAccessToken = (): string | null => {
+    return sessionStorage.getItem("accessToken");
+};
+
+export const getUsername = (): string | null => {
+    return sessionStorage.getItem("username");
+};

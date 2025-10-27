@@ -2,7 +2,7 @@ import { Router } from "../router/Router.js";
 import { isUserAuthorized, showError } from "../utils/utils.js";
 import { showErrorPopup } from "../main.js";
 
-export class Register {
+export class Login {
   private router: Router;
 
   constructor(router: Router) {
@@ -14,33 +14,31 @@ export class Register {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     const email = formData.get('email') as string | null;
-    const username = formData.get('username') as string | null;
     const password = formData.get('password') as string | null;
-    const confirmPassword = formData.get('confirmPassword') as string | null;
 
-    if (!email || !username || !password || !confirmPassword) {
-      showErrorPopup("All fields are required.");
+    if (!email || !password) {
+      showErrorPopup("Email and password are required."); // Show popup for empty inputs
       return { success: false, message: "Email and password are required." };
     }
 
     try {
-      const response = await fetch('http://localhost:3000/auth/register', {
+      const response = await fetch('http://localhost:3000/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
-        body: JSON.stringify({ email, username, password, confirmPassword }),
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
       });
       const data = await response.json();
       if (response.ok) {
-        if (data.data?.tokens?.accessToken) {
-          const secureFlag = window.location.protocol === 'https:' ? '; Secure' : '';
-          document.cookie = 'userId=' + data.data.id + `; Path=/; SameSite=Strict${secureFlag}`;
-          document.cookie = `accessToken=${data.data.tokens.accessToken}; Path=/; SameSite=Strict${secureFlag}`;
+        if (data.data?.tokens?.accessToken && data.data?.id) {
+          sessionStorage.setItem('userId', data.data.id);
+          sessionStorage.setItem('accessToken', data.data.tokens.accessToken);
+          sessionStorage.setItem('username', data.data.username);
         }
         return { success: true };
       } else {
         showErrorPopup(data.message || 'Login failed');
-        return { success: false, message: data.message || 'Registration failed' };
+        return { success: false, message: data.message || 'Login failed' };
       }
     } catch (err) {
       console.error('Network error', err);
@@ -56,8 +54,8 @@ export class Register {
     }
 
     const backBtn = document.getElementById("back-btn");
-    const form = document.getElementById("register-form");
-    const loginBtn = document.getElementById("login-btn");
+    const form = document.getElementById("login-form");
+    const registerBtn = document.getElementById("register-btn");
 
     backBtn?.addEventListener("click", () => this.router.navigate("/"));
     form?.addEventListener("submit", async (e) => {
@@ -69,6 +67,6 @@ export class Register {
         showError(result.message || 'An error occurred.');
       }
     });
-    loginBtn?.addEventListener("click", () => this.router.navigate("/login"));
+    registerBtn?.addEventListener("click", () => this.router.navigate("/register"));
   }
 }

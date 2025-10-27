@@ -1,5 +1,5 @@
 import { Router } from "../router/Router.js";
-import { getUserId, getAccessToken } from "../utils/utils.js";
+import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 
 
@@ -34,8 +34,9 @@ export class Home {
         });
 
         if (response.ok) {
-          document.cookie = "accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-          document.cookie = "userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          sessionStorage.removeItem("accessToken");
+          sessionStorage.removeItem("userId");
+          sessionStorage.removeItem("username");
           this.router.navigate("/");
         } else {
           console.error("Failed to log out", await response.json());
@@ -45,7 +46,7 @@ export class Home {
       }
     });
 
-    if (this.isUserAuthorized()) {
+    if (isUserAuthorized()) {
       logoutBtn?.classList.remove("hidden");
       profileBtn?.classList.remove("hidden");
       loginBtn?.classList.add("hidden");
@@ -81,11 +82,6 @@ export class Home {
       loginBtn?.classList.remove("hidden");
       userAvatar?.classList.add("hidden");
     }
-  }
-
-  private isUserAuthorized(): boolean {
-    const cookies = document.cookie.split("; ");
-    return cookies.some((cookie) => cookie.startsWith("accessToken="));
   }
 }
 
