@@ -85,8 +85,6 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_PATH: ${LIVECHAT_DATABASE_PATH:-/app/data/database.db}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://databank:3000}
-    ports:
-      - "${LIVECHAT_PORT:-3002}:${LIVECHAT_PORT:-3002}"
     volumes:
       - ./live-chat/data:/app/data
     depends_on:
