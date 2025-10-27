@@ -28,21 +28,27 @@ export async function cleanupTestAvatars(): Promise<void> {
     // Delete all files except the default folder and its contents
     for (const file of files) {
       const filePath = path.join(uploadsDir, file)
-      const stat = await fs.stat(filePath)
       
-      // Skip the 'default' directory
-      if (stat.isDirectory() && file === 'default') {
+      try {
+        const stat = await fs.stat(filePath)
+        
+        // Skip the 'default' directory
+        if (stat.isDirectory() && file === 'default') {
+          continue
+        }
+        
+        // Delete uploaded avatar files (not directories)
+        if (stat.isFile()) {
+          await fs.unlink(filePath)
+        }
+      } catch (err) {
+        // File might have been already deleted, skip it
         continue
-      }
-      
-      // Delete uploaded avatar files (not directories)
-      if (stat.isFile()) {
-        await fs.unlink(filePath)
       }
     }
   } catch (error) {
-    // Silently fail if uploads directory doesn't exist
-    console.error('Failed to cleanup test avatars:', error)
+    // Silently fail if uploads directory doesn't exist or other errors
+    // This is expected in test environments
   }
 }
 
