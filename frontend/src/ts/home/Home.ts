@@ -2,7 +2,6 @@ import { Router } from "../router/Router.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 
-
 export class Home {
   private router: Router;
 

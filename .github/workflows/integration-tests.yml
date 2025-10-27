@@ -1,0 +1,138 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test-gateway-integration:
+    runs-on: ubuntu-latest
+    env:
+      NGINX_HTTPS_PORT: 8443
+      NGINX_HTTP_PORT: 8080
+      NGINX_HOST: localhost
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        run: |
+          cp .env.example .env
+          echo "Created .env file from .env.example"
+
+      - name: Generate SSL certificates
+        run: |
+          chmod +x ./scripts/certs.sh
+          ./scripts/certs.sh
+
+      - name: Build and start services
+        run: |
+          docker compose up -d --build
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for services to start..."
+          sleep 30
+
+          # Check if all containers are running
+          docker compose ps
+
+          # Wait for nginx and services to be ready by checking frontend access
+          timeout=60
+          while [ $timeout -gt 0 ]; do
+            # Check if we can reach the frontend through nginx
+            # -k: accept self-signed cert, -s: silent, -f: fail on error, -I: HEAD request only
+            if curl -k -s -f -I https://$NGINX_HOST:$NGINX_HTTPS_PORT > /dev/null 2>&1; then
+              echo "✓ Services are ready!"
+              break
+            fi
+            echo "Waiting for services... ($timeout seconds left)"
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+
+          if [ $timeout -eq 0 ]; then
+            echo "ERROR: Services failed to start within timeout"
+            echo "Final container status:"
+            docker compose ps -a
+            echo ""
+            echo "Service logs:"
+            docker compose logs
+            exit 1
+          fi
+
+      - name: Test HTTPS frontend access
+        run: |
+          echo "Testing HTTPS frontend access..."
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://$NGINX_HOST:$NGINX_HTTPS_PORT)
+          if [ "$response" != "200" ]; then
+            echo "ERROR: HTTPS frontend access failed. Expected 200, got $response"
+            exit 1
+          fi
+          echo "HTTPS frontend accessible (200)"
+
+      - name: Test API routing through gateway
+        run: |
+          echo "Testing API routing through gateway..."
+          # Test that API routes are accessible through nginx
+          # /api/users is public (returns 200), so test a protected endpoint
+          # /api/users/1 requires authentication and should return 401
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" https://$NGINX_HOST:$NGINX_HTTPS_PORT/api/users/1)
+          if [ "$response" != "401" ]; then
+            echo "ERROR: API routing failed. Expected 401 (unauthorized), got $response"
+            exit 1
+          fi
+          echo "✓ API routing working (401 - unauthorized as expected)"
+
+      - name: Test Auth routing through gateway
+        run: |
+          echo "Testing Auth routing..."
+          response=$(curl -k -s -o /dev/null -w "%{http_code}" -X POST -H "Content-Type: application/json" -d '{}' https://$NGINX_HOST:$NGINX_HTTPS_PORT/auth/register)
+          if [ "$response" != "400" ]; then
+            echo "ERROR: Auth routing failed. Expected 400 (validation error), got $response"
+            exit 1
+          fi
+          echo "Auth routing working (400 - validation error as expected)"
+
+      - name: Test container health
+        run: |
+          echo "Testing container health..."
+
+          containers=$(docker compose ps --services)
+          for container in $containers; do
+            status=$(docker compose ps -q $container | xargs docker inspect --format='{{.State.Status}}')
+            if [ "$status" != "running" ]; then
+              echo "ERROR: Container $container is not running (status: $status)"
+              exit 1
+            fi
+            echo "Container $container is running"
+          done
+
+          echo "✓ All containers are running"
+
+      - name: Show service logs on failure
+        if: failure()
+        run: |
+          echo "=== CONTAINER STATUS ==="
+          docker compose ps -a
+          echo ""
+          echo "=== NGINX LOGS ==="
+          docker compose logs nginx
+          echo ""
+          echo "=== DATABASE LOGS ==="
+          docker compose logs databank
+          echo ""
+          echo "=== GAME LOGS ==="
+          docker compose logs backend
+          echo ""
+          echo "=== FRONTEND LOGS ==="
+          docker compose logs frontend
+          echo ""
+          echo "=== LIVE-CHAT LOGS ==="
+          docker compose logs live-chat
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker compose down -v
+          docker system prune -f

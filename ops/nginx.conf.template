@@ -1,0 +1,77 @@
+# HTTP server - redirect all traffic to HTTPS with 301 Moved Permanently
+server {
+    listen ${NGINX_HTTP_PORT};
+    server_name ${NGINX_HOST};
+    return 301 https://$host:${NGINX_HTTPS_PORT}$request_uri;
+}
+
+# HTTPS server - main application
+server {
+    listen ${NGINX_HTTPS_PORT} ssl;
+    server_name ${NGINX_HOST};
+
+    ssl_certificate     /etc/nginx/certs/cert.pem;
+    ssl_certificate_key /etc/nginx/certs/key.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+
+    location / {
+        proxy_pass http://frontend:${FRONTEND_PORT};
+        add_header Content-Security-Policy "connect-src 'self';" always;
+    }
+
+    location /api/auth/ {
+        proxy_pass http://databank:${DATABANK_PORT}/auth/;
+    }
+
+    location /api/ {
+        proxy_pass http://databank:${DATABANK_PORT}/api/;
+    }
+
+    location /auth/ {
+        proxy_pass http://databank:${DATABANK_PORT}/auth/;
+    }
+
+    location /oauth/ {
+        proxy_pass http://databank:${DATABANK_PORT}/oauth/;
+    }
+
+    location /game/ {
+        proxy_pass http://backend:${GAMELOGIC_PORT}/;
+    }
+
+    location /ws/game {
+        proxy_pass http://backend:${GAMELOGIC_PORT}/game;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /ws/lobby {
+        proxy_pass http://live-chat:${LIVECHAT_PORT}/lobby;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /ws/chats/ {
+        proxy_pass http://live-chat:${LIVECHAT_PORT}/chats/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+}

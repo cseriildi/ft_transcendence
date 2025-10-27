@@ -5,6 +5,14 @@ services:
     build:
       context: ./backend_database
     container_name: database
+    env_file:
+      - .env
+    environment:
+      # Map .env variables to internal service variables
+      PORT: ${DATABANK_PORT:-3000}
+      HOST: ${DATABANK_HOST:-0.0.0.0}
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_PATH: ${DATABANK_DATABASE_PATH:-/app/data/database.db}
     volumes:
       - ./backend_database/database:/app/data
     restart: unless-stopped
@@ -15,8 +23,12 @@ services:
     build:
       context: ./backend_gamelogic
     container_name: game
-    # env_file:
-    #   - ./backend_gamelogic/.env.game
+    env_file:
+      - .env
+    environment:
+      PORT: ${GAMELOGIC_PORT:-3001}
+      HOST: ${GAMELOGIC_HOST:-0.0.0.0}
+      NODE_ENV: ${NODE_ENV:-production}
     restart: unless-stopped
     networks:
       - transcendence
@@ -25,17 +37,33 @@ services:
     build:
       context: ./frontend
     container_name: frontend
+    env_file:
+      - .env
+    environment:
+      PUBLIC_API_URL: ${PUBLIC_API_URL:-https://localhost:8443/api}
+      PUBLIC_WS_URL: ${PUBLIC_WS_URL:-wss://localhost:8443/ws}
     restart: unless-stopped
     networks:
       - transcendence
 
   nginx:
-    image: nginx:alpine
+    build:
+      context: ./ops
     container_name: nginx-proxy
+    env_file:
+      - .env
+    environment:
+      NGINX_HTTPS_PORT: ${NGINX_HTTPS_PORT:-8443}
+      NGINX_HTTP_PORT: ${NGINX_HTTP_PORT:-8080}
+      NGINX_HOST: ${NGINX_HOST:-localhost}
+      FRONTEND_PORT: ${FRONTEND_PORT:-4200}
+      DATABANK_PORT: ${DATABANK_PORT:-3000}
+      GAMELOGIC_PORT: ${GAMELOGIC_PORT:-3001}
+      LIVECHAT_PORT: ${LIVECHAT_PORT:-3002}
     ports:
-      - "8443:8443"
+      - "${NGINX_HTTPS_PORT:-8443}:${NGINX_HTTPS_PORT:-8443}"
+      - "${NGINX_HTTP_PORT:-8080}:${NGINX_HTTP_PORT:-8080}"
     volumes:
-      - ./ops/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./.certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
@@ -49,8 +77,16 @@ services:
     build:
       context: ./live-chat
     container_name: live-chat
-    ports:
-      - "3002:3002"
+    env_file:
+      - .env
+    environment:
+      PORT: ${LIVECHAT_PORT:-3002}
+      HOST: ${LIVECHAT_HOST:-0.0.0.0}
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_PATH: ${LIVECHAT_DATABASE_PATH:-/app/data/database.db}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://databank:3000}
+    volumes:
+      - ./live-chat/data:/app/data
     depends_on:
       - databank
     restart: unless-stopped

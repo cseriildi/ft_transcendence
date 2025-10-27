@@ -1,11 +1,12 @@
 import { Router } from "./router/Router.js";
 import { Pong } from "./pong/Pong.js";
-import { Login } from "./login/Login";
-import { Register } from "./register/Register";
+import { Login } from "./login/Login.js";
+import { Register } from "./register/Register.js";
 import { Home } from "./home/Home.js";
 import { Profile } from "./profile/Profile.js";
 import { Edit } from "./edit/Edit.js";
 import { Chat } from "./chat/Chat.js";
+import { config } from "./config.js";
 
 let currentPong: Pong | null = null;
 
@@ -19,7 +20,7 @@ const initPongPage = () => {
 
   const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
   if (canvas) {
-    currentPong = new Pong("pong-canvas", "wss://localhost:8443/ws/game");
+    currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
   } else {
     console.error("❌ Pong canvas not found");
   }
