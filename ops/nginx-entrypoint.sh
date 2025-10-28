@@ -12,9 +12,7 @@ export LIVECHAT_PORT=${LIVECHAT_PORT:-3002}
 
 # Process nginx.conf.template with environment variables
 envsubst '${NGINX_HTTPS_PORT} ${NGINX_HTTP_PORT} ${NGINX_HOST} ${FRONTEND_PORT} ${DATABANK_PORT} ${GAMELOGIC_PORT} ${LIVECHAT_PORT}' \
-  < /etc/nginx/templates/nginx.conf.template \
+  < /etc/nginx/nginx.conf.template \
   > /etc/nginx/conf.d/default.conf
 
 echo "Generated nginx configuration from template"
-
-exec nginx -g "daemon off;"
