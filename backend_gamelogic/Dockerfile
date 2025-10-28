@@ -49,14 +49,15 @@ USER nodejs
 ENV NODE_ENV=production \
     PORT=3001 \
     HOST=0.0.0.0 \
-    LOG_LEVEL=info
+    LOG_LEVEL=info \
+    HEALTHCHECK_HOST=127.0.0.1
 
 # Expose port
 EXPOSE 3001
 
-# Health check - verify service is responding
+# Health check - verify service is responding (uses $HEALTHCHECK_HOST and $PORT from ENV)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+  CMD /bin/sh -c 'node -e "require(\"http\").get(\"http://${HEALTHCHECK_HOST}:${PORT}/health\", (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"' || exit 1
 
 # Start the application using compiled JavaScript
 CMD ["node", "dist/server.js"]

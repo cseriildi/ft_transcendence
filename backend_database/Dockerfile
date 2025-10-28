@@ -24,8 +24,8 @@ RUN npm run build
 # ============================================
 FROM node:18.20.5-alpine AS production
 
-# Install SQLite3 runtime (only what's needed)
-RUN apk add --no-cache sqlite-libs
+# Install SQLite3 runtime and su-exec for user switching
+RUN apk add --no-cache sqlite-libs su-exec
 
 WORKDIR /app
 
@@ -54,22 +54,30 @@ RUN mkdir -p /app/data && \
 # Copy default avatars
 COPY uploads/avatars/default ./uploads/avatars/default
 
-# Switch to non-root user
-USER nodejs
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Note: Do NOT switch to nodejs user here - entrypoint needs root to fix permissions
+# The entrypoint script will switch to nodejs user after fixing permissions
 
 # Set default environment variables
 ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0 \
     DATABASE_PATH=/app/data/database.db \
-    LOG_LEVEL=info
+    LOG_LEVEL=info \
+    HEALTHCHECK_HOST=127.0.0.1
 
 # Expose port
 EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+  CMD /bin/sh -c 'node -e "require(\"http\").get(\"http://${HEALTHCHECK_HOST}:${PORT}/health\", (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"' || exit 1
+
+# Use custom entrypoint for permission handling
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Start the application using compiled JavaScript
 CMD ["node", "dist/main.js"]

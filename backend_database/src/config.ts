@@ -21,6 +21,15 @@ function parsePort(value: string | undefined, defaultValue: number): number {
   return port;
 }
 
+// Helper to build public URL
+function buildPublicUrl(path: string): string {
+  const host = getEnvVar("PUBLIC_HOST", "localhost");
+  const port = getOptionalEnvVar("PUBLIC_PORT", "");
+  const protocol = getEnvVar("PUBLIC_PROTOCOL", "http");
+  const portSuffix = port ? `:${port}` : "";
+  return `${protocol}://${host}${portSuffix}${path}`;
+}
+
 // Environment configuration
 export const config = {
   // Server configuration
@@ -28,6 +37,8 @@ export const config = {
     port: parsePort(process.env.PORT, 3000),
     host: getEnvVar("HOST", "::"),
     env: getEnvVar("NODE_ENV", "production"),
+    publicHost: getEnvVar("PUBLIC_HOST", "localhost"),
+    publicPort: getOptionalEnvVar("PUBLIC_PORT", ""),
   },
 
   // Database configuration
@@ -45,6 +56,13 @@ export const config = {
     auth: getEnvVar("AUTH_PREFIX", "/auth"),
     oauth: getEnvVar("OAUTH_PREFIX", "/oauth"),
     api: getEnvVar("API_PREFIX", "/api"),
+  },
+
+  // CORS configuration
+  cors: {
+    origins: getOptionalEnvVar("CORS_ORIGINS", "http://localhost:4200")
+      .split(",")
+      .map((s) => s.trim()),
   },
 
   // JWT config
@@ -71,7 +89,7 @@ export const config = {
       clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET"),
       redirectUri: getOptionalEnvVar(
         "GITHUB_REDIRECT_URI",
-        "http://localhost:3000/oauth/github/callback"
+        buildPublicUrl("/oauth/github/callback")
       ),
     },
     google: {
@@ -79,7 +97,7 @@ export const config = {
       clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET"),
       redirectUri: getOptionalEnvVar(
         "GOOGLE_REDIRECT_URI",
-        "http://localhost:3000/oauth/google/callback"
+        buildPublicUrl("/oauth/google/callback")
       ),
     },
   },

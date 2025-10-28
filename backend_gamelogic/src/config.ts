@@ -7,6 +7,11 @@ function getEnvVar(name: string, defaultValue?: string): string {
   return value;
 }
 
+// Helper function to get optional environment variable
+function getOptionalEnvVar(name: string, defaultValue: string = ""): string {
+  return process.env[name] || defaultValue;
+}
+
 // Helper function to parse integer with validation
 function parsePort(value: string | undefined, defaultValue: number): number {
   const port = parseInt(value || String(defaultValue), 10);
@@ -36,6 +41,8 @@ export const config = {
     port: parsePort(process.env.PORT, 3001),
     host: getEnvVar("HOST", "::"),
     env: getEnvVar("NODE_ENV", "production"),
+    publicHost: getEnvVar("PUBLIC_HOST", "localhost"),
+    publicPort: getOptionalEnvVar("PUBLIC_PORT", ""),
   },
 
   // Logging

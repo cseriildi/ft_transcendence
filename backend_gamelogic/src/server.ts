@@ -95,10 +95,12 @@ fastify.listen(
       console.error("❌ Failed to start server:", err);
       process.exit(1);
     }
+    const publicPort = config.server.publicPort || config.server.port;
+    const wsUrl = config.server.publicPort
+      ? `ws://${config.server.publicHost}:${publicPort}/game`
+      : `ws://${config.server.publicHost}/game`;
     console.log(`🎮 Game server running at ${address}`);
-    console.log(
-      `🔌 WebSocket available at ws://localhost:${config.server.port}/game`
-    );
+    console.log(`🔌 WebSocket available at ${wsUrl}`);
   }
 );
 
