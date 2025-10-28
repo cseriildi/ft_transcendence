@@ -53,8 +53,8 @@ export const config = {
 
   // Route prefixes
   routes: {
-    auth: getEnvVar("AUTH_PREFIX", "/auth"),
-    oauth: getEnvVar("OAUTH_PREFIX", "/oauth"),
+    auth: getEnvVar("AUTH_PREFIX", "/api/auth"),
+    oauth: getEnvVar("OAUTH_PREFIX", "/api/oauth"),
     api: getEnvVar("API_PREFIX", "/api"),
   },
 
