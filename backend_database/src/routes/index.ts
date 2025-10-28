@@ -10,12 +10,16 @@ import friendRoutes from "../services/friendService/friendRoutes.ts";
 async function routes(fastify: FastifyInstance) {
   await fastify.register(checkRoutes);
 
-  await fastify.register(authRoutes, { prefix: config.routes.auth });
-  await fastify.register(oauthRoutes, { prefix: config.routes.oauth });
-  // API routes are registered without prefix since nginx strips /api before proxying
-  await fastify.register(userRoutes);
-  await fastify.register(matchRoutes);
-  await fastify.register(friendRoutes);
+  // Auth and OAuth routes are under /api for consistency with frontend expectations
+  await fastify.register(authRoutes, {
+    prefix: `${config.routes.api}${config.routes.auth}`,
+  });
+  await fastify.register(oauthRoutes, {
+    prefix: `${config.routes.api}${config.routes.oauth}`,
+  });
+  await fastify.register(userRoutes, { prefix: config.routes.api });
+  await fastify.register(matchRoutes, { prefix: config.routes.api });
+  await fastify.register(friendRoutes, { prefix: config.routes.api });
 }
 
 export default routes;
