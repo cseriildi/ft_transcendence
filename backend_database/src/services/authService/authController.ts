@@ -144,10 +144,10 @@ export const authController = {
         throw errors.validation("Passwords do not match");
       }
       if (await db.get("SELECT id FROM users WHERE email = ?", [request.body.email])){
-        throw errors.conflict("Email is already registered");
+        throw errors.conflict("Email is already exists");
       }
       if (await db.get("SELECT id FROM users WHERE username = ?", [request.body.username])){
-        throw errors.conflict("Username is already taken");
+        throw errors.conflict("Username is already exists");
       }
 
       const { username, email } = request.body || {};
