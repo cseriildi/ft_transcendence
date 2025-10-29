@@ -52,3 +52,4 @@ wait_for_service "gamelogic" "backend" "$GAMELOGIC_PORT" 15 || true
 wait_for_service "live-chat" "live-chat" "$LIVECHAT_PORT" 10 || true
 
 echo "🚀 Starting nginx gateway..."
+exec nginx -g 'daemon off;'
