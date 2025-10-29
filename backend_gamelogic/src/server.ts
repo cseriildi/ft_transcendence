@@ -98,7 +98,7 @@ fastify.listen(
     const publicPort = config.server.publicPort || config.server.port;
     const wsUrl =
       config.server.publicPort && config.server.publicPort !== ""
-        ? `ws://${config.server.publicHost}:${config.server.publicPort}/game`
+        ? `ws://${config.server.publicHost}:${publicPort}/game`
         : `ws://${config.server.publicHost}/game`;
     console.log(`🎮 Game server running at ${address}`);
     console.log(`🔌 WebSocket available at ${wsUrl}`);
