@@ -1,62 +1,89 @@
-# Use Node.js 18 LTS as base image
-FROM node:18-alpine
+# ============================================
+# Stage 1: Dependencies - Install all dependencies
+# ============================================
+FROM node:18.20.5-alpine AS dependencies
 
-# Install SQLite3, su-exec, and other build dependencies
-RUN apk add --no-cache sqlite python3 make g++ su-exec
-
-# Set working directory
 WORKDIR /app
 
-# Create database directory
-RUN mkdir -p /app/database
+# Copy package files
+COPY package*.json ./
 
-# Copy package files first for better caching
+# Install ALL dependencies (including devDependencies for build stage)
+RUN npm ci && \
+    npm cache clean --force
+
+# ============================================
+# Stage 2: Builder - Compile TypeScript
+# ============================================
+FROM node:18.20.5-alpine AS builder
+
+WORKDIR /app
+
+# Copy package files and tsconfig
 COPY package*.json ./
 COPY tsconfig.json ./
 
-# Install dependencies (including devDependencies for TypeScript compilation)
-RUN npm ci
+# Install dependencies (needed for TypeScript compilation)
+RUN npm ci && \
+    npm cache clean --force
 
 # Copy source code
 COPY src ./src
 
-# Build TypeScript (compile to JS)
-RUN npx tsc
+# Compile TypeScript to JavaScript
+RUN npm run build
 
-# Remove devDependencies to reduce image size
-RUN npm prune --production
+# ============================================
+# Stage 3: Production - Final minimal image
+# ============================================
+FROM node:18.20.5-alpine AS production
 
-# Set default environment variables (can be overridden)
-ENV NODE_ENV=production
-ENV PORT=3002
-ENV HOST=0.0.0.0
-ENV DATABASE_PATH=/app/data/database.db
-ENV LOG_LEVEL=info
+# Install runtime dependencies only (sqlite-libs for sqlite3, su-exec for user switching)
+RUN apk add --no-cache sqlite-libs su-exec
 
-# Create data directory for database
-RUN mkdir -p /app/data
+WORKDIR /app
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
+# Create non-root user and group
+RUN addgroup -g 1001 nodejs && \
+    adduser -S nodejs -u 1001 -G nodejs
+
+# Copy package files
+COPY package*.json ./
+
+# Install ONLY production dependencies
+RUN npm ci --omit=dev && \
+    npm cache clean --force
+
+# Copy compiled code from builder stage
+COPY --from=builder /app/dist ./dist
+
+# Copy static files (WebSocket HTML client)
+COPY src/www ./src/www
+
+# Create necessary directories and set ownership
+RUN mkdir -p /app/data && \
     chown -R nodejs:nodejs /app
 
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+# Copy and setup entrypoint script
+COPY entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Don't switch to non-root user yet - entrypoint will do it
-# This allows us to fix permissions on mounted volumes first
+# Set environment variables
+ENV NODE_ENV=production \
+    PORT=3002 \
+    HOST=0.0.0.0 \
+    DATABASE_PATH=/app/data/database.db \
+    LOG_LEVEL=info
 
-# Expose port (use environment variable)
-EXPOSE $PORT
+# Expose port
+EXPOSE 3002
 
-# Health check
+# Health check using shell form to allow variable expansion
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:${PORT}/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+    CMD wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST:-127.0.0.1}:${PORT}/health || exit 1
 
-# Use entrypoint to handle permissions before starting app
-ENTRYPOINT ["/entrypoint.sh"]
+# Use entrypoint to fix volume permissions, then switch to non-root user
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 
-# Start the application using compiled JavaScript
+# Start the application
 CMD ["node", "dist/main.js"]
