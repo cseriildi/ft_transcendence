@@ -66,8 +66,6 @@ dev:
 		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
 		docker compose up
 
-# (Development-specific targets removed - repository now sticks to production workflow)
-
 # Stop and remove containers
 down:
 	@echo "🛑 Stopping all services..."

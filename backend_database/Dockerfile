@@ -58,9 +58,6 @@ COPY uploads/avatars/default ./uploads/avatars/default
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Note: Do NOT switch to nodejs user here - entrypoint needs root to fix permissions
-# The entrypoint script will switch to nodejs user after fixing permissions
-
 # Set default environment variables
 ENV NODE_ENV=production \
     PORT=3000 \
