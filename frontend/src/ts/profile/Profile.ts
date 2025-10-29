@@ -48,7 +48,7 @@ export class Profile {
 		}
 
 		try {
-			const response = await fetch("http://localhost:3000/api/users", {
+			const response = await fetch("http://localhost:3000/api/friends/status", {
 				headers: {
 					Authorization: `Bearer ${getAccessToken()}`,
 				},
