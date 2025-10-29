@@ -1,25 +1,23 @@
 #!/bin/sh
-# Runtime entrypoint for production frontend (nginx-based)
+# Production entrypoint: Inject runtime configuration into static files
+
+set -e
 
 # Default values if not provided
 PUBLIC_API_URL="${PUBLIC_API_URL:-https://localhost:8443/api}"
 PUBLIC_WS_URL="${PUBLIC_WS_URL:-wss://localhost:8443/ws}"
 
-echo "🔧 Frontend configuration ready:"
+echo "🔧 Frontend runtime configuration:"
 echo "   API_URL: ${PUBLIC_API_URL}"
 echo "   WS_URL: ${PUBLIC_WS_URL}"
 
-# Inject runtime variables into built index.html (and any other files that use placeholders)
+# Inject runtime variables into built index.html
 if [ -f /usr/share/nginx/html/index.html ]; then
-    echo "💉 Injecting configuration into built files..."
-    sed -i "s|{{PUBLIC_API_URL}}|${PUBLIC_API_URL}|g" /usr/share/nginx/html/index.html || true
-    sed -i "s|{{PUBLIC_WS_URL}}|${PUBLIC_WS_URL}|g" /usr/share/nginx/html/index.html || true
-    echo "✅ Frontend configuration injected successfully"
+  echo "💉 Injecting configuration..."
+  sed -i "s|{{PUBLIC_API_URL}}|${PUBLIC_API_URL}|g" /usr/share/nginx/html/index.html
+  sed -i "s|{{PUBLIC_WS_URL}}|${PUBLIC_WS_URL}|g" /usr/share/nginx/html/index.html
+  echo "✅ Configuration injected successfully"
 fi
 
-# Start nginx (default CMD) — exec any provided command
-if [ "$#" -eq 0 ]; then
-    exec nginx -g "daemon off;"
-else
-    exec "$@"
-fi
+# Execute the CMD (nginx)
+exec "$@"
