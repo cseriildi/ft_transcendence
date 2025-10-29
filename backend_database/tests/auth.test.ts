@@ -197,7 +197,7 @@ describe('Auth Routes', () => {
     expect(res.statusCode).toBe(409)
     const body = res.json() as any
     expect(body.success).toBe(false)
-    expect(body.message).toContain('already exists')
+    expect(body.message).toContain('already exist')
   })
 
   it('POST /auth/register should reject password mismatch', async () => {
