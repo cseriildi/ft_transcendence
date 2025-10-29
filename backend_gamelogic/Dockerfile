@@ -57,7 +57,7 @@ EXPOSE 3001
 
 # Health check - verify service is responding (uses $HEALTHCHECK_HOST and $PORT from ENV)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD ["/bin/sh", "-c", "wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST}:${PORT}/health || exit 1"]
+    CMD wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST}:${PORT}/health || exit 1
 
 # Start the application using compiled JavaScript
 CMD ["node", "dist/server.js"]
