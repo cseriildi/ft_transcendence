@@ -67,7 +67,7 @@ EXPOSE 3002
 
 # Health check using shell form to allow variable expansion
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["/bin/sh", "-c", "wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST}:${PORT}/health || exit 1"]
+    CMD wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST}:${PORT}/health || exit 1
 
 # Use entrypoint to fix volume permissions, then switch to non-root user
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
