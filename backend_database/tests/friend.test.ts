@@ -1104,7 +1104,7 @@ describe('Friend Routes', () => {
         expect(body.data.friends).toEqual([])
       })
 
-      it('should only return accepted friends, not pending or declined', async () => {
+      it('should return all friend requests including pending and declined with their status', async () => {
         // Create user4
         const user4Payload = {
           username: 'dave',
@@ -1128,7 +1128,7 @@ describe('Friend Routes', () => {
           headers: { authorization: `Bearer ${user1Token}` },
         })
 
-        // User1 checks friends status (should only see user2 and user3, not user4)
+        // User1 checks friends status (should see all 3: user2 accepted, user3 accepted, user4 pending)
         const res = await app.inject({
           method: 'GET',
           url: `${FRIENDS_PREFIX}/status`,
@@ -1137,15 +1137,32 @@ describe('Friend Routes', () => {
 
         expect(res.statusCode).toBe(200)
         const body = res.json() as any
-        expect(body.data.friends.length).toBe(2)
+        expect(body.data.friends.length).toBe(3)
         
         const friendIds = body.data.friends.map((f: any) => f.user_id)
         expect(friendIds).toContain(user2Id)
         expect(friendIds).toContain(user3Id)
-        expect(friendIds).not.toContain(user4Id)
+        expect(friendIds).toContain(user4Id)
+
+        // Check that status is included
+        const user2Friend = body.data.friends.find((f: any) => f.user_id === user2Id)
+        const user3Friend = body.data.friends.find((f: any) => f.user_id === user3Id)
+        const user4Friend = body.data.friends.find((f: any) => f.user_id === user4Id)
+
+        expect(user2Friend.status).toBe('accepted')
+        expect(user3Friend.status).toBe('accepted')
+        expect(user4Friend.status).toBe('pending')
+
+        // Check inviter information
+        expect(user2Friend.inviter_id).toBe(user1Id)
+        expect(user2Friend.is_inviter).toBe(true)
+        expect(user3Friend.inviter_id).toBe(user1Id)
+        expect(user3Friend.is_inviter).toBe(true)
+        expect(user4Friend.inviter_id).toBe(user1Id)
+        expect(user4Friend.is_inviter).toBe(true)
       })
 
-      it('should show friends sorted by online status first, then alphabetically', async () => {
+      it('should show friends sorted by status (pending first), then online status, then alphabetically', async () => {
         // User3 sends heartbeat (charlie will be online)
         await app.inject({
           method: 'PATCH',
@@ -1165,13 +1182,16 @@ describe('Friend Routes', () => {
         const body = res.json() as any
         const friends = body.data.friends
 
+        // Both friends are accepted status, so sorting is by online status then alphabetically
         // First friend should be online (charlie)
         expect(friends[0].is_online).toBe(true)
         expect(friends[0].username).toBe('charlie')
+        expect(friends[0].status).toBe('accepted')
 
         // Second friend should be offline (bob)
         expect(friends[1].is_online).toBe(false)
         expect(friends[1].username).toBe('bob')
+        expect(friends[1].status).toBe('accepted')
       })
 
       it('should update last_seen timestamp correctly across multiple heartbeats', async () => {
@@ -1359,5 +1379,228 @@ describe('Friend Routes', () => {
         expect(user2View.is_online).toBe(true)
       })
     })
+
+    describe('Friend Request Status and Inviter Information', () => {
+      it('should include inviter information for all friend requests', async () => {
+        // User1 sends request to User2
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // User2 checks status and sees pending request from User1
+        const user2Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        expect(user2Check.statusCode).toBe(200)
+        const user2Body = user2Check.json() as any
+        expect(user2Body.data.friends.length).toBe(1)
+
+        const friendRequest = user2Body.data.friends[0]
+        expect(friendRequest.user_id).toBe(user1Id)
+        expect(friendRequest.status).toBe('pending')
+        expect(friendRequest.inviter_id).toBe(user1Id)
+        expect(friendRequest.inviter_username).toBe('alice')
+        expect(friendRequest.is_inviter).toBe(false) // User2 is not the inviter
+
+        // User1 checks status and sees their own pending request
+        const user1Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        const user1Body = user1Check.json() as any
+        expect(user1Body.data.friends.length).toBe(1)
+
+        const sentRequest = user1Body.data.friends[0]
+        expect(sentRequest.user_id).toBe(user2Id)
+        expect(sentRequest.status).toBe('pending')
+        expect(sentRequest.inviter_id).toBe(user1Id)
+        expect(sentRequest.inviter_username).toBe('alice')
+        expect(sentRequest.is_inviter).toBe(true) // User1 is the inviter
+      })
+
+      it('should show declined requests with correct status', async () => {
+        // User1 sends request to User2
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // User2 declines the request
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/decline`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 checks status and sees declined request
+        const user1Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        const user1Body = user1Check.json() as any
+        expect(user1Body.data.friends.length).toBe(1)
+
+        const declinedRequest = user1Body.data.friends[0]
+        expect(declinedRequest.user_id).toBe(user2Id)
+        expect(declinedRequest.status).toBe('declined')
+        expect(declinedRequest.inviter_id).toBe(user1Id)
+        expect(declinedRequest.is_inviter).toBe(true)
+
+        // User2 also sees the declined request
+        const user2Check = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        const user2Body = user2Check.json() as any
+        expect(user2Body.data.friends.length).toBe(1)
+
+        const declinedByUser2 = user2Body.data.friends[0]
+        expect(declinedByUser2.user_id).toBe(user1Id)
+        expect(declinedByUser2.status).toBe('declined')
+        expect(declinedByUser2.inviter_id).toBe(user1Id)
+        expect(declinedByUser2.is_inviter).toBe(false)
+      })
+
+      it('should sort friend requests by status: pending, accepted, declined', async () => {
+        // Create additional users
+        const user4Payload = {
+          username: 'dave',
+          email: 'dave@example.com',
+          password: 'password123',
+          confirmPassword: 'password123',
+        }
+        const user4Res = await app.inject({
+          method: 'POST',
+          url: `${AUTH_PREFIX}/register`,
+          payload: user4Payload,
+        })
+        const user4Body = user4Res.json() as any
+        const user4Id = user4Body.data.id
+
+        const user5Payload = {
+          username: 'eve',
+          email: 'eve@example.com',
+          password: 'password123',
+          confirmPassword: 'password123',
+        }
+        const user5Res = await app.inject({
+          method: 'POST',
+          url: `${AUTH_PREFIX}/register`,
+          payload: user5Payload,
+        })
+        const user5Body = user5Res.json() as any
+        const user5Id = user5Body.data.id
+        const user5Token = user5Body.data.tokens.accessToken
+        const user4Token = user4Body.data.tokens.accessToken
+
+        // User1 -> User2: accepted
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // User1 -> User3: pending
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user3Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // User1 -> User4: declined
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user4Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/decline`,
+          headers: { authorization: `Bearer ${user4Token}` },
+        })
+
+        // User1 checks status - should see pending first, then accepted, then declined
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        const body = res.json() as any
+        expect(body.data.friends.length).toBe(3)
+
+        // Order should be: pending (user3), accepted (user2), declined (user4)
+        expect(body.data.friends[0].status).toBe('pending')
+        expect(body.data.friends[0].user_id).toBe(user3Id)
+
+        expect(body.data.friends[1].status).toBe('accepted')
+        expect(body.data.friends[1].user_id).toBe(user2Id)
+
+        expect(body.data.friends[2].status).toBe('declined')
+        expect(body.data.friends[2].user_id).toBe(user4Id)
+      })
+
+      it('should include created_at and updated_at timestamps', async () => {
+        // User1 sends request to User2
+        await app.inject({
+          method: 'POST',
+          url: `${FRIENDS_PREFIX}/${user2Id}`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        // Check status
+        const res = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        const body = res.json() as any
+        const friendRequest = body.data.friends[0]
+
+        expect(friendRequest.created_at).toBeDefined()
+        expect(friendRequest.updated_at).toBeDefined()
+        expect(typeof friendRequest.created_at).toBe('string')
+        expect(typeof friendRequest.updated_at).toBe('string')
+
+        // Accept the request
+        await app.inject({
+          method: 'PATCH',
+          url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+          headers: { authorization: `Bearer ${user2Token}` },
+        })
+
+        // Check that updated_at changed
+        const res2 = await app.inject({
+          method: 'GET',
+          url: `${FRIENDS_PREFIX}/status`,
+          headers: { authorization: `Bearer ${user1Token}` },
+        })
+
+        const body2 = res2.json() as any
+        const acceptedFriend = body2.data.friends[0]
+
+        expect(acceptedFriend.created_at).toBe(friendRequest.created_at)
+        expect(acceptedFriend.updated_at).not.toBe(friendRequest.updated_at)
+      })
+    })
   })
 })
+
