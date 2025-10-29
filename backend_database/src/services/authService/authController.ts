@@ -143,6 +143,12 @@ export const authController = {
       if (request.body.password !== request.body.confirmPassword) {
         throw errors.validation("Passwords do not match");
       }
+      if (await db.get("SELECT id FROM users WHERE email = ?", [request.body.email])){
+        throw errors.conflict("Email is already registered");
+      }
+      if (await db.get("SELECT id FROM users WHERE username = ?", [request.body.username])){
+        throw errors.conflict("Username is already taken");
+      }
 
       const { username, email } = request.body || {};
 
@@ -185,10 +191,7 @@ export const authController = {
           "User created"
         );
       } catch (err: any) {
-        if (err.message?.includes("UNIQUE constraint")) {
-          throw errors.conflict("Username or email already exists");
-        }
-        throw err; // Re-throw other database errors
+        throw err;
       }
     }
   ),
