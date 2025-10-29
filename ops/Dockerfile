@@ -1,7 +1,7 @@
 FROM nginx:alpine
 
 # Install envsubst (part of gettext package)
-RUN apk add --no-cache gettext
+RUN apk add --no-cache gettext curl
 
 # Copy template to a different location (not /etc/nginx/templates/ to avoid auto-processing)
 COPY nginx.conf.template /etc/nginx/nginx.conf.template

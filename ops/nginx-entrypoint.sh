@@ -16,3 +16,24 @@ envsubst '${NGINX_HTTPS_PORT} ${NGINX_HTTP_PORT} ${NGINX_HOST} ${FRONTEND_PORT} 
   > /etc/nginx/conf.d/default.conf
 
 echo "Generated nginx configuration from template"
+
+# Wait for dependent services to become available (best-effort)
+wait_for_service() {
+  name="$1"; host="$2"; port="$3"; timeout=${4:-30}
+  i=0
+  echo "Waiting for $name at $host:$port (timeout ${timeout}s)"
+  until curl -sS --fail "http://$host:$port/health" >/dev/null 2>&1; do
+    i=$((i+1))
+    if [ "$i" -ge "$timeout" ]; then
+      echo "Timed out waiting for $name after ${timeout}s"
+      return 1
+    fi
+    sleep 1
+  done
+  echo "$name is reachable"
+}
+
+# Best-effort checks (non-fatal)
+wait_for_service "databank" "databank" "$DATABANK_PORT" 15 || true
+wait_for_service "backend" "backend" "$GAMELOGIC_PORT" 15 || true
+wait_for_service "live-chat" "live-chat" "$LIVECHAT_PORT" 10 || true
