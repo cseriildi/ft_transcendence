@@ -16,6 +16,12 @@ export interface FriendStatus {
   username: string;
   is_online: boolean;
   last_seen: string | null;
+  status: 'pending' | 'accepted' | 'declined';
+  inviter_id: number;
+  inviter_username: string;
+  is_inviter: boolean; // true if current user is the inviter
+  created_at: string;
+  updated_at: string;
 }
 
 export interface FriendsStatusResponse {

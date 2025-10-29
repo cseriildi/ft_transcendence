@@ -22,7 +22,7 @@ export const UserSchemas = {
     }, [400, 401, 403, 404])
   },
 
-  // Get friends' online status
+  // Get friends' online status and all friend requests
   getFriendsStatus: {
     response: createResponseSchema(200, {
       type: "object" as const,
@@ -42,8 +42,36 @@ export const UserSchemas = {
                 type: ["string", "null"] as const,
                 format: "date-time",
                 description: "ISO 8601 timestamp of user's last activity, or null if never active"
+              },
+              status: {
+                type: "string" as const,
+                enum: ["pending", "accepted", "declined"],
+                description: "Current status of the friendship/friend request"
+              },
+              inviter_id: {
+                type: "number" as const,
+                description: "User ID of who sent the friend request"
+              },
+              inviter_username: {
+                type: "string" as const,
+                description: "Username of who sent the friend request"
+              },
+              is_inviter: {
+                type: "boolean" as const,
+                description: "True if the current user sent this friend request"
+              },
+              created_at: {
+                type: "string" as const,
+                format: "date-time",
+                description: "When the friend request was created"
+              },
+              updated_at: {
+                type: "string" as const,
+                format: "date-time",
+                description: "When the friendship status was last updated"
               }
-            }
+            },
+            required: ["user_id", "username", "is_online", "last_seen", "status", "inviter_id", "inviter_username", "is_inviter", "created_at", "updated_at"]
           }
         },
         online_threshold_minutes: {

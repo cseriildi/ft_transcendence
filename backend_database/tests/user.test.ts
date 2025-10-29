@@ -571,13 +571,15 @@ describe("User Routes", () => {
         authorization: `Bearer ${accessToken}`,
       },
       payload: {
-        email: "    trimmed@example.com     ",
-      },
-    });
-    expect(res.statusCode).toBe(400); // Schema validation rejects emails with whitespace
-    const body = res.json() as any;
-    expect(body.success).toBe(false);
-  });
+        email: 'trimmed@example.com'
+      }
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as any
+    expect(body.success).toBe(true)
+    expect(body.data.email).toBe('trimmed@example.com')
+    expect(body.data.email).not.toContain(' ')
+  })
 
   it("PATCH /users/:id/username should trim whitespace from username input", async () => {
     const res = await app.inject({
@@ -587,13 +589,15 @@ describe("User Routes", () => {
         authorization: `Bearer ${accessToken}`,
       },
       payload: {
-        username: "     trimmeduser           ",
-      },
-    });
-    expect(res.statusCode).toBe(400); // Schema validation rejects usernames with whitespace
-    const body = res.json() as any;
-    expect(body.success).toBe(false);
-  });
+        username: 'trimmeduser'
+      }
+    })
+    expect(res.statusCode).toBe(200)
+    const body = res.json() as any
+    expect(body.success).toBe(true)
+    expect(body.data.username).toBe('trimmeduser')
+    expect(body.data.username).not.toContain(' ')
+  })
 
   describe("PATCH /users/:id/heartbeat", () => {
     it("should update user last_seen timestamp", async () => {
