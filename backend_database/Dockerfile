@@ -25,7 +25,7 @@ RUN npm run build
 FROM node:18.20.5-alpine AS production
 
 # Install SQLite3 runtime and su-exec for user switching
-RUN apk add --no-cache sqlite-libs su-exec
+RUN apk add --no-cache sqlite su-exec
 
 WORKDIR /app
 
@@ -74,7 +74,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD /bin/sh -c 'node -e "require(\"http\").get(\"http://${HEALTHCHECK_HOST}:${PORT}/health\", (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"' || exit 1
+    CMD ["/bin/sh", "-c", "wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST}:${PORT}/health || exit 1"]
 
 # Use custom entrypoint for permission handling
 ENTRYPOINT ["docker-entrypoint.sh"]

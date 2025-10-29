@@ -1,19 +1,5 @@
 # ============================================
-# Stage 1: Dependencies - Install all dependencies
-# ============================================
-FROM node:18.20.5-alpine AS dependencies
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install ALL dependencies (including devDependencies for build stage)
-RUN npm ci && \
-    npm cache clean --force
-
-# ============================================
-# Stage 2: Builder - Compile TypeScript
+# Stage 1: Builder - Compile TypeScript
 # ============================================
 FROM node:18.20.5-alpine AS builder
 
@@ -34,12 +20,12 @@ COPY src ./src
 RUN npm run build
 
 # ============================================
-# Stage 3: Production - Final minimal image
+# Stage 2: Production - Final minimal image
 # ============================================
 FROM node:18.20.5-alpine AS production
 
-# Install runtime dependencies only (sqlite-libs for sqlite3, su-exec for user switching)
-RUN apk add --no-cache sqlite-libs su-exec
+# Install runtime dependencies (sqlite for database, su-exec for user switching)
+RUN apk add --no-cache sqlite su-exec
 
 WORKDIR /app
 
@@ -73,14 +59,15 @@ ENV NODE_ENV=production \
     PORT=3002 \
     HOST=0.0.0.0 \
     DATABASE_PATH=/app/data/database.db \
-    LOG_LEVEL=info
+    LOG_LEVEL=info \
+    HEALTHCHECK_HOST=127.0.0.1
 
 # Expose port
 EXPOSE 3002
 
 # Health check using shell form to allow variable expansion
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST:-127.0.0.1}:${PORT}/health || exit 1
+    CMD ["/bin/sh", "-c", "wget --no-verbose --tries=1 --spider http://${HEALTHCHECK_HOST}:${PORT}/health || exit 1"]
 
 # Use entrypoint to fix volume permissions, then switch to non-root user
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

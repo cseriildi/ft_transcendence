@@ -23,8 +23,8 @@ RUN npm run build
 # ============================================
 FROM nginx:alpine
 
-# Install gettext for envsubst (runtime config injection)
-RUN apk add --no-cache gettext && \
+# Install gettext for envsubst (runtime config injection) and curl for health check
+RUN apk add --no-cache gettext curl && \
     rm -rf /var/cache/apk/*
 
 # Copy built static files from builder
@@ -37,7 +37,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Health check using curl (wget has issues in some Alpine versions)
+# Health check (curl works better with nginx than wget due to IPv6 handling)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:4200/ || exit 1
 
