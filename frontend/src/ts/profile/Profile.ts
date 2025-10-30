@@ -19,8 +19,12 @@ export class Profile {
 		const backBtn = document.getElementById("back-btn");
 		const userName = document.getElementById("user-name");
 		const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
-		const userListContainer = document.getElementById("user-list");
+		const freindsListContainer = document.getElementById("friends-list");
 		const userEmail = document.getElementById("user-email");
+		const findFriendsBtn = document.getElementById("find-friends-btn");
+		let users: Array<{ id: number; username: string; avatar_url: string }> | undefined;
+
+		findFriendsBtn?.addEventListener("click", () => this.router.navigate("/users"));
 
 		backBtn?.addEventListener("click", () => this.router.navigate("/"));
 		editBtn?.addEventListener("click", () => this.router.navigate("/edit"));
@@ -48,6 +52,24 @@ export class Profile {
 		}
 
 		try {
+			const usersResponse = await fetchWithRefresh(`http://localhost:3000/api/users`, {
+				headers: {
+					Authorization: `Bearer ${getAccessToken()}`,
+				},
+				method: "GET",
+				credentials: "include",
+			});
+			if (usersResponse.ok) {
+				const usersData = await usersResponse.json();
+				users = usersData.data;
+			} else {
+				console.error("Failed to fetch users", await usersResponse.json());
+			}
+		} catch (error) {
+			console.error("Error fetching users", error);
+		}
+
+		try {
 			const response = await fetch("http://localhost:3000/api/friends/status", {
 				headers: {
 					Authorization: `Bearer ${getAccessToken()}`,
@@ -58,12 +80,21 @@ export class Profile {
 
 			if (response.ok) {
 				const data = await response.json();
-				if (userListContainer) {
-					userListContainer.innerHTML = "";
-					if (data.data.length === 0) {
-						userListContainer.innerHTML = "<p>You don't have friends yet</p>";
+				if (freindsListContainer) {
+					freindsListContainer.innerHTML = "";
+					console.log(data);
+					if (data.data.friends.length === 0) {
+						freindsListContainer.innerHTML = "<p>You don't have friends yet</p>";
+						freindsListContainer.classList.add("text-white");
 					} else {
-						data.data.forEach((user: { username: string; avatar_url: string, id: number }) => {
+						data.data.friends.forEach((friend: { user_id: number; username: string; status: string; is_inviter: boolean }) => {
+							// Find the avatar URL from the users list
+							const userWithAvatar = users?.find((u: any) => u.id === friend.user_id);
+							const avatarUrl = userWithAvatar?.avatar_url || '/uploads/avatars/default/default-avatar.png';
+
+							const isPending = friend.status === "pending";
+							const isInviter = friend.is_inviter;
+
 							const userItem = document.createElement("div");
 							userItem.classList.add(
 								"user-item", "flex", "items-center", "space-x-4",
@@ -72,24 +103,49 @@ export class Profile {
 							);
 
 							const avatar = document.createElement("img");
-							avatar.src = `http://localhost:3000${user.avatar_url}`;
-							avatar.alt = `${user.username}'s avatar`;
+							avatar.src = `http://localhost:3000${avatarUrl}`;
+							avatar.alt = `${friend.username}'s avatar`;
 							avatar.classList.add("w-8", "h-8", "rounded-full", "min-w-[2rem]");
+							
+							// Add opacity if pending
+							if (isPending) {
+								avatar.classList.add("opacity-50");
+							}
+
+							const usernameContainer = document.createElement("div");
+							usernameContainer.classList.add("flex", "flex-col", "flex-1", "min-w-0");
 
 							const username = document.createElement("span");
-							username.textContent = user.username;
-							username.classList.add("text-sm", "font-medium", "max-w-xs", "rounded-lg", "truncate");
+							username.textContent = friend.username;
+							username.classList.add("text-sm", "font-medium", "truncate");
+
+							usernameContainer.appendChild(username);
+
+							// Add pending indicator
+							if (isPending) {
+								const statusLabel = document.createElement("span");
+								statusLabel.textContent = isInviter ? "(Request sent)" : "(Pending approval)";
+								statusLabel.classList.add("text-xs", "text-gray-400", "italic");
+								usernameContainer.appendChild(statusLabel);
+							}
 
 							userItem.appendChild(avatar);
-							userItem.appendChild(username);
-							userListContainer.appendChild(userItem);
+							userItem.appendChild(usernameContainer);
+							freindsListContainer.appendChild(userItem);
 
-							userItem.addEventListener("click", () => {
-								const currentUserId = getUserId();
-								const friendId = user.id;
-								const chatId = [currentUserId, friendId].sort((a, b) => a - b).join("-");
-								this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
-							});
+							// Only allow chat for accepted friends
+							if (!isPending) {
+								userItem.addEventListener("click", () => {
+									const currentUserId = getUserId();
+									const friendId = friend.user_id;
+									const chatId = [currentUserId, friendId].sort((a, b) => a - b).join("-");
+									this.router.navigate(`/chat?chatId=${chatId}&username=${friend.username}`);
+								});
+							} else {
+								// Change cursor for pending requests
+								userItem.classList.remove("cursor-pointer");
+								userItem.classList.add("cursor-not-allowed", "opacity-75");
+							}
 						});
 					}
 				}

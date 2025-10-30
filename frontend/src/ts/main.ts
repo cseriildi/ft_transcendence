@@ -7,6 +7,7 @@ import { Profile } from "./profile/Profile.js";
 import { Edit } from "./edit/Edit.js";
 import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
+import { Users } from "./users/Users.js";
 
 let currentPong: Pong | null = null;
 
@@ -37,6 +38,7 @@ const registerPage = new Register(router);
 const homePage = new Home(router);
 const profilePage = new Profile(router);
 const editPage = new Edit(router);
+const usersPage = new Users(router);
 const chatPage = new Chat(router);
 
 router.addRoute("/", "home", () => homePage.initPage());
@@ -45,6 +47,7 @@ router.addRoute("/login", "login", () => loginPage.initPage());
 router.addRoute("/register", "register", () => registerPage.initPage());
 router.addRoute("/profile", "profile", () => profilePage.initPage());
 router.addRoute("/edit", "edit", () => editPage.initPage());
+router.addRoute("/users", "users", () => usersPage.initPage());
 router.addRoute("/chat", "chat", () => chatPage.initPage());
 router.addRoute("/404", "404", initNotFoundPage);
 

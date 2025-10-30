@@ -116,9 +116,23 @@ export class Edit {
     const fileInput = document.getElementById("avatar");
     const fileNameDisplay = document.getElementById("file-name");
 
+    if (!fileInput || !fileNameDisplay) {
+      console.error("File input or file name display element not found");
+      return;
+    }
     fileInput.addEventListener("change", () => {
       if (fileInput.files && fileInput.files.length > 0) {
-          fileNameDisplay.textContent = fileInput.files[0].name;
+          const file = fileInput.files[0];
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+          
+          if (!allowedTypes.includes(file.type)) {
+              showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
+              fileInput.value = ''; // Clear the input
+              fileNameDisplay.textContent = "No file chosen";
+              return;
+          }
+          
+          fileNameDisplay.textContent = file.name;
       } else {
           fileNameDisplay.textContent = "No file chosen";
       }
