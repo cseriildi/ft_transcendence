@@ -39,7 +39,7 @@ export class Register {
         }
         return { success: true };
       } else {
-        showErrorPopup(data.message || 'Login failed');
+        showErrorPopup(data.message || 'Registration failed');
         return { success: false, message: data.message || 'Registration failed' };
       }
     } catch (err) {
