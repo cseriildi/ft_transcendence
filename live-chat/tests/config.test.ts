@@ -35,7 +35,7 @@ describe("Config Module", () => {
     });
 
     it("should have default database configuration", () => {
-      expect(config.database.path).toBe("/app/data/database.db");
+      expect(config.database.path).toBe("src/database/database.db");
     });
 
     it("should have default logging configuration", () => {
