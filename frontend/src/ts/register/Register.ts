@@ -20,7 +20,7 @@ export class Register {
 
     if (!email || !username || !password || !confirmPassword) {
       showErrorPopup("All fields are required.");
-      return { success: false, message: "Email and password are required." };
+      return { success: false, message: "All fields are required." };
     }
 
     try {
