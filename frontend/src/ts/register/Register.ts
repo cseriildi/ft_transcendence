@@ -20,7 +20,7 @@ export class Register {
 
     if (!email || !username || !password || !confirmPassword) {
       showErrorPopup("All fields are required.");
-      return { success: false, message: "Email and password are required." };
+      return { success: false, message: "All fields are required." };
     }
 
     try {
@@ -39,7 +39,7 @@ export class Register {
         }
         return { success: true };
       } else {
-        showErrorPopup(data.message || 'Login failed');
+        showErrorPopup(data.message || 'Registration failed');
         return { success: false, message: data.message || 'Registration failed' };
       }
     } catch (err) {
