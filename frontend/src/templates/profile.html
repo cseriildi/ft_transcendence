@@ -3,7 +3,7 @@
         <h1 class="text-5xl font-bold text-center mt-10 mb-8 text-neon-green drop-shadow-neon">
             Profile
         </h1>
-        <div class="flex gap-8">
+        <div class="flex flex-col sm:flex-row gap-8">
             <div class="flex-1">
                 <div class="bg-black py-10 p-6 rounded-lg border-2 border-neon-pink shadow-neon mb-10 flex flex-col items-center">
                     <img id="user-avatar" src="" alt="Avatar" class="w-32 h-32 rounded-full shadow-neon mb-4">
@@ -11,11 +11,6 @@
                     <p id="user-email" class="text-neon-pink mb-4 max-w-xs rounded-lg truncate"></p>
                     <button id="edit-btn" class="bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition">
                         Edit Profile
-                    </button>
-                </div>
-                <div class="text-center">
-                    <button id="back-btn" class="bg-neon-pink hover:bg-neon-green text-white font-bold py-2 px-4 rounded shadow-neon transition">
-                        Back to Home
                     </button>
                 </div>
             </div>
@@ -30,6 +25,11 @@
                     </button>
                 </div>
             </div>
+        </div>
+        <div class="text-center">
+            <button id="back-btn" class="bg-neon-pink hover:bg-neon-green text-white font-bold py-2 px-4 rounded shadow-neon transition">
+                Back to Home
+            </button>
         </div>
     </div>
 </div>

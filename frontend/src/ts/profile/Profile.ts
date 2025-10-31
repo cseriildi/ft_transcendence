@@ -19,7 +19,7 @@ export class Profile {
 		const backBtn = document.getElementById("back-btn");
 		const userName = document.getElementById("user-name");
 		const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
-		const freindsListContainer = document.getElementById("friends-list");
+		const friendsListContainer = document.getElementById("friends-list");
 		const userEmail = document.getElementById("user-email");
 		const findFriendsBtn = document.getElementById("find-friends-btn");
 		let users: Array<{ id: number; username: string; avatar_url: string }> | undefined;
@@ -80,12 +80,12 @@ export class Profile {
 
 			if (response.ok) {
 				const data = await response.json();
-				if (freindsListContainer) {
-					freindsListContainer.innerHTML = "";
+				if (friendsListContainer) {
+					friendsListContainer.innerHTML = "";
 					console.log(data);
 					if (data.data.friends.length === 0) {
-						freindsListContainer.innerHTML = "<p>You don't have friends yet</p>";
-						freindsListContainer.classList.add("text-white");
+						friendsListContainer.innerHTML = "<p>You don't have friends yet</p>";
+						friendsListContainer.classList.add("text-white");
 					} else {
 						data.data.friends.forEach((friend: { user_id: number; username: string; status: string; is_inviter: boolean }) => {
 							// Find the avatar URL from the users list
@@ -131,7 +131,7 @@ export class Profile {
 
 							userItem.appendChild(avatar);
 							userItem.appendChild(usernameContainer);
-							freindsListContainer.appendChild(userItem);
+							friendsListContainer.appendChild(userItem);
 
 							// Only allow chat for accepted friends
 							if (!isPending) {

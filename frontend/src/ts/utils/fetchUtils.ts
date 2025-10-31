@@ -19,6 +19,7 @@ export async function fetchWithRefresh(url: string, options: RequestInit): Promi
         };
         return fetch(url, options);
       } else {
+        sessionStorage.clear();
         throw new Error('Failed to refresh token');
       }
     }

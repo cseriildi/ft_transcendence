@@ -26,7 +26,6 @@ export class Users {
 
             if (response.ok) {
                 friends = await response.json();
-                console.log('FRIENDS STATUS DATA', friends);
             } else {
                 console.error("Failed to fetch friends status", await response.json());
             }
@@ -51,7 +50,6 @@ export class Users {
                 if (usersListContainer) {
                     usersListContainer.innerHTML = "";
 
-                    console.log('USERS LENGTH', users.length);
                     if (users.length === 1) {
                         usersListContainer.innerHTML = "<p>No other users found.</p>";
                         usersListContainer.classList.add("text-white");
@@ -85,7 +83,7 @@ export class Users {
 
                         const username = document.createElement("span");
                         username.textContent = user.username;
-                        username.classList.add("text-white", "mr-4");
+                        username.classList.add("text-white", "mr-4", "max-w-[150px]", "truncate", "block");
 
                         userInfo.appendChild(avatar);
                         userInfo.appendChild(username);
