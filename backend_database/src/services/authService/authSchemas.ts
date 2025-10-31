@@ -23,7 +23,7 @@ export const AuthSchemas = {
       type: "object" as const,
       properties: {
         email: { type: "string", format: "email" },
-        password: { type: "string", minLength: 8 }
+        password: { type: "string"}
       },
       required: ["email", "password"],
       additionalProperties: false

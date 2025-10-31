@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup src/main.ts --format esm --clean --minify",
     "start": "node dist/main.js",
     "dev": "tsx src/main.ts",
     "clean": "rm -rf dist",
@@ -24,6 +24,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
     "@types/sqlite3": "3.1.11",
+    "tsup": "^8.3.5",
     "tsx": "4.20.5",
     "typescript": "5.9.2",
     "vitest": "^2.1.3"

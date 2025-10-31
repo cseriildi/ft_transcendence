@@ -7,6 +7,11 @@ function getEnvVar(name: string, defaultValue?: string): string {
   return value;
 }
 
+// Helper function to get optional environment variable
+function getOptionalEnvVar(name: string, defaultValue: string = ""): string {
+  return process.env[name] || defaultValue;
+}
+
 // Helper function to parse integer with validation
 function parsePort(value: string | undefined, defaultValue: number): number {
   const port = parseInt(value || String(defaultValue), 10);
@@ -33,6 +38,16 @@ export const config = {
   // Auth service
   auth: {
     serviceUrl: getEnvVar("AUTH_SERVICE_URL", "http://databank:3000"),
+  },
+
+  // CORS configuration
+  cors: {
+    origins: getOptionalEnvVar(
+      "CORS_ORIGINS",
+      "http://localhost:4200,http://localhost:8080"
+    )
+      .split(",")
+      .map((s) => s.trim()),
   },
 
   // Logging

@@ -8,9 +8,9 @@ import { config } from "../config.ts";
 import friendRoutes from "../services/friendService/friendRoutes.ts";
 
 async function routes(fastify: FastifyInstance) {
-
   await fastify.register(checkRoutes);
-  
+
+  // All routes use their configured prefixes
   await fastify.register(authRoutes, { prefix: config.routes.auth });
   await fastify.register(oauthRoutes, { prefix: config.routes.oauth });
   await fastify.register(userRoutes, { prefix: config.routes.api });

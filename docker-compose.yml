@@ -13,6 +13,12 @@ services:
       HOST: ${DATABANK_HOST:-0.0.0.0}
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_PATH: ${DATABANK_DATABASE_PATH:-/app/data/database.db}
+      # Public-facing URL configuration
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+      PUBLIC_PORT: ${PUBLIC_PORT:-}
+      PUBLIC_PROTOCOL: ${PUBLIC_PROTOCOL:-http}
+      # CORS configuration
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
     volumes:
       - ./backend_database/database:/app/data
     restart: unless-stopped
@@ -29,6 +35,9 @@ services:
       PORT: ${GAMELOGIC_PORT:-3001}
       HOST: ${GAMELOGIC_HOST:-0.0.0.0}
       NODE_ENV: ${NODE_ENV:-production}
+      # Public-facing URL configuration
+      PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
+      PUBLIC_PORT: ${PUBLIC_PORT:-}
     restart: unless-stopped
     networks:
       - transcendence
@@ -85,6 +94,8 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_PATH: ${LIVECHAT_DATABASE_PATH:-/app/data/database.db}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://databank:3000}
+      # CORS configuration
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:8080}
     volumes:
       - ./live-chat/data:/app/data
     depends_on:

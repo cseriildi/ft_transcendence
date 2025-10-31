@@ -140,53 +140,57 @@ export const authController = {
       if (request.body.password !== request.body.confirmPassword) {
         throw errors.validation("Passwords do not match");
       }
-
+      const emailExists = await db.get("SELECT id FROM users WHERE email = ?", [request.body.email])
+      const userNameExists = await db.get("SELECT id FROM users WHERE username = ?", [request.body.username])
+      
+      if (emailExists && userNameExists) {
+        throw errors.conflict("Email and username are already exist");
+      }
+      if (emailExists) {
+        throw errors.conflict("Email is already exists");
+      }
+      if (userNameExists) {
+        throw errors.conflict("Username is already exists");
+      }
       const { username, email } = request.body || {};
 
-      try {
-        const hash = await bcrypt.hash(request.body.password, 10);
-        const result = await db.run(
-          "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-          [username.trim(), email.trim(), hash]
-        );
+      const hash = await bcrypt.hash(request.body.password, 10);
+      const result = await db.run(
+        "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+        [username.trim(), email.trim(), hash]
+      );
 
-        const accessToken = await signAccessToken(result.lastID);
-        const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
-        setRefreshTokenCookie(reply, refreshToken);
+      const accessToken = await signAccessToken(result.lastID);
+      const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
+      setRefreshTokenCookie(reply, refreshToken);
 
-        // Copy default avatar for new user
-        const avatar = await copyDefaultAvatar(result.lastID);
-        const insert = await  db.run(
-          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-          [result.lastID, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
-        );
-        if (!insert) {
-          await deleteUploadedFile(avatar.fileUrl);
-          await db.run("DELETE FROM users WHERE id = ?", [result.lastID]);
-          throw errors.internal("Failed to assign default avatar to new user, registration rolled back, please retry");
-        }
-
-        // Retrieve avatar URL using helper
-        const avatar_url = await db.getAvatarUrl(result.lastID);
-
-        reply.status(201);
-        return ApiResponseHelper.success(
-          {
-            id: result.lastID,
-            username: username.trim(),
-            email: email.trim(),
-            created_at: new Date().toISOString(),
-            avatar_url,
-            tokens: { accessToken },
-          },
-          "User created"
-        );
-      } catch (err: any) {
-        if (err.message?.includes("UNIQUE constraint")) {
-          throw errors.conflict("Username or email already exists");
-        }
-        throw err; // Re-throw other database errors
+      // Copy default avatar for new user
+      const avatar = await copyDefaultAvatar(result.lastID);
+      const insert = await  db.run(
+        "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+        [result.lastID, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
+      );
+      if (!insert) {
+        await deleteUploadedFile(avatar.fileUrl);
+        await db.run("DELETE FROM users WHERE id = ?", [result.lastID]);
+        throw errors.internal("Failed to assign default avatar to new user, registration rolled back, please retry");
       }
+
+      // Retrieve avatar URL using helper
+      const avatar_url = await db.getAvatarUrl(result.lastID);
+
+      reply.status(201);
+      return ApiResponseHelper.success(
+        {
+          id: result.lastID,
+          username: username.trim(),
+          email: email.trim(),
+          created_at: new Date().toISOString(),
+          avatar_url,
+          tokens: { accessToken },
+        },
+        "User created"
+      );
     }
   ),
 

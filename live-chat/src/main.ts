@@ -22,7 +22,7 @@ await app.register(helmet, { global: true });
 await app.register(dbConnector, { path: config.database.path });
 
 await app.register(cors, {
-  origin: ["http://localhost:4200", "http://localhost:8080"],
+  origin: config.cors.origins,
   credentials: true,
 });
 
