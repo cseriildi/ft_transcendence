@@ -32,7 +32,7 @@ export const config = {
 
   // Database configuration
   database: {
-    path: getEnvVar("DATABASE_PATH", "/app/data/database.db"),
+    path: getEnvVar("DATABASE_PATH", "src/database/database.db"),
   },
 
   // Auth service
