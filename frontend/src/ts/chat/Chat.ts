@@ -38,7 +38,7 @@ export class Chat {
 
                 const messageElement = document.createElement("div");
                 messageElement.textContent = `You: ${message}`;
-                messageElement.classList.add("ttext-neon-green", "mb-2");
+                messageElement.classList.add("text-neon-green", "mb-2");
                 chatBox.appendChild(messageElement);
                 chatInput.value = "";
             }
