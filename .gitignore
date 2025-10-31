@@ -24,12 +24,8 @@ build/
 
 backend_database/uploads/avatars/
 !backend_database/uploads/avatars/.gitkeep
+!backend_database/uploads/avatars/default/
 
-# Database files and directories
-app/data/
-backend_database/app/data/
-backend_database/database/
-backend_database/src/database/
-live-chat/src/database/
+# Database files only (not directories)
 *.sqlite
 *.sqlite3
