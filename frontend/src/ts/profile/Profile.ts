@@ -138,7 +138,11 @@ export class Profile {
 								userItem.addEventListener("click", () => {
 									const currentUserId = getUserId();
 									const friendId = friend.user_id;
-									const chatId = [currentUserId, friendId].sort((a, b) => a - b).join("-");
+									if (currentUserId === null) {
+										console.error("Current user ID is null, cannot create chat ID.");
+										return;
+									}
+									const chatId = [Number(currentUserId), Number(friendId)].sort((a, b) => a - b).join("-");
 									this.router.navigate(`/chat?chatId=${chatId}&username=${friend.username}`);
 								});
 							} else {
