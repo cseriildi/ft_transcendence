@@ -2,6 +2,8 @@
 .env.*.local
 !.env.example
 *.db
+*.db-shm
+*.db-wal
 
 .certs/
 !.certs/.gitkeep
@@ -18,3 +20,16 @@ build/
 
 .DS_Store
 .vscode/
+.idea/
+
+backend_database/uploads/avatars/
+!backend_database/uploads/avatars/.gitkeep
+
+# Database files and directories
+app/data/
+backend_database/app/data/
+backend_database/database/
+backend_database/src/database/
+live-chat/src/database/
+*.sqlite
+*.sqlite3
