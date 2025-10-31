@@ -113,7 +113,7 @@ export class Edit {
 
     const backBtn = document.getElementById("back-btn");
     const form = document.getElementById("edit-form");
-    const fileInput = document.getElementById("avatar");
+    const fileInput = document.getElementById("avatar") as HTMLInputElement;
     const fileNameDisplay = document.getElementById("file-name");
 
     if (!fileInput || !fileNameDisplay) {
