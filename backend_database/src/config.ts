@@ -1,6 +1,15 @@
+// Store configuration warnings to log after Fastify starts
+const configWarnings: string[] = [];
+
 // Helper function to get required environment variable
 function getEnvVar(name: string, defaultValue?: string): string {
-  const value = process.env[name] || defaultValue;
+  const value = process.env[name];
+  if (!value && defaultValue) {
+    configWarnings.push(
+      `Environment variable ${name} not found, using fallback value: "${defaultValue}"`
+    );
+    return defaultValue;
+  }
   if (!value) {
     throw new Error(`❌ Required environment variable ${name} is not set`);
   }
@@ -9,7 +18,13 @@ function getEnvVar(name: string, defaultValue?: string): string {
 
 // Helper function to get optional environment variable
 function getOptionalEnvVar(name: string, defaultValue = ""): string {
-  return process.env[name] || defaultValue;
+  const value = process.env[name];
+  if (!value && defaultValue) {
+    configWarnings.push(
+      `Environment variable ${name} not found, using fallback value: "${defaultValue}"`
+    );
+  }
+  return value || defaultValue;
 }
 
 // Helper function to parse integer with validation
@@ -99,6 +114,9 @@ export const config = {
     },
   },
 } as const;
+
+// Export config warnings for logging after Fastify starts
+export const getConfigWarnings = () => [...configWarnings];
 
 // Validate configuration and log startup info
 export const validateConfig = () => {
