@@ -101,7 +101,16 @@ export const authController = {
       const jti = decoded.jti!;
 
       // Revoke the refresh token in database
-      const result = await db.run("UPDATE refresh_tokens SET revoked = 1 WHERE jti = ?", [jti]);
+      await db.run("UPDATE refresh_tokens SET revoked = 1 WHERE jti = ?", [jti]);
+
+      // Log successful logout
+      request.log.info(
+        {
+          userId: decoded.sub,
+          jti,
+        },
+        "User logged out successfully"
+      );
 
       // Clear the refresh token cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
@@ -174,6 +183,16 @@ export const authController = {
       // Retrieve avatar URL using helper
       const avatar_url = await db.getAvatarUrl(result.lastID);
 
+      // Log successful registration
+      request.log.info(
+        {
+          userId: result.lastID,
+          username,
+          email,
+        },
+        "User registered successfully"
+      );
+
       reply.status(201);
       return ApiResponseHelper.success(
         {
@@ -211,6 +230,16 @@ export const authController = {
 
         // Retrieve avatar URL using helper
         const avatar_url = await db.getAvatarUrl(result.id);
+
+        // Log successful login
+        request.log.info(
+          {
+            userId: result.id,
+            username: result.username,
+            email: result.email,
+          },
+          "User logged in successfully"
+        );
 
         reply.status(200);
         return ApiResponseHelper.success(

@@ -18,7 +18,8 @@ src/
 ├── config.ts                  # Centralized configuration with env validation
 ├── database.ts                # Database plugin with schema initialization
 ├── middleware/
-│   └── authMiddleware.ts      # JWT authentication middleware (requireAuth, optionalAuth)
+│   ├── authMiddleware.ts      # JWT authentication middleware (requireAuth, optionalAuth)
+│   └── loggingMiddleware.ts   # Optional request/response logging hooks
 ├── plugins/
 │   └── errorHandlerPlugin.ts  # Global error handler for AppError instances
 ├── routes/
@@ -123,6 +124,37 @@ throw errors.internal("DB error"); // 500
 ```
 
 Global error handler in `plugins/errorHandlerPlugin.ts` catches `AppError` instances and formats responses consistently.
+
+### Logging
+
+**Use Fastify's built-in Pino logger** (never `console.log`):
+
+```typescript
+// In controllers - use request.log
+export const userController = {
+  getUser: createHandler<{ Params: { id: string } }>(
+    async (request, { db }) => {
+      request.log.info({ userId: request.params.id }, "Fetching user");
+      const user = await db.get(/*...*/);
+      if (!user) {
+        request.log.warn({ userId: request.params.id }, "User not found");
+        throw errors.notFound("User");
+      }
+      return ApiResponseHelper.success(user);
+    }
+  ),
+};
+```
+
+**Structured logging format:**
+- First argument: Object with context data
+- Second argument: Message string
+
+**Log levels:** `trace`, `debug`, `info`, `warn`, `error`, `fatal`  
+**Configuration:** `LOG_LEVEL` env var (default: "info")  
+**Output:** JSON in production, pretty-printed in development
+
+See `LOGGING.md` for complete guide.
 
 ### Response Format
 
