@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsup src/main.ts --format esm --clean --minify",
     "start": "node dist/main.js",
-    "dev": "tsx src/main.ts",
+    "dev": "NODE_ENV=development tsx src/main.ts",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
