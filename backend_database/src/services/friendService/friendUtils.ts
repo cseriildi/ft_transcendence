@@ -25,7 +25,7 @@ export async function ensureUsersExist(
 ): Promise<void> {
   const user1 = await db.get<User>("SELECT id FROM users WHERE id = ?", [userId1]);
   const user2 = await db.get<User>("SELECT id FROM users WHERE id = ?", [userId2]);
-  
+
   if (!user1 || !user2) {
     throw errors.notFound("One or both users not found");
   }
@@ -40,7 +40,7 @@ export async function getFriendshipRecord(
   userId1: number,
   userId2: number
 ): Promise<any | null> {
-  return await db.get(
+  return db.get(
     "SELECT * FROM friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
     [userId1, userId2, userId2, userId1]
   );

@@ -13,9 +13,8 @@ import type {
 import { ApiResponse } from "../../types/commonTypes.ts";
 
 export const twoFAController = {
-
-  setup2FA: createHandler<{ Params:{userId :string} }, ApiResponse<Setup2FAData>>(
-    async (request, { db, reply}) => {
+  setup2FA: createHandler<{ Params: { userId: string } }, ApiResponse<Setup2FAData>>(
+    async (request, { db, reply }) => {
       const userId = parseInt(request.params.userId);
 
       if (isNaN(userId)) {
@@ -23,10 +22,9 @@ export const twoFAController = {
       }
 
       // Check if user exists
-      const user = await db.get<{ username: string }>(
-            "SELECT username FROM users WHERE id = ?",
-            [userId]
-          );
+      const user = await db.get<{ username: string }>("SELECT username FROM users WHERE id = ?", [
+        userId,
+      ]);
 
       if (!user) {
         throw errors.notFound("User");
@@ -39,10 +37,7 @@ export const twoFAController = {
       });
 
       // Store secret in database (not enabled yet)
-      await db.run(
-        "UPDATE users SET twofa_secret = ? WHERE id = ?",
-        [secret.base32, userId]
-      );
+      await db.run("UPDATE users SET twofa_secret = ? WHERE id = ?", [secret.base32, userId]);
 
       // Generate QR code
       const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
@@ -59,20 +54,20 @@ export const twoFAController = {
     }
   ),
 
-  verify2FA: createHandler<{Body: Verify2FARequest}, ApiResponse<Verify2FAData>>(
-    async (request, {db}) =>{
-      const {userId, token} = request.body;
+  verify2FA: createHandler<{ Body: Verify2FARequest }, ApiResponse<Verify2FAData>>(
+    async (request, { db }) => {
+      const { userId, token } = request.body;
 
-      const user = await db.get<{username : string, twofa_secret: string}>(
+      const user = await db.get<{ username: string; twofa_secret: string }>(
         "SELECT username, twofa_secret FROM users WHERE id = ?",
         [userId]
       );
 
-      if (!user){
+      if (!user) {
         throw errors.notFound("User not found");
       }
 
-      if (!user.twofa_secret){
+      if (!user.twofa_secret) {
         throw errors.validation("2FA is not set up for this user");
       }
 
@@ -90,10 +85,10 @@ export const twoFAController = {
     }
   ),
 
-  enable2FA: createHandler<{Body : Enable2FARequest}, ApiResponse<{ enabled: boolean }>>(
-    async (request, {db, reply}) =>{
+  enable2FA: createHandler<{ Body: Enable2FARequest }, ApiResponse<{ enabled: boolean }>>(
+    async (request, { db, reply }) => {
       const { userId, token } = request.body;
-      const user = await db.get<{ twofa_secret: string, twofa_enabled: number }>(
+      const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
         "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
         [userId]
       );
@@ -101,7 +96,7 @@ export const twoFAController = {
       if (!user) {
         throw errors.notFound("User not found");
       }
-      
+
       if (!user.twofa_secret) {
         throw errors.validation("2FA is not set up for this user");
       }
@@ -121,20 +116,17 @@ export const twoFAController = {
         throw errors.validation("Invalid 2FA token");
       }
 
-      await db.run(
-        "UPDATE users SET twofa_enabled = 1 WHERE id = ?",
-        [userId]
-      );
+      await db.run("UPDATE users SET twofa_enabled = 1 WHERE id = ?", [userId]);
 
-      reply.code(201); 
+      reply.code(201);
       return ApiResponseHelper.success({ enabled: true }, "2FA enabled");
     }
   ),
 
-  disable2FA: createHandler<{Body: Disable2FARequest}, ApiResponse<{ enabled: boolean }>>(
-    async (request, {db}) =>{
-        const { userId, token } = request.body;
-      const user = await db.get<{ twofa_secret: string, twofa_enabled: number }>(
+  disable2FA: createHandler<{ Body: Disable2FARequest }, ApiResponse<{ enabled: boolean }>>(
+    async (request, { db }) => {
+      const { userId, token } = request.body;
+      const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
         "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
         [userId]
       );
@@ -161,13 +153,11 @@ export const twoFAController = {
         throw errors.validation("Invalid 2FA token");
       }
 
-      await db.run(
-        "UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?",
-        [userId]
-      );
+      await db.run("UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?", [
+        userId,
+      ]);
 
       return ApiResponseHelper.success({ enabled: false }, "2FA disabled");
     }
-  )
-
+  ),
 };

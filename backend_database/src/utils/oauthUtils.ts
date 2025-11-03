@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
 import { errors } from "./errorUtils.ts";
-import { OAuthProvider, OAuthTokenResponse, OAuthUserInfo } from "../services/oAuthService/oAuthTypes.ts";
+import {
+  OAuthProvider,
+  OAuthTokenResponse,
+  OAuthUserInfo,
+} from "../services/oAuthService/oAuthTypes.ts";
 import { config } from "../config.ts";
 
 // CSRF state protection
@@ -38,7 +42,10 @@ export function unpackAndVerifyState(cookieVal: string | undefined): string | nu
 }
 
 // Exchange OAuth code for access token
-export async function exchangeCodeForToken(provider: OAuthProvider, code: string): Promise<OAuthTokenResponse> {
+export async function exchangeCodeForToken(
+  provider: OAuthProvider,
+  code: string
+): Promise<OAuthTokenResponse> {
   const body = new URLSearchParams({
     client_id: provider.clientId,
     client_secret: provider.clientSecret,
@@ -88,7 +95,8 @@ export async function fetchGitHubUserInfo(accessToken: string): Promise<OAuthUse
     const emailRes = await fetch("https://api.github.com/user/emails", { headers });
     if (emailRes.ok) {
       const emails = await emailRes.json();
-      const primaryEmail = emails.find((e: any) => e.primary && e.verified) || emails.find((e: any) => e.verified);
+      const primaryEmail =
+        emails.find((e: any) => e.primary && e.verified) || emails.find((e: any) => e.verified);
       email = primaryEmail?.email || null;
     }
   }

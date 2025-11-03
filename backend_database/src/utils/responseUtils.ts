@@ -19,13 +19,7 @@ export class ApiResponseHelper {
     };
   }
 
-  static paginated<T>(
-    data: T[],
-    page: number,
-    limit: number,
-    total: number,
-    message?: string
-  ) {
+  static paginated<T>(data: T[], page: number, limit: number, total: number, message?: string) {
     return {
       success: true,
       data,
