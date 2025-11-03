@@ -16,7 +16,41 @@ export type BuildOptions = {
 };
 
 export async function build(opts: BuildOptions = {}) {
-  const { logger = { level: appConfig.logging.level }, database, disableRateLimit } = opts;
+  const {
+    logger = {
+      level: appConfig.logging.level,
+      // Structured logging for production
+      serializers: {
+        req(request) {
+          return {
+            method: request.method,
+            url: request.url,
+            hostname: request.hostname,
+            remoteAddress: request.ip,
+          };
+        },
+        res(reply) {
+          return {
+            statusCode: reply.statusCode,
+          };
+        },
+      },
+      // Pretty print in development, JSON in production
+      transport:
+        appConfig.server.env === "development"
+          ? {
+              target: "pino-pretty",
+              options: {
+                translateTime: "HH:MM:ss Z",
+                ignore: "pid,hostname",
+                colorize: true,
+              },
+            }
+          : undefined,
+    },
+    database,
+    disableRateLimit,
+  } = opts;
   const app = fastify({ logger });
 
   await app.register(cors, {
@@ -82,6 +116,14 @@ export async function build(opts: BuildOptions = {}) {
     });
     await app.register(errorHandler);
     await app.register(import("@fastify/cookie"));
+
+    // Optional: Add request/response logging hooks (only in development for now)
+    // Uncomment to enable detailed request logging
+    // if (appConfig.server.env === "development") {
+    //   const { requestLogger, responseLogger } = await import("./middleware/loggingMiddleware.ts");
+    //   app.addHook("onRequest", requestLogger);
+    //   app.addHook("onResponse", responseLogger);
+    // }
 
     // Register multipart for file uploads
     await app.register(import("@fastify/multipart"), {
