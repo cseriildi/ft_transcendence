@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+</head>
+<body>
+    <div id="chat-container" class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black py-8 font-orbitron">
+        <div class="max-w-4xl mx-auto px-4">
+            <h1 class="text-5xl font-bold text-center mb-8 text-neon-green drop-shadow-neon">Chat</h1>
+            <div id="chat-box" class="bg-black p-6 rounded-lg shadow-neon border-2 border-neon-pink mb-10 h-96 overflow-y-auto">
+                <!-- Chat messages will appear here -->
+            </div>
+            <form id="chat-form" class="flex space-x-4">
+                <input type="text" id="chat-input" class="flex-1 p-2 rounded border-2 border-neon-pink bg-gray-800 text-white" placeholder="Type your message...">
+                <button type="submit" class="bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition">Send</button>
+            </form>
+            <div class="text-center mt-4">
+                <button id="back-btn" class="bg-neon-pink hover:bg-neon-green text-white font-bold py-2 px-4 rounded shadow-neon transition">
+                    Back to Profile
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

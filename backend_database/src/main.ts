@@ -23,10 +23,11 @@ export async function build(opts: BuildOptions = {}) {
   } = opts;
   const app = fastify({ logger });
 
-  await app.register(cors, {
-    origin: appConfig.cors.origins,
-    credentials: true,
-  });
+    await app.register(cors, {
+      origin: appConfig.cors.origins,
+      credentials: true,
+      methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+    });
 
   try {
     //-------------------------------- Swagger Setup --------------------------------
@@ -78,7 +79,7 @@ export async function build(opts: BuildOptions = {}) {
     //------------------------------------
 
     if (!disableRateLimit) {
-      await app.register(rateLimit, { max: 5, timeWindow: "1 second" });
+      await app.register(rateLimit, { max: 20, timeWindow: "1 second" });
     }
     await app.register(dbConnector, {
       path: database?.path ?? appConfig.database.path,
