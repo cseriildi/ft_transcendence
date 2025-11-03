@@ -182,5 +182,6 @@ const start = async () => {
 
 // Only start if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  void start(); // Explicitly mark as fire-and-forget
+  void start(); // Explicitly mark as fire-and-forget : 
+  // errors are handled inside start() and will exit the process
 }

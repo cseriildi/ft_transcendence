@@ -1121,7 +1121,6 @@ describe("Friend Routes", () => {
         });
         const user4Body = user4Res.json() as any;
         const user4Id = user4Body.data.id;
-        const user4Token = user4Body.data.tokens.accessToken;
 
         // User1 -> User4: pending (not accepted)
         await app.inject({
@@ -1496,21 +1495,6 @@ describe("Friend Routes", () => {
         });
         const user4Body = user4Res.json() as any;
         const user4Id = user4Body.data.id;
-
-        const user5Payload = {
-          username: "eve",
-          email: "eve@example.com",
-          password: "password123",
-          confirmPassword: "password123",
-        };
-        const user5Res = await app.inject({
-          method: "POST",
-          url: `${AUTH_PREFIX}/register`,
-          payload: user5Payload,
-        });
-        const user5Body = user5Res.json() as any;
-        const user5Id = user5Body.data.id;
-        const user5Token = user5Body.data.tokens.accessToken;
         const user4Token = user4Body.data.tokens.accessToken;
 
         // User1 -> User2: accepted
