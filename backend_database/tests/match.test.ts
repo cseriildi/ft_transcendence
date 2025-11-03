@@ -154,7 +154,7 @@ describe("Match Routes", () => {
     expect(body.success).toBe(false);
   });
 
-  it("GET ${API_PREFIX}/matches/:username should return user matches", async () => {
+  it(`GET ${API_PREFIX}/matches/:username should return user matches`, async () => {
     // Create some matches
     await app.inject({
       method: "POST",
@@ -195,7 +195,7 @@ describe("Match Routes", () => {
     });
   });
 
-  it("GET ${API_PREFIX}/matches/:username should return empty array for no matches", async () => {
+  it(`GET ${API_PREFIX}/matches/:username should return empty array for no matches`, async () => {
     const res = await app.inject({
       method: "GET",
       url: `${API_PREFIX}/matches/${user1.username}`,
@@ -208,7 +208,7 @@ describe("Match Routes", () => {
     expect(body.data.length).toBe(0);
   });
 
-  it("GET ${API_PREFIX}/matches/:username should return 404 for non-existent user", async () => {
+  it(`GET ${API_PREFIX}/matches/:username should return 404 for non-existent user`, async () => {
     const res = await app.inject({
       method: "GET",
       url: `${API_PREFIX}/matches/nonexistentuser`,
@@ -219,7 +219,7 @@ describe("Match Routes", () => {
     expect(body.success).toBe(false);
   });
 
-  it("GET ${API_PREFIX}/matches/:username should order matches by date (newest first)", async () => {
+  it(`GET ${API_PREFIX}/matches/:username should order matches by date (newest first)`, async () => {
     // Create matches with slight delay
     await app.inject({
       method: "POST",

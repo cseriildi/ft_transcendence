@@ -26,7 +26,7 @@ describe("OAuth Routes", () => {
     vi.clearAllMocks();
   });
 
-  describe("GET ${OAUTH_PREFIX}/github", () => {
+  describe(`GET ${OAUTH_PREFIX}/github`, () => {
     it("should return GitHub OAuth redirect URL", async () => {
       const res = await app.inject({
         method: "GET",
@@ -71,7 +71,7 @@ describe("OAuth Routes", () => {
     });
   });
 
-  describe("GET ${OAUTH_PREFIX}/github/callback", () => {
+  describe(`GET ${OAUTH_PREFIX}/github/callback`, () => {
     it("should reject missing code parameter", async () => {
       const res = await app.inject({
         method: "GET",
@@ -540,8 +540,6 @@ describe("OAuth Routes", () => {
         headers: { cookie: `oauth_state=${stateCookie?.value}` },
       });
 
-      const authBody = authRes.json() as any;
-      const originalAccessToken = authBody.data.tokens.accessToken;
       const refreshCookie = authRes.cookies.find((c: any) => c.name === "refresh_token");
 
       // Use refresh token to get new access token
