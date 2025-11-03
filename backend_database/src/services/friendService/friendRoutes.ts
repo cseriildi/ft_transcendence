@@ -5,9 +5,7 @@ import { UserSchemas } from "./friendSchemas.ts";
 import { UserParams, ManageFriendsBody, FriendsStatusResponse } from "./friendTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 
-
 async function friendRoutes(fastify: FastifyInstance) {
- 
   fastify.post<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id",
     {
@@ -16,13 +14,13 @@ async function friendRoutes(fastify: FastifyInstance) {
         tags: ["friend"],
         description: "Add a user as a friend (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.manageFriends
-      }
+        ...UserSchemas.manageFriends,
+      },
     },
     friendController.addFriend
-  )
+  );
 
-    fastify.patch<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id/accept",
     {
       preHandler: requireAuth,
@@ -30,13 +28,13 @@ async function friendRoutes(fastify: FastifyInstance) {
         tags: ["friend"],
         description: "Accept a friend request (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.manageFriends
-      }
+        ...UserSchemas.manageFriends,
+      },
     },
     friendController.acceptFriend
-  )
+  );
 
-      fastify.patch<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
+  fastify.patch<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id/decline",
     {
       preHandler: requireAuth,
@@ -44,11 +42,11 @@ async function friendRoutes(fastify: FastifyInstance) {
         tags: ["friend"],
         description: "Decline a friend request (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.manageFriends
-      }
+        ...UserSchemas.manageFriends,
+      },
     },
     friendController.declineFriend
-  )
+  );
 
   fastify.delete<{ Params: UserParams; Reply: ApiResponse<ManageFriendsBody> }>(
     "/friends/:id",
@@ -58,8 +56,8 @@ async function friendRoutes(fastify: FastifyInstance) {
         tags: ["friend"],
         description: "Delete a friend from friends (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.manageFriends
-      }
+        ...UserSchemas.manageFriends,
+      },
     },
     friendController.removeFriend
   );
@@ -72,8 +70,8 @@ async function friendRoutes(fastify: FastifyInstance) {
         tags: ["friend"],
         description: "Get online status of all friends (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.getFriendsStatus
-      }
+        ...UserSchemas.getFriendsStatus,
+      },
     },
     friendController.getFriendsStatus
   );

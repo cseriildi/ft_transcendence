@@ -9,8 +9,8 @@ export const errorResponseSchema = {
   properties: {
     success: { type: "boolean" as const },
     message: { type: "string" as const },
-    timestamp: { type: "string" as const }
-  }
+    timestamp: { type: "string" as const },
+  },
 };
 
 /**
@@ -25,8 +25,8 @@ export function createSuccessSchema(dataSchema: Record<string, any>) {
       success: { type: "boolean" as const },
       data: dataSchema,
       message: { type: "string" as const },
-      timestamp: { type: "string" as const }
-    }
+      timestamp: { type: "string" as const },
+    },
   };
 }
 
@@ -43,11 +43,11 @@ export function createResponseSchema(
   errorCodes: number[] = []
 ) {
   const response: Record<number, any> = {
-    [statusCode]: createSuccessSchema(dataSchema)
+    [statusCode]: createSuccessSchema(dataSchema),
   };
 
   // Add error response schemas
-  errorCodes.forEach(code => {
+  errorCodes.forEach((code) => {
     response[code] = errorResponseSchema;
   });
 
@@ -66,8 +66,8 @@ export const commonDataSchemas = {
       username: { type: "string" as const },
       email: { type: "string" as const },
       avatar_url: { type: "string" as const },
-      created_at: { type: "string" as const }
-    }
+      created_at: { type: "string" as const },
+    },
   },
 
   // User with tokens (for auth responses)
@@ -82,10 +82,10 @@ export const commonDataSchemas = {
       tokens: {
         type: "object" as const,
         properties: {
-          accessToken: { type: "string" as const }
-        }
-      }
-    }
+          accessToken: { type: "string" as const },
+        },
+      },
+    },
   },
 
   // Array of users
@@ -98,9 +98,9 @@ export const commonDataSchemas = {
         username: { type: "string" as const },
         email: { type: "string" as const },
         avatar_url: { type: "string" as const },
-        created_at: { type: "string" as const }
-      }
-    }
+        created_at: { type: "string" as const },
+      },
+    },
   },
 
   // Match object
@@ -112,8 +112,8 @@ export const commonDataSchemas = {
       loser: { type: "string" as const },
       winner_score: { type: "number" as const },
       loser_score: { type: "number" as const },
-      played_at: { type: "string" as const }
-    }
+      played_at: { type: "string" as const },
+    },
   },
 
   // Array of matches
@@ -127,8 +127,8 @@ export const commonDataSchemas = {
         loser: { type: "string" as const },
         winner_score: { type: "number" as const },
         loser_score: { type: "number" as const },
-        played_at: { type: "string" as const }
-      }
-    }
-  }
+        played_at: { type: "string" as const },
+      },
+    },
+  },
 };

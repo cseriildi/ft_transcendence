@@ -16,14 +16,14 @@ export class DatabaseHelper {
       "SELECT file_url FROM avatars WHERE user_id = ?",
       [userId]
     );
-    
+
     if (!avatar || !avatar.file_url) {
       throw errors.notFound(`Avatar not found for user ${userId}`);
     }
-    
+
     return avatar.file_url;
   }
-  
+
   //here T is the type of the row returned
   // :Promise<T | null> means it will return a promis of that type
   //sql is the query as a string
@@ -37,12 +37,12 @@ export class DatabaseHelper {
       });
     });
   }
-  
+
   async run(sql: string, params: any[] = []): Promise<{ lastID: number; changes: number }> {
     return new Promise((resolve, reject) => {
       //rrow functions don't have their own this
       // so we'd lose access to lastID and changes
-      this.db.run(sql, params, function(err) {
+      this.db.run(sql, params, function (err) {
         if (err) reject(errors.internal(err.message));
         //the lastID and changes are properties of the function context
         //lastID is the id of the last inserted row (only relevant if inserted else it is 0)
@@ -51,7 +51,7 @@ export class DatabaseHelper {
       });
     });
   }
-  
+
   async all<T = any>(sql: string, params: any[] = []): Promise<T[]> {
     return new Promise((resolve, reject) => {
       this.db.all(sql, params, (err, rows) => {

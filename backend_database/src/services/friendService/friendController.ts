@@ -3,7 +3,7 @@ import {
   UserParams,
   ManageFriendsBody,
   FriendStatus,
-  FriendsStatusResponse
+  FriendsStatusResponse,
 } from "./friendTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
@@ -39,7 +39,7 @@ export const friendController = {
         user1_id: user1_Id.toString(),
         user2_id: user2_Id.toString(),
         action: "add" as const,
-        created_at
+        created_at,
       };
       return ApiResponseHelper.success(responseBody, "Friend request sent");
     }
@@ -61,26 +61,26 @@ export const friendController = {
       if (existingRequest.inviter_id === user1_Id) {
         throw errors.conflict("You cannot accept a friend request you sent yourself");
       }
-      if (existingRequest.status === 'accepted') {
+      if (existingRequest.status === "accepted") {
         throw errors.conflict("These users are already friends");
       }
-      if (existingRequest.status === 'declined') {
+      if (existingRequest.status === "declined") {
         throw errors.conflict("This friend request has already been declined by one of the users");
       }
 
       const updated_at = new Date().toISOString();
 
       // Create friend request
-       await db.run(
-      "UPDATE friends SET status = 'accepted', updated_at = ? WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
-      [updated_at, user1_Id, user2_Id, user2_Id, user1_Id]
+      await db.run(
+        "UPDATE friends SET status = 'accepted', updated_at = ? WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
+        [updated_at, user1_Id, user2_Id, user2_Id, user1_Id]
       );
 
       const responseBody = {
         user1_id: user1_Id.toString(),
         user2_id: user2_Id.toString(),
         action: "accept" as const,
-        updated_at
+        updated_at,
       };
       return ApiResponseHelper.success(responseBody, "Friend request accepted");
     }
@@ -100,12 +100,16 @@ export const friendController = {
         throw errors.conflict("No friend request exists between these users");
       }
       if (existingRequest.inviter_id === user1_Id) {
-        throw errors.conflict("You cannot decline a friend request you sent yourself, you can delete the friend-request instead");
+        throw errors.conflict(
+          "You cannot decline a friend request you sent yourself, you can delete the friend-request instead"
+        );
       }
-      if (existingRequest.status === 'accepted') {
-        throw errors.conflict("These users are already friends, you can delete the friendship instead");
+      if (existingRequest.status === "accepted") {
+        throw errors.conflict(
+          "These users are already friends, you can delete the friendship instead"
+        );
       }
-      if (existingRequest.status === 'declined') {
+      if (existingRequest.status === "declined") {
         throw errors.conflict("This friend request has already been declined");
       }
 
@@ -113,15 +117,15 @@ export const friendController = {
 
       // Create friend request
       await db.run(
-      "UPDATE friends SET status = 'declined', updated_at = ? WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
-      [updated_at, user1_Id, user2_Id, user2_Id, user1_Id]
+        "UPDATE friends SET status = 'declined', updated_at = ? WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
+        [updated_at, user1_Id, user2_Id, user2_Id, user1_Id]
       );
 
       const responseBody = {
         user1_id: user1_Id.toString(),
         user2_id: user2_Id.toString(),
         action: "decline" as const,
-        updated_at
+        updated_at,
       };
       return ApiResponseHelper.success(responseBody, "Friend request declined");
     }
@@ -140,8 +144,10 @@ export const friendController = {
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users");
       }
-      if (existingRequest.status === 'declined' && existingRequest.inviter_id === user1_Id) {
-        throw errors.conflict("You cannot delete a friend request you sent yourself that has been declined");
+      if (existingRequest.status === "declined" && existingRequest.inviter_id === user1_Id) {
+        throw errors.conflict(
+          "You cannot delete a friend request you sent yourself that has been declined"
+        );
       }
 
       const updated_at = new Date().toISOString();
@@ -149,13 +155,12 @@ export const friendController = {
         "DELETE FROM friends WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)",
         [user1_Id, user2_Id, user2_Id, user1_Id]
       );
-      
 
       const responseBody = {
         user1_id: user1_Id.toString(),
         user2_id: user2_Id.toString(),
         action: "remove" as const,
-        updated_at
+        updated_at,
       };
       return ApiResponseHelper.success(responseBody, "Friend removed successfully");
     }
@@ -164,10 +169,10 @@ export const friendController = {
   getFriendsStatus: createHandler<{}, ApiResponse<FriendsStatusResponse>>(
     async (request, { db }) => {
       const userId = request.user!.id;
-      
+
       // Online threshold: 2 minutes (configurable)
       const ONLINE_THRESHOLD_MINUTES = 2;
-      
+
       // Get all friend requests for the current user (accepted, pending, declined)
       const friends = await db.all<FriendStatus>(
         `SELECT 
@@ -212,19 +217,18 @@ export const friendController = {
       );
 
       // Convert is_online and is_inviter from 0/1 to boolean
-      const friendsWithStatus: FriendStatus[] = friends.map(f => ({
+      const friendsWithStatus: FriendStatus[] = friends.map((f) => ({
         ...f,
         is_online: Boolean(f.is_online),
-        is_inviter: Boolean(f.is_inviter)
+        is_inviter: Boolean(f.is_inviter),
       }));
 
       const response: FriendsStatusResponse = {
         friends: friendsWithStatus,
-        online_threshold_minutes: ONLINE_THRESHOLD_MINUTES
+        online_threshold_minutes: ONLINE_THRESHOLD_MINUTES,
       };
 
       return ApiResponseHelper.success(response, "Friends status retrieved");
     }
   ),
-
 };

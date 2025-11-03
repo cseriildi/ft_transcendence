@@ -13,8 +13,8 @@ async function authRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ["auth"],
         description: "Register a new user account",
-        ...AuthSchemas.register
-      }
+        ...AuthSchemas.register,
+      },
     },
     authController.createUser
   );
@@ -26,8 +26,8 @@ async function authRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ["auth"],
         description: "Login with email and password",
-        ...AuthSchemas.login
-      }
+        ...AuthSchemas.login,
+      },
     },
     authController.loginUser
   );
@@ -39,8 +39,8 @@ async function authRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ["auth"],
         description: "Refresh access token using refresh token cookie",
-        ...AuthSchemas.refresh
-      }
+        ...AuthSchemas.refresh,
+      },
     },
     authController.refresh
   );
@@ -52,8 +52,8 @@ async function authRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ["auth"],
         description: "Logout user and revoke refresh token",
-        ...AuthSchemas.logout
-      }
+        ...AuthSchemas.logout,
+      },
     },
     authController.logout
   );
@@ -67,8 +67,8 @@ async function authRoutes(fastify: FastifyInstance) {
         tags: ["auth"],
         description: "Verify access token validity (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...AuthSchemas.verify
-      }
+        ...AuthSchemas.verify,
+      },
     },
     authController.verifyToken
   );

@@ -8,7 +8,7 @@ function getEnvVar(name: string, defaultValue?: string): string {
 }
 
 // Helper function to get optional environment variable
-function getOptionalEnvVar(name: string, defaultValue: string = ""): string {
+function getOptionalEnvVar(name: string, defaultValue = ""): string {
   return process.env[name] || defaultValue;
 }
 
@@ -70,10 +70,7 @@ export const config = {
     issuer: getEnvVar("JWT_ISSUER", "ping-pong-api"),
     audience: getEnvVar("JWT_AUDIENCE", "ping-pong-clients"),
     accessSecret: getEnvVar("JWT_ACCESS_SECRET", "dev-access-secret-change-me"),
-    refreshSecret: getEnvVar(
-      "JWT_REFRESH_SECRET",
-      "dev-refresh-secret-change-me"
-    ),
+    refreshSecret: getEnvVar("JWT_REFRESH_SECRET", "dev-refresh-secret-change-me"),
     accessTtl: getEnvVar("JWT_ACCESS_TTL", "15m"),
     refreshTtl: getEnvVar("JWT_REFRESH_TTL", "7d"),
   },
@@ -105,12 +102,6 @@ export const config = {
 
 // Validate configuration and log startup info
 export const validateConfig = () => {
-  console.log("🚀 Starting server with configuration:", {
-    port: config.server.port,
-    host: config.server.host,
-    env: config.server.env,
-    databasePath: config.database.path,
-    logLevel: config.logging.level,
-    routePrefixes: config.routes,
-  });
+  // Configuration is logged by Fastify on startup
+  // No need for console.log here
 };
