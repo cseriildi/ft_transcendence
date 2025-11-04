@@ -14,18 +14,22 @@ export class Home {
     const pongBtn = document.getElementById("pong-btn");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
-    const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
+    const userAvatar = document.getElementById(
+      "user-avatar"
+    ) as HTMLImageElement;
     const userName = document.getElementById("user-name");
     const profileBtn = document.getElementById("profile-btn");
 
     pongBtn?.addEventListener("click", () => this.router.navigate("/pong"));
-    profileBtn?.addEventListener("click", () => this.router.navigate("/profile"));
+    profileBtn?.addEventListener("click", () =>
+      this.router.navigate("/profile")
+    );
     loginBtn?.addEventListener("click", () => {
       this.router.navigate("/login");
     });
     logoutBtn?.addEventListener("click", async () => {
       try {
-        const response = await fetch(`${config.apiUrl}/auth/logout", {
+        const response = await fetch(`${config.apiUrl}/auth/logout`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${getAccessToken()}`,
@@ -53,7 +57,7 @@ export class Home {
       if (userName || userAvatar) {
         try {
           const response = await fetchWithRefresh(
-            `http://localhost:3000/api/users/${getUserId()}`,
+            `${config.apiUrl}/api/users/${getUserId()}`,
             {
               headers: {
                 Authorization: `Bearer ${getAccessToken()}`,
@@ -64,7 +68,7 @@ export class Home {
           if (response.ok) {
             const userData = await response.json();
             if (userAvatar && userData.data.avatar_url) {
-              userAvatar.src = `http://localhost:3000${userData.data.avatar_url}`;
+              userAvatar.src = `${config.apiUrl}${userData.data.avatar_url}`;
             }
             console.log("avatar url:", userData.data.avatar_url);
             userAvatar.classList.remove("hidden");
