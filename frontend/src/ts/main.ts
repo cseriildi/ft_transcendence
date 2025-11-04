@@ -49,7 +49,7 @@ const initPongPage = () => {
     }
   });
 
-  // Do not auto-create a Pong instance on page load. The Start button will create and start a game.
+  // Do not auto-create a Pong instance on page load. The New Game button will create and start a game.
   const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
   if (!canvas) {
     console.error("❌ Pong canvas not found");
