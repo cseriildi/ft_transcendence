@@ -1,8 +1,8 @@
 import { Router } from "../router/Router.js";
 import { showErrorPopup } from "../main.js";
+import { config } from "../config.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
-import { config } from "../config.js";
 
 export class Edit {
   private router: Router;
@@ -11,9 +11,7 @@ export class Edit {
     this.router = router;
   }
 
-  async handleFormSubmit(
-    e: Event
-  ): Promise<{ success: boolean; message?: string }> {
+  async handleFormSubmit(e: Event): Promise<{ success: boolean; message?: string }> {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -33,16 +31,14 @@ export class Edit {
     }
 
     const emailInput = document.getElementById("email") as HTMLInputElement;
-    const usernameInput = document.getElementById(
-      "username"
-    ) as HTMLInputElement;
+    const usernameInput = document.getElementById("username") as HTMLInputElement;
     const avatarInput = document.getElementById("avatar") as HTMLInputElement;
 
     const requests = [];
 
     if (emailInput && email !== emailInput.defaultValue) {
       requests.push(
-        fetchWithRefresh(`${config.apiUrl}/api/users/${userId}/email`, {
+        fetchWithRefresh(`http://localhost:3000/api/users/${userId}/email`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -56,7 +52,7 @@ export class Edit {
 
     if (usernameInput && username !== usernameInput.defaultValue) {
       requests.push(
-        fetchWithRefresh(`${config.apiUrl}/api/users/${userId}/username`, {
+        fetchWithRefresh(`http://localhost:3000/api/users/${userId}/username`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -73,7 +69,7 @@ export class Edit {
       formData.append("avatar", avatarInput.files[0]);
 
       requests.push(
-        fetchWithRefresh(`${config.apiUrl}/api/users/avatar`, {
+        fetchWithRefresh(`http://localhost:3000/api/users/avatar`, {
           method: "POST",
           body: formData,
           headers: {
@@ -127,19 +123,19 @@ export class Edit {
     }
     fileInput.addEventListener("change", () => {
       if (fileInput.files && fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-
-        if (!allowedTypes.includes(file.type)) {
-          showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
-          fileInput.value = ""; // Clear the input
-          fileNameDisplay.textContent = "No file chosen";
-          return;
-        }
-
-        fileNameDisplay.textContent = file.name;
+          const file = fileInput.files[0];
+          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+          
+          if (!allowedTypes.includes(file.type)) {
+              showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
+              fileInput.value = ''; // Clear the input
+              fileNameDisplay.textContent = "No file chosen";
+              return;
+          }
+          
+          fileNameDisplay.textContent = file.name;
       } else {
-        fileNameDisplay.textContent = "No file chosen";
+          fileNameDisplay.textContent = "No file chosen";
       }
     });
 
@@ -152,23 +148,18 @@ export class Edit {
     });
 
     try {
-      const response = await fetchWithRefresh(
-        `${config.apiUrl}/api/users/${getUserId()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetchWithRefresh(`http://localhost:3000/api/users/${getUserId()}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        method: "GET",
+        credentials: "include",
+      });
       if (response.ok) {
         const userData = await response.json();
         console.log(userData);
         const emailInput = document.getElementById("email") as HTMLInputElement;
-        const usernameInput = document.getElementById(
-          "username"
-        ) as HTMLInputElement;
+        const usernameInput = document.getElementById("username") as HTMLInputElement;
         if (emailInput && usernameInput) {
           emailInput.value = userData.data.email;
           usernameInput.value = userData.data.username;
