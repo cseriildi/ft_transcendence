@@ -11,6 +11,17 @@ import { Users } from "./users/Users.js";
 
 let currentPong: Pong | null = null;
 
+window.addEventListener("popstate", () => {
+  // If we're leaving the /pong route, destroy the Pong instance
+  if (window.location.pathname !== "/pong") {
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+      console.log("Pong destroyed due to navigation");
+    }
+  }
+});
+
 const initPongPage = () => {
   const backBtn = document.getElementById("back-btn");
   backBtn?.addEventListener("click", () => {
@@ -19,10 +30,28 @@ const initPongPage = () => {
     router.navigate("/");
   });
 
+  // New Game button: destroy existing game instance for this tab and create a fresh one
+  const newGameBtn = document.getElementById("new-game-btn");
+  newGameBtn?.addEventListener("click", () => {
+    // If a pong exists, destroy it so server will delete its game instance on disconnect
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
+
+    const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
+    if (canvas) {
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+      // Tell server to start a fresh game tied to this connection
+      currentPong.startGame();
+    } else {
+      console.error("❌ Pong canvas not found");
+    }
+  });
+
+  // Do not auto-create a Pong instance on page load. The Start button will create and start a game.
   const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
-  if (canvas) {
-    currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
-  } else {
+  if (!canvas) {
     console.error("❌ Pong canvas not found");
   }
 };
