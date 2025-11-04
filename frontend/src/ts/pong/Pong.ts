@@ -49,18 +49,9 @@ export class Pong {
       sendStart();
     } else if (this.ws) {
       // wait for open then send once
-      const originalOnOpen = this.ws.onopen;
-      this.ws.onopen = (ev) => {
-        try {
-          sendStart();
-        } finally {
-          // restore previous handler if any
-          if (originalOnOpen) originalOnOpen!.call(this.ws!, ev as any);
-        }
-      };
+      this.ws.addEventListener("open", () => { sendStart(); }, { once: true });
     }
   }
-
 
     private connect() {
         this.ws = new WebSocket(this.wsUrl);
