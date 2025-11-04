@@ -54,8 +54,8 @@ RUN mkdir -p /app/data && \
 # Copy default avatars
 COPY uploads/avatars/default ./uploads/avatars/default
 
-# Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/
+# Copy entrypoint script from scripts folder
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Set default environment variables

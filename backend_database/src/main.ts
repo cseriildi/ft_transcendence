@@ -1,7 +1,7 @@
 import fastify, { FastifyServerOptions } from "fastify";
 import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig } from "./config.ts";
+import { config as appConfig, validateConfig, getConfigWarnings } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
@@ -17,17 +17,55 @@ export type BuildOptions = {
 
 export async function build(opts: BuildOptions = {}) {
   const {
-    logger = { level: appConfig.logging.level },
+    logger = {
+      level: appConfig.logging.level,
+      // Structured logging for production
+      serializers: {
+        req(request) {
+          return {
+            method: request.method,
+            url: request.url,
+            hostname: request.hostname,
+            remoteAddress: request.ip,
+          };
+        },
+        res(reply) {
+          return {
+            statusCode: reply.statusCode,
+          };
+        },
+      },
+      // Pretty print in development, JSON in production
+      transport:
+        appConfig.server.env === "development"
+          ? {
+              target: "pino-pretty",
+              options: {
+                translateTime: "HH:MM:ss Z",
+                ignore: "pid,hostname",
+                colorize: true,
+              },
+            }
+          : undefined,
+    },
     database,
     disableRateLimit,
   } = opts;
   const app = fastify({ logger });
 
-    await app.register(cors, {
-      origin: appConfig.cors.origins,
-      credentials: true,
-      methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  // Log configuration warnings (env variables using fallbacks)
+  const warnings = getConfigWarnings();
+  if (warnings.length > 0) {
+    warnings.forEach((warning) => {
+      app.log.warn(`⚠️  ${warning}`);
     });
+  }
+
+  await app.register(cors, {
+    origin: appConfig.cors.origins,
+    credentials: true,
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
+  });
 
   try {
     //-------------------------------- Swagger Setup --------------------------------
@@ -87,6 +125,14 @@ export async function build(opts: BuildOptions = {}) {
     await app.register(errorHandler);
     await app.register(import("@fastify/cookie"));
 
+    // Optional: Add request/response logging hooks (only in development for now)
+    // Uncomment to enable detailed request logging
+    // if (appConfig.server.env === "development") {
+    //   const { requestLogger, responseLogger } = await import("./middleware/loggingMiddleware.ts");
+    //   app.addHook("onRequest", requestLogger);
+    //   app.addHook("onResponse", responseLogger);
+    // }
+
     // Register multipart for file uploads
     await app.register(import("@fastify/multipart"), {
       limits: {
@@ -97,10 +143,7 @@ export async function build(opts: BuildOptions = {}) {
 
     // Register static file serving for uploaded avatars
     await app.register(import("@fastify/static"), {
-      root:
-        appConfig.server.env === "production"
-          ? "/app/uploads"
-          : `${process.cwd()}/uploads`,
+      root: appConfig.server.env === "production" ? "/app/uploads" : `${process.cwd()}/uploads`,
       prefix: "/uploads/",
       decorateReply: false,
     });
@@ -115,24 +158,30 @@ export async function build(opts: BuildOptions = {}) {
 }
 
 const start = async () => {
+  let app;
   try {
-    const app = await build();
+    app = await build();
     await app.listen({
       port: appConfig.server.port,
       host: appConfig.server.host,
     });
     if (appConfig.server.env === "development") {
-      console.log(
-        `📚 Swagger docs available at http://localhost:${appConfig.server.port}/docs`
-      );
+      app.log.info(`📚 Swagger docs available at http://localhost:${appConfig.server.port}/docs`);
     }
   } catch (err) {
-    console.error(err);
+    if (app) {
+      app.log.error(err, "Failed to start server");
+    } else {
+      // Fallback if app failed to build
+      // eslint-disable-next-line no-console
+      console.error("Failed to build application:", err);
+    }
     process.exit(1);
   }
 };
 
 // Only start if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  start();
+  void start(); // Explicitly mark as fire-and-forget : 
+  // errors are handled inside start() and will exit the process
 }

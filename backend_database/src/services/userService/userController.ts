@@ -1,8 +1,5 @@
 // src/routes/users.ts
-import {
-  UserParams,
-  UploadAvatarData
-} from "./userTypes.ts";
+import { UserParams, UploadAvatarData } from "./userTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { errors } from "../../utils/errorUtils.ts";
@@ -13,36 +10,31 @@ import { MultipartFile } from "@fastify/multipart";
 import { ensureUserOwnership } from "../../utils/authUtils.ts";
 
 export const userController = {
-
   //structure for createHAndler:
   // createHandler<{ whatever is provoded as neccesary for the query }, response type>(
   //   async (request, { db , reply(optional)}) => {
   //     // handler logic
   //   }
   // ),
-  getUserById: createHandler<{ Params: UserParams }, ApiResponse<User>>(
-    async (request, { db }) => {
-      const { id } = request.params;
-      ensureUserOwnership(request.user!.id, id);
-      
-      const user = await db.get<User>(
-        "SELECT id,username,email,created_at FROM users WHERE id = ?",
-        [id]
-      );
-      if (!user) {
-        throw errors.notFound("User");
-      }
-      // Retrieve avatar URL using helper (throws error if not found)
-      user.avatar_url = await db.getAvatarUrl(user.id);
-      
-      return ApiResponseHelper.success(user, "User found");
-    }
-  ),
+  getUserById: createHandler<{ Params: UserParams }, ApiResponse<User>>(async (request, { db }) => {
+    const { id } = request.params;
+    ensureUserOwnership(request.user!.id, id);
 
-   getUsers: createHandler<{}, ApiResponse<User[]>>(
-    async (request, { db }) => {     
-      const users = await db.all<User>(
-        `SELECT 
+    const user = await db.get<User>("SELECT id,username,email,created_at FROM users WHERE id = ?", [
+      id,
+    ]);
+    if (!user) {
+      throw errors.notFound("User");
+    }
+    // Retrieve avatar URL using helper (throws error if not found)
+    user.avatar_url = await db.getAvatarUrl(user.id);
+
+    return ApiResponseHelper.success(user, "User found");
+  }),
+
+  getUsers: createHandler<{}, ApiResponse<User[]>>(async (request, { db }) => {
+    const users = await db.all<User>(
+      `SELECT 
           u.id, 
           u.username, 
           u.email, 
@@ -51,129 +43,135 @@ export const userController = {
         FROM users u
         LEFT JOIN avatars a ON u.id = a.user_id
         ORDER BY u.created_at DESC`
-      );
-      return ApiResponseHelper.success(users, "Users retrieved");
-    }
-  ),
+    );
+    return ApiResponseHelper.success(users, "Users retrieved");
+  }),
 
-  uploadAvatar: createHandler<{}, ApiResponse<UploadAvatarData>>(
-    async (request, { db }) => {
-      const userId = request.user!.id;
-      
-      // Check if request is multipart
-      if (!request.isMultipart()) {
-        throw errors.validation("Request must be multipart/form-data with an avatar file");
+  uploadAvatar: createHandler<{}, ApiResponse<UploadAvatarData>>(async (request, { db }) => {
+    const userId = request.user!.id;
+
+    // Check if request is multipart
+    if (!request.isMultipart()) {
+      throw errors.validation("Request must be multipart/form-data with an avatar file");
+    }
+
+    let avatarUrl: string | undefined;
+    let filePath: string | undefined;
+    let oldAvatarUrl: string | null = null;
+    let fileMetadata: { filename: string; mimetype: string; fileSize: number } | undefined;
+
+    try {
+      // Get current avatar URL (for cleanup)
+      const existingAvatar = await db.get<{ file_url: string } | undefined>(
+        "SELECT file_url FROM avatars WHERE user_id = ?",
+        [userId]
+      );
+      oldAvatarUrl = existingAvatar?.file_url || null;
+
+      // Process multipart data
+      const parts = request.parts();
+
+      for await (const part of parts) {
+        if (part.type === "file" && part.fieldname === "avatar") {
+          const file = part as MultipartFile;
+          avatarUrl = await saveUploadedFile(file);
+          // Convert URL path to file system path
+          filePath = avatarUrl.replace(/^\/uploads\/avatars\//, "");
+          fileMetadata = {
+            filename: file.filename,
+            mimetype: file.mimetype,
+            fileSize: (file as any).file?.bytesRead || 0,
+          };
+          break; // Only process first avatar file
+        }
       }
 
-      let avatarUrl: string | undefined;
-      let filePath: string | undefined;
-      let oldAvatarUrl: string | null = null;
-      let fileMetadata: { filename: string; mimetype: string; fileSize: number } | undefined;
+      if (!avatarUrl || !fileMetadata || !filePath) {
+        throw errors.validation("No avatar file provided in request");
+      }
 
-      try {
-        // Get current avatar URL (for cleanup)
-        const existingAvatar = await db.get<{ file_url: string } | undefined>(
-          "SELECT file_url FROM avatars WHERE user_id = ?",
-          [userId]
+      // Update or insert avatar record
+      if (oldAvatarUrl) {
+        await db.run(
+          "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
+          [
+            filePath,
+            avatarUrl,
+            fileMetadata.filename,
+            fileMetadata.mimetype,
+            fileMetadata.fileSize,
+            userId,
+          ]
         );
-        oldAvatarUrl = existingAvatar?.file_url || null;
-
-        // Process multipart data
-        const parts = request.parts();
-        
-        for await (const part of parts) {
-          if (part.type === 'file' && part.fieldname === 'avatar') {
-            const file = part as MultipartFile;
-            avatarUrl = await saveUploadedFile(file);
-            // Convert URL path to file system path
-            filePath = avatarUrl.replace(/^\/uploads\/avatars\//, '');
-            fileMetadata = {
-              filename: file.filename,
-              mimetype: file.mimetype,
-              fileSize: (file as any).file?.bytesRead || 0
-            };
-            break; // Only process first avatar file
-          }
-        }
-
-        if (!avatarUrl || !fileMetadata || !filePath) {
-          throw errors.validation("No avatar file provided in request");
-        }
-
-        // Update or insert avatar record
-        if (oldAvatarUrl) {
-          await db.run(
-            "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
-            [filePath, avatarUrl, fileMetadata.filename, fileMetadata.mimetype, fileMetadata.fileSize, userId]
-          );
-          await deleteUploadedFile(oldAvatarUrl);
-        } else {
-          await db.run(
-            "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-            [userId, filePath, avatarUrl, fileMetadata.filename, fileMetadata.mimetype, fileMetadata.fileSize]
-          );
-        }
-
-        const result = await db.get<UploadAvatarData>(
-          "SELECT u.username, a.file_url as avatar_url, a.created_at FROM users u JOIN avatars a ON u.id = a.user_id WHERE u.id = ?",
-          [userId]
+        await deleteUploadedFile(oldAvatarUrl);
+      } else {
+        await db.run(
+          "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [
+            userId,
+            filePath,
+            avatarUrl,
+            fileMetadata.filename,
+            fileMetadata.mimetype,
+            fileMetadata.fileSize,
+          ]
         );
-
-        if (!result) {
-          throw errors.internal("Failed to retrieve uploaded avatar information");
-        }
-
-        return ApiResponseHelper.success(result, "Avatar uploaded successfully");
-      } catch (err: any) {
-        // Clean up newly uploaded file if update fails
-        if (avatarUrl) {
-          await deleteUploadedFile(avatarUrl);
-        }
-        throw err;
       }
+
+      const result = await db.get<UploadAvatarData>(
+        "SELECT u.username, a.file_url as avatar_url, a.created_at FROM users u JOIN avatars a ON u.id = a.user_id WHERE u.id = ?",
+        [userId]
+      );
+
+      if (!result) {
+        throw errors.internal("Failed to retrieve uploaded avatar information");
+      }
+
+      return ApiResponseHelper.success(result, "Avatar uploaded successfully");
+    } catch (err: any) {
+      // Clean up newly uploaded file if update fails
+      if (avatarUrl) {
+        await deleteUploadedFile(avatarUrl);
+      }
+      throw err;
     }
-  ),
+  }),
 
-  changeEmail: createHandler<{ Params: UserParams }, ApiResponse<User>>(
-    async (request, { db }) => {
-      const { id } = request.params;
-      ensureUserOwnership(request.user!.id, id);
-      const { email } = request.body as { email: string };
+  changeEmail: createHandler<{ Params: UserParams }, ApiResponse<User>>(async (request, { db }) => {
+    const { id } = request.params;
+    ensureUserOwnership(request.user!.id, id);
+    const { email } = request.body as { email: string };
 
-      // Schema already validates email format and required field
-      // Check if email is already in use by another user
-      const existingEmail = await db.get<User>(
-        "SELECT id FROM users WHERE email = ? AND id != ?",
-        [email.trim(), id]
-      );
-      if (existingEmail) {
-        throw errors.conflict("Email is already in use by another account");
-      }
-
-      // Update email
-      await db.run(
-        "UPDATE users SET email = ? WHERE id = ?",
-        [email.trim(), id]
-      );
-
-      const updatedUser = await db.get<User>(
-        "SELECT id, username, email, created_at FROM users WHERE id = ?",
-        [id]
-      );
-      if (!updatedUser) {
-        throw errors.notFound("User");
-      }
-
-      return ApiResponseHelper.success(updatedUser, "Email updated successfully");
+    // Schema already validates email format and required field
+    // Check if email is already in use by another user
+    const existingEmail = await db.get<User>("SELECT id FROM users WHERE email = ? AND id != ?", [
+      email.trim(),
+      id,
+    ]);
+    if (existingEmail) {
+      throw errors.conflict("Email is already in use by another account");
     }
-  ),
+
+    // Update email
+    await db.run("UPDATE users SET email = ? WHERE id = ?", [email.trim(), id]);
+
+    const updatedUser = await db.get<User>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      [id]
+    );
+    if (!updatedUser) {
+      throw errors.notFound("User");
+    }
+
+    return ApiResponseHelper.success(updatedUser, "Email updated successfully");
+  }),
 
   changeUsername: createHandler<{ Params: UserParams }, ApiResponse<User>>(
     async (request, { db }) => {
       const { id } = request.params;
       ensureUserOwnership(request.user!.id, id);
       const { username } = request.body as { username: string };
-      
+
       // Check if username is already in use by another user
       const existingUsername = await db.get<User>(
         "SELECT id FROM users WHERE username = ? AND id != ?",
@@ -184,10 +182,7 @@ export const userController = {
       }
 
       // Update username
-      await db.run(
-        "UPDATE users SET username = ? WHERE id = ?",
-        [username.trim(), id]
-      );
+      await db.run("UPDATE users SET username = ? WHERE id = ?", [username.trim(), id]);
 
       const updatedUser = await db.get<User>(
         "SELECT id, username, email, created_at FROM users WHERE id = ?",
@@ -205,15 +200,12 @@ export const userController = {
     async (request, { db }) => {
       const { id } = request.params;
       ensureUserOwnership(request.user!.id, id);
-      
+
       const last_seen = new Date().toISOString();
-      
-      await db.run(
-        "UPDATE users SET last_seen = ? WHERE id = ?",
-        [last_seen, id]
-      );
+
+      await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [last_seen, id]);
 
       return ApiResponseHelper.success({ last_seen }, "Heartbeat updated");
     }
-  )
+  ),
 };

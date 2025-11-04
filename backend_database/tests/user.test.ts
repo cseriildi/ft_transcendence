@@ -326,13 +326,7 @@ describe("User Routes", () => {
   });
 
   it("PATCH /users/:id/username should accept valid username formats", async () => {
-    const validUsernames = [
-      "user123",
-      "user_name",
-      "user-name",
-      "User123",
-      "ABC",
-    ];
+    const validUsernames = ["user123", "user_name", "user-name", "User123", "ABC"];
 
     for (const username of validUsernames) {
       const res = await app.inject({
@@ -383,13 +377,7 @@ describe("User Routes", () => {
   });
 
   it("PATCH /users/:id/username should return 400 for invalid characters", async () => {
-    const invalidUsernames = [
-      "user@name",
-      "user name",
-      "user!name",
-      "user#name",
-      "user$name",
-    ];
+    const invalidUsernames = ["user@name", "user name", "user!name", "user#name", "user$name"];
 
     for (const username of invalidUsernames) {
       const res = await app.inject({
@@ -571,15 +559,15 @@ describe("User Routes", () => {
         authorization: `Bearer ${accessToken}`,
       },
       payload: {
-        email: 'trimmed@example.com'
-      }
-    })
-    expect(res.statusCode).toBe(200)
-    const body = res.json() as any
-    expect(body.success).toBe(true)
-    expect(body.data.email).toBe('trimmed@example.com')
-    expect(body.data.email).not.toContain(' ')
-  })
+        email: "trimmed@example.com",
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as any;
+    expect(body.success).toBe(true);
+    expect(body.data.email).toBe("trimmed@example.com");
+    expect(body.data.email).not.toContain(" ");
+  });
 
   it("PATCH /users/:id/username should trim whitespace from username input", async () => {
     const res = await app.inject({
@@ -589,15 +577,15 @@ describe("User Routes", () => {
         authorization: `Bearer ${accessToken}`,
       },
       payload: {
-        username: 'trimmeduser'
-      }
-    })
-    expect(res.statusCode).toBe(200)
-    const body = res.json() as any
-    expect(body.success).toBe(true)
-    expect(body.data.username).toBe('trimmeduser')
-    expect(body.data.username).not.toContain(' ')
-  })
+        username: "trimmeduser",
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as any;
+    expect(body.success).toBe(true);
+    expect(body.data.username).toBe("trimmeduser");
+    expect(body.data.username).not.toContain(" ");
+  });
 
   describe("PATCH /users/:id/heartbeat", () => {
     it("should update user last_seen timestamp", async () => {
@@ -619,9 +607,7 @@ describe("User Routes", () => {
       expect(body.message).toBe("Heartbeat updated");
       expect(body.data).toHaveProperty("last_seen");
       expect(body.data.last_seen).toBeDefined();
-      expect(body.data.last_seen).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
-      );
+      expect(body.data.last_seen).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
 
       // Verify timestamp is within expected range
       expect(body.data.last_seen >= beforeTime).toBe(true);
@@ -728,9 +714,7 @@ describe("User Routes", () => {
       const timestamp = body.data.last_seen;
 
       // Verify ISO 8601 format
-      expect(timestamp).toMatch(
-        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
-      );
+      expect(timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
 
       // Verify it's a valid date
       const date = new Date(timestamp);

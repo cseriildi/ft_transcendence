@@ -1,15 +1,62 @@
-// Helper function to get required environment variable
+// Store configuration warnings to log after Fastify starts
+const configWarnings: string[] = [];
+
+// Decide strictness based on environment. We allow fallbacks in development
+// (for local dev) but require explicit env vars in production containers.
+const NODE_ENV = process.env.NODE_ENV || "production";
+// Allow fallbacks in non-production environments (development, test). In production we
+// treat any missing env that would require a fallback as a fatal error.
+const isProduction = NODE_ENV === "production";
+
+// Helper function to get required environment variable.
+// - If running in development, missing vars will use the provided fallback and a warning
+//   will be collected.
+// - If running in production, missing vars (even when a fallback is provided) will
+//   throw an error and prevent the container from starting.
 function getEnvVar(name: string, defaultValue?: string): string {
-  const value = process.env[name] || defaultValue;
+  const value = process.env[name];
+  if (!value && defaultValue !== undefined) {
+    if (!isProduction) {
+      configWarnings.push(
+        `Environment variable ${name} not found, using fallback value: "${defaultValue}"`
+      );
+      return defaultValue;
+    }
+    // In production, fail fast.
+    throw new Error(
+      `❌ Required environment variable ${name} is not set. Refusing to use fallback in production mode.`
+    );
+  }
   if (!value) {
+    // No value and no fallback provided -> always error (required)
     throw new Error(`❌ Required environment variable ${name} is not set`);
   }
   return value;
 }
 
-// Helper function to get optional environment variable
-function getOptionalEnvVar(name: string, defaultValue: string = ""): string {
-  return process.env[name] || defaultValue;
+// Helper function to get optional environment variable.
+// Behavior:
+// - If defaultValue is a non-empty string and we're in development, we record a warning
+//   and return the default.
+// - If defaultValue is a non-empty string and we're in production, we throw so the
+//   container won't start using a potentially insecure default.
+// - If defaultValue is an empty string (the common pattern for true-optional vars),
+//   we return the empty default silently.
+function getOptionalEnvVar(name: string, defaultValue = ""): string {
+  const value = process.env[name];
+  if (!value && defaultValue !== "") {
+    if (!isProduction) {
+      configWarnings.push(
+        `Environment variable ${name} not found, using fallback value: "${defaultValue}"`
+      );
+      return defaultValue;
+    }
+    // In production, treat a non-empty fallback as a misconfiguration and refuse to start.
+    throw new Error(
+      `❌ Optional environment variable ${name} is not set. Refusing to use fallback in production mode.`
+    );
+  }
+  return value || defaultValue;
 }
 
 // Helper function to parse integer with validation
@@ -70,47 +117,43 @@ export const config = {
     issuer: getEnvVar("JWT_ISSUER", "ping-pong-api"),
     audience: getEnvVar("JWT_AUDIENCE", "ping-pong-clients"),
     accessSecret: getEnvVar("JWT_ACCESS_SECRET", "dev-access-secret-change-me"),
-    refreshSecret: getEnvVar(
-      "JWT_REFRESH_SECRET",
-      "dev-refresh-secret-change-me"
-    ),
+    refreshSecret: getEnvVar("JWT_REFRESH_SECRET", "dev-refresh-secret-change-me"),
     accessTtl: getEnvVar("JWT_ACCESS_TTL", "15m"),
     refreshTtl: getEnvVar("JWT_REFRESH_TTL", "7d"),
   },
 
   // OAuth config
   oauth: {
-    stateSecret: getEnvVar(
+    // OAuth is optional functionality, so we allow empty defaults for all OAuth vars
+    // In production, if OAuth is needed, these must be explicitly set
+    stateSecret: getOptionalEnvVar(
       "OAUTH_STATE_SECRET",
-      process.env.JWT_REFRESH_SECRET || "dev-oauth-state-secret-change-me"
+      isProduction ? "" : "dev-oauth-state-secret-change-me"
     ),
     github: {
-      clientId: getOptionalEnvVar("GITHUB_CLIENT_ID"),
-      clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET"),
+      clientId: getOptionalEnvVar("GITHUB_CLIENT_ID", ""),
+      clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET", ""),
       redirectUri: getOptionalEnvVar(
         "GITHUB_REDIRECT_URI",
-        buildPublicUrl("/oauth/github/callback")
+        isProduction ? "" : buildPublicUrl("/oauth/github/callback")
       ),
     },
     google: {
-      clientId: getOptionalEnvVar("GOOGLE_CLIENT_ID"),
-      clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET"),
+      clientId: getOptionalEnvVar("GOOGLE_CLIENT_ID", ""),
+      clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET", ""),
       redirectUri: getOptionalEnvVar(
         "GOOGLE_REDIRECT_URI",
-        buildPublicUrl("/oauth/google/callback")
+        isProduction ? "" : buildPublicUrl("/oauth/google/callback")
       ),
     },
   },
 } as const;
 
+// Export config warnings for logging after Fastify starts
+export const getConfigWarnings = () => [...configWarnings];
+
 // Validate configuration and log startup info
 export const validateConfig = () => {
-  console.log("🚀 Starting server with configuration:", {
-    port: config.server.port,
-    host: config.server.host,
-    env: config.server.env,
-    databasePath: config.database.path,
-    logLevel: config.logging.level,
-    routePrefixes: config.routes,
-  });
+  // Configuration is logged by Fastify on startup
+  // No need for console.log here
 };

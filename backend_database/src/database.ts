@@ -1,4 +1,4 @@
-import sqlite3, { Database } from "sqlite3";
+import sqlite3 from "sqlite3";
 import fp from "fastify-plugin";
 import { FastifyInstance } from "fastify";
 import { config } from "./config.ts";
@@ -54,9 +54,9 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         expires_at TEXT NOT NULL,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )`);
-    
+
     await run(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id)`);
-    
+
     await run(`
       CREATE TABLE IF NOT EXISTS matches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +68,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         FOREIGN KEY (winner_name) REFERENCES users(username) ON DELETE SET NULL,
         FOREIGN KEY (loser_name) REFERENCES users(username) ON DELETE SET NULL
       )`);
-    
+
     await run(`
       CREATE TABLE IF NOT EXISTS avatars (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,7 +83,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )`);
 
-      await run(`CREATE TABLE IF NOT EXISTS friends (
+    await run(`CREATE TABLE IF NOT EXISTS friends (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inviter_id INTEGER NOT NULL,
         user1_id INTEGER NOT NULL,
@@ -96,13 +96,13 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
         FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE,
         UNIQUE(user1_id, user2_id)
         )`);
-        
+
     await run(`CREATE INDEX IF NOT EXISTS idx_avatars_user_id ON avatars(user_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_avatars_file_name ON avatars(file_name)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friends_user1 ON friends(user1_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friends_user2 ON friends(user2_id)`);
     await run(`CREATE INDEX IF NOT EXISTS idx_friends_status ON friends(status)`);
-    
+
     fastify.log.info("Database schema initialized");
   };
 

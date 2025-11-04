@@ -5,7 +5,6 @@ import { UserSchemas } from "./userSchemas.ts";
 import { UserParams, UploadAvatarData } from "./userTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 
-
 async function userRoutes(fastify: FastifyInstance) {
   // GET /users/:id - Get single user (protected)
   fastify.get<{ Params: UserParams; Reply: ApiResponse<User> }>(
@@ -16,8 +15,8 @@ async function userRoutes(fastify: FastifyInstance) {
         tags: ["users"],
         description: "Get user by ID (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.getUser
-      }
+        ...UserSchemas.getUser,
+      },
     },
     userController.getUserById
   );
@@ -29,8 +28,8 @@ async function userRoutes(fastify: FastifyInstance) {
       schema: {
         tags: ["users"],
         description: "Get all users",
-        ...UserSchemas.getUsers
-      }
+        ...UserSchemas.getUsers,
+      },
     },
     userController.getUsers
   );
@@ -42,12 +41,13 @@ async function userRoutes(fastify: FastifyInstance) {
       preHandler: requireAuth,
       schema: {
         tags: ["users"],
-        description: "Upload avatar image (requires authentication, multipart/form-data).\
+        description:
+          "Upload avatar image (requires authentication, multipart/form-data).\
           After upload, avatars are publicly accessible at /uploads/avatars/{filename}",
         security: [{ bearerAuth: [] }],
         consumes: ["multipart/form-data"],
-        ...UserSchemas.uploadAvatar
-      }
+        ...UserSchemas.uploadAvatar,
+      },
     },
     userController.uploadAvatar
   );
@@ -61,8 +61,8 @@ async function userRoutes(fastify: FastifyInstance) {
         tags: ["users"],
         description: "Change user email (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.changeEmail
-      }
+        ...UserSchemas.changeEmail,
+      },
     },
     userController.changeEmail
   );
@@ -76,8 +76,8 @@ async function userRoutes(fastify: FastifyInstance) {
         tags: ["users"],
         description: "Change username (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.changeUsername
-      }
+        ...UserSchemas.changeUsername,
+      },
     },
     userController.changeUsername
   );
@@ -91,8 +91,8 @@ async function userRoutes(fastify: FastifyInstance) {
         tags: ["users"],
         description: "Update user's last seen timestamp (requires authentication)",
         security: [{ bearerAuth: [] }],
-        ...UserSchemas.heartbeat
-      }
+        ...UserSchemas.heartbeat,
+      },
     },
     userController.updateHeartbeat
   );

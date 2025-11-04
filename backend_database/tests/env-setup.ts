@@ -8,6 +8,5 @@ if (!process.env.GITHUB_CLIENT_SECRET) {
   process.env.GITHUB_CLIENT_SECRET = "test_client_secret";
 }
 if (!process.env.GITHUB_REDIRECT_URI) {
-  process.env.GITHUB_REDIRECT_URI =
-    "http://localhost:3000/oauth/github/callback";
+  process.env.GITHUB_REDIRECT_URI = "http://localhost:3000/oauth/github/callback";
 }

@@ -6,11 +6,21 @@
   "scripts": {
     "build": "tsup src/main.ts --format esm --clean --minify",
     "start": "node dist/main.js",
-    "dev": "tsx src/main.ts",
+    "dev": "NODE_ENV=development tsx src/main.ts",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "lint-staged": {
+    "*.ts": [
+      "prettier --write",
+      "eslint --fix"
+    ]
   },
   "keywords": [],
   "author": "",
@@ -24,6 +34,15 @@
     "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
     "@types/sqlite3": "3.1.11",
+    "@typescript-eslint/eslint-plugin": "^8.46.2",
+    "@typescript-eslint/parser": "^8.46.2",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.6",
+    "pino-pretty": "^13.1.2",
+    "prettier": "^3.6.2",
     "tsup": "^8.3.5",
     "tsx": "4.20.5",
     "typescript": "5.9.2",

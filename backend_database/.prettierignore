@@ -1,0 +1,13 @@
+dist
+node_modules
+coverage
+*.md
+*.json
+!package.json
+.env
+.env.*
+uploads
+database
+*.db
+*.sh
+Dockerfile*
