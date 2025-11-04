@@ -123,29 +123,31 @@ export const config = {
   },
 
   // OAuth config
-//   oauth: {
-//     stateSecret: getEnvVar(
-//       "OAUTH_STATE_SECRET",
-//       process.env.JWT_REFRESH_SECRET || "dev-oauth-state-secret-change-me"
-//     ),
-//     github: {
-//       clientId: getOptionalEnvVar("GITHUB_CLIENT_ID"),
-//       clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET"),
-//       redirectUri: getOptionalEnvVar(
-//         "GITHUB_REDIRECT_URI",
-//         buildPublicUrl("/oauth/github/callback")
-//       ),
-//     },
-//     google: {
-//       clientId: getOptionalEnvVar("GOOGLE_CLIENT_ID"),
-//       clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET"),
-//       redirectUri: getOptionalEnvVar(
-//         "GOOGLE_REDIRECT_URI",
-//         buildPublicUrl("/oauth/google/callback")
-//       ),
-//     },
-//   },
-// } as const;
+  oauth: {
+    // OAuth is optional functionality, so we allow empty defaults for all OAuth vars
+    // In production, if OAuth is needed, these must be explicitly set
+    stateSecret: getOptionalEnvVar(
+      "OAUTH_STATE_SECRET",
+      isProduction ? "" : "dev-oauth-state-secret-change-me"
+    ),
+    github: {
+      clientId: getOptionalEnvVar("GITHUB_CLIENT_ID", ""),
+      clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET", ""),
+      redirectUri: getOptionalEnvVar(
+        "GITHUB_REDIRECT_URI",
+        isProduction ? "" : buildPublicUrl("/oauth/github/callback")
+      ),
+    },
+    google: {
+      clientId: getOptionalEnvVar("GOOGLE_CLIENT_ID", ""),
+      clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET", ""),
+      redirectUri: getOptionalEnvVar(
+        "GOOGLE_REDIRECT_URI",
+        isProduction ? "" : buildPublicUrl("/oauth/google/callback")
+      ),
+    },
+  },
+} as const;
 
 // Export config warnings for logging after Fastify starts
 export const getConfigWarnings = () => [...configWarnings];
