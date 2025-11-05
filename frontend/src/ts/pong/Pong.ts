@@ -219,7 +219,7 @@ export class Pong {
 
         // Draw count down
         if (countdown && countdown > 0) {
-            this.ctx.fillStyle = "#fff"//"rgba(255, 255, 255, 0.8)";
+            this.ctx.fillStyle = "#fff"; //"rgba(255, 255, 255, 0.8)";
             this.ctx.font = "bold 72px Arial";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
