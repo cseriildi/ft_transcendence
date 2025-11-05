@@ -38,6 +38,21 @@ export class Pong {
         this.renderLoop();
     }
 
+  public startGame() {
+    const sendStart = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: "startGame" }));
+      }
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      sendStart();
+    } else if (this.ws) {
+      // wait for open then send once
+      this.ws.addEventListener("open", () => { sendStart(); }, { once: true });
+    }
+  }
+
     private connect() {
         this.ws = new WebSocket(this.wsUrl);
 
@@ -49,7 +64,7 @@ export class Pong {
         this.ws.onmessage = (event: MessageEvent) => {
             try {
                 const message = JSON.parse(event.data);
-                
+
                 if (message.type === "gameSetup") {
                     // Store initial full state
                     this.gameState = message.data;
@@ -110,10 +125,10 @@ export class Pong {
 
     private updateScoreDisplay() {
         if (!this.gameState?.score) return;
-        
+
         const score1El = document.getElementById('score-player1');
         const score2El = document.getElementById('score-player2');
-        
+
         if (score1El) score1El.textContent = this.gameState.score.player1.toString();
         if (score2El) score2El.textContent = this.gameState.score.player2.toString();
     }
