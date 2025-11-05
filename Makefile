@@ -1,19 +1,22 @@
+
+LOCAL_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '/src/ {print $$7; exit}' || echo localhost)
+
 # Port configuration (use: sudo make ports=privileged up)
 # privileged: 443/80 (requires sudo), school: 8443/8080 (default)
 ifeq ($(ports),privileged)
 	HTTPS_PORT = 443
 	HTTP_PORT = 80
 	# For standard ports, don't include port in URL
-	PUBLIC_API_URL = https://localhost/api
-	PUBLIC_WS_URL = wss://localhost/ws
-	URL = https://localhost
+	PUBLIC_API_URL = https://$(LOCAL_IP)/api
+	PUBLIC_WS_URL = wss://$(LOCAL_IP)/ws
+	URL = https://$(LOCAL_IP)
 else
 	HTTPS_PORT = 8443
 	HTTP_PORT = 8080
 	# For non-standard ports, include port in URL
-	PUBLIC_API_URL = https://localhost:8443/api
-	PUBLIC_WS_URL = wss://localhost:8443/ws
-	URL = https://localhost:8443
+	PUBLIC_API_URL = https://$(LOCAL_IP):8443/api
+	PUBLIC_WS_URL = wss://$(LOCAL_IP):8443/ws
+	URL = https://$(LOCAL_IP):8443
 endif
 
 SERVICES = backend frontend databank nginx
@@ -23,13 +26,8 @@ all: env certs setup-dirs build up
 
 # Setup environment file
 env:
-	@if [ ! -f .env ]; then \
-		cp .env.example .env && \
-		echo "✅ Created .env file from .env.example"; \
-		echo "⚠️  Please review and customize .env before proceeding"; \
-	else \
-		echo "✅ .env file already exists"; \
-	fi
+# Replace localhost with actual local IP in .env
+	sed 's/localhost/$(LOCAL_IP)/g' .env.example > .env || true
 
 # Generate SSL certificates
 certs:
