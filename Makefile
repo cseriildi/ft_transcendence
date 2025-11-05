@@ -26,15 +26,8 @@ all: env certs setup-dirs build up
 
 # Setup environment file
 env:
-	@if [ ! -f .env ]; then \
-		cp .env.example .env && \
-		echo "✅ Created .env file from .env.example"; \
-		echo "⚠️  Please review and customize .env before proceeding"; \
-	else \
-		echo "✅ .env file already exists"; \
-	fi
-	# Replace localhost with actual local IP in .env
-	sed 's/localhost/$(LOCAL_IP)/g' .env > .env.tmp && mv .env.tmp .env || true
+# Replace localhost with actual local IP in .env
+	sed 's/localhost/$(LOCAL_IP)/g' .env.example > .env || true
 
 # Generate SSL certificates
 certs:
