@@ -63,12 +63,21 @@ export async function exchangeCodeForToken(
   });
 
   if (!res.ok) {
-    throw errors.validation("Failed to exchange code for token");
+    throw errors.validation("Failed to exchange code for token", {
+      status: res.status,
+      statusText: res.statusText,
+      provider: "github",
+      function: "exchangeCodeForToken",
+    });
   }
 
   const data = (await res.json()) as OAuthTokenResponse;
   if (!data.access_token) {
-    throw errors.validation("Invalid token response from OAuth provider");
+    throw errors.validation("Invalid token response from OAuth provider", {
+      hasAccessToken: !!data.access_token,
+      provider: "github",
+      function: "exchangeCodeForToken",
+    });
   }
 
   return data;
@@ -85,7 +94,11 @@ export async function fetchGitHubUserInfo(accessToken: string): Promise<OAuthUse
   // Get user profile
   const userRes = await fetch("https://api.github.com/user", { headers });
   if (!userRes.ok) {
-    throw errors.validation("Failed to fetch user info from GitHub");
+    throw errors.validation("Failed to fetch user info from GitHub", {
+      status: userRes.status,
+      statusText: userRes.statusText,
+      function: "fetchGitHubUserInfo",
+    });
   }
   const user = await userRes.json();
 
@@ -102,7 +115,11 @@ export async function fetchGitHubUserInfo(accessToken: string): Promise<OAuthUse
   }
 
   if (!email) {
-    throw errors.validation("Email not available from GitHub");
+    throw errors.validation("Email not available from GitHub", {
+      githubId: user.id,
+      githubLogin: user.login,
+      function: "fetchGitHubUserInfo",
+    });
   }
 
   return {

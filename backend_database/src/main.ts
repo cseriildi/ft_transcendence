@@ -119,6 +119,10 @@ export async function build(opts: BuildOptions = {}) {
     if (!disableRateLimit) {
       await app.register(rateLimit, { max: 20, timeWindow: "1 second" });
     }
+
+    // Register request ID middleware (must be early to include ID in all logs)
+    await app.register(import("./middleware/requestIdMiddleware.ts"));
+
     await app.register(dbConnector, {
       path: database?.path ?? appConfig.database.path,
     });

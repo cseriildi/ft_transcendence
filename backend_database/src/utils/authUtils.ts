@@ -47,7 +47,9 @@ export async function verifyAccessToken(token: string): Promise<JwtPayload> {
     });
     return payload as unknown as JwtPayload;
   } catch {
-    throw errors.unauthorized("Invalid or expired access token");
+    throw errors.unauthorized("Invalid or expired access token", {
+      function: "verifyAccessToken",
+    });
   }
 }
 
@@ -59,7 +61,9 @@ export async function verifyRefreshToken(token: string): Promise<JwtPayload> {
     });
     return payload as unknown as JwtPayload;
   } catch {
-    throw errors.unauthorized("Invalid or expired refresh token");
+    throw errors.unauthorized("Invalid or expired refresh token", {
+      function: "verifyRefreshToken",
+    });
   }
 }
 
@@ -67,7 +71,11 @@ export async function requireAuth(request: FastifyRequest, _reply: FastifyReply)
   const authHeader = request.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw errors.unauthorized("Access token required");
+    throw errors.unauthorized("Access token required", {
+      hasAuthHeader: !!authHeader,
+      authHeaderPrefix: authHeader?.substring(0, 7),
+      middleware: "requireAuth",
+    });
   }
 
   const token = authHeader.substring(7); // Remove "Bearer " prefix
@@ -98,7 +106,11 @@ export async function requireAuth(request: FastifyRequest, _reply: FastifyReply)
 export function ensureUserOwnership(tokenUserId: number, resourceId: string | number) {
   const numericResourceId = typeof resourceId === "string" ? parseInt(resourceId) : resourceId;
   if (tokenUserId !== numericResourceId) {
-    throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource");
+    throw errors.forbidden("Token Subject-ID does not match user ID of requested Resource", {
+      tokenUserId,
+      requestedResourceId: numericResourceId,
+      function: "ensureUserOwnership",
+    });
   }
 }
 

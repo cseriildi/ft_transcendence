@@ -29,7 +29,12 @@ export const oauthController = {
     const githubConfig = getGitHubConfig();
 
     if (!githubConfig.clientId || !githubConfig.clientSecret) {
-      throw errors.internal("GitHub OAuth not configured");
+      throw errors.internal("GitHub OAuth not configured", {
+        hasClientId: !!githubConfig.clientId,
+        hasClientSecret: !!githubConfig.clientSecret,
+        endpoint: "oauth-initiate",
+        provider: "github",
+      });
     }
 
     const state = crypto.randomUUID();
@@ -60,13 +65,23 @@ export const oauthController = {
     const { db, reply } = context;
 
     if (!code || !state) {
-      throw errors.validation("Missing code or state parameter");
+      throw errors.validation("Missing code or state parameter", {
+        hasCode: !!code,
+        hasState: !!state,
+        endpoint: "oauth-callback",
+        provider: "github",
+      });
     }
 
     // Verify state (CSRF protection)
     const cookieState = unpackAndVerifyState(request.cookies.oauth_state);
     if (!cookieState || cookieState !== state) {
-      throw errors.validation("Invalid state parameter");
+      throw errors.validation("Invalid state parameter", {
+        hasCookieState: !!cookieState,
+        stateMatch: cookieState === state,
+        endpoint: "oauth-callback",
+        provider: "github",
+      });
     }
 
     // Clear state cookie
@@ -216,7 +231,12 @@ export const oauthController = {
     });
 
     if (!user) {
-      throw errors.internal("Failed to create or retrieve user during OAuth flow");
+      throw errors.internal("Failed to create or retrieve user during OAuth flow", {
+        provider: "github",
+        githubId: userInfo.id,
+        email: userInfo.email,
+        endpoint: "oauth-callback",
+      });
     }
 
     // Issue JWT tokens (same as regular login)

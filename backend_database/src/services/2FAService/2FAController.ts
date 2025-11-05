@@ -18,7 +18,10 @@ export const twoFAController = {
       const userId = parseInt(request.params.userId);
 
       if (isNaN(userId)) {
-        throw errors.validation("Invalid user ID");
+        throw errors.validation("Invalid user ID", {
+          userIdParam: request.params.userId,
+          endpoint: "setup2FA",
+        });
       }
 
       // Check if user exists
@@ -27,7 +30,10 @@ export const twoFAController = {
       ]);
 
       if (!user) {
-        throw errors.notFound("User");
+        throw errors.notFound("User", {
+          userId,
+          endpoint: "setup2FA",
+        });
       }
 
       // Generate secret
@@ -64,11 +70,17 @@ export const twoFAController = {
       );
 
       if (!user) {
-        throw errors.notFound("User not found");
+        throw errors.notFound("User", {
+          userId,
+          endpoint: "verify2FA",
+        });
       }
 
       if (!user.twofa_secret) {
-        throw errors.validation("2FA is not set up for this user");
+        throw errors.validation("2FA is not set up for this user", {
+          userId,
+          endpoint: "verify2FA",
+        });
       }
 
       const verified = speakeasy.totp.verify({
@@ -94,15 +106,24 @@ export const twoFAController = {
       );
 
       if (!user) {
-        throw errors.notFound("User not found");
+        throw errors.notFound("User", {
+          userId,
+          endpoint: "enable2FA",
+        });
       }
 
       if (!user.twofa_secret) {
-        throw errors.validation("2FA is not set up for this user");
+        throw errors.validation("2FA is not set up for this user", {
+          userId,
+          endpoint: "enable2FA",
+        });
       }
 
       if (user.twofa_enabled) {
-        throw errors.validation("2FA is already enabled");
+        throw errors.validation("2FA is already enabled", {
+          userId,
+          endpoint: "enable2FA",
+        });
       }
 
       const verified = speakeasy.totp.verify({
@@ -113,7 +134,10 @@ export const twoFAController = {
       });
 
       if (!verified) {
-        throw errors.validation("Invalid 2FA token");
+        throw errors.validation("Invalid 2FA token", {
+          userId,
+          endpoint: "enable2FA",
+        });
       }
 
       await db.run("UPDATE users SET twofa_enabled = 1 WHERE id = ?", [userId]);
@@ -132,15 +156,24 @@ export const twoFAController = {
       );
 
       if (!user) {
-        throw errors.notFound("User not found");
+        throw errors.notFound("User", {
+          userId,
+          endpoint: "disable2FA",
+        });
       }
 
       if (!user.twofa_secret) {
-        throw errors.validation("2FA is not set up for this user");
+        throw errors.validation("2FA is not set up for this user", {
+          userId,
+          endpoint: "disable2FA",
+        });
       }
 
       if (!user.twofa_enabled) {
-        throw errors.validation("2FA is not enabled");
+        throw errors.validation("2FA is not enabled", {
+          userId,
+          endpoint: "disable2FA",
+        });
       }
       const verified = speakeasy.totp.verify({
         secret: user.twofa_secret,
@@ -150,7 +183,10 @@ export const twoFAController = {
       });
 
       if (!verified) {
-        throw errors.validation("Invalid 2FA token");
+        throw errors.validation("Invalid 2FA token", {
+          userId,
+          endpoint: "disable2FA",
+        });
       }
 
       await db.run("UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?", [

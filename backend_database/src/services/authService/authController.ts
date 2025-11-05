@@ -22,7 +22,10 @@ export const authController = {
       [request.user!.id]
     );
     if (!dbUser) {
-      throw errors.notFound("User not found");
+      throw errors.notFound("User", {
+        userId: request.user!.id,
+        endpoint: "verifyToken",
+      });
     }
     return ApiResponseHelper.success({ verified: true }, "Token is valid and user exists");
   }),
@@ -32,7 +35,10 @@ export const authController = {
 
     const refreshToken = request.cookies.refresh_token;
     if (!refreshToken) {
-      throw errors.unauthorized("No refresh token provided");
+      throw errors.unauthorized("No refresh token provided", {
+        endpoint: "refresh",
+        hasCookie: !!request.cookies.refresh_token,
+      });
     }
 
     // Verify refresh token and get user ID
@@ -46,12 +52,21 @@ export const authController = {
     );
 
     if (!storedToken) {
-      throw errors.unauthorized("Invalid or expired refresh token");
+      throw errors.unauthorized("Invalid or expired refresh token", {
+        userId,
+        jti,
+        endpoint: "refresh",
+      });
     }
 
     const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
     if (!tokenMatch) {
-      throw errors.unauthorized("Invalid refresh token");
+      throw errors.unauthorized("Invalid refresh token", {
+        userId,
+        jti,
+        endpoint: "refresh",
+        reason: "token_mismatch",
+      });
     }
 
     const user = await db.get<User>(
@@ -60,7 +75,10 @@ export const authController = {
     );
 
     if (!user) {
-      throw errors.notFound("User not found");
+      throw errors.notFound("User", {
+        userId,
+        endpoint: "refresh",
+      });
     }
 
     const accessToken = await signAccessToken(user.id);
@@ -90,7 +108,10 @@ export const authController = {
   logout: createHandler(async (request, { db, reply }) => {
     const refreshToken = request.cookies.refresh_token;
     if (!refreshToken) {
-      throw errors.unauthorized("No refresh token provided");
+      throw errors.unauthorized("No refresh token provided", {
+        endpoint: "logout",
+        hasCookie: !!request.cookies.refresh_token,
+      });
     }
 
     try {
@@ -120,14 +141,18 @@ export const authController = {
     } catch {
       // Even if token is invalid/expired, clear the cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
-      throw errors.unauthorized("Invalid refresh token");
+      throw errors.unauthorized("Invalid refresh token", {
+        endpoint: "logout",
+      });
     }
   }),
 
   createUser: createHandler<{ Body: CreateUserBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
       if (request.body.password !== request.body.confirmPassword) {
-        throw errors.validation("Passwords do not match");
+        throw errors.validation("Passwords do not match", {
+          endpoint: "register",
+        });
       }
       const emailExists = await db.get("SELECT id FROM users WHERE email = ?", [
         request.body.email,
@@ -137,13 +162,23 @@ export const authController = {
       ]);
 
       if (emailExists && userNameExists) {
-        throw errors.conflict("Email and username are already exist");
+        throw errors.conflict("Email and username are already exist", {
+          email: request.body.email,
+          username: request.body.username,
+          endpoint: "register",
+        });
       }
       if (emailExists) {
-        throw errors.conflict("Email is already exists");
+        throw errors.conflict("Email is already exists", {
+          email: request.body.email,
+          endpoint: "register",
+        });
       }
       if (userNameExists) {
-        throw errors.conflict("Username is already exists");
+        throw errors.conflict("Username is already exists", {
+          username: request.body.username,
+          endpoint: "register",
+        });
       }
       const { username, email } = request.body || {};
 
@@ -210,11 +245,18 @@ export const authController = {
           [email.trim()]
         );
         if (!result) {
-          throw errors.unauthorized("Invalid email");
+          throw errors.unauthorized("Invalid email", {
+            email: email.trim(),
+            endpoint: "login",
+          });
         }
         const passwordMatch = await bcrypt.compare(password, result.password_hash);
         if (!passwordMatch) {
-          throw errors.unauthorized("Invalid password");
+          throw errors.unauthorized("Invalid password", {
+            userId: result.id,
+            email: email.trim(),
+            endpoint: "login",
+          });
         }
 
         const accessToken = await signAccessToken(result.id);

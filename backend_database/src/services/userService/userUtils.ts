@@ -21,7 +21,10 @@ export async function getAvatarUrl(db: DatabaseHelper, userId: number): Promise<
   );
 
   if (!avatar || !avatar.file_url) {
-    throw errors.notFound(`Avatar not found for user ${userId}`);
+    throw errors.notFound("Avatar", {
+      userId,
+      function: "getAvatarUrl",
+    });
   }
 
   return avatar.file_url;
