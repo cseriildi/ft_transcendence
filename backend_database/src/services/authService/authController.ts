@@ -13,6 +13,7 @@ import {
   generateAndStoreRefreshToken,
 } from "../../utils/authUtils.ts";
 import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
+import { getAvatarUrl } from "../userService/userUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(async (request, { db }) => {
@@ -34,60 +35,56 @@ export const authController = {
       throw errors.unauthorized("No refresh token provided");
     }
 
-    try {
-      // Verify refresh token and get user ID
-      const decoded = await verifyRefreshToken(refreshToken);
-      const userId = parseInt(decoded.sub!);
-      const jti = decoded.jti!;
+    // Verify refresh token and get user ID
+    const decoded = await verifyRefreshToken(refreshToken);
+    const userId = parseInt(decoded.sub!);
+    const jti = decoded.jti!;
 
-      const storedToken = await db.get<{ token_hash: string }>(
-        "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND revoked = 0 AND expires_at > datetime('now')",
-        [jti, userId]
-      );
+    const storedToken = await db.get<{ token_hash: string }>(
+      "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND revoked = 0 AND expires_at > datetime('now')",
+      [jti, userId]
+    );
 
-      if (!storedToken) {
-        throw errors.unauthorized("Invalid or expired refresh token");
-      }
-
-      const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
-      if (!tokenMatch) {
-        throw errors.unauthorized("Invalid refresh token");
-      }
-
-      const user = await db.get<User>(
-        "SELECT id, username, email, created_at FROM users WHERE id = ?",
-        [userId]
-      );
-
-      if (!user) {
-        throw errors.notFound("User not found");
-      }
-
-      const accessToken = await signAccessToken(user.id);
-
-      const { newRefreshToken, avatar_url } = await db.transaction(async (tx) => {
-        await tx.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
-        const newToken = await generateAndStoreRefreshToken(tx, user.id);
-        const avatarUrl = await tx.getAvatarUrl(user.id);
-        return { newRefreshToken: newToken, avatar_url: avatarUrl };
-      });
-
-      setRefreshTokenCookie(reply, newRefreshToken);
-
-      return ApiResponseHelper.success(
-        {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          created_at: user.created_at,
-          avatar_url,
-          tokens: { accessToken },
-        },
-        "Token refreshed successfully"
-      );
-    } catch (err: unknown) {
-      throw err;
+    if (!storedToken) {
+      throw errors.unauthorized("Invalid or expired refresh token");
     }
+
+    const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
+    if (!tokenMatch) {
+      throw errors.unauthorized("Invalid refresh token");
+    }
+
+    const user = await db.get<User>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!user) {
+      throw errors.notFound("User not found");
+    }
+
+    const accessToken = await signAccessToken(user.id);
+
+    const { newRefreshToken, avatar_url } = await db.transaction(async (tx) => {
+      await tx.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
+      const newToken = await generateAndStoreRefreshToken(tx, user.id);
+      const avatarUrl = await getAvatarUrl(tx, user.id);
+      return { newRefreshToken: newToken, avatar_url: avatarUrl };
+    });
+
+    setRefreshTokenCookie(reply, newRefreshToken);
+
+    return ApiResponseHelper.success(
+      {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        created_at: user.created_at,
+        avatar_url,
+        tokens: { accessToken },
+      },
+      "Token refreshed successfully"
+    );
   }),
 
   logout: createHandler(async (request, { db, reply }) => {
@@ -171,7 +168,7 @@ export const authController = {
           ]
         );
 
-        const avatarUrl = await tx.getAvatarUrl(result.lastID);
+        const avatarUrl = await getAvatarUrl(tx, result.lastID);
         return { userId: result.lastID, avatar_url: avatarUrl };
       });
 
@@ -225,7 +222,7 @@ export const authController = {
         setRefreshTokenCookie(reply, refreshToken);
 
         // Retrieve avatar URL using helper
-        const avatar_url = await db.getAvatarUrl(result.id);
+        const avatar_url = await getAvatarUrl(db, result.id);
 
         // Log successful login
         request.log.info(

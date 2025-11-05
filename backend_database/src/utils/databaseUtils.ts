@@ -4,19 +4,6 @@ import { errors } from "./errorUtils.ts";
 export class DatabaseHelper {
   constructor(private db: Database) {}
 
-  async getAvatarUrl(userId: number): Promise<string> {
-    const avatar = await this.get<{ file_url: string }>(
-      "SELECT file_url FROM avatars WHERE user_id = ?",
-      [userId]
-    );
-
-    if (!avatar || !avatar.file_url) {
-      throw errors.notFound(`Avatar not found for user ${userId}`);
-    }
-
-    return avatar.file_url;
-  }
-
   async transaction<T>(callback: (tx: DatabaseHelper) => Promise<T>): Promise<T> {
     await this.run("BEGIN TRANSACTION");
     try {

@@ -8,14 +8,16 @@ import { config } from "../config.ts";
 import friendRoutes from "../services/friendService/friendRoutes.ts";
 
 async function routes(fastify: FastifyInstance) {
-  await fastify.register(checkRoutes);
-
-  // All routes use their configured prefixes
-  await fastify.register(authRoutes, { prefix: config.routes.auth });
-  await fastify.register(oauthRoutes, { prefix: config.routes.oauth });
-  await fastify.register(userRoutes, { prefix: config.routes.api });
-  await fastify.register(matchRoutes, { prefix: config.routes.api });
-  await fastify.register(friendRoutes, { prefix: config.routes.api });
+  // Register all routes in parallel for faster startup
+  // Routes are independent and don't need to wait for each other
+  await Promise.all([
+    fastify.register(checkRoutes),
+    fastify.register(authRoutes, { prefix: config.routes.auth }),
+    fastify.register(oauthRoutes, { prefix: config.routes.oauth }),
+    fastify.register(userRoutes, { prefix: config.routes.api }),
+    fastify.register(matchRoutes, { prefix: config.routes.api }),
+    fastify.register(friendRoutes, { prefix: config.routes.api }),
+  ]);
 }
 
 export default routes;

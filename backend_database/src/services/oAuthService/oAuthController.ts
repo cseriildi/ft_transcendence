@@ -7,6 +7,7 @@ import {
   generateAndStoreRefreshToken,
 } from "../../utils/authUtils.ts";
 import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
+import { getAvatarUrl } from "../userService/userUtils.ts";
 import {
   getGitHubConfig,
   packStateCookie,
@@ -224,7 +225,7 @@ export const oauthController = {
     setRefreshTokenCookie(reply, refreshToken);
 
     // Retrieve avatar URL using helper (throws error if not found)
-    const avatar_url = await db.getAvatarUrl(user.id);
+    const avatar_url = await getAvatarUrl(db, user.id);
 
     return ApiResponseHelper.success(
       {

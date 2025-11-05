@@ -8,6 +8,7 @@ import { createHandler } from "../../utils/handlerUtils.ts";
 import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 import { MultipartFile } from "@fastify/multipart";
 import { ensureUserOwnership } from "../../utils/authUtils.ts";
+import { getAvatarUrl } from "./userUtils.ts";
 
 export const userController = {
   //structure for createHAndler:
@@ -27,7 +28,7 @@ export const userController = {
       throw errors.notFound("User");
     }
     // Retrieve avatar URL using helper (throws error if not found)
-    user.avatar_url = await db.getAvatarUrl(user.id);
+    user.avatar_url = await getAvatarUrl(db, user.id);
 
     return ApiResponseHelper.success(user, "User found");
   }),
