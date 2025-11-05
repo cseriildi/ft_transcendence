@@ -86,15 +86,19 @@ fastify.register(async function (server: FastifyInstance) {
 
             // Run countdown and release ball when done
             (async () => {
+              const thisGame = game;
               for (let i = 3; i > 0; i--) {
-                game!!.countdown = i;
+                if (game !== thisGame || !game) break;
+                game.countdown = i;
                 broadcastGameState(game);
                 await new Promise(resolve => setTimeout(resolve, 1000));
               }
               // Countdown complete, reset ball (gives it speed)
-              game!!.countdown = 0;
-              resetBall(game);
-              broadcastGameSetup(game);
+              if (game === thisGame && game) {
+                game.countdown = 0;
+                resetBall(game);
+                broadcastGameSetup(game);
+              }
             })();
             break;
           }
