@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import { FastifyInstance } from "fastify";
 import { config, validateConfig } from "./config.js";
-import { createGame } from "./gameUtils.js";
+import { createGame, resetBall} from "./gameUtils.js";
 import { GameServer } from "./gameTypes.js";
 import { broadcastGameState, broadcastGameSetup } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
@@ -79,8 +79,23 @@ fastify.register(async function (server: FastifyInstance) {
             game = createGame();
             activeGames.add(game);
             game.clients.add(connection);
-            game.start();
+            game.Ball.speedX = 0;
+            game.Ball.speedY = 0;
             broadcastGameSetup(game);
+            game.start();
+
+            // Run countdown and release ball when done
+            (async () => {
+              for (let i = 3; i > 0; i--) {
+                game!!.countdown = i;
+                broadcastGameState(game);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+              }
+              // Countdown complete, reset ball (gives it speed)
+              game!!.countdown = 0;
+              resetBall(game);
+              broadcastGameSetup(game);
+            })();
             break;
           }
           case "joinGame":

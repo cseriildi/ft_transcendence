@@ -48,7 +48,7 @@ export class Paddle {
       if (this._capsule && this._lastCy === this.cy) {
         return this._capsule;
       }
-      
+
       const halfLen = this.length / 2 - this.width / 2;
       this._capsule = {
         x1: this.cx,
@@ -58,7 +58,7 @@ export class Paddle {
         R: this.width / 2
       };
       this._lastCy = this.cy;
-      
+
       return this._capsule;
     }
 }
@@ -70,6 +70,7 @@ export class GameServer {
   Paddle2: Paddle;
   score1: number = 0;
   score2: number = 0;
+  countdown: number = 3;
   maxScore: number;
   clients = new Set<any>();
   physicsInterval: number;
@@ -113,7 +114,7 @@ export class GameServer {
     }
 
     console.log('▶️  Starting game loops...');
-    
+
     // Start physics loop
     this.physicsLoopId = setInterval(() => {
       this.onPhysicsUpdate!(this);
@@ -136,7 +137,7 @@ export class GameServer {
     }
 
     console.log('⏸️  Stopping game loops...');
-    
+
     if (this.physicsLoopId) {
       clearInterval(this.physicsLoopId);
       this.physicsLoopId = undefined;
