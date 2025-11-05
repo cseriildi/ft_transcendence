@@ -63,7 +63,7 @@ export async function verifyRefreshToken(token: string): Promise<JwtPayload> {
   }
 }
 
-export async function requireAuth(request: FastifyRequest, reply: FastifyReply) {
+export async function requireAuth(request: FastifyRequest, _reply: FastifyReply) {
   const authHeader = request.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -115,11 +115,10 @@ export function setRefreshTokenCookie(reply: FastifyReply, refreshToken: string)
   });
 }
 
-/**
- * Generates new refresh token and stores it in database
- * Returns the generated refresh token
- */
-export async function generateAndStoreRefreshToken(db: any, userId: number): Promise<string> {
+export async function generateAndStoreRefreshToken(
+  db: { run: (sql: string, params: unknown[]) => Promise<{ lastID: number; changes: number }> },
+  userId: number
+): Promise<string> {
   const jti = createJti();
   const refreshToken = await signRefreshToken(userId, jti);
   const refreshHash = await (await import("bcrypt")).default.hash(refreshToken, 10);

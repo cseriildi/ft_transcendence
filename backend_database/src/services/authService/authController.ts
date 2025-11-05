@@ -40,7 +40,7 @@ export const authController = {
       const userId = parseInt(decoded.sub!);
       const jti = decoded.jti!;
 
-      const storedToken = await db.get(
+      const storedToken = await db.get<{ token_hash: string }>(
         "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND revoked = 0 AND expires_at > datetime('now')",
         [jti, userId]
       );
@@ -65,13 +65,14 @@ export const authController = {
 
       const accessToken = await signAccessToken(user.id);
 
-      // Delete old refresh token and generate new one
-      await db.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
-      const newRefreshToken = await generateAndStoreRefreshToken(db, user.id);
-      setRefreshTokenCookie(reply, newRefreshToken);
+      const { newRefreshToken, avatar_url } = await db.transaction(async (tx) => {
+        await tx.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
+        const newToken = await generateAndStoreRefreshToken(tx, user.id);
+        const avatarUrl = await tx.getAvatarUrl(user.id);
+        return { newRefreshToken: newToken, avatar_url: avatarUrl };
+      });
 
-      // Retrieve avatar URL using helper
-      const avatar_url = await db.getAvatarUrl(user.id);
+      setRefreshTokenCookie(reply, newRefreshToken);
 
       return ApiResponseHelper.success(
         {
@@ -84,7 +85,7 @@ export const authController = {
         },
         "Token refreshed successfully"
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       throw err;
     }
   }),
@@ -119,7 +120,7 @@ export const authController = {
         { message: "Logged out successfully" },
         "Logged out successfully"
       );
-    } catch (err: any) {
+    } catch {
       // Even if token is invalid/expired, clear the cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
       throw errors.unauthorized("Invalid refresh token");
@@ -253,7 +254,7 @@ export const authController = {
           },
           "User logged in successfully"
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         throw err;
       }
     }
