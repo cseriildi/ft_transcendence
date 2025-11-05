@@ -1,5 +1,5 @@
 
-LOCAL_IP := $(shell ifconfig 2>/dev/null | awk '/inet / && $$2 != "127.0.0.1" {print $$2; exit}' || echo localhost)
+LOCAL_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '/src/ {print $$7; exit}' || echo localhost)
 
 # Port configuration (use: sudo make ports=privileged up)
 # privileged: 443/80 (requires sudo), school: 8443/8080 (default)
