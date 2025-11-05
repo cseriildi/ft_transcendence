@@ -12,7 +12,7 @@ import {
   setRefreshTokenCookie,
   generateAndStoreRefreshToken,
 } from "../../utils/authUtils.ts";
-import { copyDefaultAvatar, deleteUploadedFile } from "../../utils/uploadUtils.ts";
+import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(async (request, { db }) => {
@@ -151,43 +151,38 @@ export const authController = {
       const { username, email } = request.body || {};
 
       const hash = await bcrypt.hash(request.body.password, 10);
-      const result = await db.run(
-        "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-        [username.trim(), email.trim(), hash]
-      );
 
-      const accessToken = await signAccessToken(result.lastID);
-      const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
-      setRefreshTokenCookie(reply, refreshToken);
-
-      // Copy default avatar for new user
-      const avatar = await copyDefaultAvatar(result.lastID);
-      const insert = await db.run(
-        "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-        [
-          result.lastID,
-          avatar.fileUrl,
-          avatar.filePath,
-          avatar.fileName,
-          avatar.mimeType,
-          avatar.fileSize,
-        ]
-      );
-      if (!insert) {
-        await deleteUploadedFile(avatar.fileUrl);
-        await db.run("DELETE FROM users WHERE id = ?", [result.lastID]);
-        throw errors.internal(
-          "Failed to assign default avatar to new user, registration rolled back, please retry"
+      const { userId, avatar_url } = await db.transaction(async (tx) => {
+        const result = await tx.run(
+          "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+          [username.trim(), email.trim(), hash]
         );
-      }
 
-      // Retrieve avatar URL using helper
-      const avatar_url = await db.getAvatarUrl(result.lastID);
+        const avatar = await copyDefaultAvatar(result.lastID);
+        await tx.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [
+            result.lastID,
+            avatar.fileUrl,
+            avatar.filePath,
+            avatar.fileName,
+            avatar.mimeType,
+            avatar.fileSize,
+          ]
+        );
+
+        const avatarUrl = await tx.getAvatarUrl(result.lastID);
+        return { userId: result.lastID, avatar_url: avatarUrl };
+      });
+
+      const accessToken = await signAccessToken(userId);
+      const refreshToken = await generateAndStoreRefreshToken(db, userId);
+      setRefreshTokenCookie(reply, refreshToken);
 
       // Log successful registration
       request.log.info(
         {
-          userId: result.lastID,
+          userId,
           username,
           email,
         },
@@ -197,7 +192,7 @@ export const authController = {
       reply.status(201);
       return ApiResponseHelper.success(
         {
-          id: result.lastID,
+          id: userId,
           username: username.trim(),
           email: email.trim(),
           created_at: new Date().toISOString(),

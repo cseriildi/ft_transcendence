@@ -75,14 +75,13 @@ export const userController = {
         if (part.type === "file" && part.fieldname === "avatar") {
           const file = part as MultipartFile;
           avatarUrl = await saveUploadedFile(file);
-          // Convert URL path to file system path
           filePath = avatarUrl.replace(/^\/uploads\/avatars\//, "");
           fileMetadata = {
             filename: file.filename,
             mimetype: file.mimetype,
-            fileSize: (file as any).file?.bytesRead || 0,
+            fileSize: (file as { file?: { bytesRead?: number } }).file?.bytesRead || 0,
           };
-          break; // Only process first avatar file
+          break;
         }
       }
 
@@ -90,32 +89,36 @@ export const userController = {
         throw errors.validation("No avatar file provided in request");
       }
 
-      // Update or insert avatar record
+      await db.transaction(async (tx) => {
+        if (oldAvatarUrl) {
+          await tx.run(
+            "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
+            [
+              filePath,
+              avatarUrl,
+              fileMetadata!.filename,
+              fileMetadata!.mimetype,
+              fileMetadata!.fileSize,
+              userId,
+            ]
+          );
+        } else {
+          await tx.run(
+            "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+              userId,
+              filePath,
+              avatarUrl,
+              fileMetadata!.filename,
+              fileMetadata!.mimetype,
+              fileMetadata!.fileSize,
+            ]
+          );
+        }
+      });
+
       if (oldAvatarUrl) {
-        await db.run(
-          "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
-          [
-            filePath,
-            avatarUrl,
-            fileMetadata.filename,
-            fileMetadata.mimetype,
-            fileMetadata.fileSize,
-            userId,
-          ]
-        );
         await deleteUploadedFile(oldAvatarUrl);
-      } else {
-        await db.run(
-          "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-          [
-            userId,
-            filePath,
-            avatarUrl,
-            fileMetadata.filename,
-            fileMetadata.mimetype,
-            fileMetadata.fileSize,
-          ]
-        );
       }
 
       const result = await db.get<UploadAvatarData>(
@@ -128,8 +131,7 @@ export const userController = {
       }
 
       return ApiResponseHelper.success(result, "Avatar uploaded successfully");
-    } catch (err: any) {
-      // Clean up newly uploaded file if update fails
+    } catch (err: unknown) {
       if (avatarUrl) {
         await deleteUploadedFile(avatarUrl);
       }

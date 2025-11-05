@@ -76,75 +76,69 @@ export const oauthController = {
     const tokenData = await exchangeCodeForToken(githubConfig, code);
     const userInfo = await fetchGitHubUserInfo(tokenData.access_token);
 
-    // Find existing user by OAuth provider+id
-    let user = await db.get<User>(
-      "SELECT id, username, email, created_at FROM users WHERE oauth_provider = ? AND oauth_id = ?",
-      ["github", userInfo.id]
-    );
-
-    // If OAuth user exists, ensure they have an avatar
-    if (user) {
-      const existingAvatar = await db.get<{ id: number }>(
-        "SELECT id FROM avatars WHERE user_id = ?",
-        [user.id]
+    const user = await db.transaction(async (tx) => {
+      const usr = await tx.get<User>(
+        "SELECT id, username, email, created_at FROM users WHERE oauth_provider = ? AND oauth_id = ?",
+        ["github", userInfo.id]
       );
 
-      if (userInfo.avatar_url) {
-        // Update with OAuth avatar
-        if (existingAvatar) {
-          await db.run(
-            "UPDATE avatars SET file_url = ?, file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
-            [userInfo.avatar_url, userInfo.avatar_url, user.id]
-          );
-        } else {
-          await db.run(
+      // If OAuth user exists, ensure they have an avatar
+      if (usr) {
+        const existingAvatar = await tx.get<{ id: number }>(
+          "SELECT id FROM avatars WHERE user_id = ?",
+          [usr.id]
+        );
+
+        if (userInfo.avatar_url) {
+          if (existingAvatar) {
+            await tx.run(
+              "UPDATE avatars SET file_url = ?, file_path = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
+              [userInfo.avatar_url, userInfo.avatar_url, usr.id]
+            );
+          } else {
+            await tx.run(
+              "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+              [usr.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+            );
+          }
+        } else if (!existingAvatar) {
+          const defaultAvatar = await copyDefaultAvatar(usr.id);
+          await tx.run(
             "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-            [user.id, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+            [
+              usr.id,
+              defaultAvatar.fileUrl,
+              defaultAvatar.filePath,
+              defaultAvatar.fileName,
+              defaultAvatar.mimeType,
+              defaultAvatar.fileSize,
+            ]
           );
         }
-      } else if (!existingAvatar) {
-        // OAuth didn't provide avatar and user has none - use default
-        const defaultAvatar = await copyDefaultAvatar(user.id);
-        await db.run(
-          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-          [
-            user.id,
-            defaultAvatar.fileUrl,
-            defaultAvatar.filePath,
-            defaultAvatar.fileName,
-            defaultAvatar.mimeType,
-            defaultAvatar.fileSize,
-          ]
-        );
+        return usr;
       }
-    }
 
-    // If not found, try to link by email or create new
-    if (!user) {
-      const existingByEmail = await db.get<User>(
+      // If not found, try to link by email or create new
+      const existingByEmail = await tx.get<User>(
         "SELECT id, username, email, created_at FROM users WHERE email = ?",
         [userInfo.email]
       );
 
       if (existingByEmail) {
-        // Link OAuth to existing account
-        await db.run("UPDATE users SET oauth_provider = ?, oauth_id = ? WHERE id = ?", [
+        await tx.run("UPDATE users SET oauth_provider = ?, oauth_id = ? WHERE id = ?", [
           "github",
           userInfo.id,
           existingByEmail.id,
         ]);
-        user = existingByEmail;
 
-        // Handle OAuth avatar - ensure user has an avatar
-        const existingAvatar = await db.get<{ id: number }>(
+        const existingAvatar = await tx.get<{ id: number }>(
           "SELECT id FROM avatars WHERE user_id = ?",
           [existingByEmail.id]
         );
 
         if (userInfo.avatar_url) {
-          // Update with OAuth avatar
           if (existingAvatar) {
-            await db.run(
+            await tx.run(
               "UPDATE avatars SET file_url = ?, file_path = ?, file_name = ?, mime_type = ?, file_size = ?, updated_at = CURRENT_TIMESTAMP WHERE user_id = ?",
               [
                 userInfo.avatar_url,
@@ -156,7 +150,7 @@ export const oauthController = {
               ]
             );
           } else {
-            await db.run(
+            await tx.run(
               "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
               [
                 existingByEmail.id,
@@ -169,9 +163,8 @@ export const oauthController = {
             );
           }
         } else if (!existingAvatar) {
-          // OAuth didn't provide avatar and user has none - use default
           const defaultAvatar = await copyDefaultAvatar(existingByEmail.id);
-          await db.run(
+          await tx.run(
             "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
             [
               existingByEmail.id,
@@ -183,53 +176,44 @@ export const oauthController = {
             ]
           );
         }
-      } else {
-        // Create new user
-        const result = await db.run(
-          "INSERT INTO users (username, email, oauth_provider, oauth_id) VALUES (?, ?, ?, ?)",
-          [userInfo.name, userInfo.email, "github", userInfo.id]
-        );
-
-        // Save avatar to avatars table (OAuth or default)
-        if (userInfo.avatar_url) {
-          await db.run(
-            "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-            [
-              result.lastID,
-              userInfo.avatar_url,
-              userInfo.avatar_url,
-              "oauth_avatar",
-              "image/jpeg",
-              0,
-            ]
-          );
-        } else {
-          // OAuth didn't provide avatar - use default
-          const defaultAvatar = await copyDefaultAvatar(result.lastID);
-          await db.run(
-            "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-            [
-              result.lastID,
-              defaultAvatar.fileUrl,
-              defaultAvatar.filePath,
-              defaultAvatar.fileName,
-              defaultAvatar.mimeType,
-              defaultAvatar.fileSize,
-            ]
-          );
-        }
-
-        user = {
-          id: result.lastID,
-          username: userInfo.name,
-          email: userInfo.email,
-          created_at: new Date().toISOString(),
-          avatar_url: "", // Will be fetched later using helper
-        };
+        return existingByEmail;
       }
-    }
 
-    // At this point, user should always be defined
+      // Create new user
+      const result = await tx.run(
+        "INSERT INTO users (username, email, oauth_provider, oauth_id) VALUES (?, ?, ?, ?)",
+        [userInfo.name, userInfo.email, "github", userInfo.id]
+      );
+
+      if (userInfo.avatar_url) {
+        await tx.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [result.lastID, userInfo.avatar_url, userInfo.avatar_url, "oauth_avatar", "image/jpeg", 0]
+        );
+      } else {
+        const defaultAvatar = await copyDefaultAvatar(result.lastID);
+        await tx.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [
+            result.lastID,
+            defaultAvatar.fileUrl,
+            defaultAvatar.filePath,
+            defaultAvatar.fileName,
+            defaultAvatar.mimeType,
+            defaultAvatar.fileSize,
+          ]
+        );
+      }
+
+      return {
+        id: result.lastID,
+        username: userInfo.name,
+        email: userInfo.email,
+        created_at: new Date().toISOString(),
+        avatar_url: "",
+      };
+    });
+
     if (!user) {
       throw errors.internal("Failed to create or retrieve user during OAuth flow");
     }
