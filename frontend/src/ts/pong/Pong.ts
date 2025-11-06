@@ -198,13 +198,12 @@ export class Pong {
         const scale = Math.min(scaleX, scaleY);
 
         // Draw center line
-        this.ctx.strokeStyle = "#00ffff";
-        this.ctx.setLineDash([5, 5]);
+        this.ctx.strokeStyle = "#39ff14";
+        this.ctx.lineWidth = 10;
         this.ctx.beginPath();
         this.ctx.moveTo(width / 2, 0);
         this.ctx.lineTo(width / 2, height);
         this.ctx.stroke();
-        this.ctx.setLineDash([]);
 
         // Draw ball
         this.ctx.fillStyle = "#ff00cc";
@@ -220,7 +219,7 @@ export class Pong {
         // Draw count down
         if (countdown && countdown > 0) {
             this.ctx.fillStyle = "#fff"; //"rgba(255, 255, 255, 0.8)";
-            this.ctx.font = "bold 72px Arial";
+            this.ctx.font = "bold 500px Arial";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
             this.ctx.fillText(countdown.toString(), width / 2, height / 2);

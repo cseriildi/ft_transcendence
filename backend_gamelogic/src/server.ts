@@ -91,7 +91,7 @@ fastify.register(async function (server: FastifyInstance) {
                 if (game !== thisGame || !game) break;
                 game.countdown = i;
                 broadcastGameState(game);
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(resolve => setTimeout(resolve, 500));
               }
               // Countdown complete, reset ball (gives it speed)
               if (game === thisGame && game) {
