@@ -1,7 +1,7 @@
 import fastify, { FastifyServerOptions } from "fastify";
 import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig, getConfigWarnings } from "./config.ts";
+import { config as appConfig, validateConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
@@ -52,14 +52,6 @@ export async function build(opts: BuildOptions = {}) {
     disableRateLimit,
   } = opts;
   const app = fastify({ logger });
-
-  // Log configuration warnings (env variables using fallbacks)
-  const warnings = getConfigWarnings();
-  if (warnings.length > 0) {
-    warnings.forEach((warning) => {
-      app.log.warn(`⚠️  ${warning}`);
-    });
-  }
 
   await app.register(cors, {
     origin: appConfig.cors.origins,
@@ -182,6 +174,6 @@ const start = async () => {
 
 // Only start if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  void start(); // Explicitly mark as fire-and-forget : 
+  void start(); // Explicitly mark as fire-and-forget :
   // errors are handled inside start() and will exit the process
 }

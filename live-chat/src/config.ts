@@ -1,6 +1,6 @@
 // Helper function to get required environment variable
-function getEnvVar(name: string, defaultValue?: string): string {
-  const value = process.env[name] || defaultValue;
+function getEnvVar(name: string): string {
+  const value = process.env[name];
   if (!value) {
     throw new Error(`❌ Required environment variable ${name} is not set`);
   }
@@ -21,38 +21,46 @@ function parsePort(value: string | undefined, defaultValue: number): number {
   return port;
 }
 
+// Detect if running in Docker by checking for Docker-specific env or hostname patterns
+function isRunningInDocker(): boolean {
+  return (
+    process.env.DOCKER_CONTAINER === "true" ||
+    process.env.NODE_ENV === "production"
+  );
+}
+
+// Context-aware defaults based on environment
+const isDocker = isRunningInDocker();
+
 // Environment configuration
 export const config = {
   // Server configuration
   server: {
     port: parsePort(process.env.PORT, 3002),
-    host: getEnvVar("HOST", "::"),
-    env: getEnvVar("NODE_ENV", "production"),
+    host: getEnvVar("HOST"),
+    env: getEnvVar("NODE_ENV"),
   },
 
   // Database configuration
   database: {
-    path: getEnvVar("DATABASE_PATH", "src/database/database.db"),
+    path: getEnvVar("DATABASE_PATH"),
   },
 
   // Auth service
   auth: {
-    serviceUrl: getEnvVar("AUTH_SERVICE_URL", "http://databank:3000"),
+    serviceUrl: getEnvVar("AUTH_SERVICE_URL"),
   },
 
   // CORS configuration
   cors: {
-    origins: getOptionalEnvVar(
-      "CORS_ORIGINS",
-      "http://localhost:4200,http://localhost:8080"
-    )
+    origins: getEnvVar("CORS_ORIGINS")
       .split(",")
       .map((s) => s.trim()),
   },
 
   // Logging
   logging: {
-    level: getEnvVar("LOG_LEVEL", "info"),
+    level: getEnvVar("LOG_LEVEL"),
   },
 };
 

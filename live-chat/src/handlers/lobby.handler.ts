@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { lobbyConnections, userLobbyConnections } from "../services/state.js";
 import { banList } from "../services/state.js";
+import { config } from "../config.js";
 
 /**
  * Handle join_lobby action
@@ -29,9 +30,7 @@ export async function handleJoinLobby(
 
   // Verify token
   try {
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || "http://localhost:3000";
-    const upstream = await fetch(`${authServiceUrl}/auth/verify`, {
+    const upstream = await fetch(`${config.auth.serviceUrl}/auth/verify`, {
       method: "GET",
       headers: {
         authorization: `Bearer ${token}`,

@@ -1,5 +1,5 @@
 {
-  "name": "Node.js & TypeScript",
+  "name": "Live Chat (Node.js & TypeScript)",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
   "customizations": {
     "vscode": {
@@ -10,7 +10,7 @@
       ]
     }
   },
-  "forwardPorts": [3002, 3003],
+  "forwardPorts": [3002],
   "postCreateCommand": "apt update && npm install",
   "remoteUser": "root",
   "mounts": [

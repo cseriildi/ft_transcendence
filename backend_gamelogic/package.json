@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "tsx src/server.ts",
+    "dev": "../scripts/load-env.sh .env.development tsx src/server.ts",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
