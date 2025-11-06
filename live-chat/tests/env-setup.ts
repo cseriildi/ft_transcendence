@@ -8,6 +8,10 @@ process.env.PORT = process.env.PORT || "3002";
 process.env.DATABASE_PATH = process.env.DATABASE_PATH || ":memory:";
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || "silent";
 
+// CORS configuration
+process.env.CORS_ORIGINS =
+  process.env.CORS_ORIGINS || "http://localhost:8443,http://localhost:3000";
+
 // Service URLs
 process.env.AUTH_SERVICE_URL =
   process.env.AUTH_SERVICE_URL || "http://localhost:3000";
