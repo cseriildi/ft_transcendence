@@ -37,7 +37,7 @@ describe("OAuth Routes", () => {
       const body = res.json() as any;
       expect(body.success).toBe(true);
       expect(body.data?.redirectUrl).toContain("https://github.com/login/oauth/authorize");
-      expect(body.data?.redirectUrl).toContain("client_id=test_client_id");
+      expect(body.data?.redirectUrl).toContain("client_id=test_github_client_id");
       expect(body.data?.redirectUrl).toContain("scope=");
       expect(body.data?.redirectUrl).toContain("state=");
     });
