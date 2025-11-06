@@ -9,6 +9,10 @@ process.env.HOST = process.env.HOST || "127.0.0.1";
 process.env.PORT = process.env.PORT || "3001";
 process.env.LOG_LEVEL = process.env.LOG_LEVEL || "silent";
 
+// Public server configuration
+process.env.PUBLIC_HOST = process.env.PUBLIC_HOST || "localhost";
+process.env.PUBLIC_PORT = process.env.PUBLIC_PORT || "8443";
+
 // Game configuration
 process.env.GAME_WIDTH = process.env.GAME_WIDTH || "4000";
 process.env.GAME_HEIGHT = process.env.GAME_HEIGHT || "2000";
