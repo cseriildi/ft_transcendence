@@ -32,11 +32,17 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
+# Stash unstaged changes temporarily to avoid staging them
+git stash push -k -u -m "pre-commit stash" -- . > /dev/null 2>&1
+
 # Use npx to run prettier (it respects .prettierignore)
 npx prettier --write $STAGED_FILES
 
-# Re-stage the formatted files
+# Re-stage only the formatted staged files
 git add $STAGED_FILES
+
+# Restore the stashed unstaged changes
+git stash pop > /dev/null 2>&1
 
 echo "✅ Formatting complete!"
 EOF
