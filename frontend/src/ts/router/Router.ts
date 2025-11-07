@@ -9,8 +9,8 @@ class Router {
   private templates: Map<string, string> = new Map();
 
   constructor() {
-    window.addEventListener('popstate', () => this.handleRoute());
-    document.addEventListener('DOMContentLoaded', () => this.init());
+    window.addEventListener("popstate", () => this.handleRoute());
+    document.addEventListener("DOMContentLoaded", () => this.init());
   }
 
   async init() {
@@ -19,8 +19,18 @@ class Router {
   }
 
   private async loadTemplates() {
-    const templateFiles = ['home', 'pong', 'login', 'register', 'profile', 'edit', 'users', 'chat', '404'];
-    
+    const templateFiles = [
+      "home",
+      "pong",
+      "login",
+      "register",
+      "profile",
+      "edit",
+      "users",
+      "chat",
+      "404",
+    ];
+
     for (const template of templateFiles) {
       try {
         const response = await fetch(`./templates/${template}.html`);
@@ -36,19 +46,35 @@ class Router {
     this.routes.push({ path, template, init });
   }
 
-  navigate(path: string) {
-    window.history.pushState({}, '', path);
+  navigate(path: string, params?: Record<string, string>) {
+    let fullPath = path;
+    if (params) {
+      const queryString = new URLSearchParams(params).toString();
+      fullPath = `${path}?${queryString}`;
+    }
+    window.history.pushState({}, "", fullPath);
     this.handleRoute();
+  }
+
+  getQueryParams(): Record<string, string> {
+    const params: Record<string, string> = {};
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+    return params;
   }
 
   private handleRoute() {
     const currentPath = window.location.pathname;
-    const route = this.routes.find(r => r.path === currentPath) || this.routes.find(r => r.path === '/404');
-    
+    const route =
+      this.routes.find((r) => r.path === currentPath) ||
+      this.routes.find((r) => r.path === "/404");
+
     if (route) {
       const template = this.templates.get(route.template);
       if (template) {
-        const appElement = document.getElementById('app');
+        const appElement = document.getElementById("app");
         if (appElement) {
           appElement.innerHTML = template;
           if (route.init) {
