@@ -21,17 +21,6 @@ function parsePort(value: string | undefined, defaultValue: number): number {
   return port;
 }
 
-// Detect if running in Docker by checking for Docker-specific env or hostname patterns
-function isRunningInDocker(): boolean {
-  return (
-    process.env.DOCKER_CONTAINER === "true" ||
-    process.env.NODE_ENV === "production"
-  );
-}
-
-// Context-aware defaults based on environment
-const isDocker = isRunningInDocker();
-
 // Environment configuration
 export const config = {
   // Server configuration
