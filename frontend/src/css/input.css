@@ -10,4 +10,28 @@
   .form-input {
     @apply w-full px-3 py-2 border-2 border-neon-pink rounded-md bg-purple-900 text-neon-green focus:outline-none focus:ring-2 focus:ring-neon-green font-orbitron;
   }
+
+  .btn-pink,
+  .btn-green:hover {
+    @apply bg-neon-pink text-white font-bold py-2 px-4 rounded transition;
+    box-shadow: 0 0 10px rgb(255, 0, 127);
+  }
+
+  .btn-green,
+  .btn-pink:hover {
+    @apply bg-neon-green text-purple-900 font-bold py-2 px-4 rounded transition;
+    box-shadow: 0 0 10px rgb(0, 255, 127);
+  }
+
+  .page-bg {
+    @apply min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black font-orbitron;
+  }
+
+  .form-card {
+    @apply bg-black p-6 rounded-lg shadow-neon border-2 border-neon-pink mb-10;
+  }
+
+  .page-title {
+    @apply text-5xl font-bold text-center mb-8 text-neon-green drop-shadow-neon;
+  }
 }
