@@ -23,7 +23,19 @@ window.addEventListener("popstate", () => {
   }
 });
 
+const VALID_MODES = ["local", "ai", "remote", "friend", "tournament", "local-tournament"];
+
 const initPongPage = () => {
+  const queryParams = router.getQueryParams();
+  const mode = queryParams.mode;
+
+  // Redirect to home if no mode is specified or if mode is invalid
+  if (!mode || !VALID_MODES.includes(mode)) {
+    console.warn(`Invalid or missing pong mode: ${mode}, redirecting to home`);
+    router.navigate("/");
+    return;
+  }
+
   const backBtn = document.getElementById("back-btn");
   backBtn?.addEventListener("click", () => {
     currentPong?.destroy();
