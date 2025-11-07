@@ -47,10 +47,7 @@ export const config = {
       `http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar(
         "NGINX_HTTP_PORT",
         "8080"
-      )},http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar(
-        "FRONTEND_PORT",
-        "4200"
-      )}`
+      )},http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar("FRONTEND_PORT", "4200")}`
     )
       .split(",")
       .map((s) => s.trim()),

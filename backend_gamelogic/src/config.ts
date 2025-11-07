@@ -22,11 +22,7 @@ function parsePort(value: string | undefined, defaultValue: number): number {
 }
 
 // Helper function to parse positive integer with validation
-function parsePositiveInt(
-  name: string,
-  value: string | undefined,
-  defaultValue: number
-): number {
+function parsePositiveInt(name: string, value: string | undefined, defaultValue: number): number {
   const parsed = parseInt(value || String(defaultValue), 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     throw new Error(`❌ Invalid ${name}: ${value}. Must be a positive integer`);
@@ -77,12 +73,6 @@ export const validateConfig = () => {
     gameSettings: config.game,
   });
 
-  console.log(
-    `⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(
-      2
-    )}ms)`
-  );
-  console.log(
-    `📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`
-  );
+  console.log(`⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(2)}ms)`);
+  console.log(`📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`);
 };

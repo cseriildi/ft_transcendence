@@ -1,786 +1,844 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Unified WebSocket Chat Client</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-        }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+      }
 
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      .header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px 30px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-        .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-        }
+      .header h1 {
+        font-size: 24px;
+        font-weight: 600;
+      }
 
-        .status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+      }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #ef4444;
-            animation: pulse 2s infinite;
-        }
+      .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ef4444;
+        animation: pulse 2s infinite;
+      }
 
-        .status-dot.connected {
-            background: #10b981;
-        }
+      .status-dot.connected {
+        background: #10b981;
+      }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
         }
+        50% {
+          opacity: 0.5;
+        }
+      }
 
-        .main-content {
-            display: grid;
-            grid-template-columns: 300px 1fr;
-            height: calc(100vh - 140px);
-        }
+      .main-content {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        height: calc(100vh - 140px);
+      }
 
-        .sidebar {
-            background: #f9fafb;
-            border-right: 1px solid #e5e7eb;
-            display: flex;
-            flex-direction: column;
-        }
+      .sidebar {
+        background: #f9fafb;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+      }
 
-        .auth-section {
-            padding: 20px;
-            border-bottom: 1px solid #e5e7eb;
-        }
+      .auth-section {
+        padding: 20px;
+        border-bottom: 1px solid #e5e7eb;
+      }
 
-        .auth-section h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #374151;
-        }
+      .auth-section h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #374151;
+      }
 
-        .form-group {
-            margin-bottom: 12px;
-        }
+      .form-group {
+        margin-bottom: 12px;
+      }
 
-        .form-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 500;
-            margin-bottom: 4px;
-            color: #6b7280;
-        }
+      .form-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        color: #6b7280;
+      }
 
-        .form-group input {
-            width: 100%;
-            padding: 8px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            font-size: 14px;
-        }
+      .form-group input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+      }
 
-        .btn {
-            width: 100%;
-            padding: 10px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+      .btn {
+        width: 100%;
+        padding: 10px;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
 
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
 
-        .btn-primary:hover:not(:disabled) {
-            background: #5568d3;
-        }
+      .btn-primary:hover:not(:disabled) {
+        background: #5568d3;
+      }
 
-        .btn-secondary {
-            background: #e5e7eb;
-            color: #374151;
-        }
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #374151;
+      }
 
-        .btn-secondary:hover:not(:disabled) {
-            background: #d1d5db;
-        }
+      .btn-secondary:hover:not(:disabled) {
+        background: #d1d5db;
+      }
 
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-        .users-section {
-            padding: 20px;
-            flex: 1;
-            overflow-y: auto;
-        }
+      .users-section {
+        padding: 20px;
+        flex: 1;
+        overflow-y: auto;
+      }
 
-        .users-section h3 {
-            font-size: 14px;
-            font-weight: 600;
-            margin-bottom: 12px;
-            color: #374151;
-        }
+      .users-section h3 {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        color: #374151;
+      }
 
-        .user-list {
-            list-style: none;
-        }
+      .user-list {
+        list-style: none;
+      }
 
-        .user-item {
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+      .user-item {
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
 
-        .user-item:hover {
-            background: #e5e7eb;
-        }
+      .user-item:hover {
+        background: #e5e7eb;
+      }
 
-        .user-item.active {
-            background: #ddd6fe;
-            color: #5b21b6;
-        }
+      .user-item.active {
+        background: #ddd6fe;
+        color: #5b21b6;
+      }
 
-        .user-name {
-            font-size: 14px;
-            font-weight: 500;
-        }
+      .user-name {
+        font-size: 14px;
+        font-weight: 500;
+      }
 
-        .chat-area {
-            display: flex;
-            flex-direction: column;
-        }
+      .chat-area {
+        display: flex;
+        flex-direction: column;
+      }
 
-        .chat-header {
-            padding: 20px 30px;
-            border-bottom: 1px solid #e5e7eb;
-            background: white;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+      .chat-header {
+        padding: 20px 30px;
+        border-bottom: 1px solid #e5e7eb;
+        background: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-        .chat-header-content h2 {
-            font-size: 18px;
-            font-weight: 600;
-            color: #1f2937;
-        }
+      .chat-header-content h2 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #1f2937;
+      }
 
-        .chat-header-content p {
-            font-size: 14px;
-            color: #6b7280;
-            margin-top: 4px;
-        }
+      .chat-header-content p {
+        font-size: 14px;
+        color: #6b7280;
+        margin-top: 4px;
+      }
 
-        .chat-actions {
-            display: flex;
-            gap: 8px;
-        }
+      .chat-actions {
+        display: flex;
+        gap: 8px;
+      }
 
-        .btn-small {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+      .btn-small {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
 
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
+      .btn-danger {
+        background: #ef4444;
+        color: white;
+      }
 
-        .btn-danger:hover:not(:disabled) {
-            background: #dc2626;
-        }
+      .btn-danger:hover:not(:disabled) {
+        background: #dc2626;
+      }
 
-        .btn-leave {
-            background: #6b7280;
-            color: white;
-        }
+      .btn-leave {
+        background: #6b7280;
+        color: white;
+      }
 
-        .btn-leave:hover:not(:disabled) {
-            background: #4b5563;
-        }
+      .btn-leave:hover:not(:disabled) {
+        background: #4b5563;
+      }
 
-        .messages {
-            flex: 1;
-            padding: 20px 30px;
-            overflow-y: auto;
-            background: #fafafa;
-        }
+      .messages {
+        flex: 1;
+        padding: 20px 30px;
+        overflow-y: auto;
+        background: #fafafa;
+      }
 
-        .message {
-            margin-bottom: 16px;
-            padding: 12px 16px;
-            border-radius: 8px;
-            max-width: 70%;
-            word-wrap: break-word;
-        }
+      .message {
+        margin-bottom: 16px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        max-width: 70%;
+        word-wrap: break-word;
+      }
 
-        .message.system {
-            background: #fef3c7;
-            color: #92400e;
-            font-style: italic;
-            font-size: 14px;
-            max-width: 100%;
-            text-align: center;
-        }
+      .message.system {
+        background: #fef3c7;
+        color: #92400e;
+        font-style: italic;
+        font-size: 14px;
+        max-width: 100%;
+        text-align: center;
+      }
 
-        .message.incoming {
-            background: #e5e7eb;
-            color: #1f2937;
-        }
+      .message.incoming {
+        background: #e5e7eb;
+        color: #1f2937;
+      }
 
-        .message.outgoing {
-            background: #667eea;
-            color: white;
-            margin-left: auto;
-        }
+      .message.outgoing {
+        background: #667eea;
+        color: white;
+        margin-left: auto;
+      }
 
-        .message-sender {
-            font-weight: 600;
-            font-size: 12px;
-            margin-bottom: 4px;
-        }
+      .message-sender {
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 4px;
+      }
 
-        .message-text {
-            font-size: 14px;
-            line-height: 1.5;
-        }
+      .message-text {
+        font-size: 14px;
+        line-height: 1.5;
+      }
 
-        .message-time {
-            font-size: 11px;
-            opacity: 0.7;
-            margin-top: 4px;
-        }
+      .message-time {
+        font-size: 11px;
+        opacity: 0.7;
+        margin-top: 4px;
+      }
 
-        .message-input {
-            padding: 20px 30px;
-            border-top: 1px solid #e5e7eb;
-            background: white;
-        }
+      .message-input {
+        padding: 20px 30px;
+        border-top: 1px solid #e5e7eb;
+        background: white;
+      }
 
-        .input-container {
-            display: flex;
-            gap: 12px;
-        }
+      .input-container {
+        display: flex;
+        gap: 12px;
+      }
 
-        .input-container input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
-        }
+      .input-container input {
+        flex: 1;
+        padding: 12px 16px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+      }
 
-        .input-container button {
-            padding: 12px 24px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+      .input-container button {
+        padding: 12px 24px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
 
-        .input-container button:hover:not(:disabled) {
-            background: #5568d3;
-        }
+      .input-container button:hover:not(:disabled) {
+        background: #5568d3;
+      }
 
-        .input-container button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+      .input-container button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
 
-        .welcome-screen {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #9ca3af;
-        }
+      .welcome-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #9ca3af;
+      }
 
-        .welcome-screen svg {
-            width: 100px;
-            height: 100px;
-            margin-bottom: 20px;
-            opacity: 0.5;
-        }
+      .welcome-screen svg {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 20px;
+        opacity: 0.5;
+      }
 
-        .welcome-screen h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
+      .welcome-screen h2 {
+        font-size: 24px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
 
-        .welcome-screen p {
-            font-size: 16px;
-        }
+      .welcome-screen p {
+        font-size: 16px;
+      }
 
-        .activity-log {
-            padding: 10px 20px;
-            background: #f3f4f6;
-            border-top: 1px solid #e5e7eb;
-            font-size: 12px;
-            color: #6b7280;
-            max-height: 100px;
-            overflow-y: auto;
-        }
+      .activity-log {
+        padding: 10px 20px;
+        background: #f3f4f6;
+        border-top: 1px solid #e5e7eb;
+        font-size: 12px;
+        color: #6b7280;
+        max-height: 100px;
+        overflow-y: auto;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <div class="header">
-            <h1>🚀 Unified WebSocket Chat</h1>
-            <div class="status">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Disconnected</span>
+      <div class="header">
+        <h1>🚀 Unified WebSocket Chat</h1>
+        <div class="status">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="statusText">Disconnected</span>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="sidebar">
+          <div class="auth-section">
+            <h3>Connection</h3>
+            <div class="form-group">
+              <label>User ID</label>
+              <input type="number" id="userId" value="1" />
             </div>
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="username" value="alice" />
+            </div>
+            <div class="form-group">
+              <label>Token</label>
+              <input type="text" id="token" value="test-token-123" />
+            </div>
+            <button class="btn btn-primary" id="connectBtn" onclick="connect()">Connect</button>
+            <button
+              class="btn btn-secondary"
+              id="disconnectBtn"
+              onclick="disconnect()"
+              style="display: none; margin-top: 8px"
+            >
+              Disconnect
+            </button>
+          </div>
+
+          <div class="users-section">
+            <h3>Online Users</h3>
+            <div style="margin-bottom: 12px">
+              <button class="btn btn-secondary" id="joinLobbyBtn" onclick="joinLobby()" disabled>
+                Join Lobby
+              </button>
+            </div>
+            <ul class="user-list" id="userList">
+              <li style="color: #9ca3af; font-size: 14px; padding: 10px">
+                Join lobby to see users
+              </li>
+            </ul>
+          </div>
         </div>
 
-        <div class="main-content">
-            <div class="sidebar">
-                <div class="auth-section">
-                    <h3>Connection</h3>
-                    <div class="form-group">
-                        <label>User ID</label>
-                        <input type="number" id="userId" value="1" />
-                    </div>
-                    <div class="form-group">
-                        <label>Username</label>
-                        <input type="text" id="username" value="alice" />
-                    </div>
-                    <div class="form-group">
-                        <label>Token</label>
-                        <input type="text" id="token" value="test-token-123" />
-                    </div>
-                    <button class="btn btn-primary" id="connectBtn" onclick="connect()">Connect</button>
-                    <button class="btn btn-secondary" id="disconnectBtn" onclick="disconnect()" style="display: none; margin-top: 8px;">Disconnect</button>
-                </div>
-
-                <div class="users-section">
-                    <h3>Online Users</h3>
-                    <div style="margin-bottom: 12px;">
-                        <button class="btn btn-secondary" id="joinLobbyBtn" onclick="joinLobby()" disabled>Join Lobby</button>
-                    </div>
-                    <ul class="user-list" id="userList">
-                        <li style="color: #9ca3af; font-size: 14px; padding: 10px;">Join lobby to see users</li>
-                    </ul>
-                </div>
+        <div class="chat-area">
+          <div class="chat-header">
+            <div class="chat-header-content">
+              <h2 id="chatTitle">Welcome</h2>
+              <p id="chatSubtitle">Connect to get started</p>
             </div>
-
-            <div class="chat-area">
-                <div class="chat-header">
-                    <div class="chat-header-content">
-                        <h2 id="chatTitle">Welcome</h2>
-                        <p id="chatSubtitle">Connect to get started</p>
-                    </div>
-                    <div class="chat-actions" id="chatActions" style="display: none;">
-                        <button class="btn-small btn-danger" id="blockBtn" onclick="blockUser()" title="Block this user">🚫 Block</button>
-                        <button class="btn-small btn-leave" id="leaveChatBtn" onclick="leaveChat()" title="Leave chat">← Leave</button>
-                    </div>
-                </div>
-
-                <div class="messages" id="messages">
-                    <div class="welcome-screen">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                        <h2>One Connection, All Features</h2>
-                        <p>Connect and join lobby to start chatting</p>
-                    </div>
-                </div>
-
-                <div class="message-input">
-                    <div class="input-container">
-                        <input type="text" id="messageInput" placeholder="Type a message..." disabled />
-                        <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
-                    </div>
-                </div>
+            <div class="chat-actions" id="chatActions" style="display: none">
+              <button
+                class="btn-small btn-danger"
+                id="blockBtn"
+                onclick="blockUser()"
+                title="Block this user"
+              >
+                🚫 Block
+              </button>
+              <button
+                class="btn-small btn-leave"
+                id="leaveChatBtn"
+                onclick="leaveChat()"
+                title="Leave chat"
+              >
+                ← Leave
+              </button>
             </div>
-        </div>
+          </div>
 
-        <div class="activity-log" id="activityLog">
-            <strong>Activity Log:</strong> Ready to connect...
+          <div class="messages" id="messages">
+            <div class="welcome-screen">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                />
+              </svg>
+              <h2>One Connection, All Features</h2>
+              <p>Connect and join lobby to start chatting</p>
+            </div>
+          </div>
+
+          <div class="message-input">
+            <div class="input-container">
+              <input type="text" id="messageInput" placeholder="Type a message..." disabled />
+              <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div class="activity-log" id="activityLog">
+        <strong>Activity Log:</strong> Ready to connect...
+      </div>
     </div>
 
     <script>
-        let ws = null;
-        let currentUsername = '';
-        let currentUserId = 0;
-        let currentChatId = null;
-        let currentChatUser = null; // Track who we're chatting with
-        let inLobby = false;
+      let ws = null;
+      let currentUsername = "";
+      let currentUserId = 0;
+      let currentChatId = null;
+      let currentChatUser = null; // Track who we're chatting with
+      let inLobby = false;
 
-        function log(message) {
-            const logEl = document.getElementById('activityLog');
-            const time = new Date().toLocaleTimeString();
-            logEl.innerHTML = `<strong>Activity Log:</strong> [${time}] ${message}`;
+      function log(message) {
+        const logEl = document.getElementById("activityLog");
+        const time = new Date().toLocaleTimeString();
+        logEl.innerHTML = `<strong>Activity Log:</strong> [${time}] ${message}`;
+      }
+
+      function updateStatus(connected) {
+        const dot = document.getElementById("statusDot");
+        const text = document.getElementById("statusText");
+        if (connected) {
+          dot.classList.add("connected");
+          text.textContent = "Connected";
+        } else {
+          dot.classList.remove("connected");
+          text.textContent = "Disconnected";
+        }
+      }
+
+      function connect() {
+        const userId = document.getElementById("userId").value;
+        const username = document.getElementById("username").value;
+        const token = document.getElementById("token").value;
+
+        if (!userId || !username || !token) {
+          alert("Please fill in all fields");
+          return;
         }
 
-        function updateStatus(connected) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-            if (connected) {
-                dot.classList.add('connected');
-                text.textContent = 'Connected';
+        currentUsername = username;
+        currentUserId = parseInt(userId);
+
+        const wsUrl = `ws://localhost:3002/ws?userId=${userId}&username=${username}`;
+
+        log(`Connecting to ${wsUrl}...`);
+        ws = new WebSocket(wsUrl);
+
+        // Note: WebSocket API doesn't support custom headers in constructor
+        // Authorization is passed via query params or handled after connection
+        // For production, consider server-side token validation via cookies
+
+        ws.onopen = () => {
+          log("✅ Connected to unified WebSocket");
+          updateStatus(true);
+          document.getElementById("connectBtn").style.display = "none";
+          document.getElementById("disconnectBtn").style.display = "block";
+          document.getElementById("joinLobbyBtn").disabled = false;
+          document.getElementById("userId").disabled = true;
+          document.getElementById("username").disabled = true;
+          document.getElementById("token").disabled = true;
+        };
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          log(`📨 Received: ${data.type}`);
+          handleMessage(data);
+        };
+
+        ws.onerror = (error) => {
+          log("❌ WebSocket error");
+          console.error("WebSocket error:", error);
+        };
+
+        ws.onclose = () => {
+          log("🔌 Disconnected");
+          updateStatus(false);
+          document.getElementById("connectBtn").style.display = "block";
+          document.getElementById("disconnectBtn").style.display = "none";
+          document.getElementById("joinLobbyBtn").disabled = true;
+          document.getElementById("userId").disabled = false;
+          document.getElementById("username").disabled = false;
+          document.getElementById("token").disabled = false;
+          document.getElementById("chatActions").style.display = "none";
+          inLobby = false;
+          currentChatId = null;
+          currentChatUser = null;
+        };
+      }
+
+      function disconnect() {
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+      }
+
+      function joinLobby() {
+        if (!ws) return;
+
+        ws.send(
+          JSON.stringify({
+            action: "join_lobby",
+          })
+        );
+
+        log("📤 Sent: join_lobby");
+      }
+
+      function leaveLobby() {
+        if (!ws) return;
+
+        ws.send(
+          JSON.stringify({
+            action: "leave_lobby",
+          })
+        );
+
+        log("📤 Sent: leave_lobby");
+      }
+
+      function joinChat(otherUser) {
+        if (!ws) return;
+
+        // Generate chat ID (alphabetically sorted usernames)
+        const users = [currentUsername, otherUser].sort();
+        const chatId = users.join("-");
+
+        currentChatId = chatId;
+        currentChatUser = otherUser;
+
+        ws.send(
+          JSON.stringify({
+            action: "join_chat",
+            chatid: chatId,
+          })
+        );
+
+        log(`📤 Sent: join_chat (${chatId})`);
+
+        // Update UI
+        document.getElementById("chatTitle").textContent = `Chat with ${otherUser}`;
+        document.getElementById("chatSubtitle").textContent = chatId;
+        document.getElementById("messageInput").disabled = false;
+        document.getElementById("sendBtn").disabled = false;
+        document.getElementById("chatActions").style.display = "flex";
+        document.getElementById("messages").innerHTML = "";
+      }
+
+      function leaveChat() {
+        if (!ws || !currentChatId) return;
+
+        ws.send(
+          JSON.stringify({
+            action: "leave_chat",
+            chatid: currentChatId,
+          })
+        );
+
+        log(`📤 Sent: leave_chat (${currentChatId})`);
+      }
+
+      function blockUser() {
+        if (!currentChatUser || !ws) return;
+
+        if (
+          !confirm(
+            `Are you sure you want to block ${currentChatUser}? They will no longer be able to send you messages.`
+          )
+        ) {
+          return;
+        }
+
+        // Call the REST API to block the user
+        fetch("http://localhost:3002/lobby/block", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            blocker: currentUsername,
+            blocked: currentChatUser,
+          }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((data) => {
+                throw new Error(data.error || "Failed to block user");
+              });
+            }
+            return response.json();
+          })
+          .then((data) => {
+            if (data.success) {
+              log(`✅ Blocked ${currentChatUser}`);
+              addMessage("system", "", `You have blocked ${currentChatUser}`);
+
+              // Leave the chat
+              leaveChat();
             } else {
-                dot.classList.remove('connected');
-                text.textContent = 'Disconnected';
+              log(`❌ Failed to block user: ${data.error || "Unknown error"}`);
+              addMessage("system", "", `Error: ${data.error || "Failed to block user"}`);
             }
-        }
+          })
+          .catch((error) => {
+            log(`❌ Error blocking user: ${error.message}`);
+            console.error("Block error:", error);
+            addMessage("system", "", `Error: ${error.message || "Failed to block user"}`);
+          });
+      }
 
-        function connect() {
-            const userId = document.getElementById('userId').value;
-            const username = document.getElementById('username').value;
-            const token = document.getElementById('token').value;
+      function sendMessage() {
+        const input = document.getElementById("messageInput");
+        const message = input.value.trim();
 
-            if (!userId || !username || !token) {
-                alert('Please fill in all fields');
-                return;
+        if (!message || !currentChatId || !ws) return;
+
+        ws.send(
+          JSON.stringify({
+            action: "send_message",
+            chatid: currentChatId,
+            message: message,
+          })
+        );
+
+        log(`📤 Sent message: "${message}"`);
+
+        // Add own message to UI
+        addMessage("outgoing", currentUsername, message);
+
+        input.value = "";
+      }
+
+      function handleMessage(data) {
+        switch (data.type) {
+          case "lobby_connected":
+            inLobby = true;
+            document.getElementById("joinLobbyBtn").textContent = "Leave Lobby";
+            document.getElementById("joinLobbyBtn").onclick = leaveLobby;
+            updateUserList(data.allUsers);
+            document.getElementById("chatTitle").textContent = "Lobby";
+            document.getElementById("chatSubtitle").textContent =
+              `${data.allUsers.length} users online`;
+            document.getElementById("messages").innerHTML =
+              `<div class="message system">${data.message}</div>`;
+            break;
+
+          case "lobby_left":
+            inLobby = false;
+            document.getElementById("joinLobbyBtn").textContent = "Join Lobby";
+            document.getElementById("joinLobbyBtn").onclick = joinLobby;
+            document.getElementById("userList").innerHTML =
+              '<li style="color: #9ca3af; font-size: 14px; padding: 10px;">Join lobby to see users</li>';
+            break;
+
+          case "user_list_update":
+            updateUserList(data.allUsers);
+            if (inLobby) {
+              document.getElementById("chatSubtitle").textContent =
+                `${data.allUsers.length} users online`;
             }
+            break;
 
-            currentUsername = username;
-            currentUserId = parseInt(userId);
-
-            const wsUrl = `ws://localhost:3002/ws?userId=${userId}&username=${username}`;
-            
-            log(`Connecting to ${wsUrl}...`);
-            ws = new WebSocket(wsUrl);
-
-            // Note: WebSocket API doesn't support custom headers in constructor
-            // Authorization is passed via query params or handled after connection
-            // For production, consider server-side token validation via cookies
-
-            ws.onopen = () => {
-                log('✅ Connected to unified WebSocket');
-                updateStatus(true);
-                document.getElementById('connectBtn').style.display = 'none';
-                document.getElementById('disconnectBtn').style.display = 'block';
-                document.getElementById('joinLobbyBtn').disabled = false;
-                document.getElementById('userId').disabled = true;
-                document.getElementById('username').disabled = true;
-                document.getElementById('token').disabled = true;
-            };
-
-            ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                log(`📨 Received: ${data.type}`);
-                handleMessage(data);
-            };
-
-            ws.onerror = (error) => {
-                log('❌ WebSocket error');
-                console.error('WebSocket error:', error);
-            };
-
-            ws.onclose = () => {
-                log('🔌 Disconnected');
-                updateStatus(false);
-                document.getElementById('connectBtn').style.display = 'block';
-                document.getElementById('disconnectBtn').style.display = 'none';
-                document.getElementById('joinLobbyBtn').disabled = true;
-                document.getElementById('userId').disabled = false;
-                document.getElementById('username').disabled = false;
-                document.getElementById('token').disabled = false;
-                document.getElementById('chatActions').style.display = 'none';
-                inLobby = false;
-                currentChatId = null;
-                currentChatUser = null;
-            };
-        }
-
-        function disconnect() {
-            if (ws) {
-                ws.close();
-                ws = null;
+          case "chat_connected":
+            if (data.history && data.history.length > 0) {
+              data.history.forEach((msg) => {
+                const msgType = msg.username === currentUsername ? "outgoing" : "incoming";
+                addMessage(msgType, msg.username, msg.message, new Date(msg.timestamp));
+              });
             }
-        }
+            addMessage("system", "", data.message);
+            break;
 
-        function joinLobby() {
-            if (!ws) return;
+          case "chat_left":
+            addMessage("system", "", data.message);
+            currentChatId = null;
+            currentChatUser = null;
+            document.getElementById("messageInput").disabled = true;
+            document.getElementById("sendBtn").disabled = true;
+            document.getElementById("chatActions").style.display = "none";
+            document.getElementById("chatTitle").textContent = "Lobby";
+            document.getElementById("chatSubtitle").textContent = inLobby
+              ? `${document.getElementById("userList").children.length} users online`
+              : "Join lobby to see users";
+            break;
 
-            ws.send(JSON.stringify({
-                action: 'join_lobby'
-            }));
-
-            log('📤 Sent: join_lobby');
-        }
-
-        function leaveLobby() {
-            if (!ws) return;
-
-            ws.send(JSON.stringify({
-                action: 'leave_lobby'
-            }));
-
-            log('📤 Sent: leave_lobby');
-        }
-
-        function joinChat(otherUser) {
-            if (!ws) return;
-
-            // Generate chat ID (alphabetically sorted usernames)
-            const users = [currentUsername, otherUser].sort();
-            const chatId = users.join('-');
-
-            currentChatId = chatId;
-            currentChatUser = otherUser;
-
-            ws.send(JSON.stringify({
-                action: 'join_chat',
-                chatid: chatId
-            }));
-
-            log(`📤 Sent: join_chat (${chatId})`);
-
-            // Update UI
-            document.getElementById('chatTitle').textContent = `Chat with ${otherUser}`;
-            document.getElementById('chatSubtitle').textContent = chatId;
-            document.getElementById('messageInput').disabled = false;
-            document.getElementById('sendBtn').disabled = false;
-            document.getElementById('chatActions').style.display = 'flex';
-            document.getElementById('messages').innerHTML = '';
-        }
-
-        function leaveChat() {
-            if (!ws || !currentChatId) return;
-
-            ws.send(JSON.stringify({
-                action: 'leave_chat',
-                chatid: currentChatId
-            }));
-
-            log(`📤 Sent: leave_chat (${currentChatId})`);
-        }
-
-        function blockUser() {
-            if (!currentChatUser || !ws) return;
-
-            if (!confirm(`Are you sure you want to block ${currentChatUser}? They will no longer be able to send you messages.`)) {
-                return;
-            }
-
-            // Call the REST API to block the user
-            fetch('http://localhost:3002/lobby/block', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    blocker: currentUsername,
-                    blocked: currentChatUser
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.error || 'Failed to block user');
-                    });
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    log(`✅ Blocked ${currentChatUser}`);
-                    addMessage('system', '', `You have blocked ${currentChatUser}`);
-                    
-                    // Leave the chat
-                    leaveChat();
-                } else {
-                    log(`❌ Failed to block user: ${data.error || 'Unknown error'}`);
-                    addMessage('system', '', `Error: ${data.error || 'Failed to block user'}`);
-                }
-            })
-            .catch(error => {
-                log(`❌ Error blocking user: ${error.message}`);
-                console.error('Block error:', error);
-                addMessage('system', '', `Error: ${error.message || 'Failed to block user'}`);
-            });
-        }
-
-        function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-
-            if (!message || !currentChatId || !ws) return;
-
-            ws.send(JSON.stringify({
-                action: 'send_message',
-                chatid: currentChatId,
-                message: message
-            }));
-
-            log(`📤 Sent message: "${message}"`);
-
-            // Add own message to UI
-            addMessage('outgoing', currentUsername, message);
-
-            input.value = '';
-        }
-
-        function handleMessage(data) {
-            switch (data.type) {
-                case 'lobby_connected':
-                    inLobby = true;
-                    document.getElementById('joinLobbyBtn').textContent = 'Leave Lobby';
-                    document.getElementById('joinLobbyBtn').onclick = leaveLobby;
-                    updateUserList(data.allUsers);
-                    document.getElementById('chatTitle').textContent = 'Lobby';
-                    document.getElementById('chatSubtitle').textContent = `${data.allUsers.length} users online`;
-                    document.getElementById('messages').innerHTML = `<div class="message system">${data.message}</div>`;
-                    break;
-
-                case 'lobby_left':
-                    inLobby = false;
-                    document.getElementById('joinLobbyBtn').textContent = 'Join Lobby';
-                    document.getElementById('joinLobbyBtn').onclick = joinLobby;
-                    document.getElementById('userList').innerHTML = '<li style="color: #9ca3af; font-size: 14px; padding: 10px;">Join lobby to see users</li>';
-                    break;
-
-                case 'user_list_update':
-                    updateUserList(data.allUsers);
-                    if (inLobby) {
-                        document.getElementById('chatSubtitle').textContent = `${data.allUsers.length} users online`;
-                    }
-                    break;
-
-                case 'chat_connected':
-                    if (data.history && data.history.length > 0) {
-                        data.history.forEach(msg => {
-                            const msgType = msg.username === currentUsername ? 'outgoing' : 'incoming';
-                            addMessage(msgType, msg.username, msg.message, new Date(msg.timestamp));
-                        });
-                    }
-                    addMessage('system', '', data.message);
-                    break;
-
-                case 'chat_left':
-                    addMessage('system', '', data.message);
-                    currentChatId = null;
-                    currentChatUser = null;
-                    document.getElementById('messageInput').disabled = true;
-                    document.getElementById('sendBtn').disabled = true;
-                    document.getElementById('chatActions').style.display = 'none';
-                    document.getElementById('chatTitle').textContent = 'Lobby';
-                    document.getElementById('chatSubtitle').textContent = inLobby ? `${document.getElementById('userList').children.length} users online` : 'Join lobby to see users';
-                    break;
-
-                case 'message':
-                    // Only show message if it's for the current chat
-                    if (data.chatid === currentChatId) {
-                        addMessage('incoming', data.username, data.message, new Date(data.timestamp));
-                    } else {
-                        // Log that we received a message for a different chat
-                        log(`📨 Message from ${data.username} in ${data.chatid} (not current chat)`);
-                    }
-                    break;
-
-                case 'system':
-                    addMessage('system', '', data.message);
-                    break;
-
-                case 'error':
-                    addMessage('system', '', `Error: ${data.message}`);
-                    break;
-            }
-        }
-
-        function updateUserList(users) {
-            const userList = document.getElementById('userList');
-            userList.innerHTML = '';
-
-            users.forEach(user => {
-                const li = document.createElement('li');
-                li.className = 'user-item';
-                li.innerHTML = `<span class="user-name">${user}</span>`;
-                li.onclick = () => joinChat(user);
-                userList.appendChild(li);
-            });
-
-            if (users.length === 0) {
-                userList.innerHTML = '<li style="color: #9ca3af; font-size: 14px; padding: 10px;">No other users online</li>';
-            }
-        }
-
-        function addMessage(type, sender, text, timestamp = new Date()) {
-            const messagesDiv = document.getElementById('messages');
-            
-            // Remove welcome screen if present
-            const welcomeScreen = messagesDiv.querySelector('.welcome-screen');
-            if (welcomeScreen) {
-                welcomeScreen.remove();
-            }
-
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${type}`;
-
-            if (type === 'system') {
-                messageDiv.textContent = text;
+          case "message":
+            // Only show message if it's for the current chat
+            if (data.chatid === currentChatId) {
+              addMessage("incoming", data.username, data.message, new Date(data.timestamp));
             } else {
-                messageDiv.innerHTML = `
+              // Log that we received a message for a different chat
+              log(`📨 Message from ${data.username} in ${data.chatid} (not current chat)`);
+            }
+            break;
+
+          case "system":
+            addMessage("system", "", data.message);
+            break;
+
+          case "error":
+            addMessage("system", "", `Error: ${data.message}`);
+            break;
+        }
+      }
+
+      function updateUserList(users) {
+        const userList = document.getElementById("userList");
+        userList.innerHTML = "";
+
+        users.forEach((user) => {
+          const li = document.createElement("li");
+          li.className = "user-item";
+          li.innerHTML = `<span class="user-name">${user}</span>`;
+          li.onclick = () => joinChat(user);
+          userList.appendChild(li);
+        });
+
+        if (users.length === 0) {
+          userList.innerHTML =
+            '<li style="color: #9ca3af; font-size: 14px; padding: 10px;">No other users online</li>';
+        }
+      }
+
+      function addMessage(type, sender, text, timestamp = new Date()) {
+        const messagesDiv = document.getElementById("messages");
+
+        // Remove welcome screen if present
+        const welcomeScreen = messagesDiv.querySelector(".welcome-screen");
+        if (welcomeScreen) {
+          welcomeScreen.remove();
+        }
+
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${type}`;
+
+        if (type === "system") {
+          messageDiv.textContent = text;
+        } else {
+          messageDiv.innerHTML = `
                     <div class="message-sender">${sender}</div>
                     <div class="message-text">${text}</div>
                     <div class="message-time">${timestamp.toLocaleTimeString()}</div>
                 `;
-            }
-
-            messagesDiv.appendChild(messageDiv);
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        // Allow sending message with Enter key
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
-            }
-        });
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      // Allow sending message with Enter key
+      document.getElementById("messageInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

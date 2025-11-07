@@ -36,15 +36,11 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
     };
 
     if (!blocker || !blocked) {
-      return reply
-        .status(400)
-        .send({ error: "Missing blocker or blocked username" });
+      return reply.status(400).send({ error: "Missing blocker or blocked username" });
     }
 
     if (!userLobbyConnections.has(blocker)) {
-      return reply
-        .status(401)
-        .send({ error: "Blocking user is not authorized" });
+      return reply.status(401).send({ error: "Blocking user is not authorized" });
     }
 
     // Add to in-memory ban list
@@ -62,12 +58,7 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
           [blocker, blocked],
           (err) => {
             if (err) {
-              fastify.log.error(
-                "Error blocking user %s for %s: %s",
-                blocked,
-                blocker,
-                err.message
-              );
+              fastify.log.error("Error blocking user %s for %s: %s", blocked, blocker, err.message);
               reject(err);
             }
             resolve({ success: true });
