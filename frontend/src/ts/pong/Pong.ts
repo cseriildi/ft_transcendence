@@ -4,6 +4,7 @@ export interface GameState {
     paddle1: { cx?: number; cy?: number; capsule: Capsule };
     paddle2: { cx?: number; cy?: number; capsule: Capsule };
     score?: { player1: number; player2: number };
+    countdown?: number;
 }
 
 interface Capsule {
@@ -38,6 +39,21 @@ export class Pong {
         this.renderLoop();
     }
 
+  public startGame() {
+    const sendStart = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type: "startGame" }));
+      }
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      sendStart();
+    } else if (this.ws) {
+      // wait for open then send once
+      this.ws.addEventListener("open", () => { sendStart(); }, { once: true });
+    }
+  }
+
     private connect() {
         this.ws = new WebSocket(this.wsUrl);
 
@@ -49,7 +65,7 @@ export class Pong {
         this.ws.onmessage = (event: MessageEvent) => {
             try {
                 const message = JSON.parse(event.data);
-                
+
                 if (message.type === "gameSetup") {
                     // Store initial full state
                     this.gameState = message.data;
@@ -67,6 +83,9 @@ export class Pong {
                         // Update capsules based on new positions
                         this.updateCapsule(this.gameState.paddle1);
                         this.updateCapsule(this.gameState.paddle2);
+                        if (message.data.countdown) {
+                            this.gameState.countdown = message.data.countdown;
+                        }
                         // Update scores
                         if (message.data.score) {
                             if (!this.gameState.score) {
@@ -110,10 +129,10 @@ export class Pong {
 
     private updateScoreDisplay() {
         if (!this.gameState?.score) return;
-        
+
         const score1El = document.getElementById('score-player1');
         const score2El = document.getElementById('score-player2');
-        
+
         if (score1El) score1El.textContent = this.gameState.score.player1.toString();
         if (score2El) score2El.textContent = this.gameState.score.player2.toString();
     }
@@ -167,7 +186,7 @@ export class Pong {
         if (!this.gameState) return;
 
         const { width, height } = this.canvas;
-        const { field, ball, paddle1, paddle2, score } = this.gameState;
+        const { field, ball, paddle1, paddle2, score, countdown } = this.gameState;
 
         // Clear canvas
         this.ctx.fillStyle = "#000";
@@ -198,14 +217,13 @@ export class Pong {
         this.drawCapsule(paddle1.capsule, scale);
         this.drawCapsule(paddle2.capsule, scale);
 
-        // Draw scores
-        if (score) {
-            this.ctx.fillStyle = "#fff";
-            this.ctx.font = "bold 24px Arial";
+        // Draw count down
+        if (countdown && countdown > 0) {
+            this.ctx.fillStyle = "#fff"; //"rgba(255, 255, 255, 0.8)";
+            this.ctx.font = "bold 72px Arial";
             this.ctx.textAlign = "center";
             this.ctx.textBaseline = "middle";
-            this.ctx.fillText(score.player1.toString(), width / 4, 30);
-            this.ctx.fillText(score.player2.toString(), (3 * width) / 4, 30);
+            this.ctx.fillText(countdown.toString(), width / 2, height / 2);
         }
     }
 

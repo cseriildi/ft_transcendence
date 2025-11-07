@@ -1,5 +1,6 @@
 import { Router } from "../router/Router.js";
 import { getUserId, isUserAuthorized } from "../utils/utils.js";
+import { config } from "../config.js";
 
 export class Chat {
     private router: Router;
@@ -53,7 +54,7 @@ export class Chat {
     private connectWebSocket(chatBox: HTMLDivElement): void {
         const urlParams = new URLSearchParams(window.location.search);
         const chatId = urlParams.get('chatId');
-        this.ws = new WebSocket(`ws://localhost:3002/ws?userId=${getUserId()}&username=${getUserId()}`);
+        this.ws = new WebSocket(`${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`);
 
         this.ws.onopen = () => {
             console.log("Connected to WebSocket server");

@@ -2,7 +2,7 @@ import { Paddle, Ball, GameServer } from "./gameTypes.js";
 import { config} from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
 
-// Factory function to create and start a game instance
+// Factory function to create
 export function createGame(): GameServer {
   const game = new GameServer();
 
@@ -10,12 +10,8 @@ export function createGame(): GameServer {
   game.setUpdateCallback(updateGameState);
   game.setRenderCallback(broadcastGameState);
 
-  // Start the game loops
-  game.start();
-
   return game;
 }
-
 
 export function closestPointOnSegment(paddle: Paddle, ball: Ball) {
   const capsule = paddle.getCapsule();
@@ -110,9 +106,13 @@ export function updateGameState(game: GameServer) {
   collideBallWithWalls(game);
 
   if (game.score1 >= game.maxScore || game.score2 >= game.maxScore) {
-    game.score1 = 0;
-    game.score2 = 0;
-    resetBall(game);
+    // stop the game loops
+    try {
+      game.stop();
+    } catch (err) {
+      console.error("Error stopping game:", err);
+    }
+    return;
   }
 
   // Check paddle collisions
