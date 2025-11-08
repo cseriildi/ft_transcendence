@@ -1,5 +1,18 @@
 import { GameServer } from "./gameTypes.js";
 
+/**
+ * Removes a client from the game when sending fails
+ * Iterates through clients to find by connection reference
+ */
+function removeFailedClient(game: GameServer, failedConnection: any): void {
+  for (const [playerNum, { connection }] of game.clients.entries()) {
+    if (connection === failedConnection) {
+      game.clients.delete(playerNum);
+      break;
+    }
+  }
+}
+
 export function broadcastGameState(game: GameServer) {
   const gameState = {
     ball: {
@@ -31,12 +44,11 @@ export function broadcastGameState(game: GameServer) {
   });
 
   // Send to all connected clients
-  for (const client of game.clients) {
+  for (const { connection } of game.clients.values()) {
     try {
-      client.send(message);
+      connection.send(message);
     } catch (err) {
-      // Remove client if sending fails
-      game.clients.delete(client);
+      removeFailedClient(game, connection);
     }
   }
 }
@@ -80,18 +92,17 @@ export function broadcastGameSetup(game: GameServer) {
     countdown: game.countdown,
   };
 
-  const message = JSON.stringify({
-    type: "gameSetup",
-    data: gameState,
-  });
-
-  // Send to all connected clients
-  for (const client of game.clients) {
+  // Send to all connected clients - each gets told which player they are
+  for (const [playerNum, { connection }] of game.clients.entries()) {
     try {
-      client.send(message);
+      const message = JSON.stringify({
+        type: "gameSetup",
+        playerNumber: playerNum,
+        data: gameState,
+      });
+      connection.send(message);
     } catch (err) {
-      // Remove client if sending fails
-      game.clients.delete(client);
+      removeFailedClient(game, connection);
     }
   }
 }

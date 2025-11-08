@@ -1,5 +1,5 @@
 import { Router } from "./router/Router.js";
-import { Pong } from "./pong/Pong.js";
+import { Pong, GameMode } from "./pong/Pong.js";
 import { Login } from "./login/Login.js";
 import { Register } from "./register/Register.js";
 import { Home } from "./home/Home.js";
@@ -23,7 +23,14 @@ window.addEventListener("popstate", () => {
   }
 });
 
-const VALID_MODES = ["local", "ai", "remote", "friend", "tournament", "local-tournament"];
+const VALID_MODES = [
+  "local",
+  "ai",
+  "remote",
+  "friend",
+  "tournament",
+  "local-tournament",
+];
 
 const initPongPage = () => {
   const queryParams = router.getQueryParams();
@@ -56,7 +63,9 @@ const initPongPage = () => {
     if (canvas) {
       currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
       // Tell server to start a fresh game tied to this connection
-      currentPong.startGame();
+      currentPong.startGame(
+        mode === "local" ? GameMode.LOCAL : GameMode.ONLINE,
+      );
     } else {
       console.error("❌ Pong canvas not found");
     }

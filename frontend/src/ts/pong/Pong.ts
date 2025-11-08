@@ -1,3 +1,15 @@
+// Game mode types (must match backend)
+export enum GameMode {
+  LOCAL = "LOCAL",
+  ONLINE = "ONLINE",
+}
+
+interface PlayerInfo {
+  userId: number | string;
+  username: string;
+  avatar?: string;
+}
+
 export interface GameState {
   field: { width: number; height: number };
   ball: { x: number; y: number; radius: number };
@@ -22,6 +34,15 @@ export class Pong {
   private gameState: GameState | null = null;
   private readonly wsUrl: string;
   private isConnected: boolean = false;
+  private currentGameMode: GameMode = GameMode.LOCAL;
+  private currentPlayerInfo: PlayerInfo | null = null;
+  private readonly tabId: string;
+  private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
+  private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
+
+  // Store references to event listeners for cleanup
+  private keydownListener: ((event: KeyboardEvent) => void) | null = null;
+  private keyupListener: ((event: KeyboardEvent) => void) | null = null;
 
   constructor(canvasId: string, wsUrl: string) {
     const canvasEl = document.getElementById(canvasId);
@@ -33,16 +54,54 @@ export class Pong {
     this.canvas = canvas;
     this.ctx = ctx;
     this.wsUrl = wsUrl;
+    this.tabId = this.generateTabId();
 
     this.setupInputHandlers();
     this.connect();
     this.renderLoop();
   }
 
-  public startGame() {
+  /**
+   * Generate or retrieve a unique ID for this browser tab
+   * Persists across page refreshes within the same tab
+   */
+  private generateTabId(): string {
+    let tabId = sessionStorage.getItem("tabId");
+    if (!tabId) {
+      // Use crypto.randomUUID if available, otherwise fallback
+      if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        tabId = crypto.randomUUID();
+      } else {
+        // Fallback for older browsers
+        tabId = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+      sessionStorage.setItem("tabId", tabId);
+    }
+    return tabId;
+  }
+
+  /**
+   * Start a game with optional game mode and player information
+   * @param gameMode - The game mode (LOCAL, ONLINE, TOURNAMENT). Defaults to LOCAL.
+   * @param playerInfo - Optional player information (userId, username, avatar)
+   */
+  public startGame(gameMode: GameMode, playerInfo?: PlayerInfo) {
+    this.currentGameMode = gameMode;
+    // Use tabId as username for now (until login is implemented)
+    this.currentPlayerInfo = playerInfo || {
+      userId: this.tabId,
+      username: this.tabId,
+    };
+
     const sendStart = () => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type: "startGame" }));
+        const message: any = {
+          type: "startGame",
+          mode: this.currentGameMode,
+          player: this.currentPlayerInfo,
+        };
+
+        this.ws.send(JSON.stringify(message));
       }
     };
 
@@ -72,10 +131,29 @@ export class Pong {
       try {
         const message = JSON.parse(event.data);
 
-        if (message.type === "gameSetup") {
-          // Store initial full state
+        if (message.type === "error") {
+          // Handle error messages from server
+          console.error("❌ Game server error:", message.message);
+          alert(`Game Error: ${message.message}`);
+        } else if (message.type === "waiting") {
+          // Set waiting state and store player number
+          this.isWaitingForOpponent = true;
+        } else if (message.type === "ready") {
+          this.isWaitingForOpponent = false;
+        }
+        if (["gameSetup", "ready", "waiting"].includes(message.type)) {
           this.gameState = message.data;
-          console.log("📦 Received game setup:", this.gameState);
+
+          if (this.currentGameMode === GameMode.ONLINE) {
+            if (message.playerNumber) {
+              this.assignedPlayerNumber = message.playerNumber;
+            } else {
+              this.assignedPlayerNumber = 1;
+            }
+          } else {
+            this.assignedPlayerNumber = null;
+          }
+
           this.updateScoreDisplay();
         } else if (message.type === "gameState") {
           // Merge updates with existing state
@@ -104,7 +182,7 @@ export class Pong {
           }
         }
       } catch (err) {
-        console.error("Error parsing game state:", err);
+        console.error("Error parsing game message:", err);
       }
     };
 
@@ -144,15 +222,43 @@ export class Pong {
     if (score2El) score2El.textContent = this.gameState.score.player2.toString();
   }
 
-  private setupInputHandlers() {
-    const sendInput = (type: string, data: any) => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type, data }));
-      }
-    };
+  /**
+   * Handle keydown events based on game mode
+   */
+  private handleKeyDown(
+    key: string,
+    sendInput: (type: string, data: any) => void,
+  ): void {
+    // Skip if waiting for opponent
+    if (
+      this.currentGameMode === GameMode.ONLINE &&
+      this.assignedPlayerNumber === null
+    ) {
+      return;
+    }
 
-    document.addEventListener("keydown", (event) => {
-      const key = event.key.toLowerCase();
+    if (this.currentGameMode === GameMode.ONLINE) {
+      // ONLINE mode: only control assigned player
+      switch (key) {
+        case "arrowup":
+          if (this.assignedPlayerNumber) {
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "up",
+            });
+          }
+          break;
+        case "arrowdown":
+          if (this.assignedPlayerNumber) {
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "down",
+            });
+          }
+          break;
+      }
+    } else {
+      // LOCAL mode: both players controllable (S/X for player 1, arrows for player 2)
       switch (key) {
         case "s":
           sendInput("playerInput", { player: 1, action: "up" });
@@ -167,10 +273,37 @@ export class Pong {
           sendInput("playerInput", { player: 2, action: "down" });
           break;
       }
-    });
+    }
+  }
 
-    document.addEventListener("keyup", (event) => {
-      const key = event.key.toLowerCase();
+  /**
+   * Handle keyup events based on game mode
+   */
+  private handleKeyUp(
+    key: string,
+    sendInput: (type: string, data: any) => void,
+  ): void {
+    // Skip if waiting for opponent
+    if (
+      this.currentGameMode === GameMode.ONLINE &&
+      this.assignedPlayerNumber === null
+    ) {
+      return;
+    }
+
+    if (this.currentGameMode === GameMode.ONLINE) {
+      // ONLINE mode: only stop assigned player
+      if (
+        (key === "arrowup" || key === "arrowdown") &&
+        this.assignedPlayerNumber
+      ) {
+        sendInput("playerInput", {
+          player: this.assignedPlayerNumber,
+          action: "stop",
+        });
+      }
+    } else {
+      // LOCAL mode: stop both players
       switch (key) {
         case "s":
         case "x":
@@ -181,7 +314,31 @@ export class Pong {
           sendInput("playerInput", { player: 2, action: "stop" });
           break;
       }
-    });
+    }
+  }
+
+  private setupInputHandlers() {
+    const sendInput = (type: string, data: any) => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type, data }));
+      }
+    };
+
+    // Create and store keydown listener
+    this.keydownListener = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      this.handleKeyDown(key, sendInput);
+    };
+
+    // Create and store keyup listener
+    this.keyupListener = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      this.handleKeyUp(key, sendInput);
+    };
+
+    // Add event listeners
+    document.addEventListener("keydown", this.keydownListener);
+    document.addEventListener("keyup", this.keyupListener);
   }
 
   private renderLoop = () => {
@@ -223,9 +380,19 @@ export class Pong {
     this.drawCapsule(paddle1.capsule, scale);
     this.drawCapsule(paddle2.capsule, scale);
 
+    // Draw waiting for opponent message
+    if (this.isWaitingForOpponent) {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 200px Arial";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.fillText("Waiting for opponent...", width / 2, height / 2);
+      return;
+    }
+
     // Draw count down
-    if (countdown && countdown > 0) {
-      this.ctx.fillStyle = "#fff"; //"rgba(255, 255, 255, 0.8)";
+    if (!this.isWaitingForOpponent && countdown && countdown > 0) {
+      this.ctx.fillStyle = "#fff";
       this.ctx.font = "bold 500px Arial";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
@@ -271,6 +438,14 @@ export class Pong {
   }
 
   public destroy(): void {
+    // Remove event listeners
+    if (this.keydownListener) {
+      document.removeEventListener("keydown", this.keydownListener);
+    }
+    if (this.keyupListener) {
+      document.removeEventListener("keyup", this.keyupListener);
+    }
+
     this.ws?.close();
     this.ws = null;
     this.isConnected = false;

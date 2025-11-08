@@ -1,10 +1,10 @@
-import { Paddle, Ball, GameServer } from "./gameTypes.js";
+import { Paddle, Ball, GameServer, GameMode } from "./gameTypes.js";
 import { config } from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
 
-// Factory function to create
-export function createGame(): GameServer {
-  const game = new GameServer();
+// Factory function to create game with specified mode
+export function createGame(gameMode: GameMode): GameServer {
+  const game = new GameServer(gameMode);
 
   // Set up callbacks
   game.setUpdateCallback(updateGameState);
@@ -32,7 +32,8 @@ export function closestPointOnSegment(paddle: Paddle, ball: Ball) {
 
 export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
   // Early distance check - if ball is too far, skip expensive calculations
-  const roughDistance = Math.abs(ball.x - paddle.cx) + Math.abs(ball.y - paddle.cy);
+  const roughDistance =
+    Math.abs(ball.x - paddle.cx) + Math.abs(ball.y - paddle.cy);
   const maxPossibleDistance = ball.radius + paddle.width + paddle.length;
   if (roughDistance > maxPossibleDistance) return false;
 
@@ -94,7 +95,10 @@ export function collideBallWithWalls(game: GameServer) {
     resetBall(game);
   }
   if (ball.y - ball.radius < 0 || ball.y + ball.radius > field.height) {
-    ball.y = Math.max(ball.radius, Math.min(ball.y, field.height - ball.radius));
+    ball.y = Math.max(
+      ball.radius,
+      Math.min(ball.y, field.height - ball.radius),
+    );
     ball.speedY *= -1;
   }
 }
