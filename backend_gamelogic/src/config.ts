@@ -52,7 +52,7 @@ export const config = {
 
   // Game configuration
   game: {
-    width: parsePositiveInt("GAME_WIDTH", process.env.GAME_WIDTH, 4000),
+    width: parsePositiveInt("GAME_WIDTH", process.env.GAME_WIDTH, 3200),
     height: parsePositiveInt("GAME_HEIGHT", process.env.GAME_HEIGHT, 2000),
     maxScore: parsePositiveInt("MAX_SCORE", process.env.MAX_SCORE, 10),
     ballRadius: parsePositiveInt("BALL_RADIUS", process.env.BALL_RADIUS, 40),

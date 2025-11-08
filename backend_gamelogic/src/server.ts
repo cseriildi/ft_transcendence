@@ -1,7 +1,7 @@
 import Fastify from "fastify";
 import { FastifyInstance } from "fastify";
 import { config, validateConfig } from "./config.js";
-import { createGame, resetBall} from "./gameUtils.js";
+import { createGame, resetBall } from "./gameUtils.js";
 import { GameServer } from "./gameTypes.js";
 import { broadcastGameState, broadcastGameSetup } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
@@ -28,7 +28,7 @@ const activeGames = new Set<GameServer>();
 fastify.get("/health", async () => {
   const connectedClients = Array.from(activeGames).reduce(
     (acc, g) => acc + g.clients.size,
-    0
+    0,
   );
   return {
     status: "healthy",
@@ -91,7 +91,7 @@ fastify.register(async function (server: FastifyInstance) {
                 if (game !== thisGame || !game) break;
                 game.countdown = i;
                 broadcastGameState(game);
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise((resolve) => setTimeout(resolve, 500));
               }
               // Countdown complete, reset ball (gives it speed)
               if (game === thisGame && game) {
@@ -119,7 +119,10 @@ fastify.register(async function (server: FastifyInstance) {
 });
 
 // Handle player input
-function handlePlayerInput(game: GameServer, input: { player: number; action: string }) {
+function handlePlayerInput(
+  game: GameServer,
+  input: { player: number; action: string },
+) {
   const { player, action } = input;
   const targetPaddle = player === 1 ? game.Paddle1 : game.Paddle2;
 
@@ -151,7 +154,7 @@ fastify.listen(
         : `ws://${config.server.publicHost}/game`;
     console.log(`🎮 Game server running at ${address}`);
     console.log(`🔌 WebSocket available at ${wsUrl}`);
-  }
+  },
 );
 
 // Graceful shutdown
