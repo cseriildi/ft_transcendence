@@ -1,5 +1,22 @@
 import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
 
+// Game mode types
+export enum GameMode {
+  LOCAL = "LOCAL", // Two players on same machine
+  ONLINE = "ONLINE", // Two players on different machines
+}
+
+// Player information
+export interface PlayerInfo {
+  username: string;
+}
+
+export interface GameStartPayload {
+  type: "startGame";
+  mode: GameMode;
+  player: PlayerInfo;
+}
+
 export class Field {
   width: number;
   height: number;
@@ -16,11 +33,12 @@ export class Ball {
   speedX: number;
   speedY: number;
   constructor(field: Field) {
-    const angle = (Math.random() - 0.5) * Math.PI / 2;
+    const angle = ((Math.random() - 0.5) * Math.PI) / 2;
     this.x = field.width / 2;
     this.y = field.height / 2;
     this.radius = config.game.ballRadius;
-    this.speedX = Math.cos(angle) * config.game.ballSpeed * (Math.random() < 0.5 ? 1 : -1);
+    this.speedX =
+      Math.cos(angle) * config.game.ballSpeed * (Math.random() < 0.5 ? 1 : -1);
     this.speedY = Math.sin(angle) * config.game.ballSpeed;
   }
 }
@@ -32,35 +50,41 @@ export class Paddle {
   width: number;
   speed: number;
   ySpeed: number;
-  private _capsule: { x1: number; y1: number; x2: number; y2: number; R: number } | null = null;
+  private _capsule: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    R: number;
+  } | null = null;
   private _lastCy: number = -1;
 
   constructor(pos: number, field: Field, speed: number) {
-    this.cy = field.height / 2;                 // center y
-    this.length = field.height / 5;             // total length
-    this.width = field.width / 50;                            // thickness of paddle
+    this.cy = field.height / 2; // center y
+    this.length = field.height / 5; // total length
+    this.width = field.width / 50; // thickness of paddle
     this.cx = pos === 1 ? this.width * 2 : field.width - this.width * 2; // center x
     this.speed = speed;
     this.ySpeed = 0;
   }
-    getCapsule() {
-      // Cache capsule if position hasn't changed
-      if (this._capsule && this._lastCy === this.cy) {
-        return this._capsule;
-      }
-
-      const halfLen = this.length / 2 - this.width / 2;
-      this._capsule = {
-        x1: this.cx,
-        y1: this.cy - halfLen,
-        x2: this.cx,
-        y2: this.cy + halfLen,
-        R: this.width / 2
-      };
-      this._lastCy = this.cy;
-
+  getCapsule() {
+    // Cache capsule if position hasn't changed
+    if (this._capsule && this._lastCy === this.cy) {
       return this._capsule;
     }
+
+    const halfLen = this.length / 2 - this.width / 2;
+    this._capsule = {
+      x1: this.cx,
+      y1: this.cy - halfLen,
+      x2: this.cx,
+      y2: this.cy + halfLen,
+      R: this.width / 2,
+    };
+    this._lastCy = this.cy;
+
+    return this._capsule;
+  }
 }
 
 export class GameServer {
@@ -72,9 +96,11 @@ export class GameServer {
   score2: number = 0;
   countdown: number = 3;
   maxScore: number;
-  clients = new Set<any>();
+  clients = new Map<1 | 2, { playerInfo: PlayerInfo; connection: any }>();
   physicsInterval: number;
   renderInterval: number;
+  gameMode: GameMode;
+
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;
   private isRunning: boolean = false;
@@ -83,7 +109,7 @@ export class GameServer {
   private onPhysicsUpdate?: (game: GameServer) => void;
   private onRender?: (game: GameServer) => void;
 
-  constructor() {
+  constructor(gameMode: GameMode) {
     this.Field = new Field(config.game.width, config.game.height);
     this.Ball = new Ball(this.Field);
     this.Paddle1 = new Paddle(1, this.Field, config.game.paddleSpeed);
@@ -91,6 +117,7 @@ export class GameServer {
     this.maxScore = config.game.maxScore;
     this.physicsInterval = PHYSICS_INTERVAL;
     this.renderInterval = RENDER_INTERVAL;
+    this.gameMode = gameMode;
   }
 
   // Set callback functions
@@ -105,15 +132,17 @@ export class GameServer {
   // Start the game loops
   start() {
     if (this.isRunning) {
-      console.warn('⚠️  Game loops already running');
+      console.warn("⚠️  Game loops already running");
       return;
     }
 
     if (!this.onPhysicsUpdate || !this.onRender) {
-      throw new Error('❌ Callbacks not set. Call setUpdateCallback() and setRenderCallback() first.');
+      throw new Error(
+        "❌ Callbacks not set. Call setUpdateCallback() and setRenderCallback() first.",
+      );
     }
 
-    console.log('▶️  Starting game loops...');
+    console.log("▶️  Starting game loops...");
 
     // Start physics loop
     this.physicsLoopId = setInterval(() => {
@@ -126,17 +155,19 @@ export class GameServer {
     }, this.renderInterval);
 
     this.isRunning = true;
-    console.log(`✅ Game loops started (Physics: ${this.physicsInterval}ms, Render: ${this.renderInterval}ms)`);
+    console.log(
+      `✅ Game loops started (Physics: ${this.physicsInterval}ms, Render: ${this.renderInterval}ms)`,
+    );
   }
 
   // Stop the game loops
   stop() {
     if (!this.isRunning) {
-      console.warn('⚠️  Game loops not running');
+      console.warn("⚠️  Game loops not running");
       return;
     }
 
-    console.log('⏸️  Stopping game loops...');
+    console.log("⏸️  Stopping game loops...");
 
     if (this.physicsLoopId) {
       clearInterval(this.physicsLoopId);
@@ -149,7 +180,7 @@ export class GameServer {
     }
 
     this.isRunning = false;
-    console.log('✅ Game loops stopped');
+    console.log("✅ Game loops stopped");
   }
 
   // Get current state
