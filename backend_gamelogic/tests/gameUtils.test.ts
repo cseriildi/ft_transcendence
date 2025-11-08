@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { Field, Ball, Paddle } from "../src/gameTypes.js";
+import { Field, Ball, Paddle, GameMode } from "../src/gameTypes.js";
 import {
   closestPointOnSegment,
   resetBall,
@@ -115,7 +115,7 @@ describe("Game Utilities", () => {
 
   describe("resetBall", () => {
     it("should reset ball to center of field", () => {
-      const game = createGame();
+      const game = createGame(GameMode.LOCAL);
 
       // Move ball away from center
       game.Ball.x = 100;
@@ -128,7 +128,7 @@ describe("Game Utilities", () => {
     });
 
     it("should reset ball speed", () => {
-      const game = createGame();
+      const game = createGame(GameMode.LOCAL);
 
       // Set ball speed to zero
       game.Ball.speedX = 0;
@@ -143,7 +143,7 @@ describe("Game Utilities", () => {
 
   describe("createGame", () => {
     it("should create a game server instance", () => {
-      const game = createGame();
+      const game = createGame(GameMode.LOCAL);
       expect(game).toBeDefined();
       expect(game).toHaveProperty("Ball");
       expect(game).toHaveProperty("Field");
@@ -152,15 +152,15 @@ describe("Game Utilities", () => {
     });
 
     it("should initialize scores to zero", () => {
-      const game = createGame();
+      const game = createGame(GameMode.LOCAL);
       expect(game.score1).toBe(0);
       expect(game.score2).toBe(0);
     });
 
     it("should have a clients set", () => {
-      const game = createGame();
+      const game = createGame(GameMode.LOCAL);
       expect(game.clients).toBeDefined();
-      expect(game.clients instanceof Set).toBe(true);
+      expect(game.clients instanceof Map).toBe(true);
     });
   });
 });
