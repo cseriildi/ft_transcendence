@@ -11,6 +11,7 @@ import type {
   Verify2FAData,
 } from "./2FATypes";
 import { ApiResponse } from "../../types/commonTypes.ts";
+import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
 
 export const twoFAController = {
   setup2FA: createHandler<{ Params: { userId: string } }, ApiResponse<Setup2FAData>>(
@@ -64,6 +65,10 @@ export const twoFAController = {
     async (request, { db }) => {
       const { userId, token } = request.body;
 
+      // Rate limit: 5 attempts per 15 minutes per user (brute force protection)
+      // 6-digit code = 1,000,000 combinations, lockout prevents enumeration
+      checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
+
       const user = await db.get<{ username: string; twofa_secret: string }>(
         "SELECT username, twofa_secret FROM users WHERE id = ?",
         [userId]
@@ -90,6 +95,11 @@ export const twoFAController = {
         window: 1, // Allow a 1-step window (30 seconds before or after)
       });
 
+      // Clear rate limit on successful verification
+      if (verified) {
+        resetRateLimit(`2fa:${userId}`);
+      }
+
       return ApiResponseHelper.success(
         { valid: verified },
         verified ? "Token verified" : "Invalid 2FA token"
@@ -100,6 +110,10 @@ export const twoFAController = {
   enable2FA: createHandler<{ Body: Enable2FARequest }, ApiResponse<{ enabled: boolean }>>(
     async (request, { db, reply }) => {
       const { userId, token } = request.body;
+
+      // Rate limit: 5 attempts per 15 minutes per user (same as verify)
+      checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
+
       const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
         "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
         [userId]
@@ -139,6 +153,9 @@ export const twoFAController = {
           endpoint: "enable2FA",
         });
       }
+
+      // Clear rate limit on successful enable
+      resetRateLimit(`2fa:${userId}`);
 
       await db.run("UPDATE users SET twofa_enabled = 1 WHERE id = ?", [userId]);
 

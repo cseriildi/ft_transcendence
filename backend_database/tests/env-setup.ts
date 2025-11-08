@@ -1,6 +1,9 @@
 // Set test environment variables BEFORE any modules are imported
 // This file is loaded first via setupFiles in vitest.config.ts
 
+// Mark as test environment
+process.env.NODE_ENV = "test";
+
 if (!process.env.GITHUB_CLIENT_ID) {
   process.env.GITHUB_CLIENT_ID = "test_client_id";
 }

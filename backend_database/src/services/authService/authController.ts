@@ -14,6 +14,8 @@ import {
 } from "../../utils/authUtils.ts";
 import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
 import { getAvatarUrl } from "../userService/userUtils.ts";
+import { assertPasswordValid } from "../../utils/passwordUtils.ts";
+import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(async (request, { db }) => {
@@ -149,6 +151,16 @@ export const authController = {
 
   createUser: createHandler<{ Body: CreateUserBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
+      // Rate limit: 5 registration attempts per 5 minutes per IP
+      const clientIp = request.ip;
+      checkRateLimit(`register:${clientIp}`, 5, 5 * 60);
+
+      // Validate password strength
+      assertPasswordValid(request.body.password, {
+        endpoint: "register",
+        email: request.body.email,
+      });
+
       if (request.body.password !== request.body.confirmPassword) {
         throw errors.validation("Passwords do not match", {
           endpoint: "register",
@@ -239,6 +251,11 @@ export const authController = {
   loginUser: createHandler<{ Body: UserLoginBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
       const { email, password } = request.body || {};
+
+      // Rate limit: 5 login attempts per 5 minutes per IP
+      const clientIp = request.ip;
+      checkRateLimit(`login:${clientIp}`, 5, 5 * 60);
+
       try {
         const result = await db.get<User & { password_hash: string }>(
           "SELECT id, username, email, created_at, password_hash FROM users WHERE email = ?",
@@ -262,6 +279,9 @@ export const authController = {
         const accessToken = await signAccessToken(result.id);
         const refreshToken = await generateAndStoreRefreshToken(db, result.id);
         setRefreshTokenCookie(reply, refreshToken);
+
+        // Clear rate limit on successful login
+        resetRateLimit(`login:${clientIp}`);
 
         // Retrieve avatar URL using helper
         const avatar_url = await getAvatarUrl(db, result.id);
