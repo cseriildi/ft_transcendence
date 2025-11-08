@@ -43,6 +43,36 @@ const initPongPage = () => {
     return;
   }
 
+  if (mode !== "local" && mode !== "remote") {
+    // Hide canvas and New Game button for unsupported modes
+    const canvas = document.getElementById("pong-canvas");
+    const newGameBtn = document.getElementById("new-game-btn");
+    if (canvas) canvas.style.display = "none";
+    if (newGameBtn) newGameBtn.style.display = "none";
+
+    // Hide score display and game description
+    const scoreDiv = document.querySelector(
+      ".flex.justify-center.gap-16",
+    ) as HTMLElement | null;
+    const gameDescDiv = document.querySelector(
+      ".flex.flex-col.text-center.justify-center",
+    ) as HTMLElement | null;
+    if (scoreDiv) scoreDiv.style.display = "none";
+    if (gameDescDiv) gameDescDiv.style.display = "none";
+
+    // Show WIP message
+    const maxWidthContainer = document.querySelector(".max-w-4xl");
+    if (maxWidthContainer) {
+      const wipMessage = document.createElement("div");
+      wipMessage.className = "text-center py-16";
+      wipMessage.innerHTML = `
+      <p class="text-3xl font-bold text-neon-yellow drop-shadow-neon mb-8">🚧 Work In Progress 🚧</p>
+      <p class="text-lg text-neon-cyan mb-8">${mode.toUpperCase()} mode is coming soon!</p>
+      `;
+      maxWidthContainer.appendChild(wipMessage);
+    }
+  }
+
   const backBtn = document.getElementById("back-btn");
   backBtn?.addEventListener("click", () => {
     currentPong?.destroy();
