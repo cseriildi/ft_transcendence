@@ -21,7 +21,8 @@ export function broadcastGameState(game : GameServer) {
     score: {
       player1: game.score1,
       player2: game.score2
-    }
+    },
+    countdown: game.countdown
   };
 
   const message = JSON.stringify({
@@ -75,7 +76,8 @@ export function broadcastGameSetup(game : GameServer) {
     score: {
       player1: game.score1,
       player2: game.score2
-    }
+    },
+    countdown: game.countdown
   };
 
   const message = JSON.stringify({
