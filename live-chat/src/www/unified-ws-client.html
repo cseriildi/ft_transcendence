@@ -681,16 +681,19 @@
         }
 
         // Call the REST API to block the user
-        fetch("http://localhost:3002/lobby/block", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            blocker: currentUsername,
-            blocked: currentChatUser,
-          }),
-        })
+        fetch(
+          `${location.protocol === "https:" ? "https" : "http"}://${location.hostname}${location.port ? `:${location.port}` : ""}/lobby/block`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              blocker: currentUsername,
+              blocked: currentChatUser,
+            }),
+          }
+        )
           .then((response) => {
             if (!response.ok) {
               return response.json().then((data) => {
