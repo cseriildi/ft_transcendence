@@ -1,7 +1,7 @@
 import fastify, { FastifyServerOptions } from "fastify";
 import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig, getConfigWarnings } from "./config.ts";
+import { config as appConfig, validateConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
@@ -52,14 +52,6 @@ export async function build(opts: BuildOptions = {}) {
     disableRateLimit,
   } = opts;
   const app = fastify({ logger });
-
-  // Log configuration warnings (env variables using fallbacks)
-  const warnings = getConfigWarnings();
-  if (warnings.length > 0) {
-    warnings.forEach((warning) => {
-      app.log.warn(`⚠️  ${warning}`);
-    });
-  }
 
   await app.register(cors, {
     origin: appConfig.cors.origins,
@@ -150,6 +142,40 @@ export async function build(opts: BuildOptions = {}) {
 
     await app.register(routes);
 
+    // Security headers - add as a lightweight helmet alternative
+    // We apply stricter headers in production and relaxed ones in development to avoid breaking local tooling (e.g., Swagger UI).
+    app.addHook("onSend", async (request, reply, payload) => {
+      try {
+        // Common headers
+        reply.header("X-Frame-Options", "DENY");
+        reply.header("X-Content-Type-Options", "nosniff");
+        reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+        reply.header("X-XSS-Protection", "0");
+
+        if (appConfig.server.env === "production") {
+          // HSTS (only over HTTPS)
+          reply.header("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+
+          // Conservative CSP - adjust as needed for external CDNs
+          // Allow Google Fonts (style + font) and keep connect-src restricted to secure origins
+          reply.header(
+            "Content-Security-Policy",
+            "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' wss: https:; frame-ancestors 'none'; base-uri 'self';"
+          );
+        } else {
+          // In development keep CSP relaxed to avoid breaking dev tooling like Swagger UI
+          reply.header(
+            "Content-Security-Policy",
+            "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * ws: wss: http: https:;"
+          );
+        }
+      } catch (err) {
+        // Don't block response on header setting failures
+        request.log.warn({ err }, "Failed to set security headers");
+      }
+      return payload;
+    });
+
     return app;
   } catch (err) {
     app.log.error(err);
@@ -182,6 +208,6 @@ const start = async () => {
 
 // Only start if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  void start(); // Explicitly mark as fire-and-forget : 
+  void start(); // Explicitly mark as fire-and-forget :
   // errors are handled inside start() and will exit the process
 }

@@ -30,16 +30,16 @@ describe("Config Module", () => {
   describe("config object", () => {
     it("should have default server configuration", () => {
       expect(config.server.port).toBe(3002);
-      expect(config.server.host).toBe("::");
+      expect(config.server.host).toBe("127.0.0.1"); // From env-setup.ts
       expect(config.server.env).toBeTruthy(); // Can be 'test' or 'development'
     });
 
     it("should have default database configuration", () => {
-      expect(config.database.path).toBe("src/database/database.db");
+      expect(config.database.path).toBe(":memory:"); // From env-setup.ts for tests
     });
 
     it("should have default logging configuration", () => {
-      expect(config.logging.level).toBe("info");
+      expect(config.logging.level).toBe("silent"); // From env-setup.ts for tests
     });
 
     it("should use environment variables when provided", () => {

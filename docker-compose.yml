@@ -8,6 +8,8 @@ services:
     env_file:
       - .env
     environment:
+      # Docker container marker for auto-detection
+      DOCKER_CONTAINER: "true"
       # Map .env variables to internal service variables
       PORT: ${DATABANK_PORT:-3000}
       HOST: ${DATABANK_HOST:-0.0.0.0}
@@ -32,6 +34,7 @@ services:
     env_file:
       - .env
     environment:
+      DOCKER_CONTAINER: "true"
       PORT: ${GAMELOGIC_PORT:-3001}
       HOST: ${GAMELOGIC_HOST:-0.0.0.0}
       NODE_ENV: ${NODE_ENV:-production}
@@ -89,6 +92,7 @@ services:
     env_file:
       - .env
     environment:
+      DOCKER_CONTAINER: "true"
       PORT: ${LIVECHAT_PORT:-3002}
       HOST: ${LIVECHAT_HOST:-0.0.0.0}
       NODE_ENV: ${NODE_ENV:-production}
