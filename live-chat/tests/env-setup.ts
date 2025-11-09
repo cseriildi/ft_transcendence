@@ -15,3 +15,8 @@ process.env.CORS_ORIGINS =
 // Service URLs
 process.env.AUTH_SERVICE_URL =
   process.env.AUTH_SERVICE_URL || "http://localhost:3000";
+
+// Public host and ports (used to build default CORS origins in src/config.ts)
+process.env.PUBLIC_HOST = process.env.PUBLIC_HOST || "localhost";
+process.env.NGINX_HTTP_PORT = process.env.NGINX_HTTP_PORT || "8443";
+process.env.FRONTEND_PORT = process.env.FRONTEND_PORT || "3000";
