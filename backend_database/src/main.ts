@@ -149,7 +149,7 @@ export async function build(opts: BuildOptions = {}) {
         // Common headers
         reply.header("X-Frame-Options", "DENY");
         reply.header("X-Content-Type-Options", "nosniff");
-  reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
+        reply.header("Referrer-Policy", "strict-origin-when-cross-origin");
         reply.header("X-XSS-Protection", "0");
 
         if (appConfig.server.env === "production") {
