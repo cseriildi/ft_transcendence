@@ -1,9 +1,6 @@
 // Set test environment variables BEFORE any modules are imported
 // This file is loaded first via setupFiles in vitest.config.ts
 
-// Mark as test environment
-process.env.NODE_ENV = "test";
-
 // Core required variables
 process.env.NODE_ENV = process.env.NODE_ENV || "test";
 process.env.HOST = process.env.HOST || "127.0.0.1";
