@@ -1,7 +1,7 @@
 import fastify, { FastifyServerOptions } from "fastify";
 import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig, getConfigWarnings } from "./config.ts";
+import { config as appConfig, validateConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
@@ -79,14 +79,6 @@ export async function build(opts: BuildOptions = {}) {
     // Use 'reqId' as log property name for consistency
     requestIdLogLabel: "reqId",
   });
-
-  // Log configuration warnings (env variables using fallbacks)
-  const warnings = getConfigWarnings();
-  if (warnings.length > 0) {
-    warnings.forEach((warning) => {
-      app.log.warn(`⚠️  ${warning}`);
-    });
-  }
 
   await app.register(cors, {
     origin: appConfig.cors.origins,

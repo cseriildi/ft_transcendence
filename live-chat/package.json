@@ -7,7 +7,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "../scripts/load-env.sh .env.development tsx watch src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
     "test": "vitest",
