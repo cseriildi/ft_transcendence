@@ -1,5 +1,6 @@
 import { Router } from "../router/Router.js";
 import { showErrorPopup } from "../main.js";
+import { config } from "../config.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 
@@ -37,7 +38,7 @@ export class Edit {
 
     if (emailInput && email !== emailInput.defaultValue) {
       requests.push(
-        fetchWithRefresh(`http://localhost:3000/api/users/${userId}/email`, {
+        fetchWithRefresh(`${config.apiUrl}/api/users/${userId}/email`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -51,7 +52,7 @@ export class Edit {
 
     if (usernameInput && username !== usernameInput.defaultValue) {
       requests.push(
-        fetchWithRefresh(`http://localhost:3000/api/users/${userId}/username`, {
+        fetchWithRefresh(`${config.apiUrl}/api/users/${userId}/username`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -68,7 +69,7 @@ export class Edit {
       formData.append("avatar", avatarInput.files[0]);
 
       requests.push(
-        fetchWithRefresh(`http://localhost:3000/api/users/avatar`, {
+        fetchWithRefresh(`${config.apiUrl}/api/users/avatar`, {
           method: "POST",
           body: formData,
           headers: {
@@ -147,7 +148,7 @@ export class Edit {
     });
 
     try {
-      const response = await fetchWithRefresh(`http://localhost:3000/api/users/${getUserId()}`, {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
         },

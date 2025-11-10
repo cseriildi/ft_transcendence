@@ -30,7 +30,7 @@ export async function handleJoinLobby(
   // Verify token
   try {
     const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || "http://localhost:3000";
+      process.env.AUTH_SERVICE_URL || "http://databank:3000";
     const upstream = await fetch(`${authServiceUrl}/auth/verify`, {
       method: "GET",
       headers: {
