@@ -26,7 +26,10 @@ async function checkRoutes(fastify: FastifyInstance) {
           },
           "Service is healthy"
         );
-      } catch {
+      } catch (error) {
+        // Log error with context for debugging database connectivity issues
+        fastify.log.error({ error, endpoint: "health-check" }, "Database health check failed");
+
         return reply
           .code(503)
           .send(

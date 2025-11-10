@@ -85,12 +85,15 @@ export const authController = {
 
     const accessToken = await signAccessToken(user.id);
 
-    const { newRefreshToken, avatar_url } = await db.transaction(async (tx) => {
+    // Token rotation: delete old token, create new one (must be atomic)
+    const newRefreshToken = await db.transaction(async (tx) => {
       await tx.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
       const newToken = await generateAndStoreRefreshToken(tx, user.id);
-      const avatarUrl = await getAvatarUrl(tx, user.id);
-      return { newRefreshToken: newToken, avatar_url: avatarUrl };
+      return newToken;
     });
+
+    // Avatar fetch is independent read operation - no transactional relationship
+    const avatar_url = await getAvatarUrl(db, user.id);
 
     setRefreshTokenCookie(reply, newRefreshToken);
 
@@ -196,17 +199,39 @@ export const authController = {
 
       const hash = await bcrypt.hash(request.body.password, 10);
 
-      const { userId, avatar_url } = await db.transaction(async (tx) => {
+      // Step 1: Create user in database transaction (atomic)
+      const userId = await db.transaction(async (tx) => {
         const result = await tx.run(
           "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
           [username.trim(), email.trim(), hash]
         );
+        return result.lastID;
+      });
 
-        const avatar = await copyDefaultAvatar(result.lastID);
-        await tx.run(
+      // Step 2: Filesystem operation outside transaction
+      // Concept: DB transactions can't control filesystem - separate systems
+      let avatar;
+      try {
+        avatar = await copyDefaultAvatar(userId);
+      } catch (err) {
+        // Compensating action: rollback user creation if file copy fails
+        request.log.error(
+          { userId, error: err },
+          "Avatar copy failed during registration, rolling back user creation"
+        );
+        await db.run("DELETE FROM users WHERE id = ?", [userId]);
+        throw errors.internal("Failed to create user avatar", {
+          userId,
+          endpoint: "register",
+        });
+      }
+
+      // Step 3: Store avatar metadata in database
+      try {
+        await db.run(
           "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
           [
-            result.lastID,
+            userId,
             avatar.fileUrl,
             avatar.filePath,
             avatar.fileName,
@@ -214,10 +239,22 @@ export const authController = {
             avatar.fileSize,
           ]
         );
+      } catch (err) {
+        // Compensating actions: cleanup filesystem and database
+        request.log.error(
+          { userId, error: err },
+          "Avatar DB insert failed, cleaning up file and user"
+        );
+        // TODO: Add deleteAvatar(userId) utility for proper cleanup
+        await db.run("DELETE FROM users WHERE id = ?", [userId]);
+        throw errors.internal("Failed to store avatar metadata", {
+          userId,
+          endpoint: "register",
+        });
+      }
 
-        const avatarUrl = await getAvatarUrl(tx, result.lastID);
-        return { userId: result.lastID, avatar_url: avatarUrl };
-      });
+      // Step 4: Fetch avatar URL for response
+      const avatar_url = await getAvatarUrl(db, userId);
 
       const accessToken = await signAccessToken(userId);
       const refreshToken = await generateAndStoreRefreshToken(db, userId);

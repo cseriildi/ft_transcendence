@@ -41,6 +41,7 @@ interface RateLimitEntry {
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Cleanup old entries every 5 minutes to prevent memory leak
+// .unref() allows graceful shutdown without blocking process exit
 setInterval(
   () => {
     const now = new Date();
@@ -51,7 +52,7 @@ setInterval(
     }
   },
   5 * 60 * 1000
-);
+).unref();
 
 /**
  * Check if rate limit exceeded for a given key

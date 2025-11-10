@@ -52,7 +52,16 @@ export class DatabaseHelper {
     for (let i = 0; i < params.length; i++) {
       const param = params[i];
 
-      if (param === null || param === undefined) {
+      // undefined is almost always a bug - fail fast
+      // Use null for intentional SQL NULL values
+      if (param === undefined) {
+        throw errors.internal(
+          `Invalid SQL parameter at index ${i}: received undefined. Use null for SQL NULL values.`
+        );
+      }
+
+      // null is valid (represents SQL NULL)
+      if (param === null) {
         continue;
       }
 

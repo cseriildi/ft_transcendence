@@ -75,7 +75,10 @@ export async function authenticatedRateLimit(
  * This could be used for more granular public endpoint limits
  * Example: Public search endpoint might be 10/min per IP
  */
-export async function publicRateLimit(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+export async function publicRateLimit(
+  request: FastifyRequest,
+  _reply: FastifyReply
+): Promise<void> {
   // Skip in test environment
   if (config.server.env === "test") {
     return;
