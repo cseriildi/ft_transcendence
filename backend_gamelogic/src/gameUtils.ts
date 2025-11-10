@@ -112,6 +112,8 @@ export function updateGameState(game: GameServer) {
   collideBallWithWalls(game);
 
   if (game.score1 >= game.maxScore || game.score2 >= game.maxScore) {
+    // Broadcast the final game state before stopping
+    broadcastGameState(game);
     // stop the game loops
     try {
       game.stop();
