@@ -1,14 +1,11 @@
 import fastify, { FastifyServerOptions } from "fastify";
 import routes from "./routes/index.ts";
 import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig } from "./config.ts";
+import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
 import { randomBytes } from "node:crypto";
-
-// Validate configuration on startup
-validateConfig();
 
 export type BuildOptions = {
   logger?: boolean | FastifyServerOptions["logger"];
