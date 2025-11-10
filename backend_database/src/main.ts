@@ -5,6 +5,7 @@ import { config as appConfig, validateConfig, getConfigWarnings } from "./config
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
+import { randomBytes } from "node:crypto";
 
 // Validate configuration on startup
 validateConfig();
@@ -14,6 +15,16 @@ export type BuildOptions = {
   database?: { path?: string };
   disableRateLimit?: boolean;
 };
+
+/**
+ * Generates a unique request ID
+ * Format: req-{timestamp}-{random} for easy chronological sorting
+ */
+function generateRequestId(): string {
+  const timestamp = Date.now().toString(36); // Base36 timestamp (shorter)
+  const random = randomBytes(4).toString("hex"); // 8 char random
+  return `req-${timestamp}-${random}`;
+}
 
 export async function build(opts: BuildOptions = {}) {
   const {
@@ -51,7 +62,23 @@ export async function build(opts: BuildOptions = {}) {
     database,
     disableRateLimit,
   } = opts;
-  const app = fastify({ logger });
+
+  const app = fastify({
+    logger,
+    // Custom request ID generation for distributed tracing
+    // Uses client-provided ID (x-request-id header) or generates unique ID
+    genReqId: (req) => {
+      const clientId = req.headers["x-request-id"];
+      if (typeof clientId === "string" && clientId.length > 0) {
+        return clientId;
+      }
+      return generateRequestId();
+    },
+    // Automatically set response header with request ID
+    requestIdHeader: "x-request-id",
+    // Use 'reqId' as log property name for consistency
+    requestIdLogLabel: "reqId",
+  });
 
   // Log configuration warnings (env variables using fallbacks)
   const warnings = getConfigWarnings();
@@ -119,6 +146,7 @@ export async function build(opts: BuildOptions = {}) {
     if (!disableRateLimit) {
       await app.register(rateLimit, { max: 20, timeWindow: "1 second" });
     }
+
     await app.register(dbConnector, {
       path: database?.path ?? appConfig.database.path,
     });
@@ -182,6 +210,6 @@ const start = async () => {
 
 // Only start if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  void start(); // Explicitly mark as fire-and-forget : 
+  void start(); // Explicitly mark as fire-and-forget :
   // errors are handled inside start() and will exit the process
 }

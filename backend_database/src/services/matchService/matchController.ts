@@ -15,7 +15,12 @@ export const matchController = {
         [winner, loser]
       );
       if (!playersExist || playersExist.count < 2) {
-        throw errors.notFound("One or both players do not exist");
+        throw errors.notFound("One or both players do not exist", {
+          winner,
+          loser,
+          foundCount: playersExist?.count || 0,
+          endpoint: "recordMatch",
+        });
       }
 
       const result = await db.run(
@@ -44,7 +49,10 @@ export const matchController = {
       // First check if the user exists
       const user = await db.get<User>(`SELECT * FROM users WHERE username = ?`, [username]);
       if (!user) {
-        throw errors.notFound("User not found");
+        throw errors.notFound("User", {
+          username,
+          endpoint: "getMatches",
+        });
       }
 
       // Then get their matches

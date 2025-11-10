@@ -5,12 +5,24 @@ import { ApiResponseHelper } from "../utils/responseUtils.ts";
 
 async function errorHandler(fastify: FastifyInstance) {
   fastify.setErrorHandler(async (error, request, reply) => {
-    // Log error with minimal context
-    fastify.log.error({
+    // Build structured log entry with rich context
+    const logContext: Record<string, unknown> = {
       error: error.message,
       url: request.url,
       method: request.method,
-    });
+      userId: request.user?.id,
+      reqId: request.id, // Request ID for correlation
+    };
+
+    // Add error-specific context if available
+    if (error instanceof AppError && error.context) {
+      logContext.context = error.context;
+      logContext.code = error.code;
+    }
+
+    // Log with full context for debugging
+    // Note: reqId is also in log automatically via child logger, but we include it here for clarity
+    fastify.log.error(logContext, "Request error occurred");
 
     // Handle Fastify validation errors
     if (error.validation) {

@@ -12,7 +12,10 @@ import {
   setRefreshTokenCookie,
   generateAndStoreRefreshToken,
 } from "../../utils/authUtils.ts";
-import { copyDefaultAvatar, deleteUploadedFile } from "../../utils/uploadUtils.ts";
+import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
+import { getAvatarUrl } from "../userService/userUtils.ts";
+import { assertPasswordValid } from "../../utils/passwordUtils.ts";
+import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(async (request, { db }) => {
@@ -21,7 +24,10 @@ export const authController = {
       [request.user!.id]
     );
     if (!dbUser) {
-      throw errors.notFound("User not found");
+      throw errors.notFound("User", {
+        userId: request.user!.id,
+        endpoint: "verifyToken",
+      });
     }
     return ApiResponseHelper.success({ verified: true }, "Token is valid and user exists");
   }),
@@ -31,68 +37,86 @@ export const authController = {
 
     const refreshToken = request.cookies.refresh_token;
     if (!refreshToken) {
-      throw errors.unauthorized("No refresh token provided");
+      throw errors.unauthorized("No refresh token provided", {
+        endpoint: "refresh",
+        hasCookie: !!request.cookies.refresh_token,
+      });
     }
 
-    try {
-      // Verify refresh token and get user ID
-      const decoded = await verifyRefreshToken(refreshToken);
-      const userId = parseInt(decoded.sub!);
-      const jti = decoded.jti!;
+    // Verify refresh token and get user ID
+    const decoded = await verifyRefreshToken(refreshToken);
+    const userId = parseInt(decoded.sub!);
+    const jti = decoded.jti!;
 
-      const storedToken = await db.get(
-        "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND revoked = 0 AND expires_at > datetime('now')",
-        [jti, userId]
-      );
+    const storedToken = await db.get<{ token_hash: string }>(
+      "SELECT * FROM refresh_tokens WHERE jti = ? AND user_id = ? AND revoked = 0 AND expires_at > datetime('now')",
+      [jti, userId]
+    );
 
-      if (!storedToken) {
-        throw errors.unauthorized("Invalid or expired refresh token");
-      }
-
-      const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
-      if (!tokenMatch) {
-        throw errors.unauthorized("Invalid refresh token");
-      }
-
-      const user = await db.get<User>(
-        "SELECT id, username, email, created_at FROM users WHERE id = ?",
-        [userId]
-      );
-
-      if (!user) {
-        throw errors.notFound("User not found");
-      }
-
-      const accessToken = await signAccessToken(user.id);
-
-      // Delete old refresh token and generate new one
-      await db.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
-      const newRefreshToken = await generateAndStoreRefreshToken(db, user.id);
-      setRefreshTokenCookie(reply, newRefreshToken);
-
-      // Retrieve avatar URL using helper
-      const avatar_url = await db.getAvatarUrl(user.id);
-
-      return ApiResponseHelper.success(
-        {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          created_at: user.created_at,
-          avatar_url,
-          tokens: { accessToken },
-        },
-        "Token refreshed successfully"
-      );
-    } catch (err: any) {
-      throw err;
+    if (!storedToken) {
+      throw errors.unauthorized("Invalid or expired refresh token", {
+        userId,
+        jti,
+        endpoint: "refresh",
+      });
     }
+
+    const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
+    if (!tokenMatch) {
+      throw errors.unauthorized("Invalid refresh token", {
+        userId,
+        jti,
+        endpoint: "refresh",
+        reason: "token_mismatch",
+      });
+    }
+
+    const user = await db.get<User>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!user) {
+      throw errors.notFound("User", {
+        userId,
+        endpoint: "refresh",
+      });
+    }
+
+    const accessToken = await signAccessToken(user.id);
+
+    // Token rotation: delete old token, create new one (must be atomic)
+    const newRefreshToken = await db.transaction(async (tx) => {
+      await tx.run("DELETE FROM refresh_tokens WHERE jti = ?", [decoded.jti]);
+      const newToken = await generateAndStoreRefreshToken(tx, user.id);
+      return newToken;
+    });
+
+    // Avatar fetch is independent read operation - no transactional relationship
+    const avatar_url = await getAvatarUrl(db, user.id);
+
+    setRefreshTokenCookie(reply, newRefreshToken);
+
+    return ApiResponseHelper.success(
+      {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        created_at: user.created_at,
+        avatar_url,
+        tokens: { accessToken },
+      },
+      "Token refreshed successfully"
+    );
   }),
 
   logout: createHandler(async (request, { db, reply }) => {
     const refreshToken = request.cookies.refresh_token;
     if (!refreshToken) {
-      throw errors.unauthorized("No refresh token provided");
+      throw errors.unauthorized("No refresh token provided", {
+        endpoint: "logout",
+        hasCookie: !!request.cookies.refresh_token,
+      });
     }
 
     try {
@@ -119,17 +143,31 @@ export const authController = {
         { message: "Logged out successfully" },
         "Logged out successfully"
       );
-    } catch (err: any) {
+    } catch {
       // Even if token is invalid/expired, clear the cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
-      throw errors.unauthorized("Invalid refresh token");
+      throw errors.unauthorized("Invalid refresh token", {
+        endpoint: "logout",
+      });
     }
   }),
 
   createUser: createHandler<{ Body: CreateUserBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
+      // Rate limit: 5 registration attempts per 5 minutes per IP
+      const clientIp = request.ip;
+      checkRateLimit(`register:${clientIp}`, 5, 5 * 60);
+
+      // Validate password strength
+      assertPasswordValid(request.body.password, {
+        endpoint: "register",
+        email: request.body.email,
+      });
+
       if (request.body.password !== request.body.confirmPassword) {
-        throw errors.validation("Passwords do not match");
+        throw errors.validation("Passwords do not match", {
+          endpoint: "register",
+        });
       }
       const emailExists = await db.get("SELECT id FROM users WHERE email = ?", [
         request.body.email,
@@ -139,54 +177,93 @@ export const authController = {
       ]);
 
       if (emailExists && userNameExists) {
-        throw errors.conflict("Email and username are already exist");
+        throw errors.conflict("Email and username are already exist", {
+          email: request.body.email,
+          username: request.body.username,
+          endpoint: "register",
+        });
       }
       if (emailExists) {
-        throw errors.conflict("Email is already exists");
+        throw errors.conflict("Email is already exists", {
+          email: request.body.email,
+          endpoint: "register",
+        });
       }
       if (userNameExists) {
-        throw errors.conflict("Username is already exists");
+        throw errors.conflict("Username is already exists", {
+          username: request.body.username,
+          endpoint: "register",
+        });
       }
       const { username, email } = request.body || {};
 
       const hash = await bcrypt.hash(request.body.password, 10);
-      const result = await db.run(
-        "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-        [username.trim(), email.trim(), hash]
-      );
 
-      const accessToken = await signAccessToken(result.lastID);
-      const refreshToken = await generateAndStoreRefreshToken(db, result.lastID);
-      setRefreshTokenCookie(reply, refreshToken);
-
-      // Copy default avatar for new user
-      const avatar = await copyDefaultAvatar(result.lastID);
-      const insert = await db.run(
-        "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-        [
-          result.lastID,
-          avatar.fileUrl,
-          avatar.filePath,
-          avatar.fileName,
-          avatar.mimeType,
-          avatar.fileSize,
-        ]
-      );
-      if (!insert) {
-        await deleteUploadedFile(avatar.fileUrl);
-        await db.run("DELETE FROM users WHERE id = ?", [result.lastID]);
-        throw errors.internal(
-          "Failed to assign default avatar to new user, registration rolled back, please retry"
+      // Step 1: Create user in database transaction (atomic)
+      const userId = await db.transaction(async (tx) => {
+        const result = await tx.run(
+          "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
+          [username.trim(), email.trim(), hash]
         );
+        return result.lastID;
+      });
+
+      // Step 2: Filesystem operation outside transaction
+      // Concept: DB transactions can't control filesystem - separate systems
+      let avatar;
+      try {
+        avatar = await copyDefaultAvatar(userId);
+      } catch (err) {
+        // Compensating action: rollback user creation if file copy fails
+        request.log.error(
+          { userId, error: err },
+          "Avatar copy failed during registration, rolling back user creation"
+        );
+        await db.run("DELETE FROM users WHERE id = ?", [userId]);
+        throw errors.internal("Failed to create user avatar", {
+          userId,
+          endpoint: "register",
+        });
       }
 
-      // Retrieve avatar URL using helper
-      const avatar_url = await db.getAvatarUrl(result.lastID);
+      // Step 3: Store avatar metadata in database
+      try {
+        await db.run(
+          "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+          [
+            userId,
+            avatar.fileUrl,
+            avatar.filePath,
+            avatar.fileName,
+            avatar.mimeType,
+            avatar.fileSize,
+          ]
+        );
+      } catch (err) {
+        // Compensating actions: cleanup filesystem and database
+        request.log.error(
+          { userId, error: err },
+          "Avatar DB insert failed, cleaning up file and user"
+        );
+        // TODO: Add deleteAvatar(userId) utility for proper cleanup
+        await db.run("DELETE FROM users WHERE id = ?", [userId]);
+        throw errors.internal("Failed to store avatar metadata", {
+          userId,
+          endpoint: "register",
+        });
+      }
+
+      // Step 4: Fetch avatar URL for response
+      const avatar_url = await getAvatarUrl(db, userId);
+
+      const accessToken = await signAccessToken(userId);
+      const refreshToken = await generateAndStoreRefreshToken(db, userId);
+      setRefreshTokenCookie(reply, refreshToken);
 
       // Log successful registration
       request.log.info(
         {
-          userId: result.lastID,
+          userId,
           username,
           email,
         },
@@ -196,7 +273,7 @@ export const authController = {
       reply.status(201);
       return ApiResponseHelper.success(
         {
-          id: result.lastID,
+          id: userId,
           username: username.trim(),
           email: email.trim(),
           created_at: new Date().toISOString(),
@@ -211,25 +288,40 @@ export const authController = {
   loginUser: createHandler<{ Body: UserLoginBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
       const { email, password } = request.body || {};
+
+      // Rate limit: 5 login attempts per 5 minutes per IP
+      const clientIp = request.ip;
+      checkRateLimit(`login:${clientIp}`, 5, 5 * 60);
+
       try {
         const result = await db.get<User & { password_hash: string }>(
           "SELECT id, username, email, created_at, password_hash FROM users WHERE email = ?",
           [email.trim()]
         );
         if (!result) {
-          throw errors.unauthorized("Invalid email");
+          throw errors.unauthorized("Invalid email", {
+            email: email.trim(),
+            endpoint: "login",
+          });
         }
         const passwordMatch = await bcrypt.compare(password, result.password_hash);
         if (!passwordMatch) {
-          throw errors.unauthorized("Invalid password");
+          throw errors.unauthorized("Invalid password", {
+            userId: result.id,
+            email: email.trim(),
+            endpoint: "login",
+          });
         }
 
         const accessToken = await signAccessToken(result.id);
         const refreshToken = await generateAndStoreRefreshToken(db, result.id);
         setRefreshTokenCookie(reply, refreshToken);
 
+        // Clear rate limit on successful login
+        resetRateLimit(`login:${clientIp}`);
+
         // Retrieve avatar URL using helper
-        const avatar_url = await db.getAvatarUrl(result.id);
+        const avatar_url = await getAvatarUrl(db, result.id);
 
         // Log successful login
         request.log.info(
@@ -253,7 +345,7 @@ export const authController = {
           },
           "User logged in successfully"
         );
-      } catch (err: any) {
+      } catch (err: unknown) {
         throw err;
       }
     }

@@ -10,7 +10,12 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
   const authHeader = request.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw errors.unauthorized("Access token required");
+    throw errors.unauthorized("Access token required", {
+      hasAuthHeader: !!authHeader,
+      authHeaderPrefix: authHeader?.substring(0, 7),
+      middleware: "requireAuth",
+      url: request.url,
+    });
   }
 
   const token = authHeader.substring(7); // Remove "Bearer " prefix

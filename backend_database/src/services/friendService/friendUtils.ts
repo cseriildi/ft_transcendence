@@ -11,7 +11,10 @@ import type { DatabaseHelper } from "../../utils/databaseUtils.ts";
  */
 export function ensureDifferentUsers(userId1: number, userId2: number) {
   if (userId1 === userId2) {
-    throw errors.validation("Tokenuser ID and Param ID cannot be the same");
+    throw errors.validation("Tokenuser ID and Param ID cannot be the same", {
+      userId: userId1,
+      function: "ensureDifferentUsers",
+    });
   }
 }
 
@@ -27,7 +30,13 @@ export async function ensureUsersExist(
   const user2 = await db.get<User>("SELECT id FROM users WHERE id = ?", [userId2]);
 
   if (!user1 || !user2) {
-    throw errors.notFound("One or both users not found");
+    throw errors.notFound("User(s)", {
+      userId1,
+      userId2,
+      user1Exists: !!user1,
+      user2Exists: !!user2,
+      function: "ensureUsersExist",
+    });
   }
 }
 

@@ -8,6 +8,7 @@ import { createHandler } from "../../utils/handlerUtils.ts";
 import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 import { MultipartFile } from "@fastify/multipart";
 import { ensureUserOwnership } from "../../utils/authUtils.ts";
+import { getAvatarUrl } from "./userUtils.ts";
 
 export const userController = {
   //structure for createHAndler:
@@ -24,10 +25,14 @@ export const userController = {
       id,
     ]);
     if (!user) {
-      throw errors.notFound("User");
+      throw errors.notFound("User", {
+        requestedUserId: id,
+        authenticatedUserId: request.user!.id,
+        endpoint: "getUserById",
+      });
     }
     // Retrieve avatar URL using helper (throws error if not found)
-    user.avatar_url = await db.getAvatarUrl(user.id);
+    user.avatar_url = await getAvatarUrl(db, user.id);
 
     return ApiResponseHelper.success(user, "User found");
   }),
@@ -52,7 +57,11 @@ export const userController = {
 
     // Check if request is multipart
     if (!request.isMultipart()) {
-      throw errors.validation("Request must be multipart/form-data with an avatar file");
+      throw errors.validation("Request must be multipart/form-data with an avatar file", {
+        userId,
+        contentType: request.headers["content-type"],
+        endpoint: "uploadAvatar",
+      });
     }
 
     let avatarUrl: string | undefined;
@@ -75,47 +84,55 @@ export const userController = {
         if (part.type === "file" && part.fieldname === "avatar") {
           const file = part as MultipartFile;
           avatarUrl = await saveUploadedFile(file);
-          // Convert URL path to file system path
           filePath = avatarUrl.replace(/^\/uploads\/avatars\//, "");
           fileMetadata = {
             filename: file.filename,
             mimetype: file.mimetype,
-            fileSize: (file as any).file?.bytesRead || 0,
+            fileSize: (file as { file?: { bytesRead?: number } }).file?.bytesRead || 0,
           };
-          break; // Only process first avatar file
+          break;
         }
       }
 
       if (!avatarUrl || !fileMetadata || !filePath) {
-        throw errors.validation("No avatar file provided in request");
+        throw errors.validation("No avatar file provided in request", {
+          userId,
+          hasAvatarUrl: !!avatarUrl,
+          hasMetadata: !!fileMetadata,
+          endpoint: "uploadAvatar",
+        });
       }
 
-      // Update or insert avatar record
+      await db.transaction(async (tx) => {
+        if (oldAvatarUrl) {
+          await tx.run(
+            "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
+            [
+              filePath,
+              avatarUrl,
+              fileMetadata!.filename,
+              fileMetadata!.mimetype,
+              fileMetadata!.fileSize,
+              userId,
+            ]
+          );
+        } else {
+          await tx.run(
+            "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
+            [
+              userId,
+              filePath,
+              avatarUrl,
+              fileMetadata!.filename,
+              fileMetadata!.mimetype,
+              fileMetadata!.fileSize,
+            ]
+          );
+        }
+      });
+
       if (oldAvatarUrl) {
-        await db.run(
-          "UPDATE avatars SET file_path = ?, file_url = ?, file_name = ?, mime_type = ?, file_size = ? WHERE user_id = ?",
-          [
-            filePath,
-            avatarUrl,
-            fileMetadata.filename,
-            fileMetadata.mimetype,
-            fileMetadata.fileSize,
-            userId,
-          ]
-        );
         await deleteUploadedFile(oldAvatarUrl);
-      } else {
-        await db.run(
-          "INSERT INTO avatars (user_id, file_path, file_url, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
-          [
-            userId,
-            filePath,
-            avatarUrl,
-            fileMetadata.filename,
-            fileMetadata.mimetype,
-            fileMetadata.fileSize,
-          ]
-        );
       }
 
       const result = await db.get<UploadAvatarData>(
@@ -124,12 +141,15 @@ export const userController = {
       );
 
       if (!result) {
-        throw errors.internal("Failed to retrieve uploaded avatar information");
+        throw errors.internal("Failed to retrieve uploaded avatar information", {
+          userId,
+          avatarUrl,
+          endpoint: "uploadAvatar",
+        });
       }
 
       return ApiResponseHelper.success(result, "Avatar uploaded successfully");
-    } catch (err: any) {
-      // Clean up newly uploaded file if update fails
+    } catch (err: unknown) {
       if (avatarUrl) {
         await deleteUploadedFile(avatarUrl);
       }
@@ -149,7 +169,12 @@ export const userController = {
       id,
     ]);
     if (existingEmail) {
-      throw errors.conflict("Email is already in use by another account");
+      throw errors.conflict("Email is already in use by another account", {
+        userId: id,
+        newEmail: email.trim(),
+        conflictingUserId: existingEmail.id,
+        endpoint: "changeEmail",
+      });
     }
 
     // Update email
@@ -160,7 +185,10 @@ export const userController = {
       [id]
     );
     if (!updatedUser) {
-      throw errors.notFound("User");
+      throw errors.notFound("User", {
+        userId: id,
+        endpoint: "changeEmail",
+      });
     }
 
     return ApiResponseHelper.success(updatedUser, "Email updated successfully");
@@ -178,7 +206,12 @@ export const userController = {
         [username.trim(), id]
       );
       if (existingUsername) {
-        throw errors.conflict("Username is already in use by another account");
+        throw errors.conflict("Username is already in use by another account", {
+          userId: id,
+          newUsername: username.trim(),
+          conflictingUserId: existingUsername.id,
+          endpoint: "changeUsername",
+        });
       }
 
       // Update username
@@ -189,7 +222,10 @@ export const userController = {
         [id]
       );
       if (!updatedUser) {
-        throw errors.notFound("User");
+        throw errors.notFound("User", {
+          userId: id,
+          endpoint: "changeUsername",
+        });
       }
 
       return ApiResponseHelper.success(updatedUser, "Username updated successfully");

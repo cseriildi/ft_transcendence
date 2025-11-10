@@ -24,7 +24,12 @@ export const friendController = {
 
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (existingRequest) {
-        throw errors.conflict("A friend request already exists between these users");
+        throw errors.conflict("A friend request already exists between these users", {
+          user1_Id,
+          user2_Id,
+          existingStatus: existingRequest.status,
+          endpoint: "addFriend",
+        });
       }
 
       const created_at = new Date().toISOString();
@@ -56,16 +61,35 @@ export const friendController = {
 
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
-        throw errors.conflict("No friend request exists between these users");
+        throw errors.conflict("No friend request exists between these users", {
+          user1_Id,
+          user2_Id,
+          endpoint: "acceptFriend",
+        });
       }
       if (existingRequest.inviter_id === user1_Id) {
-        throw errors.conflict("You cannot accept a friend request you sent yourself");
+        throw errors.conflict("You cannot accept a friend request you sent yourself", {
+          user1_Id,
+          user2_Id,
+          inviterId: existingRequest.inviter_id,
+          endpoint: "acceptFriend",
+        });
       }
       if (existingRequest.status === "accepted") {
-        throw errors.conflict("These users are already friends");
+        throw errors.conflict("These users are already friends", {
+          user1_Id,
+          user2_Id,
+          status: existingRequest.status,
+          endpoint: "acceptFriend",
+        });
       }
       if (existingRequest.status === "declined") {
-        throw errors.conflict("This friend request has already been declined by one of the users");
+        throw errors.conflict("This friend request has already been declined by one of the users", {
+          user1_Id,
+          user2_Id,
+          status: existingRequest.status,
+          endpoint: "acceptFriend",
+        });
       }
 
       const updated_at = new Date().toISOString();
@@ -97,20 +121,41 @@ export const friendController = {
 
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
-        throw errors.conflict("No friend request exists between these users");
+        throw errors.conflict("No friend request exists between these users", {
+          user1_Id,
+          user2_Id,
+          endpoint: "declineFriend",
+        });
       }
       if (existingRequest.inviter_id === user1_Id) {
         throw errors.conflict(
-          "You cannot decline a friend request you sent yourself, you can delete the friend-request instead"
+          "You cannot decline a friend request you sent yourself, you can delete the friend-request instead",
+          {
+            user1_Id,
+            user2_Id,
+            inviterId: existingRequest.inviter_id,
+            endpoint: "declineFriend",
+          }
         );
       }
       if (existingRequest.status === "accepted") {
         throw errors.conflict(
-          "These users are already friends, you can delete the friendship instead"
+          "These users are already friends, you can delete the friendship instead",
+          {
+            user1_Id,
+            user2_Id,
+            status: existingRequest.status,
+            endpoint: "declineFriend",
+          }
         );
       }
       if (existingRequest.status === "declined") {
-        throw errors.conflict("This friend request has already been declined");
+        throw errors.conflict("This friend request has already been declined", {
+          user1_Id,
+          user2_Id,
+          status: existingRequest.status,
+          endpoint: "declineFriend",
+        });
       }
 
       const updated_at = new Date().toISOString();
@@ -142,11 +187,22 @@ export const friendController = {
 
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
-        throw errors.conflict("No friend request exists between these users");
+        throw errors.conflict("No friend request exists between these users", {
+          user1_Id,
+          user2_Id,
+          endpoint: "removeFriend",
+        });
       }
       if (existingRequest.status === "declined" && existingRequest.inviter_id === user1_Id) {
         throw errors.conflict(
-          "You cannot delete a friend request you sent yourself that has been declined"
+          "You cannot delete a friend request you sent yourself that has been declined",
+          {
+            user1_Id,
+            user2_Id,
+            status: existingRequest.status,
+            inviterId: existingRequest.inviter_id,
+            endpoint: "removeFriend",
+          }
         );
       }
 
