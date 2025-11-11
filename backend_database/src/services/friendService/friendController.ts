@@ -1,4 +1,3 @@
-// src/services/friendService/friendController.ts
 import {
   UserParams,
   ManageFriendsBody,

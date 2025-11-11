@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import crypto from "node:crypto";
 import { errors } from "./errorUtils.ts";
-import { JwtPayload } from "../services/authService/authTypes.ts";
+import { AccessTokenPayload, RefreshTokenPayload } from "../services/authService/authTypes.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
 import { config } from "../config.ts";
 
@@ -39,13 +39,13 @@ export async function signRefreshToken(userId: number, jti: string) {
   return token;
 }
 
-export async function verifyAccessToken(token: string): Promise<JwtPayload> {
+export async function verifyAccessToken(token: string): Promise<AccessTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, ACCESS_SECRET, {
       issuer: ISSUER,
       audience: AUDIENCE,
     });
-    return payload as unknown as JwtPayload;
+    return payload as unknown as AccessTokenPayload;
   } catch {
     throw errors.unauthorized("Invalid or expired access token", {
       function: "verifyAccessToken",
@@ -53,13 +53,19 @@ export async function verifyAccessToken(token: string): Promise<JwtPayload> {
   }
 }
 
-export async function verifyRefreshToken(token: string): Promise<JwtPayload> {
+export async function verifyRefreshToken(token: string): Promise<RefreshTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, REFRESH_SECRET, {
       issuer: ISSUER,
       audience: AUDIENCE,
     });
-    return payload as unknown as JwtPayload;
+     
+    // Type guard: Ensure JTI exists on refresh tokens
+    if (!payload.jti) {
+      throw new Error("Refresh token missing JTI");
+    }
+    
+    return payload as unknown as RefreshTokenPayload;
   } catch {
     throw errors.unauthorized("Invalid or expired refresh token", {
       function: "verifyRefreshToken",
@@ -84,10 +90,10 @@ export async function requireAuth(request: FastifyRequest, _reply: FastifyReply)
     const payload = await verifyAccessToken(token);
 
     // Attach user info to request for use in handlers
+    // Note: Access tokens don't have JTI (only refresh tokens do)
     request.user = {
       id: parseInt(payload.sub!),
       sub: payload.sub!,
-      jti: payload.jti,
       iat: payload.iat,
       exp: payload.exp,
       iss: payload.iss,

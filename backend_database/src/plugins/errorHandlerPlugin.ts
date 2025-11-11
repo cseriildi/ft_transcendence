@@ -5,26 +5,24 @@ import { ApiResponseHelper } from "../utils/responseUtils.ts";
 
 async function errorHandler(fastify: FastifyInstance) {
   fastify.setErrorHandler(async (error, request, reply) => {
-    // Build structured log entry with rich context
+    // Build structured log
     const logContext: Record<string, unknown> = {
       error: error.message,
       url: request.url,
       method: request.method,
       userId: request.user?.id,
-      reqId: request.id, // Request ID for correlation
+      reqId: request.id,
     };
 
-    // Add error-specific context if available
+    //error-specific context if available
     if (error instanceof AppError && error.context) {
       logContext.context = error.context;
       logContext.code = error.code;
     }
 
-    // Log with full context for debugging
-    // Note: reqId is also in log automatically via child logger, but we include it here for clarity
     fastify.log.error(logContext, "Request error occurred");
 
-    // Handle Fastify validation errors
+    // Handle Fastify validation errors (like schema validation)
     if (error.validation) {
       reply.status(400);
       return ApiResponseHelper.error("VALIDATION_ERROR", error.message);
