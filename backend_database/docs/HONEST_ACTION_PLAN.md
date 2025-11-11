@@ -10,46 +10,23 @@
 
 1. **Config validation** - ✅ Production fails on missing secrets, dev uses fallbacks with warnings. This is CORRECT.
 2. **Transaction support** - ✅ Race conditions fixed with proper ACID transactions
-3. **Type safety** - ✅ No `any[]` leakage, proper TypeScript throughout
+3. **Type safety** - ✅ Token types separated (AccessTokenPayload vs RefreshTokenPayload), no `any[]` leakage
 4. **Authentication** - ✅ JWT + refresh rotation + OAuth + 2FA is ambitious and well-executed
 5. **Testing** - ✅ 141 passing tests, proper isolated setup
 6. **Observability** - ✅ Request IDs, structured logging, health checks
 7. **Documentation** - ✅ Copilot instructions are chef's kiss
+8. **Graceful Shutdown** - ✅ SIGTERM/SIGINT handlers close server cleanly
+9. **Cookie Security** - ✅ sameSite='strict' for CSRF protection
+10. **Rate Limiting** - ✅ Environment-specific limits (strict in prod, relaxed in dev)
 
 ---
 
-## 🎯 Priority Fixes (8/10 → 9/10)
+## 🎯 Remaining Improvements (Optional Polish)
 
-### P0: Production Hardening (Must-Fix)
+### P0: Production Hardening
 
-#### 1. **Graceful Shutdown** ⏱️ 30min | 🎯 HIGH IMPACT
-**Why:** Docker/K8s will send SIGTERM before killing container. Currently, in-flight requests are abandoned mid-operation.
-
-**The Problem:**
-```typescript
-// main.ts - No signal handlers
-await app.listen({ port: config.server.port, host: config.server.host });
-// Container gets SIGTERM → immediate process.exit() → database writes fail
-```
-
-**Fix:**
-```typescript
-// In main.ts after await start()
-const signals: NodeJS.Signals[] = ["SIGTERM", "SIGINT"];
-signals.forEach((signal) => {
-  process.on(signal, async () => {
-    app.log.info(`Received ${signal}, closing server gracefully...`);
-    try {
-      await app.close(); // Closes DB connection, waits for in-flight requests
-      app.log.info("Server closed gracefully");
-      process.exit(0);
-    } catch (err) {
-      app.log.error("Error during graceful shutdown:", err);
-      process.exit(1);
-    }
-  });
-});
-```
+#### 1. ~~**Graceful Shutdown**~~ ✅ COMPLETED (30min)
+**Status:** Implemented in `main.ts` with SIGTERM/SIGINT handlers
 
 **Interview Angle:** "How do you handle container restarts without data loss?" → "Graceful shutdown with SIGTERM handler. Fastify's `close()` waits for in-flight requests and closes DB connections cleanly."
 
@@ -235,7 +212,7 @@ const user = await request.server.dbHelper.get(...);
 
 ---
 
-#### 6. **Consistent Error Context** ⏱️ 1 hour | 🎯 MEDIUM IMPACT
+#### 5. **Consistent Error Context** ⏱️ 1 hour | 🎯 MEDIUM IMPACT
 **Current State:** MOSTLY DONE (you already added context to ~80 errors per ACTION_PLAN.md)
 
 **Remaining Issues:**
@@ -257,41 +234,25 @@ throw errors.notFound("User", {
 
 ---
 
-### P2: Nice-to-Haves (If You Have Time)
+### P2: Nice-to-Haves (Completed)
 
-#### 7. **Environment-Specific Rate Limits** ⏱️ 30min
-```typescript
-// rateLimitUtils.ts
-const isProduction = config.server.env === "production";
-
-export const RATE_LIMITS = {
-  login: isProduction ? { max: 5, window: 5 * 60 } : { max: 100, window: 60 },
-  register: isProduction ? { max: 5, window: 5 * 60 } : { max: 100, window: 60 },
-  twoFA: isProduction ? { max: 5, window: 15 * 60 } : { max: 100, window: 60 },
-};
-```
+#### 6. ~~**Environment-Specific Rate Limits**~~ ✅ COMPLETED (30min)
+**Status:** Already implemented in `rateLimitUtils.ts` with isProd checks
 
 **Why:** Development shouldn't hit rate limits during testing.
 
 ---
 
-#### 8. **Cookie Security Hardening** ⏱️ 15min
-```typescript
-// authUtils.ts - setRefreshTokenCookie
-reply.setCookie("refresh_token", refreshToken, {
-  httpOnly: true,
-  secure: config.server.env === "production", // HTTPS only in prod
-  sameSite: "strict", // ← ADD THIS (CSRF protection)
-  path: "/",
-  maxAge: 7 * 24 * 60 * 60,
-});
-```
+#### 7. ~~**Cookie Security Hardening**~~ ✅ COMPLETED (15min)
+**Status:** Updated `authUtils.ts` setRefreshTokenCookie with sameSite='strict'
 
 **Interview Angle:** "What's SameSite cookie attribute?" → "CSRF protection. `strict` = cookie only sent to same origin. `lax` = also sent on top-level navigation. `none` = always sent (requires `secure`). We use `strict` because refresh tokens are API-only, no cross-site navigation needed."
 
 ---
 
-#### 9. **Database Connection Pooling** ⏱️ 1 hour
+### P3: Future Considerations (Skip for Showcase)
+
+#### 8. **Database Connection Pooling** ⏱️ 1 hour
 **Current:** Single SQLite connection (fine for dev/showcase)
 **Production:** Would need connection pool (but SQLite doesn't support concurrent writes anyway)
 
@@ -299,7 +260,7 @@ reply.setCookie("refresh_token", refreshToken, {
 
 ---
 
-#### 10. **Better Test Assertions** ⏱️ 2-3 hours | 🎯 HIGH LEARNING VALUE
+#### 9. **Better Test Assertions** ⏱️ 2-3 hours | 🎯 HIGH LEARNING VALUE
 **Current:** Tests mostly check status codes and `body.success`, with some data validation
 **Problem:** Missing deeper assertions that catch regressions and side effects
 
