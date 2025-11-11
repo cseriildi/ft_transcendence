@@ -3,6 +3,7 @@ import { CreateUserBody, UserLoginBody, AuthUserData } from "./authTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { requestErrors } from "../../utils/errorUtils.ts";
+import { sanitize } from "../../utils/sanitizationUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import bcrypt from "bcrypt";
@@ -171,7 +172,10 @@ export const authController = {
       if (userNameExists) {
         throw errors.conflict("Username already exists", { username: request.body.username });
       }
-      const { username, email } = request.body || {};
+
+      // Sanitize input before storage (prevent XSS)
+      const cleanUsername = sanitize.username(request.body.username);
+      const cleanEmail = sanitize.email(request.body.email);
 
       const hash = await bcrypt.hash(request.body.password, 10);
 
@@ -179,7 +183,7 @@ export const authController = {
       const userId = await db.transaction(async (tx) => {
         const result = await tx.run(
           "INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)",
-          [username.trim(), email.trim(), hash]
+          [cleanUsername, cleanEmail, hash]
         );
         return result.lastID;
       });
@@ -234,8 +238,8 @@ export const authController = {
       request.log.info(
         {
           userId,
-          username,
-          email,
+          username: cleanUsername,
+          email: cleanEmail,
         },
         "User registered successfully"
       );
@@ -244,8 +248,8 @@ export const authController = {
       return ApiResponseHelper.success(
         {
           id: userId,
-          username: username.trim(),
-          email: email.trim(),
+          username: cleanUsername,
+          email: cleanEmail,
           created_at: new Date().toISOString(),
           avatar_url,
           tokens: { accessToken },
@@ -260,6 +264,9 @@ export const authController = {
       const errors = requestErrors(request);
       const { email, password } = request.body || {};
 
+      // Sanitize email for lookup (normalize for consistency)
+      const cleanEmail = sanitize.email(email);
+
       // Rate limit: 5 login attempts per 5 minutes per IP
       const clientIp = request.ip;
       checkRateLimit(`login:${clientIp}`, 5, 5 * 60);
@@ -267,14 +274,14 @@ export const authController = {
       try {
         const result = await db.get<User & { password_hash: string }>(
           "SELECT id, username, email, created_at, password_hash FROM users WHERE email = ?",
-          [email.trim()]
+          [cleanEmail]
         );
         if (!result) {
-          throw errors.unauthorized("Invalid email", { email: email.trim() });
+          throw errors.unauthorized("Invalid email", { email: cleanEmail });
         }
         const passwordMatch = await bcrypt.compare(password, result.password_hash);
         if (!passwordMatch) {
-          throw errors.unauthorized("Invalid password", { email: email.trim() });
+          throw errors.unauthorized("Invalid password", { email: cleanEmail });
         }
 
         const accessToken = await signAccessToken(result.id);

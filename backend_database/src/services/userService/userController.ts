@@ -3,6 +3,7 @@ import { UserParams, UploadAvatarData } from "./userTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { requestErrors } from "../../utils/errorUtils.ts";
+import { sanitize } from "../../utils/sanitizationUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
@@ -148,20 +149,23 @@ export const userController = {
     ensureUserOwnership(request.user!.id, id);
     const { email } = request.body as { email: string };
 
+    // Sanitize email before checking/storing
+    const cleanEmail = sanitize.email(email);
+
     // Schema already validates email format and required field
     // Check if email is already in use by another user
     const existingEmail = await db.get<User>("SELECT id FROM users WHERE email = ? AND id != ?", [
-      email.trim(),
+      cleanEmail,
       id,
     ]);
     if (existingEmail) {
       throw errors.conflict("Email is already in use by another account", {
-        newEmail: email.trim(),
+        newEmail: cleanEmail,
       });
     }
 
     // Update email
-    await db.run("UPDATE users SET email = ? WHERE id = ?", [email.trim(), id]);
+    await db.run("UPDATE users SET email = ? WHERE id = ?", [cleanEmail, id]);
 
     const updatedUser = await db.get<User>(
       "SELECT id, username, email, created_at FROM users WHERE id = ?",
@@ -181,19 +185,22 @@ export const userController = {
       ensureUserOwnership(request.user!.id, id);
       const { username } = request.body as { username: string };
 
+      // Sanitize username before checking/storing
+      const cleanUsername = sanitize.username(username);
+
       // Check if username is already in use by another user
       const existingUsername = await db.get<User>(
         "SELECT id FROM users WHERE username = ? AND id != ?",
-        [username.trim(), id]
+        [cleanUsername, id]
       );
       if (existingUsername) {
         throw errors.conflict("Username is already in use by another account", {
-          newUsername: username.trim(),
+          newUsername: cleanUsername,
         });
       }
 
       // Update username
-      await db.run("UPDATE users SET username = ? WHERE id = ?", [username.trim(), id]);
+      await db.run("UPDATE users SET username = ? WHERE id = ?", [cleanUsername, id]);
 
       const updatedUser = await db.get<User>(
         "SELECT id, username, email, created_at FROM users WHERE id = ?",
