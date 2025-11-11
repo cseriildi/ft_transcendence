@@ -42,6 +42,7 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
 /**
  * Optional middleware - doesn't throw if no token, just attaches user if valid
  * Useful for routes that work differently for authenticated vs anonymous users
+ * not currently in use
  */
 export async function optionalAuth(request: FastifyRequest, reply: FastifyReply) {
   const authHeader = request.headers.authorization;

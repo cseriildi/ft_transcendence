@@ -1,9 +1,4 @@
 /**
- * Rate Limiting Middleware - Tiered Approach
- *
- * @concept Tiered Rate Limiting by Risk Profile
- *
- * Why Different Tiers:
  * - **Authentication (5/5min)**: High-risk, brute force target
  * - **2FA (5/15min + lockout)**: Critical security, 1M combinations
  * - **Authenticated API (100/min)**: Normal usage, per-user tracking
@@ -20,12 +15,6 @@
  * - To upgrade: Replace Map with Redis client
  * - Same function signatures: checkRateLimit(key, max, window)
  * - Zero changes to this middleware
- *
- * Interview Angle:
- * "How do you scale rate limiting across multiple servers?"
- * → Redis with atomic INCR/EXPIRE, shared state, sub-millisecond latency
- * "Why per-user for authenticated vs per-IP for public?"
- * → User can't spoof userId (JWT verified), IP can be shared (NAT, VPN)
  */
 
 import { FastifyRequest, FastifyReply } from "fastify";
@@ -39,16 +28,10 @@ import { config } from "../config.ts";
  * Does NOT apply to: /auth/*, /oauth/* (handled by endpoint-specific limits)
  *
  * Limit: 100 requests per minute per authenticated user
- *
- * Why 100/min:
- * - Average user makes ~10-20 API calls per page load
- * - SPA with polling might make 1 req/sec = 60/min
- * - 100/min allows burst + polling without hitting limit
- * - Still protects against abuse (6000 req/hour from single user)
  */
 export async function authenticatedRateLimit(
   request: FastifyRequest,
-  reply: FastifyReply
+  _reply: FastifyReply
 ): Promise<void> {
   // Skip in test environment (unless testing rate limits explicitly)
   if (config.server.env === "test") {
@@ -66,29 +49,5 @@ export async function authenticatedRateLimit(
   const key = `api:user:${userId}`;
 
   // 100 requests per minute per user
-  checkRateLimit(key, 100, 60);
-}
-
-/**
- * Optional: Rate limit for public endpoints (already have global 20/sec)
- *
- * This could be used for more granular public endpoint limits
- * Example: Public search endpoint might be 10/min per IP
- */
-export async function publicRateLimit(
-  request: FastifyRequest,
-  _reply: FastifyReply
-): Promise<void> {
-  // Skip in test environment
-  if (config.server.env === "test") {
-    return;
-  }
-
-  // Per-IP rate limiting for public endpoints
-  const clientIp = request.ip;
-  const key = `public:${clientIp}`;
-
-  // This is in addition to global 20/sec limit
-  // Use for specific public endpoints that need stricter limits
   checkRateLimit(key, 100, 60);
 }

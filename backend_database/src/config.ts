@@ -148,12 +148,3 @@ export const config = {
     },
   },
 } as const;
-
-// Export config warnings for logging after Fastify starts
-export const getConfigWarnings = () => [...configWarnings];
-
-// Validate configuration and log startup info
-export const validateConfig = () => {
-  // Configuration is logged by Fastify on startup
-  // No need for console.log here
-};

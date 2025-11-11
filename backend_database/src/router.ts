@@ -1,18 +1,18 @@
 import { FastifyInstance } from "fastify";
-import userRoutes from "../services/userService/userRoutes.ts";
-import authRoutes from "../services/authService/authRoutes.ts";
-import checkRoutes from "./healthRoutes.ts";
-import matchRoutes from "../services/matchService/matchRoutes.ts";
-import oauthRoutes from "../services/oAuthService/oAuthRoutes.ts";
-import { config } from "../config.ts";
-import friendRoutes from "../services/friendService/friendRoutes.ts";
-import { authenticatedRateLimit } from "../middleware/rateLimitMiddleware.ts";
+import userRoutes from "./services/userService/userRoutes.ts";
+import authRoutes from "./services/authService/authRoutes.ts";
+import monitoringRoutes from "./services/monitoringService/monitoringRoutes.ts";
+import matchRoutes from "./services/matchService/matchRoutes.ts";
+import oauthRoutes from "./services/oAuthService/oAuthRoutes.ts";
+import { config } from "./config.ts";
+import friendRoutes from "./services/friendService/friendRoutes.ts";
+import { authenticatedRateLimit } from "./middleware/rateLimitMiddleware.ts";
 
 async function routes(fastify: FastifyInstance) {
-  // Register health and auth routes WITHOUT rate limiting middleware
-  // (they have their own specific rate limits in controllers)
+  // Register monitoring, auth, and OAuth routes WITHOUT rate limiting middleware
+  // (auth/OAuth have their own specific rate limits in controllers)
   await Promise.all([
-    fastify.register(checkRoutes),
+    fastify.register(monitoringRoutes),
     fastify.register(authRoutes, { prefix: config.routes.auth }),
     fastify.register(oauthRoutes, { prefix: config.routes.oauth }),
   ]);

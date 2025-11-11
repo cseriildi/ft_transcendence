@@ -1,14 +1,7 @@
-/**
- * Friend service utility functions to reduce code duplication
- */
-
 import { errors } from "../../utils/errorUtils.ts";
 import type { User } from "../../types/commonTypes.ts";
 import type { DatabaseHelper } from "../../utils/databaseUtils.ts";
 
-/**
- * Validates that two user IDs are different (can't friend yourself)
- */
 export function ensureDifferentUsers(userId1: number, userId2: number) {
   if (userId1 === userId2) {
     throw errors.validation("Tokenuser ID and Param ID cannot be the same", {
@@ -18,9 +11,6 @@ export function ensureDifferentUsers(userId1: number, userId2: number) {
   }
 }
 
-/**
- * Validates that both users exist in the database
- */
 export async function ensureUsersExist(
   db: DatabaseHelper,
   userId1: number,
@@ -40,10 +30,6 @@ export async function ensureUsersExist(
   }
 }
 
-/**
- * Gets existing friend relationship between two users (if any)
- * Returns the relationship record or null
- */
 export async function getFriendshipRecord(
   db: DatabaseHelper,
   userId1: number,

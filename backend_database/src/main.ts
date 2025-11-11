@@ -1,14 +1,11 @@
 import fastify, { FastifyServerOptions } from "fastify";
-import routes from "./routes/index.ts";
-import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig, getConfigWarnings } from "./config.ts";
+import router from "./router.ts";
+import dbConnector from "./plugins/databasePlugin.ts";
+import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
 import { randomBytes } from "node:crypto";
-
-// Validate configuration on startup
-validateConfig();
 
 export type BuildOptions = {
   logger?: boolean | FastifyServerOptions["logger"];
@@ -38,6 +35,7 @@ export async function build(opts: BuildOptions = {}) {
             url: request.url,
             hostname: request.hostname,
             remoteAddress: request.ip,
+            userId: request.user?.id, // Include authenticated user ID in logs
           };
         },
         res(reply) {
@@ -79,14 +77,6 @@ export async function build(opts: BuildOptions = {}) {
     // Use 'reqId' as log property name for consistency
     requestIdLogLabel: "reqId",
   });
-
-  // Log configuration warnings (env variables using fallbacks)
-  const warnings = getConfigWarnings();
-  if (warnings.length > 0) {
-    warnings.forEach((warning) => {
-      app.log.warn(`⚠️  ${warning}`);
-    });
-  }
 
   await app.register(cors, {
     origin: appConfig.cors.origins,
@@ -153,14 +143,6 @@ export async function build(opts: BuildOptions = {}) {
     await app.register(errorHandler);
     await app.register(import("@fastify/cookie"));
 
-    // Optional: Add request/response logging hooks (only in development for now)
-    // Uncomment to enable detailed request logging
-    // if (appConfig.server.env === "development") {
-    //   const { requestLogger, responseLogger } = await import("./middleware/loggingMiddleware.ts");
-    //   app.addHook("onRequest", requestLogger);
-    //   app.addHook("onResponse", responseLogger);
-    // }
-
     // Register multipart for file uploads
     await app.register(import("@fastify/multipart"), {
       limits: {
@@ -176,7 +158,7 @@ export async function build(opts: BuildOptions = {}) {
       decorateReply: false,
     });
 
-    await app.register(routes);
+    await app.register(router);
 
     return app;
   } catch (err) {

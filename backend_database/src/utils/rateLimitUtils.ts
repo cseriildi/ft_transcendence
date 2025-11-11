@@ -1,13 +1,4 @@
 /**
- * Rate Limiting Utilities - In-Memory Implementation
- *
- * @concept Rate Limiting & Brute Force Protection
- *
- * Why Rate Limiting Matters:
- * - **Brute Force Protection**: Attackers try millions of passwords/2FA codes
- * - **DoS Prevention**: Stop single user from consuming all resources
- * - **Cost Control**: Prevent abuse that drives up server costs
- *
  * Different Tiers:
  * - 2FA verification: 5 attempts/15min (critical - 6-digit = 1M combos)
  * - Login/Register: 5 attempts/5min per IP
@@ -16,13 +7,6 @@
  * In-Memory vs Redis:
  * - In-Memory: Simple, works for single server (showcase appropriate)
  * - Redis: Persistent, scales across multiple servers (production upgrade)
- *
- * TODO Production: Replace with Redis for multi-server deployment
- * Pattern would be identical: redis.incr(key), redis.expire(key, ttl)
- *
- * Interview Angle:
- * "How do you prevent brute force attacks?"
- * → Rate limiting by user/IP, exponential backoff, account lockout after threshold
  */
 
 import { errors } from "./errorUtils.ts";
@@ -130,7 +114,8 @@ export function checkRateLimit(
   }
 
   rateLimitStore.set(key, entry);
-  return { allowed: true, remaining: maxAttempts - entry.attempts, resetAt: entry.resetAt };
+  // comment this in if you want to attach retrun value to reply.header later on
+  // return { allowed: true, remaining: maxAttempts - entry.attempts, resetAt: entry.resetAt };
 }
 
 /**
