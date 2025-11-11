@@ -1,6 +1,6 @@
 import fastify, { FastifyServerOptions } from "fastify";
-import routes from "./routes/index.ts";
-import dbConnector from "./database.ts";
+import router from "./router.ts";
+import dbConnector from "./plugins/databasePlugin.ts";
 import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
@@ -158,7 +158,7 @@ export async function build(opts: BuildOptions = {}) {
       decorateReply: false,
     });
 
-    await app.register(routes);
+    await app.register(router);
 
     return app;
   } catch (err) {
