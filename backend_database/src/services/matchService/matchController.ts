@@ -1,5 +1,5 @@
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { Match, CreateMatchBody, GetMatchesQuery } from "./matchTypes.ts";
@@ -8,6 +8,7 @@ import { User, ApiResponse } from "../../types/commonTypes.ts";
 export const matchController = {
   createMatch: createHandler<{ Body: CreateMatchBody }, ApiResponse<Match>>(
     async (request, { db, reply }) => {
+      const errors = requestErrors(request);
       const { winner, loser, winner_score, loser_score } = request.body;
 
       const playersExist = await db.get<{ count: number }>(
@@ -19,7 +20,6 @@ export const matchController = {
           winner,
           loser,
           foundCount: playersExist?.count || 0,
-          endpoint: "recordMatch",
         });
       }
 
@@ -44,15 +44,13 @@ export const matchController = {
 
   getMatches: createHandler<{ Params: GetMatchesQuery }, ApiResponse<Match[]>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { username } = request.params;
 
       // First check if the user exists
       const user = await db.get<User>(`SELECT * FROM users WHERE username = ?`, [username]);
       if (!user) {
-        throw errors.notFound("User", {
-          username,
-          endpoint: "getMatches",
-        });
+        throw errors.notFound("User", { username });
       }
 
       // Then get their matches

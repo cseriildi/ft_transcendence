@@ -2,7 +2,7 @@
 import { CreateUserBody, UserLoginBody, AuthUserData } from "./authTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import bcrypt from "bcrypt";
@@ -19,26 +19,24 @@ import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
 
 export const authController = {
   verifyToken: createHandler<{}>(async (request, { db }) => {
+    const errors = requestErrors(request);
     const dbUser = await db.get<User>(
       "SELECT id, username, email, created_at FROM users WHERE id = ?",
       [request.user!.id]
     );
     if (!dbUser) {
-      throw errors.notFound("User", {
-        userId: request.user!.id,
-        endpoint: "verifyToken",
-      });
+      throw errors.notFound("User");
     }
     return ApiResponseHelper.success({ verified: true }, "Token is valid and user exists");
   }),
 
   refresh: createHandler<{}, ApiResponse<AuthUserData>>(async (request, context) => {
+    const errors = requestErrors(request);
     const { db, reply } = context;
 
     const refreshToken = request.cookies.refresh_token;
     if (!refreshToken) {
       throw errors.unauthorized("No refresh token provided", {
-        endpoint: "refresh",
         hasCookie: !!request.cookies.refresh_token,
       });
     }
@@ -54,21 +52,12 @@ export const authController = {
     );
 
     if (!storedToken) {
-      throw errors.unauthorized("Invalid or expired refresh token", {
-        userId,
-        jti,
-        endpoint: "refresh",
-      });
+      throw errors.unauthorized("Invalid or expired refresh token", { jti });
     }
 
     const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
     if (!tokenMatch) {
-      throw errors.unauthorized("Invalid refresh token", {
-        userId,
-        jti,
-        endpoint: "refresh",
-        reason: "token_mismatch",
-      });
+      throw errors.unauthorized("Invalid refresh token", { jti, reason: "token_mismatch" });
     }
 
     const user = await db.get<User>(
@@ -77,10 +66,7 @@ export const authController = {
     );
 
     if (!user) {
-      throw errors.notFound("User", {
-        userId,
-        endpoint: "refresh",
-      });
+      throw errors.notFound("User");
     }
 
     const accessToken = await signAccessToken(user.id);
@@ -111,10 +97,10 @@ export const authController = {
   }),
 
   logout: createHandler(async (request, { db, reply }) => {
+    const errors = requestErrors(request);
     const refreshToken = request.cookies.refresh_token;
     if (!refreshToken) {
       throw errors.unauthorized("No refresh token provided", {
-        endpoint: "logout",
         hasCookie: !!request.cookies.refresh_token,
       });
     }
@@ -146,14 +132,13 @@ export const authController = {
     } catch {
       // Even if token is invalid/expired, clear the cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
-      throw errors.unauthorized("Invalid refresh token", {
-        endpoint: "logout",
-      });
+      throw errors.unauthorized("Invalid refresh token");
     }
   }),
 
   createUser: createHandler<{ Body: CreateUserBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
+      const errors = requestErrors(request);
       // Rate limit: 5 registration attempts per 5 minutes per IP
       const clientIp = request.ip;
       checkRateLimit(`register:${clientIp}`, 5, 5 * 60);
@@ -165,9 +150,7 @@ export const authController = {
       });
 
       if (request.body.password !== request.body.confirmPassword) {
-        throw errors.validation("Passwords do not match", {
-          endpoint: "register",
-        });
+        throw errors.validation("Passwords do not match");
       }
       const emailExists = await db.get("SELECT id FROM users WHERE email = ?", [
         request.body.email,
@@ -177,23 +160,16 @@ export const authController = {
       ]);
 
       if (emailExists && userNameExists) {
-        throw errors.conflict("Email and username are already exist", {
+        throw errors.conflict("Email and username already exist", {
           email: request.body.email,
           username: request.body.username,
-          endpoint: "register",
         });
       }
       if (emailExists) {
-        throw errors.conflict("Email is already exists", {
-          email: request.body.email,
-          endpoint: "register",
-        });
+        throw errors.conflict("Email already exists", { email: request.body.email });
       }
       if (userNameExists) {
-        throw errors.conflict("Username is already exists", {
-          username: request.body.username,
-          endpoint: "register",
-        });
+        throw errors.conflict("Username already exists", { username: request.body.username });
       }
       const { username, email } = request.body || {};
 
@@ -220,10 +196,7 @@ export const authController = {
           "Avatar copy failed during registration, rolling back user creation"
         );
         await db.run("DELETE FROM users WHERE id = ?", [userId]);
-        throw errors.internal("Failed to create user avatar", {
-          userId,
-          endpoint: "register",
-        });
+        throw errors.internal("Failed to create user avatar", { userId });
       }
 
       // Step 3: Store avatar metadata in database
@@ -247,10 +220,7 @@ export const authController = {
         );
         // TODO: Add deleteAvatar(userId) utility for proper cleanup
         await db.run("DELETE FROM users WHERE id = ?", [userId]);
-        throw errors.internal("Failed to store avatar metadata", {
-          userId,
-          endpoint: "register",
-        });
+        throw errors.internal("Failed to store avatar metadata", { userId });
       }
 
       // Step 4: Fetch avatar URL for response
@@ -287,6 +257,7 @@ export const authController = {
 
   loginUser: createHandler<{ Body: UserLoginBody }, ApiResponse<AuthUserData>>(
     async (request, { db, reply }) => {
+      const errors = requestErrors(request);
       const { email, password } = request.body || {};
 
       // Rate limit: 5 login attempts per 5 minutes per IP
@@ -299,18 +270,11 @@ export const authController = {
           [email.trim()]
         );
         if (!result) {
-          throw errors.unauthorized("Invalid email", {
-            email: email.trim(),
-            endpoint: "login",
-          });
+          throw errors.unauthorized("Invalid email", { email: email.trim() });
         }
         const passwordMatch = await bcrypt.compare(password, result.password_hash);
         if (!passwordMatch) {
-          throw errors.unauthorized("Invalid password", {
-            userId: result.id,
-            email: email.trim(),
-            endpoint: "login",
-          });
+          throw errors.unauthorized("Invalid password", { email: email.trim() });
         }
 
         const accessToken = await signAccessToken(result.id);

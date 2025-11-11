@@ -1,6 +1,6 @@
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import type {
@@ -16,12 +16,12 @@ import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
 export const twoFAController = {
   setup2FA: createHandler<{ Params: { userId: string } }, ApiResponse<Setup2FAData>>(
     async (request, { db, reply }) => {
+      const errors = requestErrors(request);
       const userId = parseInt(request.params.userId);
 
       if (isNaN(userId)) {
         throw errors.validation("Invalid user ID", {
           userIdParam: request.params.userId,
-          endpoint: "setup2FA",
         });
       }
 
@@ -31,10 +31,7 @@ export const twoFAController = {
       ]);
 
       if (!user) {
-        throw errors.notFound("User", {
-          userId,
-          endpoint: "setup2FA",
-        });
+        throw errors.notFound("User", { targetUserId: userId });
       }
 
       // Generate secret
@@ -63,6 +60,7 @@ export const twoFAController = {
 
   verify2FA: createHandler<{ Body: Verify2FARequest }, ApiResponse<Verify2FAData>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { userId, token } = request.body;
 
       // Rate limit: 5 attempts per 15 minutes per user (brute force protection)
@@ -75,17 +73,11 @@ export const twoFAController = {
       );
 
       if (!user) {
-        throw errors.notFound("User", {
-          userId,
-          endpoint: "verify2FA",
-        });
+        throw errors.notFound("User", { targetUserId: userId });
       }
 
       if (!user.twofa_secret) {
-        throw errors.validation("2FA is not set up for this user", {
-          userId,
-          endpoint: "verify2FA",
-        });
+        throw errors.validation("2FA is not set up for this user", { targetUserId: userId });
       }
 
       const verified = speakeasy.totp.verify({
@@ -109,6 +101,7 @@ export const twoFAController = {
 
   enable2FA: createHandler<{ Body: Enable2FARequest }, ApiResponse<{ enabled: boolean }>>(
     async (request, { db, reply }) => {
+      const errors = requestErrors(request);
       const { userId, token } = request.body;
 
       // Rate limit: 5 attempts per 15 minutes per user (same as verify)
@@ -120,24 +113,15 @@ export const twoFAController = {
       );
 
       if (!user) {
-        throw errors.notFound("User", {
-          userId,
-          endpoint: "enable2FA",
-        });
+        throw errors.notFound("User", { targetUserId: userId });
       }
 
       if (!user.twofa_secret) {
-        throw errors.validation("2FA is not set up for this user", {
-          userId,
-          endpoint: "enable2FA",
-        });
+        throw errors.validation("2FA is not set up for this user", { targetUserId: userId });
       }
 
       if (user.twofa_enabled) {
-        throw errors.validation("2FA is already enabled", {
-          userId,
-          endpoint: "enable2FA",
-        });
+        throw errors.validation("2FA is already enabled", { targetUserId: userId });
       }
 
       const verified = speakeasy.totp.verify({
@@ -148,10 +132,7 @@ export const twoFAController = {
       });
 
       if (!verified) {
-        throw errors.validation("Invalid 2FA token", {
-          userId,
-          endpoint: "enable2FA",
-        });
+        throw errors.validation("Invalid 2FA token", { targetUserId: userId });
       }
 
       // Clear rate limit on successful enable
@@ -166,6 +147,7 @@ export const twoFAController = {
 
   disable2FA: createHandler<{ Body: Disable2FARequest }, ApiResponse<{ enabled: boolean }>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { userId, token } = request.body;
       const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
         "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
@@ -173,24 +155,15 @@ export const twoFAController = {
       );
 
       if (!user) {
-        throw errors.notFound("User", {
-          userId,
-          endpoint: "disable2FA",
-        });
+        throw errors.notFound("User", { targetUserId: userId });
       }
 
       if (!user.twofa_secret) {
-        throw errors.validation("2FA is not set up for this user", {
-          userId,
-          endpoint: "disable2FA",
-        });
+        throw errors.validation("2FA is not set up for this user", { targetUserId: userId });
       }
 
       if (!user.twofa_enabled) {
-        throw errors.validation("2FA is not enabled", {
-          userId,
-          endpoint: "disable2FA",
-        });
+        throw errors.validation("2FA is not enabled", { targetUserId: userId });
       }
       const verified = speakeasy.totp.verify({
         secret: user.twofa_secret,
@@ -200,10 +173,7 @@ export const twoFAController = {
       });
 
       if (!verified) {
-        throw errors.validation("Invalid 2FA token", {
-          userId,
-          endpoint: "disable2FA",
-        });
+        throw errors.validation("Invalid 2FA token", { targetUserId: userId });
       }
 
       await db.run("UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?", [

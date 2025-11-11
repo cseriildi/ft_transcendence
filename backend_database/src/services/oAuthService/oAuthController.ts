@@ -1,6 +1,6 @@
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import {
   signAccessToken,
   setRefreshTokenCookie,
@@ -24,6 +24,7 @@ const IS_PROD = config.server.env === "production";
 export const oauthController = {
   // Step 1: Redirect to GitHub
   initiateGitHub: createHandler(async (request, context) => {
+    const errors = requestErrors(request);
     const { reply } = context;
     const githubConfig = getGitHubConfig();
 
@@ -31,8 +32,6 @@ export const oauthController = {
       throw errors.internal("GitHub OAuth not configured", {
         hasClientId: !!githubConfig.clientId,
         hasClientSecret: !!githubConfig.clientSecret,
-        endpoint: "oauth-initiate",
-        provider: "github",
       });
     }
 
@@ -60,6 +59,7 @@ export const oauthController = {
     { Querystring: { code: string; state: string } },
     ApiResponse<AuthUserData>
   >(async (request, context) => {
+    const errors = requestErrors(request);
     const { code, state } = request.query;
     const { db, reply } = context;
 
@@ -67,8 +67,6 @@ export const oauthController = {
       throw errors.validation("Missing code or state parameter", {
         hasCode: !!code,
         hasState: !!state,
-        endpoint: "oauth-callback",
-        provider: "github",
       });
     }
 
@@ -78,8 +76,6 @@ export const oauthController = {
       throw errors.validation("Invalid state parameter", {
         hasCookieState: !!cookieState,
         stateMatch: cookieState === state,
-        endpoint: "oauth-callback",
-        provider: "github",
       });
     }
 
@@ -201,7 +197,6 @@ export const oauthController = {
         provider: "github",
         githubId: userInfo.id,
         email: userInfo.email,
-        endpoint: "oauth-callback",
       });
     }
 

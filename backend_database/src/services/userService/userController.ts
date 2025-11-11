@@ -2,7 +2,7 @@
 import { UserParams, UploadAvatarData } from "./userTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
@@ -18,6 +18,7 @@ export const userController = {
   //   }
   // ),
   getUserById: createHandler<{ Params: UserParams }, ApiResponse<User>>(async (request, { db }) => {
+    const errors = requestErrors(request);
     const { id } = request.params;
     ensureUserOwnership(request.user!.id, id);
 
@@ -25,11 +26,7 @@ export const userController = {
       id,
     ]);
     if (!user) {
-      throw errors.notFound("User", {
-        requestedUserId: id,
-        authenticatedUserId: request.user!.id,
-        endpoint: "getUserById",
-      });
+      throw errors.notFound("User");
     }
     // Retrieve avatar URL using helper (throws error if not found)
     user.avatar_url = await getAvatarUrl(db, user.id);
@@ -53,15 +50,12 @@ export const userController = {
   }),
 
   uploadAvatar: createHandler<{}, ApiResponse<UploadAvatarData>>(async (request, { db }) => {
+    const errors = requestErrors(request);
     const userId = request.user!.id;
 
     // Check if request is multipart
     if (!request.isMultipart()) {
-      throw errors.validation("Request must be multipart/form-data with an avatar file", {
-        userId,
-        contentType: request.headers["content-type"],
-        endpoint: "uploadAvatar",
-      });
+      throw errors.validation("Request must be multipart/form-data with an avatar file");
     }
 
     let avatarUrl: string | undefined;
@@ -95,12 +89,7 @@ export const userController = {
       }
 
       if (!avatarUrl || !fileMetadata || !filePath) {
-        throw errors.validation("No avatar file provided in request", {
-          userId,
-          hasAvatarUrl: !!avatarUrl,
-          hasMetadata: !!fileMetadata,
-          endpoint: "uploadAvatar",
-        });
+        throw errors.validation("No avatar file provided in request");
       }
 
       await db.transaction(async (tx) => {
@@ -141,11 +130,7 @@ export const userController = {
       );
 
       if (!result) {
-        throw errors.internal("Failed to retrieve uploaded avatar information", {
-          userId,
-          avatarUrl,
-          endpoint: "uploadAvatar",
-        });
+        throw errors.internal("Failed to retrieve uploaded avatar information");
       }
 
       return ApiResponseHelper.success(result, "Avatar uploaded successfully");
@@ -158,6 +143,7 @@ export const userController = {
   }),
 
   changeEmail: createHandler<{ Params: UserParams }, ApiResponse<User>>(async (request, { db }) => {
+    const errors = requestErrors(request);
     const { id } = request.params;
     ensureUserOwnership(request.user!.id, id);
     const { email } = request.body as { email: string };
@@ -170,10 +156,7 @@ export const userController = {
     ]);
     if (existingEmail) {
       throw errors.conflict("Email is already in use by another account", {
-        userId: id,
         newEmail: email.trim(),
-        conflictingUserId: existingEmail.id,
-        endpoint: "changeEmail",
       });
     }
 
@@ -185,10 +168,7 @@ export const userController = {
       [id]
     );
     if (!updatedUser) {
-      throw errors.notFound("User", {
-        userId: id,
-        endpoint: "changeEmail",
-      });
+      throw errors.notFound("User");
     }
 
     return ApiResponseHelper.success(updatedUser, "Email updated successfully");
@@ -196,6 +176,7 @@ export const userController = {
 
   changeUsername: createHandler<{ Params: UserParams }, ApiResponse<User>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { id } = request.params;
       ensureUserOwnership(request.user!.id, id);
       const { username } = request.body as { username: string };
@@ -207,10 +188,7 @@ export const userController = {
       );
       if (existingUsername) {
         throw errors.conflict("Username is already in use by another account", {
-          userId: id,
           newUsername: username.trim(),
-          conflictingUserId: existingUsername.id,
-          endpoint: "changeUsername",
         });
       }
 
@@ -222,10 +200,7 @@ export const userController = {
         [id]
       );
       if (!updatedUser) {
-        throw errors.notFound("User", {
-          userId: id,
-          endpoint: "changeUsername",
-        });
+        throw errors.notFound("User");
       }
 
       return ApiResponseHelper.success(updatedUser, "Username updated successfully");

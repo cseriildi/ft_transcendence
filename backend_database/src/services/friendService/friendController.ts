@@ -6,7 +6,7 @@ import {
 } from "./friendTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { createHandler } from "../../utils/handlerUtils.ts";
 import { ensureDifferentUsers, ensureUsersExist, getFriendshipRecord } from "./friendUtils.ts";
@@ -14,6 +14,7 @@ import { ensureDifferentUsers, ensureUsersExist, getFriendshipRecord } from "./f
 export const friendController = {
   addFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { id } = request.params;
       const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
@@ -24,10 +25,8 @@ export const friendController = {
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (existingRequest) {
         throw errors.conflict("A friend request already exists between these users", {
-          user1_Id,
-          user2_Id,
+          targetUserId: user2_Id,
           existingStatus: existingRequest.status,
-          endpoint: "addFriend",
         });
       }
 
@@ -51,6 +50,7 @@ export const friendController = {
 
   acceptFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { id } = request.params;
       const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
@@ -61,33 +61,25 @@ export const friendController = {
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users", {
-          user1_Id,
-          user2_Id,
-          endpoint: "acceptFriend",
+          targetUserId: user2_Id,
         });
       }
       if (existingRequest.inviter_id === user1_Id) {
         throw errors.conflict("You cannot accept a friend request you sent yourself", {
-          user1_Id,
-          user2_Id,
+          targetUserId: user2_Id,
           inviterId: existingRequest.inviter_id,
-          endpoint: "acceptFriend",
         });
       }
       if (existingRequest.status === "accepted") {
         throw errors.conflict("These users are already friends", {
-          user1_Id,
-          user2_Id,
-          status: existingRequest.status,
-          endpoint: "acceptFriend",
+          targetUserId: user2_Id,
+          currentStatus: existingRequest.status,
         });
       }
       if (existingRequest.status === "declined") {
         throw errors.conflict("This friend request has already been declined by one of the users", {
-          user1_Id,
-          user2_Id,
-          status: existingRequest.status,
-          endpoint: "acceptFriend",
+          targetUserId: user2_Id,
+          currentStatus: existingRequest.status,
         });
       }
 
@@ -111,6 +103,7 @@ export const friendController = {
 
   declineFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { id } = request.params;
       const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
@@ -121,19 +114,15 @@ export const friendController = {
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users", {
-          user1_Id,
-          user2_Id,
-          endpoint: "declineFriend",
+          targetUserId: user2_Id,
         });
       }
       if (existingRequest.inviter_id === user1_Id) {
         throw errors.conflict(
           "You cannot decline a friend request you sent yourself, you can delete the friend-request instead",
           {
-            user1_Id,
-            user2_Id,
+            targetUserId: user2_Id,
             inviterId: existingRequest.inviter_id,
-            endpoint: "declineFriend",
           }
         );
       }
@@ -141,19 +130,15 @@ export const friendController = {
         throw errors.conflict(
           "These users are already friends, you can delete the friendship instead",
           {
-            user1_Id,
-            user2_Id,
-            status: existingRequest.status,
-            endpoint: "declineFriend",
+            targetUserId: user2_Id,
+            currentStatus: existingRequest.status,
           }
         );
       }
       if (existingRequest.status === "declined") {
         throw errors.conflict("This friend request has already been declined", {
-          user1_Id,
-          user2_Id,
-          status: existingRequest.status,
-          endpoint: "declineFriend",
+          targetUserId: user2_Id,
+          currentStatus: existingRequest.status,
         });
       }
 
@@ -177,6 +162,7 @@ export const friendController = {
 
   removeFriend: createHandler<{ Params: UserParams }, ApiResponse<ManageFriendsBody>>(
     async (request, { db }) => {
+      const errors = requestErrors(request);
       const { id } = request.params;
       const user1_Id = request.user!.id;
       const user2_Id = parseInt(id);
@@ -187,20 +173,16 @@ export const friendController = {
       const existingRequest = await getFriendshipRecord(db, user1_Id, user2_Id);
       if (!existingRequest) {
         throw errors.conflict("No friend request exists between these users", {
-          user1_Id,
-          user2_Id,
-          endpoint: "removeFriend",
+          targetUserId: user2_Id,
         });
       }
       if (existingRequest.status === "declined" && existingRequest.inviter_id === user1_Id) {
         throw errors.conflict(
           "You cannot delete a friend request you sent yourself that has been declined",
           {
-            user1_Id,
-            user2_Id,
-            status: existingRequest.status,
+            targetUserId: user2_Id,
+            currentStatus: existingRequest.status,
             inviterId: existingRequest.inviter_id,
-            endpoint: "removeFriend",
           }
         );
       }
