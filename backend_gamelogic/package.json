@@ -8,7 +8,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "dev": "../scripts/load-env.sh .env.development tsx src/server.ts",
+    "dev": "dotenv -e .env.development -- tsx src/server.ts",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.3.1",
+    "dotenv-cli": "^11.0.0",
     "tsx": "4.20.5",
     "typescript": "5.9.2",
     "vitest": "^2.1.3"
