@@ -5,20 +5,19 @@ import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { requestErrors } from "../../utils/errorUtils.ts";
 import { sanitize } from "../../utils/sanitizationUtils.ts";
 import "../../types/fastifyTypes.ts";
-import { createHandler } from "../../utils/handlerUtils.ts";
+import { DatabaseHelper } from "../../utils/databaseUtils.ts";
+import { FastifyRequest, FastifyReply } from "fastify";
 import { saveUploadedFile, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 import { MultipartFile } from "@fastify/multipart";
 import { ensureUserOwnership } from "../../utils/authUtils.ts";
 import { getAvatarUrl } from "./userUtils.ts";
 
 export const userController = {
-  //structure for createHAndler:
-  // createHandler<{ whatever is provoded as neccesary for the query }, response type>(
-  //   async (request, { db , reply(optional)}) => {
-  //     // handler logic
-  //   }
-  // ),
-  getUserById: createHandler<{ Params: UserParams }, ApiResponse<User>>(async (request, { db }) => {
+  getUserById: async (
+    request: FastifyRequest<{ Params: UserParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<User>> => {
+    const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { id } = request.params;
     ensureUserOwnership(request.user!.id, id);
@@ -33,9 +32,10 @@ export const userController = {
     user.avatar_url = await getAvatarUrl(db, user.id);
 
     return ApiResponseHelper.success(user, "User found");
-  }),
+  },
 
-  getUsers: createHandler<{}, ApiResponse<User[]>>(async (request, { db }) => {
+  getUsers: async (request: FastifyRequest, _reply: FastifyReply): Promise<ApiResponse<User[]>> => {
+    const db = new DatabaseHelper(request.server.db);
     const users = await db.all<User>(
       `SELECT 
           u.id, 
@@ -48,9 +48,13 @@ export const userController = {
         ORDER BY u.created_at DESC`
     );
     return ApiResponseHelper.success(users, "Users retrieved");
-  }),
+  },
 
-  uploadAvatar: createHandler<{}, ApiResponse<UploadAvatarData>>(async (request, { db }) => {
+  uploadAvatar: async (
+    request: FastifyRequest,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<UploadAvatarData>> => {
+    const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const userId = request.user!.id;
 
@@ -141,9 +145,13 @@ export const userController = {
       }
       throw err;
     }
-  }),
+  },
 
-  changeEmail: createHandler<{ Params: UserParams }, ApiResponse<User>>(async (request, { db }) => {
+  changeEmail: async (
+    request: FastifyRequest<{ Params: UserParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<User>> => {
+    const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { id } = request.params;
     ensureUserOwnership(request.user!.id, id);
@@ -176,54 +184,58 @@ export const userController = {
     }
 
     return ApiResponseHelper.success(updatedUser, "Email updated successfully");
-  }),
+  },
 
-  changeUsername: createHandler<{ Params: UserParams }, ApiResponse<User>>(
-    async (request, { db }) => {
-      const errors = requestErrors(request);
-      const { id } = request.params;
-      ensureUserOwnership(request.user!.id, id);
-      const { username } = request.body as { username: string };
+  changeUsername: async (
+    request: FastifyRequest<{ Params: UserParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<User>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { id } = request.params;
+    ensureUserOwnership(request.user!.id, id);
+    const { username } = request.body as { username: string };
 
-      // Sanitize username before checking/storing
-      const cleanUsername = sanitize.username(username);
+    // Sanitize username before checking/storing
+    const cleanUsername = sanitize.username(username);
 
-      // Check if username is already in use by another user
-      const existingUsername = await db.get<User>(
-        "SELECT id FROM users WHERE username = ? AND id != ?",
-        [cleanUsername, id]
-      );
-      if (existingUsername) {
-        throw errors.conflict("Username is already in use by another account", {
-          newUsername: cleanUsername,
-        });
-      }
-
-      // Update username
-      await db.run("UPDATE users SET username = ? WHERE id = ?", [cleanUsername, id]);
-
-      const updatedUser = await db.get<User>(
-        "SELECT id, username, email, created_at FROM users WHERE id = ?",
-        [id]
-      );
-      if (!updatedUser) {
-        throw errors.notFound("User");
-      }
-
-      return ApiResponseHelper.success(updatedUser, "Username updated successfully");
+    // Check if username is already in use by another user
+    const existingUsername = await db.get<User>(
+      "SELECT id FROM users WHERE username = ? AND id != ?",
+      [cleanUsername, id]
+    );
+    if (existingUsername) {
+      throw errors.conflict("Username is already in use by another account", {
+        newUsername: cleanUsername,
+      });
     }
-  ),
 
-  updateHeartbeat: createHandler<{ Params: UserParams }, ApiResponse<{ last_seen: string }>>(
-    async (request, { db }) => {
-      const { id } = request.params;
-      ensureUserOwnership(request.user!.id, id);
+    // Update username
+    await db.run("UPDATE users SET username = ? WHERE id = ?", [cleanUsername, id]);
 
-      const last_seen = new Date().toISOString();
-
-      await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [last_seen, id]);
-
-      return ApiResponseHelper.success({ last_seen }, "Heartbeat updated");
+    const updatedUser = await db.get<User>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      [id]
+    );
+    if (!updatedUser) {
+      throw errors.notFound("User");
     }
-  ),
+
+    return ApiResponseHelper.success(updatedUser, "Username updated successfully");
+  },
+
+  updateHeartbeat: async (
+    request: FastifyRequest<{ Params: UserParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<{ last_seen: string }>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const { id } = request.params;
+    ensureUserOwnership(request.user!.id, id);
+
+    const last_seen = new Date().toISOString();
+
+    await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [last_seen, id]);
+
+    return ApiResponseHelper.success({ last_seen }, "Heartbeat updated");
+  },
 };

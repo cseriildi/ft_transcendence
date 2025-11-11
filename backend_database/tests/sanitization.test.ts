@@ -211,7 +211,7 @@ describe("Sanitization Utils", () => {
 
       expect(sanitized.username).toBe("john&lt;script&gt;alert(1)&lt;&#x2F;script&gt;");
       expect(sanitized.email).toBe("john@example.com");
-      
+
       // Verify no XSS possible
       expect(sanitized.username).not.toContain("<script>");
     });

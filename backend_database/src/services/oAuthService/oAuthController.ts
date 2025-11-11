@@ -1,4 +1,5 @@
-import { createHandler } from "../../utils/handlerUtils.ts";
+import { DatabaseHelper } from "../../utils/databaseUtils.ts";
+import { FastifyRequest, FastifyReply } from "fastify";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { requestErrors } from "../../utils/errorUtils.ts";
 import {
@@ -23,9 +24,8 @@ const IS_PROD = config.server.env === "production";
 
 export const oauthController = {
   // Step 1: Redirect to GitHub
-  initiateGitHub: createHandler(async (request, context) => {
+  initiateGitHub: async (request: FastifyRequest, reply: FastifyReply) => {
     const errors = requestErrors(request);
-    const { reply } = context;
     const githubConfig = getGitHubConfig();
 
     if (!githubConfig.clientId || !githubConfig.clientSecret) {
@@ -52,16 +52,16 @@ export const oauthController = {
     });
 
     return ApiResponseHelper.success({ redirectUrl: authUrl }, "GitHub OAuth redirect created");
-  }),
+  },
 
   // Step 2: Handle GitHub callback
-  handleGitHubCallback: createHandler<
-    { Querystring: { code: string; state: string } },
-    ApiResponse<AuthUserData>
-  >(async (request, context) => {
+  handleGitHubCallback: async (
+    request: FastifyRequest<{ Querystring: { code: string; state: string } }>,
+    reply: FastifyReply
+  ): Promise<ApiResponse<AuthUserData>> => {
+    const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { code, state } = request.query;
-    const { db, reply } = context;
 
     if (!code || !state) {
       throw errors.validation("Missing code or state parameter", {
@@ -253,5 +253,5 @@ export const oauthController = {
       },
       "GitHub OAuth login successful"
     );
-  }),
+  },
 };
