@@ -59,12 +59,6 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
       issuer: ISSUER,
       audience: AUDIENCE,
     });
-     
-    // Type guard: Ensure JTI exists on refresh tokens
-    if (!payload.jti) {
-      throw new Error("Refresh token missing JTI");
-    }
-    
     return payload as unknown as RefreshTokenPayload;
   } catch {
     throw errors.unauthorized("Invalid or expired refresh token", {
