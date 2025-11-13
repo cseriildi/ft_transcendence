@@ -1,19 +1,19 @@
 /**
  * Database Migration Runner
- * 
+ *
  * Concept: Database Migrations
  * ────────────────────────────────────────────────────────────────────
  * Migrations are versioned, atomic transformations of database schema.
  * They provide version control for your database structure, just like
  * git provides version control for your application code.
- * 
+ *
  * Key Properties:
  * ────────────────────────────────────────────────────────────────────
  * 1. VERSIONED - Timestamp-prefixed filenames ensure chronological order
  * 2. ATOMIC - Wrapped in transactions (all-or-nothing execution)
  * 3. ONE-WAY - Applied once, never re-run (tracked in schema_migrations)
  * 4. IDEMPOTENT - Safe to run migration runner multiple times
- * 
+ *
  * How It Works:
  * ────────────────────────────────────────────────────────────────────
  * 1. Check schema_migrations table to see what's already applied
@@ -22,17 +22,17 @@
  * 4. Execute each pending migration in a transaction
  * 5. Mark successful migrations in schema_migrations table
  * 6. Rollback if any migration fails (preserves database consistency)
- * 
+ *
  * Why Transactions?
  * ────────────────────────────────────────────────────────────────────
  * Transactions guarantee ATOMICITY (the "A" in ACID):
- * 
+ *
  * WITHOUT TRANSACTION:
  *   CREATE TABLE notifications (...);  ✅ Succeeds
- *   ALTER TABLE users ADD bio;         ✅ Succeeds  
+ *   ALTER TABLE users ADD bio;         ✅ Succeeds
  *   CREATE INDEX bad_syntax;           ❌ FAILS
  *   → Result: Partial application, database in inconsistent state
- * 
+ *
  * WITH TRANSACTION:
  *   BEGIN TRANSACTION;
  *     CREATE TABLE notifications (...);  ✅ Succeeds
@@ -40,7 +40,7 @@
  *     CREATE INDEX bad_syntax;           ❌ FAILS
  *   ROLLBACK; -- Entire transaction undone
  *   → Result: Database unchanged, consistent state preserved
- * 
+ *
  * Real-World Impact:
  * ────────────────────────────────────────────────────────────────────
  * ✅ Automated deployments (no manual SQL execution)
@@ -55,6 +55,7 @@ import { readdirSync, readFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import type { FastifyBaseLogger } from "fastify";
 
 // ESM module resolution (get current directory)
 const __filename = fileURLToPath(import.meta.url);
@@ -141,15 +142,12 @@ function dbAll<T>(db: Database, sql: string, params: unknown[] = []): Promise<T[
  * 5. Execute each pending migration in a transaction
  * 6. Log progress and fail fast on errors
  *
- * Note: Uses console.log for startup logging (not request logging).
- * This runs before Fastify logger is available.
- *
  * @param db - SQLite database instance
+ * @param logger - Fastify logger instance for consistent logging
  * @throws Error if any migration fails (includes rollback confirmation)
  */
-export async function runMigrations(db: Database): Promise<void> {
-  /* eslint-disable no-console */
-  console.log("🔄 Starting database migration check...");
+export async function runMigrations(db: Database, logger: FastifyBaseLogger): Promise<void> {
+  logger.info("🔄 Starting database migration check...");
 
   // ══════════════════════════════════════════════════════════════════
   // STEP 1: Create Migration Tracking Table
@@ -163,7 +161,7 @@ export async function runMigrations(db: Database): Promise<void> {
   //
   // Why IF NOT EXISTS? On first run, table doesn't exist. On subsequent
   // runs, it does. This makes the operation idempotent.
-  
+
   await dbRun(
     db,
     `
@@ -179,7 +177,7 @@ export async function runMigrations(db: Database): Promise<void> {
   // ══════════════════════════════════════════════════════════════════
   // Query the tracking table to see what we've already run.
   // We order by version to make logs chronological.
-  
+
   const appliedMigrations = await dbAll<Migration>(
     db,
     "SELECT version FROM schema_migrations ORDER BY version"
@@ -190,7 +188,7 @@ export async function runMigrations(db: Database): Promise<void> {
   // Array.includes() is O(n), Set.has() is O(1).
   const appliedSet = new Set(appliedMigrations.map((m) => m.version));
 
-  console.log(`📋 Found ${appliedMigrations.length} previously applied migrations`);
+  logger.info(`📋 Found ${appliedMigrations.length} previously applied migrations`);
 
   // ══════════════════════════════════════════════════════════════════
   // STEP 3: Read Migration Files from Filesystem
@@ -202,7 +200,7 @@ export async function runMigrations(db: Database): Promise<void> {
   //   20241111000000_initial_schema.sql
   //   20241111120000_add_user_bio.sql
   //   20241112090000_add_notifications.sql
-  
+
   const migrationsDir = join(__dirname, "migrations");
   const files = readdirSync(migrationsDir)
     .filter((f) => f.endsWith(".sql"))
@@ -217,28 +215,28 @@ export async function runMigrations(db: Database): Promise<void> {
   //   Files:   [20241111000000, 20241111120000, 20241112090000]
   //   Applied: [20241111000000, 20241111120000]
   //   Pending: [20241112090000]
-  
+
   const pendingMigrations = files.filter((file) => {
     const version = file.replace(".sql", "");
     return !appliedSet.has(version);
   });
 
   if (pendingMigrations.length === 0) {
-    console.log("✅ Database schema is up-to-date");
+    logger.info("✅ Database schema is up-to-date");
     return;
   }
 
-  console.log(`📦 Found ${pendingMigrations.length} pending migration(s)`);
+  logger.info(`📦 Found ${pendingMigrations.length} pending migration(s)`);
 
   // ══════════════════════════════════════════════════════════════════
   // STEP 5: Apply Each Pending Migration
   // ══════════════════════════════════════════════════════════════════
   // Execute migrations ONE AT A TIME in chronological order.
   // Each migration is wrapped in a transaction for atomicity.
-  
+
   for (const file of pendingMigrations) {
     const version = file.replace(".sql", "");
-    console.log(`  ⏳ Applying migration: ${file}`);
+    logger.info(`  ⏳ Applying migration: ${file}`);
 
     // Read the SQL from the file
     const sql = readFileSync(join(migrationsDir, file), "utf-8");
@@ -251,7 +249,7 @@ export async function runMigrations(db: Database): Promise<void> {
     //
     // Critical: This ensures we never have PARTIAL migrations.
     // Either the migration fully applies or it doesn't apply at all.
-    
+
     await dbRun(db, "BEGIN TRANSACTION");
 
     try {
@@ -264,25 +262,23 @@ export async function runMigrations(db: Database): Promise<void> {
       // This happens INSIDE the transaction, so if the migration SQL
       // succeeded but we crash before recording it, the rollback will
       // also undo the schema_migrations insert.
-      await dbRun(db, "INSERT INTO schema_migrations (version) VALUES (?)", [
-        version,
-      ]);
+      await dbRun(db, "INSERT INTO schema_migrations (version) VALUES (?)", [version]);
 
       // COMMIT - Make all changes permanent
       await dbRun(db, "COMMIT");
 
-      console.log(`  ✅ Successfully applied: ${file}`);
+      logger.info(`  ✅ Successfully applied: ${file}`);
     } catch (err) {
       // ──────────────────────────────────────────────────────────────
       // ERROR HANDLING: Rollback and Fail Fast
       // ──────────────────────────────────────────────────────────────
       // If anything failed, rollback the entire transaction.
       // This returns the database to the state it was in before BEGIN.
-      
+
       await dbRun(db, "ROLLBACK");
 
       const errorMessage = err instanceof Error ? err.message : String(err);
-      
+
       // Re-throw with context
       // Why throw? We want the application startup to FAIL if migrations fail.
       // Fail-fast principle: Better to crash at startup than serve requests
@@ -295,6 +291,5 @@ export async function runMigrations(db: Database): Promise<void> {
     }
   }
 
-  console.log(`✅ All ${pendingMigrations.length} migration(s) applied successfully`);
-  /* eslint-enable no-console */
+  logger.info(`✅ All ${pendingMigrations.length} migration(s) applied successfully`);
 }

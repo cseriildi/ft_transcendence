@@ -57,8 +57,7 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
     fastify.log.info("Foreign key constraints enabled");
 
     // Run migration system (handles all schema setup)
-    await runMigrations(db);
-    fastify.log.info("Database migrations completed");
+    await runMigrations(db, fastify.log);
   };
 
   // Initialize the database

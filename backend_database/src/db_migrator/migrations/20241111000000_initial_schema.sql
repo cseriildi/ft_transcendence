@@ -1,9 +1,6 @@
 -- Initial schema migration
 -- This creates all the base tables for the application
 
--- Enable foreign key constraints (SQLite disables by default)
-PRAGMA foreign_keys = ON;
-
 -- Users table: Core user accounts with auth methods
 CREATE TABLE IF NOT EXISTS users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

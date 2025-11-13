@@ -311,7 +311,7 @@ export const authController = {
         {
           id: result.id,
           username: result.username,
-          email: email.trim(),
+          email: cleanEmail,
           created_at: result.created_at,
           avatar_url,
           tokens: { accessToken },

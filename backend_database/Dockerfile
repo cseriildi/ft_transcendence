@@ -16,6 +16,9 @@ RUN npm ci
 # Copy source code
 COPY src ./src
 
+# Copy database
+COPY database ./database
+
 # Build TypeScript to JavaScript
 RUN npm run build
 
@@ -44,7 +47,7 @@ RUN npm ci --omit=dev && \
 COPY --from=builder /app/dist ./dist
 
 # Copy database initialization files
-COPY --from=builder /app/src/database ./src/database
+COPY --from=builder /app/database ./database
 
 # Create data directory and set permissions
 RUN mkdir -p /app/data && \
