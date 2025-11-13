@@ -37,29 +37,56 @@ jobs:
           # Check if all containers are running
           docker compose ps
 
-          # Wait for nginx and services to be ready by checking frontend access
+          # Wait for nginx to be ready
+          echo "Checking nginx gateway..."
           timeout=60
           while [ $timeout -gt 0 ]; do
             # Check if we can reach the frontend through nginx
             # -k: accept self-signed cert, -s: silent, -f: fail on error, -I: HEAD request only
             if curl -k -s -f -I https://$NGINX_HOST:$NGINX_HTTPS_PORT > /dev/null 2>&1; then
-              echo "✓ Services are ready!"
+              echo "✓ Nginx gateway is ready!"
               break
             fi
-            echo "Waiting for services... ($timeout seconds left)"
+            echo "Waiting for nginx... ($timeout seconds left)"
             sleep 5
             timeout=$((timeout - 5))
           done
 
           if [ $timeout -eq 0 ]; then
-            echo "ERROR: Services failed to start within timeout"
+            echo "ERROR: Nginx failed to start within timeout"
             echo "Final container status:"
             docker compose ps -a
             echo ""
             echo "Service logs:"
-            docker compose logs
+            docker compose logs nginx
             exit 1
           fi
+
+          # Wait for backend database service to be ready
+          echo "Checking backend database service..."
+          timeout=90
+          while [ $timeout -gt 0 ]; do
+            # Check if backend API is responding by checking health from inside the container
+            if docker compose exec -T databank wget -q -O- http://localhost:3000/health > /dev/null 2>&1; then
+              echo "✓ Backend database service is ready!"
+              break
+            fi
+            echo "Waiting for backend database... ($timeout seconds left)"
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+
+          if [ $timeout -eq 0 ]; then
+            echo "ERROR: Backend database failed to start within timeout"
+            echo "Final container status:"
+            docker compose ps -a
+            echo ""
+            echo "Backend logs:"
+            docker compose logs databank
+            exit 1
+          fi
+
+          echo "✓ All services are ready!"
 
       - name: Test HTTPS frontend access
         run: |
