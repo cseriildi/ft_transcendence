@@ -67,7 +67,7 @@ jobs:
           timeout=90
           while [ $timeout -gt 0 ]; do
             # Check if backend API is responding by checking health from inside the container
-            if docker compose exec -T databank wget -q -O- http://localhost:3000/health > /dev/null 2>&1; then
+            if docker compose exec -T databank curl -f -s http://localhost:3000/health > /dev/null 2>&1; then
               echo "✓ Backend database service is ready!"
               break
             fi
