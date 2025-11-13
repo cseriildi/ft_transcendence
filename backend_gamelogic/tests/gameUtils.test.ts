@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { Field, Ball, Paddle } from "../src/gameTypes.js";
-import {
-  closestPointOnSegment,
-  resetBall,
-  createGame,
-} from "../src/gameUtils.js";
+import { closestPointOnSegment, resetBall, createGame } from "../src/gameUtils.js";
 import { config } from "../src/config.js";
 
 describe("Game Utilities", () => {

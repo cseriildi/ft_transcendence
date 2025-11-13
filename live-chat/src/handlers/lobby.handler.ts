@@ -13,24 +13,19 @@ export async function handleJoinLobby(
   fastify: FastifyInstance
 ) {
   if (inLobby.value) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Already in lobby" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Already in lobby" }));
     return;
   }
 
   if (!token) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Missing authentication token" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Missing authentication token" }));
     connection.close();
     return;
   }
 
   // Verify token
   try {
-    const authServiceUrl =
-      process.env.AUTH_SERVICE_URL || "http://databank:3000";
+    const authServiceUrl = process.env.AUTH_SERVICE_URL || "http://databank:3000";
     const upstream = await fetch(`${authServiceUrl}/auth/verify`, {
       method: "GET",
       headers: {
@@ -38,9 +33,7 @@ export async function handleJoinLobby(
       },
     });
     if (!upstream.ok) {
-      connection.send(
-        JSON.stringify({ type: "error", message: "Authentication failed" })
-      );
+      connection.send(JSON.stringify({ type: "error", message: "Authentication failed" }));
       connection.close();
       return;
     }
@@ -72,11 +65,7 @@ export async function handleJoinLobby(
         banList.get(username)!.add(row.blocked_user);
       }
     } catch (err: any) {
-      fastify.log.error(
-        "Error fetching ban list for %s: %s",
-        username,
-        err.message
-      );
+      fastify.log.error("Error fetching ban list for %s: %s", username, err.message);
     }
   }
 
@@ -104,9 +93,9 @@ export async function handleJoinLobby(
   // Broadcast to all lobby users that someone new is online
   for (const [otherConn, otherUsername] of lobbyConnections) {
     if (otherConn !== connection) {
-      const otherUsersList = Array.from(
-        new Set(userLobbyConnections.keys())
-      ).filter((u) => u !== otherUsername);
+      const otherUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(
+        (u) => u !== otherUsername
+      );
       otherConn.send(
         JSON.stringify({
           type: "user_list_update",
@@ -153,19 +142,13 @@ export async function handleLeaveLobby(
     );
   }
 
-  connection.send(
-    JSON.stringify({ type: "lobby_left", message: "Left lobby" })
-  );
+  connection.send(JSON.stringify({ type: "lobby_left", message: "Left lobby" }));
 }
 
 /**
  * Clean up lobby connection on disconnect
  */
-export function cleanupLobbyConnection(
-  connection: any,
-  username: string,
-  inLobby: boolean
-) {
+export function cleanupLobbyConnection(connection: any, username: string, inLobby: boolean) {
   if (!inLobby) return;
 
   lobbyConnections.delete(connection);

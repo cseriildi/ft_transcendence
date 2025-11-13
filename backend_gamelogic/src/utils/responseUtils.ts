@@ -3,11 +3,7 @@ import { FastifyReply } from "fastify";
 /**
  * Standard success response format
  */
-export const successResponse = <T>(
-  reply: FastifyReply,
-  data: T,
-  statusCode: number = 200
-) => {
+export const successResponse = <T>(reply: FastifyReply, data: T, statusCode: number = 200) => {
   return reply.code(statusCode).send({
     success: true,
     data,

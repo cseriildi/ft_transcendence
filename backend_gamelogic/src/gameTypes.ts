@@ -16,7 +16,7 @@ export class Ball {
   speedX: number;
   speedY: number;
   constructor(field: Field) {
-    const angle = (Math.random() - 0.5) * Math.PI / 2;
+    const angle = ((Math.random() - 0.5) * Math.PI) / 2;
     this.x = field.width / 2;
     this.y = field.height / 2;
     this.radius = config.game.ballRadius;
@@ -36,31 +36,31 @@ export class Paddle {
   private _lastCy: number = -1;
 
   constructor(pos: number, field: Field, speed: number) {
-    this.cy = field.height / 2;                 // center y
-    this.length = field.height / 5;             // total length
-    this.width = field.width / 50;                            // thickness of paddle
+    this.cy = field.height / 2; // center y
+    this.length = field.height / 5; // total length
+    this.width = field.width / 50; // thickness of paddle
     this.cx = pos === 1 ? this.width * 2 : field.width - this.width * 2; // center x
     this.speed = speed;
     this.ySpeed = 0;
   }
-    getCapsule() {
-      // Cache capsule if position hasn't changed
-      if (this._capsule && this._lastCy === this.cy) {
-        return this._capsule;
-      }
-
-      const halfLen = this.length / 2 - this.width / 2;
-      this._capsule = {
-        x1: this.cx,
-        y1: this.cy - halfLen,
-        x2: this.cx,
-        y2: this.cy + halfLen,
-        R: this.width / 2
-      };
-      this._lastCy = this.cy;
-
+  getCapsule() {
+    // Cache capsule if position hasn't changed
+    if (this._capsule && this._lastCy === this.cy) {
       return this._capsule;
     }
+
+    const halfLen = this.length / 2 - this.width / 2;
+    this._capsule = {
+      x1: this.cx,
+      y1: this.cy - halfLen,
+      x2: this.cx,
+      y2: this.cy + halfLen,
+      R: this.width / 2,
+    };
+    this._lastCy = this.cy;
+
+    return this._capsule;
+  }
 }
 
 export class GameServer {
@@ -105,15 +105,17 @@ export class GameServer {
   // Start the game loops
   start() {
     if (this.isRunning) {
-      console.warn('⚠️  Game loops already running');
+      console.warn("⚠️  Game loops already running");
       return;
     }
 
     if (!this.onPhysicsUpdate || !this.onRender) {
-      throw new Error('❌ Callbacks not set. Call setUpdateCallback() and setRenderCallback() first.');
+      throw new Error(
+        "❌ Callbacks not set. Call setUpdateCallback() and setRenderCallback() first."
+      );
     }
 
-    console.log('▶️  Starting game loops...');
+    console.log("▶️  Starting game loops...");
 
     // Start physics loop
     this.physicsLoopId = setInterval(() => {
@@ -126,17 +128,19 @@ export class GameServer {
     }, this.renderInterval);
 
     this.isRunning = true;
-    console.log(`✅ Game loops started (Physics: ${this.physicsInterval}ms, Render: ${this.renderInterval}ms)`);
+    console.log(
+      `✅ Game loops started (Physics: ${this.physicsInterval}ms, Render: ${this.renderInterval}ms)`
+    );
   }
 
   // Stop the game loops
   stop() {
     if (!this.isRunning) {
-      console.warn('⚠️  Game loops not running');
+      console.warn("⚠️  Game loops not running");
       return;
     }
 
-    console.log('⏸️  Stopping game loops...');
+    console.log("⏸️  Stopping game loops...");
 
     if (this.physicsLoopId) {
       clearInterval(this.physicsLoopId);
@@ -149,7 +153,7 @@ export class GameServer {
     }
 
     this.isRunning = false;
-    console.log('✅ Game loops stopped');
+    console.log("✅ Game loops stopped");
   }
 
   // Get current state

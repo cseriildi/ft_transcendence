@@ -10,9 +10,7 @@ export class Register {
     this.router = router;
   }
 
-  async handleFormSubmit(
-    e: Event
-  ): Promise<{ success: boolean; message?: string }> {
+  async handleFormSubmit(e: Event): Promise<{ success: boolean; message?: string }> {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);

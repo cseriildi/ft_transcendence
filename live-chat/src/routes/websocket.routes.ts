@@ -37,13 +37,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
 
         switch (data.action) {
           case "join_lobby":
-            await handleJoinLobby(
-              connection,
-              username,
-              inLobby,
-              data.token,
-              fastify
-            );
+            await handleJoinLobby(connection, username, inLobby, data.token, fastify);
             break;
 
           case "leave_lobby":
@@ -51,37 +45,19 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
             break;
 
           case "join_chat":
-            await handleJoinChat(
-              connection,
-              username,
-              data.chatid,
-              userChatRooms
-            );
+            await handleJoinChat(connection, username, data.chatid, userChatRooms);
             break;
 
           case "leave_chat":
-            await handleLeaveChat(
-              connection,
-              username,
-              data.chatid,
-              userChatRooms
-            );
+            await handleLeaveChat(connection, username, data.chatid, userChatRooms);
             break;
 
           case "send_message":
-            await handleSendMessage(
-              connection,
-              username,
-              data.chatid,
-              data.message,
-              userChatRooms
-            );
+            await handleSendMessage(connection, username, data.chatid, data.message, userChatRooms);
             break;
 
           default:
-            connection.send(
-              JSON.stringify({ type: "error", message: "Unknown action" })
-            );
+            connection.send(JSON.stringify({ type: "error", message: "Unknown action" }));
         }
       } catch (error) {
         connection.send(

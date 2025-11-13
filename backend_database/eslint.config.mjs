@@ -4,14 +4,7 @@ import prettierPlugin from "eslint-plugin-prettier";
 
 export default [
   {
-    ignores: [
-      "dist/**",
-      "node_modules/**",
-      "coverage/**",
-      "*.js",
-      "*.mjs",
-      "vitest.config.ts",
-    ],
+    ignores: ["dist/**", "node_modules/**", "coverage/**", "*.js", "*.mjs", "vitest.config.ts"],
   },
   {
     files: ["**/*.ts"],
@@ -54,10 +47,7 @@ export default [
       "@typescript-eslint/no-misused-promises": "off", // Fastify handlers return promises correctly
 
       // Warnings (show in editor, don't block)
-      "no-warning-comments": [
-        "warn",
-        { terms: ["TODO", "FIXME", "HACK"], location: "start" },
-      ],
+      "no-warning-comments": ["warn", { terms: ["TODO", "FIXME", "HACK"], location: "start" }],
       "prefer-const": "warn",
       "@typescript-eslint/no-inferrable-types": "warn",
 

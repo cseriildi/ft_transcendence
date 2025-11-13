@@ -19,34 +19,25 @@ export class Profile {
     const editBtn = document.getElementById("edit-btn");
     const backBtn = document.getElementById("back-btn");
     const userName = document.getElementById("user-name");
-    const userAvatar = document.getElementById(
-      "user-avatar"
-    ) as HTMLImageElement;
+    const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
     const friendsListContainer = document.getElementById("friends-list");
     const userEmail = document.getElementById("user-email");
     const findFriendsBtn = document.getElementById("find-friends-btn");
-    let users:
-      | Array<{ id: number; username: string; avatar_url: string }>
-      | undefined;
+    let users: Array<{ id: number; username: string; avatar_url: string }> | undefined;
 
-    findFriendsBtn?.addEventListener("click", () =>
-      this.router.navigate("/users")
-    );
+    findFriendsBtn?.addEventListener("click", () => this.router.navigate("/users"));
 
     backBtn?.addEventListener("click", () => this.router.navigate("/"));
     editBtn?.addEventListener("click", () => this.router.navigate("/edit"));
 
     try {
-      const response = await fetchWithRefresh(
-        `${config.apiUrl}/api/users/${getUserId()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        method: "GET",
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         if (userName) userName.innerHTML = data.data.username;
@@ -62,16 +53,13 @@ export class Profile {
     }
 
     try {
-      const usersResponse = await fetchWithRefresh(
-        `${config.apiUrl}/api/users`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const usersResponse = await fetchWithRefresh(`${config.apiUrl}/api/users`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        method: "GET",
+        credentials: "include",
+      });
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         users = usersData.data;
@@ -97,8 +85,7 @@ export class Profile {
           friendsListContainer.innerHTML = "";
           console.log(data);
           if (data.data.friends.length === 0) {
-            friendsListContainer.innerHTML =
-              "<p>You don't have friends yet</p>";
+            friendsListContainer.innerHTML = "<p>You don't have friends yet</p>";
             friendsListContainer.classList.add("text-white");
           } else {
             data.data.friends.forEach(
@@ -109,12 +96,9 @@ export class Profile {
                 is_inviter: boolean;
               }) => {
                 // Find the avatar URL from the users list
-                const userWithAvatar = users?.find(
-                  (u: any) => u.id === friend.user_id
-                );
+                const userWithAvatar = users?.find((u: any) => u.id === friend.user_id);
                 const avatarUrl =
-                  userWithAvatar?.avatar_url ||
-                  "/uploads/avatars/default/default-avatar.png";
+                  userWithAvatar?.avatar_url || "/uploads/avatars/default/default-avatar.png";
 
                 const isPending = friend.status === "pending";
                 const isInviter = friend.is_inviter;
@@ -136,12 +120,7 @@ export class Profile {
                 const avatar = document.createElement("img");
                 avatar.src = `${config.apiUrl}${avatarUrl}`;
                 avatar.alt = `${friend.username}'s avatar`;
-                avatar.classList.add(
-                  "w-8",
-                  "h-8",
-                  "rounded-full",
-                  "min-w-[2rem]"
-                );
+                avatar.classList.add("w-8", "h-8", "rounded-full", "min-w-[2rem]");
 
                 // Add opacity if pending
                 if (isPending) {
@@ -149,12 +128,7 @@ export class Profile {
                 }
 
                 const usernameContainer = document.createElement("div");
-                usernameContainer.classList.add(
-                  "flex",
-                  "flex-col",
-                  "flex-1",
-                  "min-w-0"
-                );
+                usernameContainer.classList.add("flex", "flex-col", "flex-1", "min-w-0");
 
                 const username = document.createElement("span");
                 username.textContent = friend.username;
@@ -165,14 +139,8 @@ export class Profile {
                 // Add pending indicator
                 if (isPending) {
                   const statusLabel = document.createElement("span");
-                  statusLabel.textContent = isInviter
-                    ? "(Request sent)"
-                    : "(Pending approval)";
-                  statusLabel.classList.add(
-                    "text-xs",
-                    "text-gray-400",
-                    "italic"
-                  );
+                  statusLabel.textContent = isInviter ? "(Request sent)" : "(Pending approval)";
+                  statusLabel.classList.add("text-xs", "text-gray-400", "italic");
                   usernameContainer.appendChild(statusLabel);
                 }
 
@@ -186,17 +154,13 @@ export class Profile {
                     const currentUserId = getUserId();
                     const friendId = friend.user_id;
                     if (currentUserId === null) {
-                      console.error(
-                        "Current user ID is null, cannot create chat ID."
-                      );
+                      console.error("Current user ID is null, cannot create chat ID.");
                       return;
                     }
                     const chatId = [Number(currentUserId), Number(friendId)]
                       .sort((a, b) => a - b)
                       .join("-");
-                    this.router.navigate(
-                      `/chat?chatId=${chatId}&username=${friend.username}`
-                    );
+                    this.router.navigate(`/chat?chatId=${chatId}&username=${friend.username}`);
                   });
                 } else {
                   // Change cursor for pending requests

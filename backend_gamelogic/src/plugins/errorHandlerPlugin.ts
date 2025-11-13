@@ -35,8 +35,7 @@ const errorHandlerPlugin: FastifyPluginAsync = async (fastify) => {
 
     // Handle generic errors
     const statusCode = error.statusCode || 500;
-    const message =
-      statusCode === 500 ? "Internal server error" : error.message;
+    const message = statusCode === 500 ? "Internal server error" : error.message;
 
     return reply.code(statusCode).send({
       success: false,

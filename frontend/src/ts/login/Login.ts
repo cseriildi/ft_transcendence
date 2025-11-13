@@ -10,9 +10,7 @@ export class Login {
     this.router = router;
   }
 
-  async handleFormSubmit(
-    e: Event
-  ): Promise<{ success: boolean; message?: string }> {
+  async handleFormSubmit(e: Event): Promise<{ success: boolean; message?: string }> {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -70,8 +68,6 @@ export class Login {
         showError(result.message || "An error occurred.");
       }
     });
-    registerBtn?.addEventListener("click", () =>
-      this.router.navigate("/register")
-    );
+    registerBtn?.addEventListener("click", () => this.router.navigate("/register"));
   }
 }

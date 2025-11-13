@@ -35,20 +35,25 @@ function closeWebSocket(ws: WebSocket): Promise<void> {
 }
 
 // Helper to connect and join a chat
-async function connectAndJoinChat(serverAddress: string, username: string, userId: string, chatId: string): Promise<WebSocket> {
+async function connectAndJoinChat(
+  serverAddress: string,
+  username: string,
+  userId: string,
+  chatId: string
+): Promise<WebSocket> {
   const ws = new WebSocket(`${serverAddress}/ws?username=${username}&userId=${userId}`);
-  
+
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);
     ws.on("error", reject);
   });
-  
+
   // Send join_chat action
   ws.send(JSON.stringify({ action: "join_chat", chatid: chatId }));
-  
+
   // Wait for chat_connected message
   await waitForMessage(ws);
-  
+
   return ws;
 }
 
@@ -100,9 +105,7 @@ describe("WebSocket - Chat Rooms", () => {
               case "join_chat":
                 const chatId = data.chatid;
                 if (!chatId) {
-                  connection.send(
-                    JSON.stringify({ type: "error", message: "Missing chatid" })
-                  );
+                  connection.send(JSON.stringify({ type: "error", message: "Missing chatid" }));
                   return;
                 }
 
@@ -341,11 +344,17 @@ describe("WebSocket - Chat Rooms", () => {
     it("should broadcast message to other users in room", async () => {
       const ws1 = await connectAndJoinChat(serverAddress, "alice", "1", "alice-bob");
       const ws2 = await connectAndJoinChat(serverAddress, "bob", "2", "alice-bob");
-      
+
       await waitForMessage(ws1); // Clear notification
 
       // Alice sends a message
-      ws1.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Hello from Alice!" }));
+      ws1.send(
+        JSON.stringify({
+          action: "send_message",
+          chatid: "alice-bob",
+          message: "Hello from Alice!",
+        })
+      );
 
       // Bob should receive it
       const received = await waitForMessage(ws2);
@@ -360,7 +369,7 @@ describe("WebSocket - Chat Rooms", () => {
     it("should not send message back to sender", async () => {
       const ws1 = await connectAndJoinChat(serverAddress, "alice", "1", "alice-bob");
       const ws2 = await connectAndJoinChat(serverAddress, "bob", "2", "alice-bob");
-      
+
       await waitForMessage(ws1);
 
       let aliceReceivedOwnMessage = false;
@@ -392,7 +401,9 @@ describe("WebSocket - Chat Rooms", () => {
       await waitForMessage(ws1);
       await waitForMessage(ws2);
 
-      ws1.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Hello everyone!" }));
+      ws1.send(
+        JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Hello everyone!" })
+      );
 
       const bobMsg = await waitForMessage(ws2);
       const charlieMsg = await waitForMessage(ws3);
@@ -412,10 +423,14 @@ describe("WebSocket - Chat Rooms", () => {
       const ws2 = await connectAndJoinChat(serverAddress, "bob", "2", "alice-bob");
       await waitForMessage(ws1);
 
-      ws1.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Message 1" }));
+      ws1.send(
+        JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Message 1" })
+      );
       await waitForMessage(ws2);
 
-      ws2.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Message 2" }));
+      ws2.send(
+        JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Message 2" })
+      );
       await waitForMessage(ws1);
 
       await closeWebSocket(ws1);
@@ -424,11 +439,11 @@ describe("WebSocket - Chat Rooms", () => {
       // Connect again and check history
       const ws3 = await connectAndJoinChat(serverAddress, "charlie", "3", "alice-bob");
 
-      // The welcome message was already read by connectAndJoinChat, 
+      // The welcome message was already read by connectAndJoinChat,
       // but we need to get it again to check history
       // Let's reconnect properly
       await closeWebSocket(ws3);
-      
+
       const ws4 = new WebSocket(`${serverAddress}/ws?username=charlie&userId=3`);
       await new Promise((resolve) => ws4.on("open", resolve));
       ws4.send(JSON.stringify({ action: "join_chat", chatid: "alice-bob" }));
@@ -448,7 +463,9 @@ describe("WebSocket - Chat Rooms", () => {
 
       // Send 25 messages (MAX is 20)
       for (let i = 0; i < 25; i++) {
-        ws1.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: `Message ${i}` }));
+        ws1.send(
+          JSON.stringify({ action: "send_message", chatid: "alice-bob", message: `Message ${i}` })
+        );
         await waitForMessage(ws2);
       }
 
@@ -500,7 +517,9 @@ describe("WebSocket - Chat Rooms", () => {
       const banList = (app as any).banList;
       banList.set("bob", new Set([{ banned: "alice" }]));
 
-      ws1.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Hello Bob!" }));
+      ws1.send(
+        JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Hello Bob!" })
+      );
 
       // Alice should receive error
       const error = await waitForMessage(ws1);
@@ -562,7 +581,13 @@ describe("WebSocket - Chat Rooms", () => {
       await waitForMessage(ws3);
 
       // Send message in room 1
-      ws1.send(JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Message for room 1" }));
+      ws1.send(
+        JSON.stringify({
+          action: "send_message",
+          chatid: "alice-bob",
+          message: "Message for room 1",
+        })
+      );
 
       // Bob should receive it
       const bobMsg = await waitForMessage(ws2);

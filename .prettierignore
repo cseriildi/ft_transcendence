@@ -1,0 +1,11 @@
+*.md
+*.json
+!package.json
+.env
+.env.*
+*.db
+*.sh
+Dockerfile
+.prettierignore
+.prettierrc
+.gitignore

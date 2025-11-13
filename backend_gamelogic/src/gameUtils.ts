@@ -1,5 +1,5 @@
 import { Paddle, Ball, GameServer } from "./gameTypes.js";
-import { config} from "./config.js";
+import { config } from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
 
 // Factory function to create
@@ -26,7 +26,7 @@ export function closestPointOnSegment(paddle: Paddle, ball: Ball) {
   t = Math.max(0, Math.min(1, t));
   return {
     x: capsule.x1 + abx * t,
-    y: capsule.y1 + aby * t
+    y: capsule.y1 + aby * t,
   };
 }
 
@@ -37,8 +37,8 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
   if (roughDistance > maxPossibleDistance) return false;
 
   const capsule = paddle.getCapsule();
-  const {x1, y1, x2, y2, R} = capsule;
-  const {x, y, radius} = ball;
+  const { x1, y1, x2, y2, R } = capsule;
+  const { x, y, radius } = ball;
 
   // Closest point on segment to ball
   const S = closestPointOnSegment(paddle, ball);
@@ -52,9 +52,12 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
 
   // Normalize normal
   if (dist === 0) {
-    nx = 1; ny = 0; dist = 1; // fallback
+    nx = 1;
+    ny = 0;
+    dist = 1; // fallback
   } else {
-    nx /= dist; ny /= dist;
+    nx /= dist;
+    ny /= dist;
   }
 
   // Push ball outside
@@ -75,19 +78,18 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
 export function resetBall(game: GameServer) {
   game.Ball.x = game.Field.width / 2;
   game.Ball.y = game.Field.height / 2;
-  const angle = (Math.random() - 0.5) * Math.PI / 2; // -45 to +45 degrees
+  const angle = ((Math.random() - 0.5) * Math.PI) / 2; // -45 to +45 degrees
   const speed = config.game.ballSpeed;
   game.Ball.speedX = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1); // randomize left/right
   game.Ball.speedY = Math.sin(angle) * speed;
 }
 
 export function collideBallWithWalls(game: GameServer) {
-  const { Ball: ball, Field: field} = game;
-  if (ball.x - ball.radius < 0){
+  const { Ball: ball, Field: field } = game;
+  if (ball.x - ball.radius < 0) {
     game.score2 += 1;
     resetBall(game);
-  }
-  else if (ball.x + ball.radius > field.width) {
+  } else if (ball.x + ball.radius > field.width) {
     game.score1 += 1;
     resetBall(game);
   }
@@ -118,7 +120,7 @@ export function updateGameState(game: GameServer) {
   // Check paddle collisions
   collideBallCapsule(game.Paddle1, game.Ball);
   collideBallCapsule(game.Paddle2, game.Ball);
-  
+
   // Update paddle positions (apply ySpeed)
   game.Paddle1.cy += game.Paddle1.ySpeed;
   game.Paddle2.cy += game.Paddle2.ySpeed;
@@ -126,7 +128,12 @@ export function updateGameState(game: GameServer) {
   // Keep paddles within bounds
   const paddleHalfLength1 = game.Paddle1.length / 2;
   const paddleHalfLength2 = game.Paddle2.length / 2;
-  game.Paddle1.cy = Math.max(paddleHalfLength1, Math.min(game.Paddle1.cy, game.Field.height - paddleHalfLength1));
-  game.Paddle2.cy = Math.max(paddleHalfLength2, Math.min(game.Paddle2.cy, game.Field.height - paddleHalfLength2));
+  game.Paddle1.cy = Math.max(
+    paddleHalfLength1,
+    Math.min(game.Paddle1.cy, game.Field.height - paddleHalfLength1)
+  );
+  game.Paddle2.cy = Math.max(
+    paddleHalfLength2,
+    Math.min(game.Paddle2.cy, game.Field.height - paddleHalfLength2)
+  );
 }
-

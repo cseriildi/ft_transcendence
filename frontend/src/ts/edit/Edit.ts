@@ -123,19 +123,19 @@ export class Edit {
     }
     fileInput.addEventListener("change", () => {
       if (fileInput.files && fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-          const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-          
-          if (!allowedTypes.includes(file.type)) {
-              showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
-              fileInput.value = ''; // Clear the input
-              fileNameDisplay.textContent = "No file chosen";
-              return;
-          }
-          
-          fileNameDisplay.textContent = file.name;
-      } else {
+        const file = fileInput.files[0];
+        const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+
+        if (!allowedTypes.includes(file.type)) {
+          showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
+          fileInput.value = ""; // Clear the input
           fileNameDisplay.textContent = "No file chosen";
+          return;
+        }
+
+        fileNameDisplay.textContent = file.name;
+      } else {
+        fileNameDisplay.textContent = "No file chosen";
       }
     });
 
