@@ -116,12 +116,23 @@ export function ensureUserOwnership(tokenUserId: number, resourceId: string | nu
 
 /**
  * Sets a refresh token cookie with standard secure settings
+ *
+ * Security features:
+ * - httpOnly: Prevents JavaScript access (XSS protection)
+ * - secure: HTTPS-only in production
+ * - sameSite: 'strict' prevents CSRF attacks
+ * - path: Scoped to /auth endpoints only
+ *
+ * Important: sameSite: "strict" assumes same-origin deployment
+ * (frontend and backend on same domain). If frontend is on a different
+ * origin (e.g., frontend.com calling api.backend.com), use "lax" instead.
+ * For this project, frontend and backend are served from the same origin.
  */
 export function setRefreshTokenCookie(reply: FastifyReply, refreshToken: string) {
   reply.setCookie("refresh_token", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax", // CSRF protection - only sent to same origin
     path: "/auth",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   });

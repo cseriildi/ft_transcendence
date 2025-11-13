@@ -90,7 +90,7 @@ export const config = {
 
   // Database configuration
   database: {
-    path: getEnvVar("DATABASE_PATH", "./src/database/database.db"),
+    path: getEnvVar("DATABASE_PATH", "./database/database.db"),
   },
 
   // Logging

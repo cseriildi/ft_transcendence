@@ -1,6 +1,7 @@
-import { createHandler } from "../../utils/handlerUtils.ts";
+import { DatabaseHelper } from "../../utils/databaseUtils.ts";
+import { FastifyRequest, FastifyReply } from "fastify";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import {
   signAccessToken,
   setRefreshTokenCookie,
@@ -23,16 +24,14 @@ const IS_PROD = config.server.env === "production";
 
 export const oauthController = {
   // Step 1: Redirect to GitHub
-  initiateGitHub: createHandler(async (request, context) => {
-    const { reply } = context;
+  initiateGitHub: async (request: FastifyRequest, reply: FastifyReply) => {
+    const errors = requestErrors(request);
     const githubConfig = getGitHubConfig();
 
     if (!githubConfig.clientId || !githubConfig.clientSecret) {
       throw errors.internal("GitHub OAuth not configured", {
         hasClientId: !!githubConfig.clientId,
         hasClientSecret: !!githubConfig.clientSecret,
-        endpoint: "oauth-initiate",
-        provider: "github",
       });
     }
 
@@ -53,22 +52,21 @@ export const oauthController = {
     });
 
     return ApiResponseHelper.success({ redirectUrl: authUrl }, "GitHub OAuth redirect created");
-  }),
+  },
 
   // Step 2: Handle GitHub callback
-  handleGitHubCallback: createHandler<
-    { Querystring: { code: string; state: string } },
-    ApiResponse<AuthUserData>
-  >(async (request, context) => {
+  handleGitHubCallback: async (
+    request: FastifyRequest<{ Querystring: { code: string; state: string } }>,
+    reply: FastifyReply
+  ): Promise<ApiResponse<AuthUserData>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
     const { code, state } = request.query;
-    const { db, reply } = context;
 
     if (!code || !state) {
       throw errors.validation("Missing code or state parameter", {
         hasCode: !!code,
         hasState: !!state,
-        endpoint: "oauth-callback",
-        provider: "github",
       });
     }
 
@@ -78,8 +76,6 @@ export const oauthController = {
       throw errors.validation("Invalid state parameter", {
         hasCookieState: !!cookieState,
         stateMatch: cookieState === state,
-        endpoint: "oauth-callback",
-        provider: "github",
       });
     }
 
@@ -201,7 +197,6 @@ export const oauthController = {
         provider: "github",
         githubId: userInfo.id,
         email: userInfo.email,
-        endpoint: "oauth-callback",
       });
     }
 
@@ -258,5 +253,5 @@ export const oauthController = {
       },
       "GitHub OAuth login successful"
     );
-  }),
+  },
 };

@@ -168,7 +168,7 @@ export async function build(opts: BuildOptions = {}) {
 }
 
 const start = async () => {
-  let app;
+  let app: Awaited<ReturnType<typeof build>> | undefined;
   try {
     app = await build();
     await app.listen({
@@ -178,6 +178,28 @@ const start = async () => {
     if (appConfig.server.env === "development") {
       app.log.info(`📚 Swagger docs available at http://localhost:${appConfig.server.port}/docs`);
     }
+
+    // Graceful shutdown handlers for production environments
+    // Docker/K8s send SIGTERM before force-killing the container
+    const signals: NodeJS.Signals[] = ["SIGTERM", "SIGINT"];
+    signals.forEach((signal) => {
+      process.on(signal, async () => {
+        if (!app) return; // Should never happen, but TypeScript safety
+        app.log.info({ signal }, `Received ${signal}, closing server gracefully...`);
+        try {
+          // Fastify's close() method:
+          // 1. Stops accepting new connections
+          // 2. Waits for in-flight requests to complete
+          // 3. Triggers onClose hooks (closes DB connection via databasePlugin)
+          await app.close();
+          app.log.info("Server closed gracefully");
+          process.exit(0);
+        } catch (err) {
+          app.log.error({ err }, "Error during graceful shutdown");
+          process.exit(1);
+        }
+      });
+    });
   } catch (err) {
     if (app) {
       app.log.error(err, "Failed to start server");

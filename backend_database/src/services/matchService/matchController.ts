@@ -1,67 +1,70 @@
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
-import { errors } from "../../utils/errorUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 import "../../types/fastifyTypes.ts";
-import { createHandler } from "../../utils/handlerUtils.ts";
+import { DatabaseHelper } from "../../utils/databaseUtils.ts";
+import { FastifyRequest, FastifyReply } from "fastify";
 import { Match, CreateMatchBody, GetMatchesQuery } from "./matchTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 
 export const matchController = {
-  createMatch: createHandler<{ Body: CreateMatchBody }, ApiResponse<Match>>(
-    async (request, { db, reply }) => {
-      const { winner, loser, winner_score, loser_score } = request.body;
+  createMatch: async (
+    request: FastifyRequest<{ Body: CreateMatchBody }>,
+    reply: FastifyReply
+  ): Promise<ApiResponse<Match>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { winner, loser, winner_score, loser_score } = request.body;
 
-      const playersExist = await db.get<{ count: number }>(
-        `SELECT COUNT(*) as count FROM users WHERE username IN (?, ?)`,
-        [winner, loser]
-      );
-      if (!playersExist || playersExist.count < 2) {
-        throw errors.notFound("One or both players do not exist", {
-          winner,
-          loser,
-          foundCount: playersExist?.count || 0,
-          endpoint: "recordMatch",
-        });
-      }
-
-      const result = await db.run(
-        `INSERT INTO matches (winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
-        [winner, loser, winner_score, loser_score]
-      );
-
-      const match: Match = {
-        id: result.lastID!,
+    const playersExist = await db.get<{ count: number }>(
+      `SELECT COUNT(*) as count FROM users WHERE username IN (?, ?)`,
+      [winner, loser]
+    );
+    if (!playersExist || playersExist.count < 2) {
+      throw errors.notFound("One or both players do not exist", {
         winner,
         loser,
-        winner_score,
-        loser_score,
-        played_at: new Date().toISOString(),
-      };
-
-      reply.status(201);
-      return ApiResponseHelper.success(match, "Match created successfully");
+        foundCount: playersExist?.count || 0,
+      });
     }
-  ),
 
-  getMatches: createHandler<{ Params: GetMatchesQuery }, ApiResponse<Match[]>>(
-    async (request, { db }) => {
-      const { username } = request.params;
+    const result = await db.run(
+      `INSERT INTO matches (winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
+      [winner, loser, winner_score, loser_score]
+    );
 
-      // First check if the user exists
-      const user = await db.get<User>(`SELECT * FROM users WHERE username = ?`, [username]);
-      if (!user) {
-        throw errors.notFound("User", {
-          username,
-          endpoint: "getMatches",
-        });
-      }
+    const match: Match = {
+      id: result.lastID!,
+      winner,
+      loser,
+      winner_score,
+      loser_score,
+      played_at: new Date().toISOString(),
+    };
 
-      // Then get their matches
-      const matches = await db.all<Match>(
-        `SELECT id, winner_name as winner, loser_name as loser, winner_score, loser_score, played_at 
+    reply.status(201);
+    return ApiResponseHelper.success(match, "Match created successfully");
+  },
+
+  getMatches: async (
+    request: FastifyRequest<{ Params: GetMatchesQuery }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<Match[]>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { username } = request.params;
+
+    // First check if the user exists
+    const user = await db.get<User>(`SELECT * FROM users WHERE username = ?`, [username]);
+    if (!user) {
+      throw errors.notFound("User", { username });
+    }
+
+    // Then get their matches
+    const matches = await db.all<Match>(
+      `SELECT id, winner_name as winner, loser_name as loser, winner_score, loser_score, played_at 
 				 FROM matches WHERE winner_name = ? OR loser_name = ? ORDER BY played_at DESC`,
-        [username, username]
-      );
-      return ApiResponseHelper.success(matches, "Match retrieved successfully");
-    }
-  ),
+      [username, username]
+    );
+    return ApiResponseHelper.success(matches, "Match retrieved successfully");
+  },
 };

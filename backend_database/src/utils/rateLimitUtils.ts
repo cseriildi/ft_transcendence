@@ -40,22 +40,23 @@ setInterval(
 
 /**
  * Check if rate limit exceeded for a given key
+ * Throws forbidden error if limit exceeded, otherwise returns silently
  *
  * @param key - Unique identifier (e.g., "login:192.168.1.1" or "2fa:user:123")
  * @param maxAttempts - Maximum attempts allowed in window
  * @param windowSeconds - Time window in seconds
  * @param lockoutMinutes - Optional: Lock for this many minutes after exceeding limit
- * @returns Remaining attempts before limit
+ * @throws {AppError} Forbidden error if rate limit exceeded
  */
 export function checkRateLimit(
   key: string,
   maxAttempts: number,
   windowSeconds: number,
   lockoutMinutes?: number
-): { allowed: boolean; remaining: number; resetAt: Date } {
+): void {
   // Bypass rate limiting in test environment
   if (isTestEnv) {
-    return { allowed: true, remaining: maxAttempts, resetAt: new Date() };
+    return;
   }
 
   const now = new Date();
@@ -79,7 +80,7 @@ export function checkRateLimit(
   if (!entry || entry.resetAt < now) {
     const resetAt = new Date(now.getTime() + windowSeconds * 1000);
     rateLimitStore.set(key, { attempts: 1, resetAt });
-    return { allowed: true, remaining: maxAttempts - 1, resetAt };
+    return; // Allowed - first attempt or window expired
   }
 
   // Increment attempts
@@ -114,8 +115,7 @@ export function checkRateLimit(
   }
 
   rateLimitStore.set(key, entry);
-  // comment this in if you want to attach retrun value to reply.header later on
-  // return { allowed: true, remaining: maxAttempts - entry.attempts, resetAt: entry.resetAt };
+  // Allowed - under the limit
 }
 
 /**
