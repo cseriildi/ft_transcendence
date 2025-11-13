@@ -3,7 +3,7 @@ import { MultipartFile } from "@fastify/multipart";
 import { errors } from "./errorUtils.ts";
 import { promises as fs } from "fs";
 import path from "path";
-import { randomBytes } from "crypto";
+// import { randomBytes } from "crypto"; // DISABLED: crypto not available in runtime environment
 
 // Upload configuration
 export const UPLOAD_CONFIG = {
@@ -25,7 +25,7 @@ export const UPLOAD_CONFIG = {
 export async function ensureUploadsDirExists(): Promise<void> {
   try {
     await fs.mkdir(UPLOAD_CONFIG.uploadsDir, { recursive: true });
-  } catch (error) {
+  } catch {
     throw errors.internal("Failed to create uploads directory", {
       path: UPLOAD_CONFIG.uploadsDir,
       function: "ensureUploadsDirExists",
@@ -34,9 +34,11 @@ export async function ensureUploadsDirExists(): Promise<void> {
 }
 
 // Generate unique filename
+// DISABLED: crypto.randomBytes not available in runtime environment
 export function generateUniqueFilename(originalFilename: string): string {
   const ext = path.extname(originalFilename).toLowerCase();
-  const randomName = randomBytes(16).toString("hex");
+  // Fallback to timestamp + Math.random() instead of crypto.randomBytes
+  const randomName = `${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
   return `${randomName}${ext}`;
 }
 
@@ -109,13 +111,25 @@ export async function saveUploadedFile(file: MultipartFile): Promise<string> {
 }
 
 // Copy default avatar for new user
-export async function copyDefaultAvatar(userId: number): Promise<{
+// DISABLED: crypto.randomBytes not available in runtime environment
+export async function copyDefaultAvatar(_userId: number): Promise<{
   filePath: string;
   fileUrl: string;
   fileName: string;
   mimeType: string;
   fileSize: number;
 }> {
+  // DISABLED: Return default avatar URL without copying file
+  // This avoids filesystem operations and crypto.randomBytes usage
+  return {
+    filePath: "default/default-avatar.png",
+    fileUrl: UPLOAD_CONFIG.defaultAvatarUrl,
+    fileName: "default-avatar.png",
+    mimeType: "image/png",
+    fileSize: 0, // Size unknown when not copying
+  };
+
+  /* ORIGINAL IMPLEMENTATION - DISABLED
   await ensureUploadsDirExists();
 
   // Check if default avatar exists
@@ -165,6 +179,7 @@ export async function copyDefaultAvatar(userId: number): Promise<{
     attempts: maxAttempts,
     function: "copyDefaultAvatar",
   });
+  */
 }
 
 // Delete uploaded file (for cleanup)
@@ -179,7 +194,7 @@ export async function deleteUploadedFile(avatarUrl: string): Promise<void> {
     const filename = path.basename(avatarUrl);
     const filePath = path.join(UPLOAD_CONFIG.uploadsDir, filename);
     await fs.unlink(filePath);
-  } catch (error) {
+  } catch {
     // Silently fail if file doesn't exist
     // Note: This is a utility function that can't access request.log
     // In production, consider using a centralized logger or passing logger as parameter

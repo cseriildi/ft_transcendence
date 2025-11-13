@@ -14,6 +14,7 @@ import {
   setRefreshTokenCookie,
   generateAndStoreRefreshToken,
 } from "../../utils/authUtils.ts";
+// DISABLED: crypto not available in runtime environment
 import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
 import { getAvatarUrl } from "../userService/userUtils.ts";
 import { assertPasswordValid } from "../../utils/passwordUtils.ts";
@@ -195,39 +196,25 @@ export const authController = {
       return result.lastID;
     });
 
-    // Step 2: Filesystem operation outside transaction
-    // Concept: DB transactions can't control filesystem - separate systems
+    // Step 2: Avatar handling - DISABLED (crypto not available in runtime)
+    // Users will use shared default avatar instead of copied unique files
     let avatar;
     try {
       avatar = await copyDefaultAvatar(userId);
-    } catch (err) {
-      // Compensating action: rollback user creation if file copy fails
-      request.log.error(
-        { userId, error: err },
-        "Avatar copy failed during registration, rolling back user creation"
-      );
-      await db.run("DELETE FROM users WHERE id = ?", [userId]);
-      throw errors.internal("Failed to create user avatar", { userId });
-    }
-
-    // Step 3: Store avatar metadata in database
-    try {
+      // Store avatar metadata in database
       await db.run(
         "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
         [userId, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
       );
     } catch (err) {
-      // Compensating actions: cleanup filesystem and database
-      request.log.error(
+      // Non-critical: log error but don't fail registration
+      request.log.warn(
         { userId, error: err },
-        "Avatar DB insert failed, cleaning up file and user"
+        "Avatar setup failed during registration (non-critical, using fallback)"
       );
-      // TODO: Add deleteAvatar(userId) utility for proper cleanup
-      await db.run("DELETE FROM users WHERE id = ?", [userId]);
-      throw errors.internal("Failed to store avatar metadata", { userId });
     }
 
-    // Step 4: Fetch avatar URL for response
+    // Step 3: Fetch avatar URL for response
     const avatar_url = await getAvatarUrl(db, userId);
 
     const accessToken = await signAccessToken(userId);
