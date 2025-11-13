@@ -10,7 +10,12 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
   const authHeader = request.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    throw errors.unauthorized("Access token required");
+    throw errors.unauthorized("Access token required", {
+      hasAuthHeader: !!authHeader,
+      authHeaderPrefix: authHeader?.substring(0, 7),
+      middleware: "requireAuth",
+      url: request.url,
+    });
   }
 
   const token = authHeader.substring(7); // Remove "Bearer " prefix
@@ -37,6 +42,7 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
 /**
  * Optional middleware - doesn't throw if no token, just attaches user if valid
  * Useful for routes that work differently for authenticated vs anonymous users
+ * not currently in use
  */
 export async function optionalAuth(request: FastifyRequest, reply: FastifyReply) {
   const authHeader = request.headers.authorization;

@@ -91,9 +91,3 @@ export const config = {
     },
   },
 } as const;
-
-// Validate configuration and log startup info
-export const validateConfig = () => {
-  // Configuration is logged by Fastify on startup
-  // No need for console.log here
-};
