@@ -32,14 +32,13 @@ coverage/
 *.md
 !README.md
 
-# Test database
-database/
-*.db
-*.db-journal
-
 # Uploaded files during development (will be mounted)
 uploads/avatars/*
 !uploads/avatars/default/
+
+# Database files (will be created at runtime or mounted)
+database/*.db
+database/*.db-*
 
 # CI/CD
 .github/
