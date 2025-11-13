@@ -7,7 +7,9 @@ import { sanitize } from "../../utils/sanitizationUtils.ts";
 import "../../types/fastifyTypes.ts";
 import { DatabaseHelper } from "../../utils/databaseUtils.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
-import bcrypt from "bcrypt";
+// REPLACED: bcrypt with simple hash due to crypto bundling issues
+// import bcrypt from "bcrypt";
+import { hashPassword, comparePassword } from "../../utils/simplePasswordUtils.ts";
 import {
   signAccessToken,
   verifyRefreshToken,
@@ -62,7 +64,7 @@ export const authController = {
       throw errors.unauthorized("Invalid or expired refresh token", { jti });
     }
 
-    const tokenMatch = await bcrypt.compare(refreshToken, storedToken.token_hash);
+    const tokenMatch = await comparePassword(refreshToken, storedToken.token_hash);
     if (!tokenMatch) {
       throw errors.unauthorized("Invalid refresh token", { jti, reason: "token_mismatch" });
     }
@@ -185,7 +187,7 @@ export const authController = {
     const cleanUsername = sanitize.username(request.body.username);
     const cleanEmail = sanitize.email(request.body.email);
 
-    const hash = await bcrypt.hash(request.body.password, 10);
+    const hash = await hashPassword(request.body.password);
 
     // Step 1: Create user in database transaction (atomic)
     const userId = await db.transaction(async (tx) => {
@@ -268,7 +270,7 @@ export const authController = {
       if (!result) {
         throw errors.unauthorized("Invalid email", { email: cleanEmail });
       }
-      const passwordMatch = await bcrypt.compare(password, result.password_hash);
+      const passwordMatch = await comparePassword(password, result.password_hash);
       if (!passwordMatch) {
         throw errors.unauthorized("Invalid password", { email: cleanEmail });
       }

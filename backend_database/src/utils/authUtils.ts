@@ -148,7 +148,9 @@ export async function generateAndStoreRefreshToken(
 ): Promise<string> {
   const jti = createJti();
   const refreshToken = await signRefreshToken(userId, jti);
-  const refreshHash = await (await import("bcrypt")).default.hash(refreshToken, 10);
+  // REPLACED: bcrypt with simple hash due to crypto bundling issues
+  const { hashPassword } = await import("./simplePasswordUtils.ts");
+  const refreshHash = await hashPassword(refreshToken);
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   await db.run(

@@ -1,3 +1,9 @@
+// CRITICAL FIX: Polyfill crypto for jose library
+import nodeCrypto from 'node:crypto';
+if (typeof globalThis.crypto === 'undefined') {
+  (globalThis as any).crypto = nodeCrypto.webcrypto;
+}
+
 import fastify, { FastifyServerOptions } from "fastify";
 import router from "./router.ts";
 import dbConnector from "./plugins/databasePlugin.ts";
@@ -5,7 +11,6 @@ import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
-// crypto.randomBytes disabled for runtime compatibility; use non-crypto fallback below
 
 export type BuildOptions = {
   logger?: boolean | FastifyServerOptions["logger"];

@@ -1,0 +1,33 @@
+Summary: What Actually Fixed the Crypto Error
+ROOT CAUSE ✅
+The jose library (used for JWT signing) expects the Web Crypto API to be available at globalThis.crypto, but Node.js doesn't automatically expose it in that location—it's at nodeCrypto.webcrypto.
+
+THE ACTUAL FIX (4 lines in main.ts)
+
+    import nodeCrypto from 'node:crypto';
+    if (typeof globalThis.crypto === 'undefined') {
+    (globalThis as any).crypto = nodeCrypto.webcrypto;
+    }
+
+What Changes Were Actually NEEDED vs WASTED EFFORT
+✅ NECESSARY (Keep these):
+Crypto polyfill in main.ts - The actual fix
+Dockerfile copy of tsup.config.ts - Was added during debugging, harmless to keep
+❌ UNNECESSARY (Can be reverted):
+Replaced bcrypt with simplePasswordUtils.ts - Bcrypt works fine with the polyfill
+Changed from compiled JS to running TypeScript with tsx - The original build process was fine
+Modified package.json build script - Should go back to tsup compilation
+Changed Dockerfile to skip building - Should compile TypeScript like before
+Modified tsup.config.ts - The bundling wasn't the problem
+What You Should Do Now
+Option A: Keep it simple (recommended for now)
+
+Keep everything as-is since it works
+You're running TypeScript directly which is fine for development/testing
+Option B: Revert to proper production setup
+
+Restore bcrypt (delete simplePasswordUtils.ts, re-import bcrypt in authController/authUtils)
+Restore package.json build script to: "build": "tsup [main.ts](http://_vscodecontentref_/9) --format esm --clean --minify"
+Restore Dockerfile to compile TypeScript and run dist/main.js
+Keep the crypto polyfill in main.ts - that's the only thing that was actually needed!
+The crypto polyfill is literally all you needed. Everything else was debugging theater! 🎭

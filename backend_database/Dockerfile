@@ -9,6 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 COPY tsconfig.json ./
 COPY tsconfig.build.json ./
+COPY tsup.config.ts ./
 
 # Install all dependencies (including devDependencies for build)
 RUN npm ci
@@ -19,11 +20,10 @@ COPY src ./src
 # Copy database
 COPY database ./database
 
-# Build TypeScript to JavaScript
-RUN npm run build
+# No build step - using tsx to run TypeScript directly
 
 # ============================================
-# Stage 2: Production - Minimal runtime image
+# Stage 2: Production - Runtime with tsx
 # ============================================
 FROM node:18.20.5-alpine AS production
 
@@ -39,14 +39,15 @@ RUN addgroup -g 1001 nodejs && \
 # Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
-RUN npm ci --omit=dev && \
+# Install ALL dependencies (including tsx for runtime)
+RUN npm ci && \
     npm cache clean --force
 
-# Copy compiled JavaScript from builder stage
-COPY --from=builder /app/dist ./dist
+# Copy source code directly (no compilation)
+COPY --from=builder /app/src ./src
 
-COPY --from=builder /app/src/db_migrator/migrations ./dist/migrations
+# Copy database migrations
+COPY --from=builder /app/src/db_migrator/migrations ./src/db_migrator/migrations
 
 # Copy database initialization files
 COPY --from=builder /app/database ./database
@@ -81,5 +82,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
 # Use custom entrypoint for permission handling
 ENTRYPOINT ["docker-entrypoint.sh"]
 
-# Start the application using compiled JavaScript
-CMD ["node", "dist/main.js"]
+# Start the application using tsx to run TypeScript directly
+CMD ["npx", "tsx", "src/main.ts"]
