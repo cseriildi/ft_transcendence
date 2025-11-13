@@ -5,7 +5,7 @@ import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
-import { randomBytes } from "node:crypto";
+// crypto.randomBytes disabled for runtime compatibility; use non-crypto fallback below
 
 export type BuildOptions = {
   logger?: boolean | FastifyServerOptions["logger"];
@@ -19,7 +19,8 @@ export type BuildOptions = {
  */
 function generateRequestId(): string {
   const timestamp = Date.now().toString(36); // Base36 timestamp (shorter)
-  const random = randomBytes(4).toString("hex"); // 8 char random
+  // Fallback non-crypto random portion when node:crypto is unavailable
+  const random = Math.floor(Math.random() * 1e9).toString(36);
   return `req-${timestamp}-${random}`;
 }
 

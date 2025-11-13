@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify } from "jose";
-import crypto from "node:crypto";
+// import crypto from "node:crypto"; // DISABLED: runtime environment does not provide node:crypto
 import { errors } from "./errorUtils.ts";
 import { AccessTokenPayload, RefreshTokenPayload } from "../services/authService/authTypes.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
@@ -12,7 +12,11 @@ const REFRESH_SECRET = new TextEncoder().encode(config.jwt.refreshSecret);
 const ACCESS_TTL = config.jwt.accessTtl;
 const REFRESH_TTL = config.jwt.refreshTtl;
 
-export const createJti = () => crypto.randomUUID();
+// Fallback JTI generator when crypto.randomUUID() is unavailable.
+// NOTE: This is less cryptographically strong than uuid/randomUUID but
+// acceptable for environments without Node's crypto. If you deploy to
+// environments with crypto available later, consider restoring randomUUID.
+export const createJti = () => `${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
 
 export async function signAccessToken(userId: number) {
   const token = await new SignJWT({})
