@@ -46,6 +46,8 @@ RUN npm ci --omit=dev && \
 # Copy compiled JavaScript from builder stage
 COPY --from=builder /app/dist ./dist
 
+COPY --from=builder /app/src/db_migrator/migrations ./dist/migrations
+
 # Copy database initialization files
 COPY --from=builder /app/database ./database
 
