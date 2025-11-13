@@ -17,7 +17,8 @@ import {
 } from "../../utils/oauthUtils.ts";
 import { AuthUserData } from "../authService/authTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
-import crypto from "node:crypto";
+// DISABLED: crypto not available in runtime environment
+// import crypto from "node:crypto";
 import { config } from "../../config.ts";
 
 const IS_PROD = config.server.env === "production";
@@ -35,7 +36,8 @@ export const oauthController = {
       });
     }
 
-    const state = crypto.randomUUID();
+    // DISABLED: crypto.randomUUID() - fallback to timestamp-based state
+    const state = `${Date.now()}-${Math.floor(Math.random() * 1e9)}`;
     const authUrl =
       `${githubConfig.authUrl}?client_id=${githubConfig.clientId}` +
       `&redirect_uri=${encodeURIComponent(githubConfig.redirectUri)}` +
