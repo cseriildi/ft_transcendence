@@ -4,10 +4,10 @@
   "description": "Frontend for the Transcendence web application.",
   "main": "index.js",
   "scripts": {
-    "build": "mkdir -p dist dist/templates dist/assets && cp -r src/assets dist && cp src/index.html dist && cp src/templates/*.html dist/templates && tsc && tailwindcss -i ./src/css/input.css -o ./dist/css/output.css",
-    "predev": "chmod +x ./scripts/inject-config.sh && ./scripts/inject-config.sh && mkdir -p dist/templates dist/assets && cp -r src/assets dist && cp src/templates/*.html dist/templates",
+    "build": "mkdir -p dist dist/templates dist/assets dist/locales && cp -r src/assets dist && cp -r src/locales dist && cp src/index.html dist && cp src/templates/*.html dist/templates && tsc && tailwindcss -i ./src/css/input.css -o ./dist/css/output.css",
+    "predev": "chmod +x ./scripts/inject-config.sh && ./scripts/inject-config.sh && mkdir -p dist/templates dist/assets dist/locales && cp -r src/assets dist && cp -r src/locales dist && cp src/templates/*.html dist/templates",
     "prestart": "npm run build",
-    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"chokidar 'src/index.html' -c './scripts/inject-config.sh'\" \"chokidar 'src/templates/*.html' -c 'cp src/templates/*.html dist/templates/'\" \"browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single\"",
+    "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"chokidar 'src/index.html' -c './scripts/inject-config.sh'\" \"chokidar 'src/templates/*.html' -c 'cp src/templates/*.html dist/templates/'\" \"chokidar 'src/locales/*.json' -c 'cp -r src/locales dist/'\" \"browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single\"",
     "start": "browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single"
   },
   "devDependencies": {

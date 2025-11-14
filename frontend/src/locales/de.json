@@ -1,0 +1,10 @@
+{
+  "home": {
+    "title": "Pong Portal: Der ultimative Paddle-Spielplatz",
+    "subtitle": "Spiele Pong. Sei legendär.",
+    "playButton": "Pong spielen",
+    "loginButton": "Anmelden",
+    "logoutButton": "Abmelden",
+    "profileButton": "Profil"
+  }
+}

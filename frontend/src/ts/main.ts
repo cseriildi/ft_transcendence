@@ -8,6 +8,8 @@ import { Edit } from "./edit/Edit.js";
 import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
+import { i18n } from "./utils/i18n.js";
+import { languageSwitcher } from "./components/LanguageSwitcher.js";
 
 let currentPong: Pong | null = null;
 
@@ -62,6 +64,13 @@ const initNotFoundPage = () => {
 };
 
 const router = new Router();
+
+router.setI18nCallback(async () => {
+  await i18n.init();
+  languageSwitcher.init();
+  console.log("✅ i18n initialized with language:", i18n.getCurrentLanguage());
+});
+
 const loginPage = new Login(router);
 const registerPage = new Register(router);
 const homePage = new Home(router);

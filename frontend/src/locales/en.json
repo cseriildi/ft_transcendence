@@ -1,0 +1,10 @@
+{
+  "home": {
+    "title": "Pong Portal: The Ultimate Paddle Playground",
+    "subtitle": "Play Pong. Be legendary.",
+    "playButton": "Play Pong",
+    "loginButton": "Log in",
+    "logoutButton": "Log out",
+    "profileButton": "Profile"
+  }
+}
