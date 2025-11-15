@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsup src/main.ts --format esm --clean --minify",
     "start": "node dist/main.js",
-    "dev": "NODE_ENV=development tsx src/main.ts",
+    "dev": "dotenv -e .env.development -- tsx src/main.ts",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -37,6 +37,7 @@
     "@types/validator": "^13.15.4",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
