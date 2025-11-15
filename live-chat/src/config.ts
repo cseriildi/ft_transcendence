@@ -1,7 +1,11 @@
 // Helper function to get required environment variable
+// Accepts an optional defaultValue which will be returned when the env var is missing.
 function getEnvVar(name: string, defaultValue?: string): string {
-  const value = process.env[name] || defaultValue;
+  const value = process.env[name];
   if (!value) {
+    if (defaultValue !== undefined) {
+      return defaultValue;
+    }
     throw new Error(`❌ Required environment variable ${name} is not set`);
   }
   return value;
@@ -26,18 +30,18 @@ export const config = {
   // Server configuration
   server: {
     port: parsePort(process.env.PORT, 3002),
-    host: getEnvVar("HOST", "::"),
-    env: getEnvVar("NODE_ENV", "production"),
+    host: getEnvVar("HOST"),
+    env: getEnvVar("NODE_ENV"),
   },
 
   // Database configuration
   database: {
-    path: getEnvVar("DATABASE_PATH", "src/database/database.db"),
+    path: getEnvVar("DATABASE_PATH"),
   },
 
   // Auth service
   auth: {
-    serviceUrl: getEnvVar("AUTH_SERVICE_URL", "http://databank:3000"),
+    serviceUrl: getEnvVar("AUTH_SERVICE_URL"),
   },
 
   // CORS configuration
@@ -46,11 +50,11 @@ export const config = {
       "CORS_ORIGINS",
       `http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar(
         "NGINX_HTTP_PORT",
-        "8080"
+        "8080",
       )},http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar(
         "FRONTEND_PORT",
-        "4200"
-      )}`
+        "4200",
+      )}`,
     )
       .split(",")
       .map((s) => s.trim()),
@@ -58,7 +62,7 @@ export const config = {
 
   // Logging
   logging: {
-    level: getEnvVar("LOG_LEVEL", "info"),
+    level: getEnvVar("LOG_LEVEL"),
   },
 };
 

@@ -1,5 +1,5 @@
 {
-  "name": "Backend Database (Node.js & TypeScript)",
+  "name": "Frontend (Node.js & TypeScript)",
   "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
   "customizations": {
     "vscode": {
@@ -10,9 +10,11 @@
       ]
     }
   },
-  "forwardPorts": [3000],
-  "postCreateCommand": "apt update && apt install -y sqlite3 libsqlite3-dev && npm install",
+  "forwardPorts": [4200],
+  "postCreateCommand": "npm install",
   "remoteUser": "root",
-  "mounts": ["source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"],
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ],
   "workspaceFolder": "/workspace"
 }
