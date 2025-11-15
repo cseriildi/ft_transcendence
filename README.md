@@ -1,8 +1,12 @@
 # ft_transcendence
 
-## Quick guide to running Transendence
+## Quick guide to running Transcendence
 
-### 🚀 One-command setup:
+### 🚀 Running Modes
+
+This project supports **three development modes**:
+
+#### 1. **Production Mode (Docker Compose)** - All services together
 
 **42 PCs (ports 8443/8080):**
 
@@ -20,21 +24,43 @@ This will automatically:
 
 - Generate SSL certificates
 - Build all containers
-- Start all services
+- Start all services (NGINX, frontend, backend_database, backend_gamelogic, live-chat)
 
-### 🌐 Access the application:
+**Access:**
 
-**42 PCs (non-privileged ports):**
+- **42 PCs**: https://localhost:8443
+- **Production**: https://localhost (port 443)
 
-- **HTTPS**: https://localhost:8443
-- **HTTP**: http://localhost:8080 (redirects to HTTPS)
+#### 2. **Dev Container Mode** - Single service in VS Code
 
-**Production (privileged ports):**
+1. Open a service folder in VS Code (e.g., `backend_database/` or `live-chat/`)
+2. Click "Reopen in Container" when prompted
+3. Run `npm run dev` inside the container
 
-- **HTTPS**: https://localhost (port 443 is default)
-- **HTTP**: http://localhost (redirects to HTTPS)
+**Environment:** Automatically loads `.env.development` with localhost defaults
 
-### Other usefull commands:
+#### 3. **Local Dev Mode** - Single service on your machine
+
+```bash
+cd backend_database  # or live-chat, backend_gamelogic
+npm install
+npm run dev
+```
+
+**Environment:**
+
+- Uses `.env.development` defaults (localhost URLs, local DB paths)
+- Override with `.env.local` if needed (gitignored)
+
+---
+
+### 📋 Environment Files
+
+- **`.env`** - Created from `.env.example`, used by Docker Compose (production mode)
+- **`.env.development`** - Tracked in git, defaults for local/devcontainer modes
+- **`.env.local`** - Optional, gitignored, for personal overrides
+
+### Other useful commands:
 
 ```bash
 make help

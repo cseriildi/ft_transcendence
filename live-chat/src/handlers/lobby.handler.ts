@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { lobbyConnections, userLobbyConnections } from "../services/state.js";
 import { banList } from "../services/state.js";
+import { config } from "../config.js";
 
 /**
  * Handle join_lobby action
