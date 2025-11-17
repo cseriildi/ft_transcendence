@@ -25,8 +25,7 @@ export class Pong {
 
   constructor(canvasId: string, wsUrl: string) {
     const canvasEl = document.getElementById(canvasId);
-    if (!canvasEl)
-      throw new Error(`Canvas element with id "${canvasId}" not found.`);
+    if (!canvasEl) throw new Error(`Canvas element with id "${canvasId}" not found.`);
     const canvas = canvasEl as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Could not get 2D rendering context.");
@@ -56,7 +55,7 @@ export class Pong {
         () => {
           sendStart();
         },
-        { once: true },
+        { once: true }
       );
     }
   }
@@ -119,22 +118,13 @@ export class Pong {
     };
   }
 
-  private updateCapsule(paddle: {
-    cx?: number;
-    cy?: number;
-    capsule: Capsule;
-  }) {
+  private updateCapsule(paddle: { cx?: number; cy?: number; capsule: Capsule }) {
     const cap = paddle.capsule;
     const dx = cap.x2 - cap.x1;
     const dy = cap.y2 - cap.y1;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    if (
-      paddle.cx === undefined ||
-      paddle.cy === undefined ||
-      !isFinite(length) ||
-      length === 0
-    )
+    if (paddle.cx === undefined || paddle.cy === undefined || !isFinite(length) || length === 0)
       return;
 
     const halfLength = length / 2;
@@ -150,10 +140,8 @@ export class Pong {
     const score1El = document.getElementById("score-player1");
     const score2El = document.getElementById("score-player2");
 
-    if (score1El)
-      score1El.textContent = this.gameState.score.player1.toString();
-    if (score2El)
-      score2El.textContent = this.gameState.score.player2.toString();
+    if (score1El) score1El.textContent = this.gameState.score.player1.toString();
+    if (score2El) score2El.textContent = this.gameState.score.player2.toString();
   }
 
   private setupInputHandlers() {
@@ -227,13 +215,7 @@ export class Pong {
     // Draw ball
     this.ctx.fillStyle = "#ff00cc";
     this.ctx.beginPath();
-    this.ctx.arc(
-      ball.x * scale,
-      ball.y * scale,
-      ball.radius * scale,
-      0,
-      Math.PI * 2,
-    );
+    this.ctx.arc(ball.x * scale, ball.y * scale, ball.radius * scale, 0, Math.PI * 2);
     this.ctx.fill();
 
     // Draw paddles
