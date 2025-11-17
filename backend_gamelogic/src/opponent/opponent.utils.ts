@@ -60,7 +60,6 @@ function timeUntilBallReachesPaddle(game: GameServer, playerNumber: 1 | 2): numb
  */
 export function predictInterceptionPoint(game: GameServer, playerNumber: 1 | 2): number {
     const paddle = playerNumber === 1 ? game.Paddle1 : game.Paddle2;
-    const ball = game.Ball;
     
     const timeToReach = timeUntilBallReachesPaddle(game, playerNumber);
     
