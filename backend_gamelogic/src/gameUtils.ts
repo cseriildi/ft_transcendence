@@ -1,4 +1,4 @@
-import { Paddle, Ball, GameServer, GameMode } from "./gameTypes.js";
+import { Paddle, Ball, GameServer } from "./gameTypes.js";
 import { config } from "./config.js";
 import { updateDummyPaddle } from "./opponent/opponent.js";
 import { broadcastGameState, broadcastGameResult } from "./networkUtils.js";
@@ -8,7 +8,7 @@ import { broadcastGameState, broadcastGameResult } from "./networkUtils.js";
  */
 async function sendMatchResult(game: GameServer): Promise<void> {
   // Only send results for ONLINE mode with real players
-  if (game.gameMode !== GameMode.ONLINE) {
+  if (!["remote", "friend"].includes(game.gameMode)) {
     return;
   }
 
@@ -49,9 +49,9 @@ async function sendMatchResult(game: GameServer): Promise<void> {
 }
 
 // Factory function to create game with specified mode
-export function createGame(gameMode: GameMode): GameServer {
+export function createGame(gameMode: string): GameServer {
   const game = new GameServer(gameMode);
-  if (gameMode === GameMode.VS_AI) {
+  if (gameMode === "ai") {
     game.aiEnabled = true;
   }
 

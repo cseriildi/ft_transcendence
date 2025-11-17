@@ -1,8 +1,8 @@
 import Fastify from "fastify";
 import { FastifyInstance } from "fastify";
-import { config, validateConfig } from "./config.js";
+import { config, VALID_MODES, validateConfig } from "./config.js";
 import { createGame, resetBall } from "./gameUtils.js";
-import { GameServer, GameMode, GameStartPayload, PlayerInfo } from "./gameTypes.js";
+import { GameServer, GameStartPayload, PlayerInfo } from "./gameTypes.js";
 import { broadcastGameState, broadcastGameSetup } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
 
@@ -159,11 +159,7 @@ fastify.register(async function (server: FastifyInstance) {
 
             // Check if player already has an active game (ONLINE mode only)
             // Note: validateGameStartMessage already ensures player exists for ONLINE mode
-            if (
-              gameMode === GameMode.ONLINE &&
-              player!.userId &&
-              activePlayers.has(player!.userId)
-            ) {
+            if (gameMode === "remote" && player!.userId && activePlayers.has(player!.userId)) {
               sendErrorToClient(
                 connection,
                 "You already have an active game. Please finish it before starting a new one."
@@ -174,7 +170,7 @@ fastify.register(async function (server: FastifyInstance) {
             // Stop previous game for this connection and start a fresh one
             stopGame();
 
-            if (gameMode === GameMode.ONLINE) {
+            if (gameMode === "remote") {
               if (!waitingRemotePlayer || waitingRemotePlayer.connection === connection) {
                 // Player 1 waiting for opponent - store in waiting room
                 game = createGame(gameMode);
@@ -225,12 +221,11 @@ fastify.register(async function (server: FastifyInstance) {
                   console.error("Error during online game countdown:", err)
                 );
               }
-            } else if (gameMode === GameMode.LOCAL) {
-              // LOCAL mode - start immediately (no player info needed)
+            } else if (["local", "ai"].includes(gameMode)) {
               game = createGame(gameMode);
 
-              game.clients.set(1, {
-                playerInfo: { userId: "local", username: "local" },
+              game.clients.set(2, {
+                playerInfo: { userId: gameMode, username: gameMode },
                 connection,
               });
               activeGames.add(game);
@@ -239,41 +234,17 @@ fastify.register(async function (server: FastifyInstance) {
               runGameCountdown(game).catch((err) =>
                 console.error("Error during local game countdown:", err)
               );
-            } else if (gameMode === GameMode.VS_AI) {
-              // VS_AI mode - start immediately (no player info needed)
-              game = createGame(gameMode);
-
-              game.clients.set(2, {
-                playerInfo: { userId: "Player", username: "Player" },
-                connection,
-              });
-              activeGames.add(game);
-              freezeBall(game);
-
-              runGameCountdown(game).catch((err) =>
-                console.error("Error during AI game countdown:", err)
-              );
             }
             break;
           }
           case "nextGame": {
-            stopGame();
-            if (data.mode === GameMode.ONLINE && game) {
-              activeGames.delete(game);
-              const client1 = game.clients.get(1);
-              if (client1?.playerInfo?.userId) {
-                activePlayers.delete(client1.playerInfo.userId);
+            if (["remote", "friend", "tournament"].includes(data.gameMode)) {
+              stopGame();
+              if (data.gameMode === "tournament") {
               }
-              const client2 = game.clients.get(2);
-              if (client2?.playerInfo?.userId) {
-                activePlayers.delete(client2.playerInfo.userId);
-              }
-              break;
             }
-          }
-          case "joinGame":
-            // Handle player joining
             break;
+          }
         }
       } catch (err) {
         console.error("Error parsing message:", err);
@@ -285,8 +256,7 @@ fastify.register(async function (server: FastifyInstance) {
       console.log("Client disconnected");
 
       // Notify other players in the game that someone left
-      // if (game && ["remote", "friend"].includes(game.gameMode)) {
-      if (game && game.gameMode === GameMode.ONLINE) {
+      if (game && ["remote", "friend"].includes(game.gameMode)) {
         // Find the player who left and notify others
         game.clients.forEach((client) => {
           if (client.connection !== connection) {
@@ -354,7 +324,7 @@ function handlePlayerInput(game: GameServer, input: { player: number; action: st
 // Helper function to validate startGame message
 function validateGameStartMessage(data: any): {
   error?: string;
-  gameMode?: GameMode;
+  gameMode?: string;
   player?: PlayerInfo;
 } {
   // Check if mode is present
@@ -363,20 +333,18 @@ function validateGameStartMessage(data: any): {
   }
 
   // Validate game mode
-  const validModes = Object.values(GameMode);
+  const validModes = Object.values(VALID_MODES);
   if (!validModes.includes(data.mode)) {
     return {
       error: `Invalid game mode: ${data.mode}. Must be one of: ${validModes.join(", ")}`,
     };
   }
 
-  // For ONLINE mode, player info is required
-  if (data.mode === GameMode.ONLINE) {
+  if (["remote", "friend"].includes(data.mode)) {
     if (!data.player) {
       return { error: "Missing required field: player" };
     }
 
-    // Validate player info has username and userId
     if (!data.player.username) {
       return { error: "Player must have a username" };
     }

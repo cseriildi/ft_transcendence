@@ -1,5 +1,5 @@
 import { Router } from "./router/Router.js";
-import { Pong, GameMode } from "./pong/Pong.js";
+import { Pong } from "./pong/Pong.js";
 import { Login } from "./login/Login.js";
 import { Register } from "./register/Register.js";
 import { Home } from "./home/Home.js";
@@ -11,6 +11,8 @@ import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
 import { getUserId, getAccessToken, isUserAuthorized, getUsername } from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
+
+const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
 
 let currentPong: Pong | null = null;
 
@@ -24,8 +26,6 @@ window.addEventListener("popstate", () => {
     }
   }
 });
-
-const VALID_MODES = ["local", "ai", "remote", "friend", "tournament", "local-tournament"];
 
 const initPongPage = async () => {
   const queryParams = router.getQueryParams();
@@ -134,7 +134,7 @@ const initPongPage = async () => {
     userAvatar?.classList.add("hidden");
   }
 
-  if (mode !== "local" && mode !== "remote" && mode !== "ai") {
+  if (!["local", "remote", "ai"].includes(mode)) {
     // Hide canvas and New Game button for unsupported modes
     const canvas = document.getElementById("pong-canvas");
     const newGameBtn = document.getElementById("new-game-btn");
@@ -181,30 +181,13 @@ const initPongPage = async () => {
     const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
     if (canvas) {
       currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
-      // Tell server to start a fresh game tied to this connection
-      let gameMode: GameMode;
-      switch (mode) {
-        case "local":
-          gameMode = GameMode.LOCAL;
-          break;
-        case "ai":
-          gameMode = GameMode.VS_AI;
-          break;
-        case "remote":
-          gameMode = GameMode.ONLINE;
-          break;
-        default:
-          console.error(`❌ Invalid game mode: ${mode}`);
-          return;
-      }
 
-      // For ONLINE mode, pass actual user data
-      if (gameMode === GameMode.ONLINE) {
+      if (["remote", "friend"].includes(mode)) {
         const userId = getUserId();
         const username = getUsername();
 
         if (userId && username) {
-          currentPong.startGame(gameMode, {
+          currentPong.startGame(mode, {
             userId: parseInt(userId),
             username: username,
           });
@@ -212,8 +195,7 @@ const initPongPage = async () => {
           console.error("❌ User not authenticated for ONLINE mode");
         }
       } else {
-        // LOCAL mode doesn't need playerInfo
-        currentPong.startGame(gameMode);
+        currentPong.startGame(mode);
       }
     } else {
       console.error("❌ Pong canvas not found");
