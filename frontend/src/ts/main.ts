@@ -9,7 +9,7 @@ import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
-import { getUserId, getAccessToken, isUserAuthorized } from "./utils/utils.js";
+import { getUserId, getAccessToken, isUserAuthorized, getUsername } from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
 let currentPong: Pong | null = null;
@@ -166,7 +166,25 @@ const initPongPage = async () => {
     if (canvas) {
       currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
       // Tell server to start a fresh game tied to this connection
-      currentPong.startGame(mode === "local" ? GameMode.LOCAL : GameMode.ONLINE);
+      const gameMode = mode === "local" ? GameMode.LOCAL : GameMode.ONLINE;
+
+      // For ONLINE mode, pass actual user data
+      if (gameMode === GameMode.ONLINE) {
+        const userId = getUserId();
+        const username = getUsername();
+
+        if (userId && username) {
+          currentPong.startGame(gameMode, {
+            userId: parseInt(userId),
+            username: username,
+          });
+        } else {
+          console.error("❌ User not authenticated for ONLINE mode");
+        }
+      } else {
+        // LOCAL mode doesn't need playerInfo
+        currentPong.startGame(gameMode);
+      }
     } else {
       console.error("❌ Pong canvas not found");
     }

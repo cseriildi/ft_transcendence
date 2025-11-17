@@ -36,7 +36,6 @@ export class Pong {
   private isConnected: boolean = false;
   private currentGameMode: GameMode = GameMode.LOCAL;
   private currentPlayerInfo: PlayerInfo | null = null;
-  private readonly tabId: string;
   private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
   private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
 
@@ -54,7 +53,6 @@ export class Pong {
     this.canvas = canvas;
     this.ctx = ctx;
     this.wsUrl = wsUrl;
-    this.tabId = this.generateTabId();
 
     this.setupInputHandlers();
     this.connect();
@@ -62,44 +60,32 @@ export class Pong {
   }
 
   /**
-   * Generate or retrieve a unique ID for this browser tab
-   * Persists across page refreshes within the same tab
-   */
-  private generateTabId(): string {
-    let tabId = sessionStorage.getItem("tabId");
-    if (!tabId) {
-      // Use crypto.randomUUID if available, otherwise fallback
-      if (typeof crypto !== "undefined" && crypto.randomUUID) {
-        tabId = crypto.randomUUID();
-      } else {
-        // Fallback for older browsers
-        tabId = `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      }
-      sessionStorage.setItem("tabId", tabId);
-    }
-    return tabId;
-  }
-
-  /**
    * Start a game with optional game mode and player information
    * @param gameMode - The game mode (LOCAL, ONLINE, TOURNAMENT). Defaults to LOCAL.
-   * @param playerInfo - Optional player information (userId, username, avatar)
+   * @param playerInfo - Optional player information (userId, username, avatar). Required for ONLINE mode.
    */
   public startGame(gameMode: GameMode, playerInfo?: PlayerInfo) {
     this.currentGameMode = gameMode;
-    // Use tabId as username for now (until login is implemented)
-    this.currentPlayerInfo = playerInfo || {
-      userId: this.tabId,
-      username: this.tabId,
-    };
+
+    // For ONLINE mode, playerInfo is required
+    if (gameMode === GameMode.ONLINE && !playerInfo) {
+      console.error("❌ Player info is required for ONLINE mode");
+      return;
+    }
+
+    this.currentPlayerInfo = playerInfo || null;
 
     const sendStart = () => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         const message: any = {
           type: "startGame",
           mode: this.currentGameMode,
-          player: this.currentPlayerInfo,
         };
+
+        // Only include player field if playerInfo is provided
+        if (this.currentPlayerInfo) {
+          message.player = this.currentPlayerInfo;
+        }
 
         this.ws.send(JSON.stringify(message));
       }

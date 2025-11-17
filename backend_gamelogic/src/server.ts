@@ -24,6 +24,10 @@ await fastify.register(import("@fastify/websocket"));
 // Track all active games so we can report health and perform graceful shutdown.
 const activeGames = new Set<GameServer>();
 
+// Track active players (userId -> game) to prevent multiple simultaneous games
+// Also enables future functionality to terminate games on user logout
+const activePlayers = new Map<string | number, GameServer>();
+
 // Track the single player waiting for an opponent in ONLINE mode
 // Only one player can wait at a time
 let waitingRemotePlayer: {
@@ -44,6 +48,61 @@ fastify.get("/health", async () => {
   };
 });
 
+// Helper function to terminate all games for a specific user (e.g., on logout)
+// Can be called from an HTTP endpoint in the future
+function terminateUserGames(userId: string | number): void {
+  const game = activePlayers.get(userId);
+  if (game) {
+    try {
+      // Notify clients in the game with different messages
+      game.clients.forEach((client) => {
+        try {
+          if (client.playerInfo && client.playerInfo.userId === userId) {
+            // Message for the user who logged out
+            client.connection.send(
+              JSON.stringify({
+                type: "error",
+                message: "Game terminated: You have been logged out",
+              })
+            );
+          } else {
+            // Message for the opponent
+            client.connection.send(
+              JSON.stringify({
+                type: "error",
+                message: "Game terminated: Opponent logged out",
+              })
+            );
+          }
+        } catch (err) {
+          console.error("Failed to notify client:", err);
+        }
+      });
+
+      // Stop the game
+      game.stop();
+
+      // Remove all players from the game from activePlayers
+      game.clients.forEach((client) => {
+        if (client.playerInfo && client.playerInfo.userId) {
+          activePlayers.delete(client.playerInfo.userId);
+        }
+      });
+
+      // Clear waiting room if needed
+      if (waitingRemotePlayer && waitingRemotePlayer.game === game) {
+        waitingRemotePlayer = null;
+      }
+
+      // Remove from active games
+      activeGames.delete(game);
+      game.clients.clear();
+    } catch (err) {
+      console.error(`Error terminating games for user ${userId}:`, err);
+    }
+  }
+}
+
 // WebSocket route for game
 fastify.register(async function (server: FastifyInstance) {
   server.get("/game", { websocket: true }, (connection: any, req: any) => {
@@ -62,6 +121,12 @@ fastify.register(async function (server: FastifyInstance) {
         if (waitingRemotePlayer && waitingRemotePlayer.game === game) {
           waitingRemotePlayer = null;
         }
+        // Remove players from active set
+        game.clients.forEach((client) => {
+          if (client.playerInfo && client.playerInfo.userId) {
+            activePlayers.delete(client.playerInfo.userId);
+          }
+        });
         game.clients.clear();
         activeGames.delete(game);
         game = null;
@@ -85,12 +150,27 @@ fastify.register(async function (server: FastifyInstance) {
             const gameStartData = data as GameStartPayload;
             const { error, gameMode, player } = validateGameStartMessage(gameStartData);
 
-            if (error || !gameMode || !player) {
+            if (error || !gameMode) {
               const errorMsg = error || "Missing required field: mode";
               console.warn("Invalid startGame message:", errorMsg);
               sendErrorToClient(connection, errorMsg);
               return;
             }
+
+            // Check if player already has an active game (ONLINE mode only)
+            // Note: validateGameStartMessage already ensures player exists for ONLINE mode
+            if (
+              gameMode === GameMode.ONLINE &&
+              player!.userId &&
+              activePlayers.has(player!.userId)
+            ) {
+              sendErrorToClient(
+                connection,
+                "You already have an active game. Please finish it before starting a new one."
+              );
+              return;
+            }
+
             // Stop previous game for this connection and start a fresh one
             stopGame();
 
@@ -98,9 +178,11 @@ fastify.register(async function (server: FastifyInstance) {
               if (!waitingRemotePlayer || waitingRemotePlayer.connection === connection) {
                 // Player 1 waiting for opponent - store in waiting room
                 game = createGame(gameMode);
-                waitingRemotePlayer = { playerInfo: player, connection, game };
-                game.clients.set(1, { playerInfo: player, connection });
+                waitingRemotePlayer = { playerInfo: player!, connection, game };
+                game.clients.set(1, { playerInfo: player!, connection });
                 activeGames.add(game);
+                activePlayers.set(player!.userId, game);
+
                 connection.send(
                   JSON.stringify({
                     type: "waiting",
@@ -111,10 +193,16 @@ fastify.register(async function (server: FastifyInstance) {
                 );
                 freezeBall(game);
               } else {
-                // Player 2 joining
+                // Player 2 joining - check if different user
+                if (waitingRemotePlayer.playerInfo.userId === player!.userId) {
+                  sendErrorToClient(connection, "Cannot play against yourself");
+                  return;
+                }
+
                 game = waitingRemotePlayer.game;
                 waitingRemotePlayer = null;
-                game.clients.set(2, { playerInfo: player, connection });
+                game.clients.set(2, { playerInfo: player!, connection });
+                activePlayers.set(player!.userId, game);
 
                 connection.send(
                   JSON.stringify({
@@ -138,10 +226,13 @@ fastify.register(async function (server: FastifyInstance) {
                 );
               }
             } else {
-              // LOCAL mode - start immediately
+              // LOCAL mode - start immediately (no player info needed)
               game = createGame(gameMode);
 
-              game.clients.set(1, { playerInfo: player, connection });
+              game.clients.set(1, {
+                playerInfo: { userId: "local", username: "local" },
+                connection,
+              });
               activeGames.add(game);
               freezeBall(game);
 
@@ -230,14 +321,20 @@ function validateGameStartMessage(data: any): {
     };
   }
 
-  // Check if player info is present
-  if (!data.player) {
-    return { error: "Missing required field: player" };
-  }
+  // For ONLINE mode, player info is required
+  if (data.mode === GameMode.ONLINE) {
+    if (!data.player) {
+      return { error: "Missing required field: player" };
+    }
 
-  // Validate player info has username
-  if (!data.player.username) {
-    return { error: "Player must have a username" };
+    // Validate player info has username and userId
+    if (!data.player.username) {
+      return { error: "Player must have a username" };
+    }
+
+    if (!data.player.userId) {
+      return { error: "Player must have a userId" };
+    }
   }
 
   return {

@@ -8,7 +8,9 @@ export enum GameMode {
 
 // Player information
 export interface PlayerInfo {
+  userId: number | string;
   username: string;
+  avatar?: string;
 }
 
 export interface GameStartPayload {
