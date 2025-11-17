@@ -10,7 +10,7 @@ export const AuthSchemas = {
     body: {
       type: "object" as const,
       properties: {
-        username: {  
+        username: {
           type: "string",
           minLength: 3,
           maxLength: 15,
