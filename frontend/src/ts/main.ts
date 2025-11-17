@@ -134,7 +134,7 @@ const initPongPage = async () => {
     userAvatar?.classList.add("hidden");
   }
 
-  if (mode !== "local" && mode !== "remote") {
+  if (mode !== "local" && mode !== "remote" && mode !== "ai") {
     // Hide canvas and New Game button for unsupported modes
     const canvas = document.getElementById("pong-canvas");
     const newGameBtn = document.getElementById("new-game-btn");
@@ -182,7 +182,21 @@ const initPongPage = async () => {
     if (canvas) {
       currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
       // Tell server to start a fresh game tied to this connection
-      const gameMode = mode === "local" ? GameMode.LOCAL : GameMode.ONLINE;
+      let gameMode: GameMode;
+      switch (mode) {
+        case "local":
+          gameMode = GameMode.LOCAL;
+          break;
+        case "ai":
+          gameMode = GameMode.VS_AI;
+          break;
+        case "remote":
+          gameMode = GameMode.ONLINE;
+          break;
+        default:
+          console.error(`❌ Invalid game mode: ${mode}`);
+          return;
+      }
 
       // For ONLINE mode, pass actual user data
       if (gameMode === GameMode.ONLINE) {

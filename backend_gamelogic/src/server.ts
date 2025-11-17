@@ -225,7 +225,7 @@ fastify.register(async function (server: FastifyInstance) {
                   console.error("Error during online game countdown:", err)
                 );
               }
-            } else {
+            } else if (gameMode === GameMode.LOCAL) {
               // LOCAL mode - start immediately (no player info needed)
               game = createGame(gameMode);
 
@@ -238,6 +238,20 @@ fastify.register(async function (server: FastifyInstance) {
 
               runGameCountdown(game).catch((err) =>
                 console.error("Error during local game countdown:", err)
+              );
+            } else if (gameMode === GameMode.VS_AI) {
+              // VS_AI mode - start immediately (no player info needed)
+              game = createGame(gameMode);
+
+              game.clients.set(1, {
+                playerInfo: { userId: "Player", username: "Player" },
+                connection,
+              });
+              activeGames.add(game);
+              freezeBall(game);
+
+              runGameCountdown(game).catch((err) =>
+                console.error("Error during AI game countdown:", err)
               );
             }
             break;

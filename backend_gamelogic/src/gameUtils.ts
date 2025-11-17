@@ -1,6 +1,5 @@
 import { Paddle, Ball, GameServer, GameMode } from "./gameTypes.js";
 import { config } from "./config.js";
-import { broadcastGameState } from "./networkUtils.js";
 import { updateDummyPaddle } from "./opponent/opponent.js";
 import { broadcastGameState, broadcastGameResult } from "./networkUtils.js";
 
@@ -52,6 +51,9 @@ async function sendMatchResult(game: GameServer): Promise<void> {
 // Factory function to create game with specified mode
 export function createGame(gameMode: GameMode): GameServer {
   const game = new GameServer(gameMode);
+  if (gameMode === GameMode.VS_AI) {
+    game.aiEnabled = true;
+  }
 
   // Set up callbacks
   game.setUpdateCallback(updateGameState);

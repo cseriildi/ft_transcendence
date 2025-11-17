@@ -4,6 +4,7 @@ import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
 export enum GameMode {
   LOCAL = "LOCAL", // Two players on same machine
   ONLINE = "ONLINE", // Two players on different machines
+  VS_AI = "VS_AI", // Player vs AI
 }
 
 // Player information
@@ -114,7 +115,7 @@ export class GameServer {
   private isRunning: boolean = false;
 
   // AI Config
-  aiEnabled: boolean = true;
+  aiEnabled: boolean = false;
   aiPlayer: AIPlayer = new AIPlayer();
 
   // Callbacks for game loops (injected from outside)
