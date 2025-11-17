@@ -34,9 +34,9 @@ export class Register {
       const data = await response.json();
       if (response.ok) {
         if (data.data?.tokens?.accessToken) {
-          sessionStorage.setItem("userId", data.data.id);
-          sessionStorage.setItem("accessToken", data.data.tokens.accessToken);
-          sessionStorage.setItem("username", data.data.username);
+          localStorage.setItem("userId", data.data.id);
+          localStorage.setItem("accessToken", data.data.tokens.accessToken);
+          localStorage.setItem("username", data.data.username);
         }
         return { success: true };
       } else {

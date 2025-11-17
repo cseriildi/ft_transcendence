@@ -1,5 +1,5 @@
 export const isUserAuthorized = (): boolean => {
-  return sessionStorage.getItem("accessToken") !== null;
+  return localStorage.getItem("accessToken") !== null;
 };
 
 export const showError = (message: string): void => {
@@ -11,13 +11,13 @@ export const showError = (message: string): void => {
 };
 
 export const getUserId = (): string | null => {
-  return sessionStorage.getItem("userId");
+  return localStorage.getItem("userId");
 };
 
 export const getAccessToken = (): string | null => {
-  return sessionStorage.getItem("accessToken");
+  return localStorage.getItem("accessToken");
 };
 
 export const getUsername = (): string | null => {
-  return sessionStorage.getItem("username");
+  return localStorage.getItem("username");
 };

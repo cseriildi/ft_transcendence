@@ -13,7 +13,7 @@ export async function fetchWithRefresh(url: string, options: RequestInit): Promi
       if (refreshResponse.ok) {
         const refreshData = await refreshResponse.json();
         const accessToken = refreshData.data.tokens.accessToken;
-        sessionStorage.setItem("accessToken", accessToken);
+        localStorage.setItem("accessToken", accessToken);
 
         options.headers = {
           ...options.headers,
@@ -21,7 +21,7 @@ export async function fetchWithRefresh(url: string, options: RequestInit): Promi
         };
         return fetch(url, options);
       } else {
-        sessionStorage.clear();
+        localStorage.clear();
         throw new Error("Failed to refresh token");
       }
     }

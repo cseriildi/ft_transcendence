@@ -31,9 +31,9 @@ export class Home {
         });
 
         if (response.ok) {
-          sessionStorage.removeItem("accessToken");
-          sessionStorage.removeItem("userId");
-          sessionStorage.removeItem("username");
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("userId");
+          localStorage.removeItem("username");
           this.router.navigate("/");
         } else {
           console.error("Failed to log out", await response.json());
