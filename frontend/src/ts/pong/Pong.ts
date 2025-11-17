@@ -59,8 +59,13 @@ export class Pong {
    * Start a game with optional game mode and player information
    * @param gameMode - The game mode (LOCAL, ONLINE, TOURNAMENT). Defaults to LOCAL.
    * @param playerInfo - Optional player information (userId, username, avatar). Required for ONLINE mode.
+   * @param difficulty - Optional difficulty level for AI mode ("easy", "medium", "hard").
    */
-  public startGame(gameMode: string, playerInfo?: PlayerInfo) {
+  public startGame(
+    gameMode: string,
+    playerInfo?: PlayerInfo,
+    difficulty?: "easy" | "medium" | "hard"
+  ) {
     this.currentGameMode = gameMode;
 
     // For ONLINE mode, playerInfo is required
@@ -81,6 +86,11 @@ export class Pong {
         // Only include player field if playerInfo is provided
         if (this.currentPlayerInfo) {
           message.player = this.currentPlayerInfo;
+        }
+
+        // Include difficulty for AI mode
+        if (difficulty) {
+          message.difficulty = difficulty;
         }
 
         this.ws.send(JSON.stringify(message));

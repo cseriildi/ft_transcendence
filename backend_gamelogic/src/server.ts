@@ -148,7 +148,7 @@ fastify.register(async function (server: FastifyInstance) {
           case "startGame": {
             // Validate and extract game mode and player info
             const gameStartData = data as GameStartPayload;
-            const { error, gameMode, player } = validateGameStartMessage(gameStartData);
+            const { error, gameMode, player, difficulty } = validateGameStartMessage(gameStartData);
 
             if (error || !gameMode) {
               const errorMsg = error || "Missing required field: mode";
@@ -223,6 +223,9 @@ fastify.register(async function (server: FastifyInstance) {
               }
             } else if (["local", "ai"].includes(gameMode)) {
               game = createGame(gameMode);
+              if (gameMode === "ai") {
+                game.aiPlayer.aiDifficulty = difficulty!;
+              }
 
               game.clients.set(2, {
                 playerInfo: { userId: gameMode, username: gameMode },
@@ -326,6 +329,7 @@ function validateGameStartMessage(data: any): {
   error?: string;
   gameMode?: string;
   player?: PlayerInfo;
+  difficulty?: "easy" | "medium" | "hard";
 } {
   // Check if mode is present
   if (!data.mode) {
@@ -337,6 +341,13 @@ function validateGameStartMessage(data: any): {
   if (!validModes.includes(data.mode)) {
     return {
       error: `Invalid game mode: ${data.mode}. Must be one of: ${validModes.join(", ")}`,
+    };
+  }
+
+  // Validate difficulty if provided
+  if (data.mode == "ai" && !["easy", "medium", "hard"].includes(data.difficulty)) {
+    return {
+      error: `Invalid difficulty: ${data.difficulty}. Must be one of: easy, medium, hard`,
     };
   }
 
@@ -357,6 +368,7 @@ function validateGameStartMessage(data: any): {
   return {
     gameMode: data.mode,
     player: data.player,
+    difficulty: data.difficulty,
   };
 }
 

@@ -11,6 +11,7 @@ export interface GameStartPayload {
   type: "startGame";
   mode: string;
   player: PlayerInfo;
+  difficulty?: "easy" | "medium" | "hard";
 }
 
 export class Field {
