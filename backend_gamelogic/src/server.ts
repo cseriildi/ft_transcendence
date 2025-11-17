@@ -244,7 +244,7 @@ fastify.register(async function (server: FastifyInstance) {
           }
           case "nextGame": {
             stopGame();
-            if (message.mode === GameMode.ONLINE && game) {
+            if (data.mode === GameMode.ONLINE && game) {
               activeGames.delete(game);
               activePlayers.delete(game.clients.get(1)?.playerInfo.userId!);
               activePlayers.delete(game.clients.get(2)?.playerInfo.userId!);
