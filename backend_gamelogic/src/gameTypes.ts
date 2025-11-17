@@ -1,4 +1,5 @@
 import { config, PHYSICS_INTERVAL, RENDER_INTERVAL, VALID_MODES } from "./config.js";
+import { Tournament } from "./Tournament.js";
 
 // Player information
 export interface PlayerInfo {
@@ -8,7 +9,7 @@ export interface PlayerInfo {
 }
 
 export interface GameStartPayload {
-  type: "startGame";
+  type: "newGame";
   mode: string;
   player: PlayerInfo;
   difficulty?: "easy" | "medium" | "hard";
@@ -21,6 +22,13 @@ export class Field {
     this.width = width;
     this.height = height;
   }
+}
+
+export interface Result {
+  player1: PlayerInfo;
+  player2: PlayerInfo;
+  score1: number;
+  score2: number;
 }
 
 export class Ball {
@@ -103,6 +111,7 @@ export class GameServer {
   physicsInterval: number;
   renderInterval: number;
   gameMode: string;
+  tournament: Tournament | null = null;
 
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;
