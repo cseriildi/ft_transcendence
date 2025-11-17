@@ -128,8 +128,13 @@ export class Pong {
           this.isWaitingForOpponent = true;
         } else if (message.type === "ready") {
           this.isWaitingForOpponent = false;
-        } else if (message.type === "gameResult") {
-          console.log("🏆 Game Over! Result:", message.data);
+        } else if (["playerLeft", "gameResult"].includes(message.type)) {
+          if (message.type === "gameResult") {
+            console.log("🏆 Game Over! Result:", message.data);
+          } else {
+            console.warn("⚠️ Player left:", message.message);
+            alert(`⚠️ ${message.message}`);
+          }
           if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(
               JSON.stringify({

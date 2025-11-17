@@ -263,6 +263,26 @@ fastify.register(async function (server: FastifyInstance) {
 
     connection.on("close", () => {
       console.log("Client disconnected");
+
+      // Notify other players in the game that someone left
+      // if (game && ["remote", "friend"].includes(game.gameMode)) {
+      if (game && game.gameMode === GameMode.ONLINE) {
+        // Find the player who left and notify others
+        game.clients.forEach((client) => {
+          if (client.connection !== connection) {
+            try {
+              client.connection.send(
+                JSON.stringify({
+                  type: "playerLeft",
+                  message: "Your opponent has left the game",
+                })
+              );
+            } catch (err) {
+              console.error("Failed to notify client about player leaving:", err);
+            }
+          }
+        });
+      }
       stopGame();
     });
   });

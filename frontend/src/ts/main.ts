@@ -53,15 +53,31 @@ const initPongPage = async () => {
   const userName = document.getElementById("user-name");
 
   loginBtn?.addEventListener("click", () => {
+    // Cleanup Pong before navigating
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
     router.navigate("/login");
   });
 
   profileBtn?.addEventListener("click", () => {
+    // Cleanup Pong before navigating
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
     router.navigate("/profile");
   });
 
   logoutBtn?.addEventListener("click", async () => {
     try {
+      // Cleanup Pong before logging out
+      if (currentPong) {
+        currentPong.destroy();
+        currentPong = null;
+      }
+
       const response = await fetch(`${config.apiUrl}/auth/logout`, {
         method: "POST",
         credentials: "include",
@@ -199,7 +215,13 @@ const initPongPage = async () => {
 
 const initNotFoundPage = () => {
   const homeBtn = document.getElementById("home-btn");
-  homeBtn?.addEventListener("click", () => router.navigate("/"));
+  homeBtn?.addEventListener("click", () => {
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
+    router.navigate("/");
+  });
 };
 
 const router = new Router();
