@@ -10,7 +10,13 @@ export const AuthSchemas = {
     body: {
       type: "object" as const,
       properties: {
-        username: { type: "string", minLength: 3, maxLength: 15 },
+        username: {  
+          type: "string",
+          minLength: 3,
+          maxLength: 15,
+          pattern: "^[a-zA-Z0-9_-]+$",
+          description: "New username (3-50 characters, alphanumeric with underscores and hyphens)",
+        },
         email: { type: "string", format: "email" },
         password: {
           type: "string",

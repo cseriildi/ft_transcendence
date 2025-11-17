@@ -67,7 +67,7 @@ export const UserSchemas = {
         username: {
           type: "string",
           minLength: 3,
-          maxLength: 50,
+          maxLength: 15,
           pattern: "^[a-zA-Z0-9_-]+$",
           description: "New username (3-50 characters, alphanumeric with underscores and hyphens)",
         },
