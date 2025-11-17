@@ -13,7 +13,7 @@ if [ -f ".env.development" ]; then
 fi
 
 # Default values if not provided
-PUBLIC_API_URL="${PUBLIC_API_URL:-http://localhost:3000/api}"
+PUBLIC_API_URL="${PUBLIC_API_URL:-http://localhost:3000}"
 PUBLIC_WS_URL="${PUBLIC_WS_URL:-ws://localhost:3002/ws}"
 
 echo "🔧 Frontend development configuration:"

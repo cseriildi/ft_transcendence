@@ -1,6 +1,6 @@
 // CRITICAL: Polyfill crypto for jose library BEFORE any other imports
-import nodeCrypto from 'node:crypto';
-if (typeof globalThis.crypto === 'undefined') {
+import nodeCrypto from "node:crypto";
+if (typeof globalThis.crypto === "undefined") {
   (globalThis as any).crypto = nodeCrypto.webcrypto;
 }
 

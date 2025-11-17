@@ -7,14 +7,14 @@ ifeq ($(ports),privileged)
 	HTTPS_PORT = 443
 	HTTP_PORT = 80
 	# For standard ports, don't include port in URL
-	PUBLIC_API_URL = https://$(LOCAL_IP)/api
+	PUBLIC_API_URL = https://$(LOCAL_IP)
 	PUBLIC_WS_URL = wss://$(LOCAL_IP)/ws
 	URL = https://$(LOCAL_IP)
 else
 	HTTPS_PORT = 8443
 	HTTP_PORT = 8080
 	# For non-standard ports, include port in URL
-	PUBLIC_API_URL = https://$(LOCAL_IP):8443/api
+	PUBLIC_API_URL = https://$(LOCAL_IP):8443
 	PUBLIC_WS_URL = wss://$(LOCAL_IP):8443/ws
 	URL = https://$(LOCAL_IP):8443
 endif
