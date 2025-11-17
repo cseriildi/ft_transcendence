@@ -1,26 +1,19 @@
-<div
-  class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black py-8 font-orbitron"
->
+<div class="page-bg py-8">
   <div class="max-w-4xl mx-auto px-4">
-    <h1 class="text-5xl font-bold text-center mb-8 text-neon-pink drop-shadow-neon">Pong Game</h1>
+    <h1 class="page-title text-neon-pink">Pong Game</h1>
 
-    <div class="text-center">
-      <button
-        id="new-game-btn"
-        class="bg-neon-pink hover:bg-neon-green text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition"
-      >
-        New Game
-      </button>
+    <div class="text-center mb-8">
+      <button id="new-game-btn" class="btn-pink">New Game</button>
     </div>
 
     <div class="flex justify-center gap-16 mb-6">
       <div class="text-center">
-        <p class="text-neon-green text-sm mb-1">Player 1</p>
+        <p id="name-player1" class="text-neon-green text-sm mb-1">Player 1</p>
         <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
       </div>
       <div class="text-neon-cyan text-4xl font-bold self-center">:</div>
       <div class="text-center">
-        <p class="text-neon-green text-sm mb-1">Player 2</p>
+        <p id="name-player2" class="text-neon-green text-sm mb-1">Player 2</p>
         <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
       </div>
     </div>
@@ -36,12 +29,18 @@
       <p class="mt-4 text-neon-green drop-shadow-neon">Pong game streamed via WebSocket</p>
     </div>
     <div class="text-center">
-      <button
-        id="back-btn"
-        class="bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition"
-      >
-        Back to Home
-      </button>
+      <button id="back-btn" class="btn-green">Back to Home</button>
     </div>
+  </div>
+  <div class="absolute top-4 left-8 space-x-4 flex items-center">
+    <img id="user-avatar" src="" alt="Avatar" class="w-16 h-16 rounded-full shadow-neon hidden" />
+    <div id="user-name" class="text-center text-white mt-4 mb-4">
+      <!-- Username will be dynamically inserted here -->
+    </div>
+  </div>
+  <div class="absolute top-4 right-4 space-x-4 flex items-center">
+    <button id="login-btn" class="btn-green">Log in</button>
+    <button id="profile-btn" class="btn-green hidden">Profile</button>
+    <button id="logout-btn" class="btn-pink hidden">Log out</button>
   </div>
 </div>

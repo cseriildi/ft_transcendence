@@ -1,10 +1,55 @@
-import { Paddle, Ball, GameServer } from "./gameTypes.js";
+import { Paddle, Ball, GameServer, GameMode } from "./gameTypes.js";
 import { config } from "./config.js";
-import { broadcastGameState } from "./networkUtils.js";
+import { broadcastGameState, broadcastGameResult } from "./networkUtils.js";
 
-// Factory function to create
-export function createGame(): GameServer {
-  const game = new GameServer();
+/**
+ * Send match result to backend_database service
+ */
+async function sendMatchResult(game: GameServer): Promise<void> {
+  // Only send results for ONLINE mode with real players
+  if (game.gameMode !== GameMode.ONLINE) {
+    return;
+  }
+
+  const result = game.getResult();
+  if (!result) {
+    console.warn("Cannot send match result: missing player info");
+    return;
+  }
+
+  const { winner, loser, winnerScore, loserScore } = result;
+  const backendUrl = process.env.BACKEND_DATABASE_URL || "http://databank:3000";
+
+  try {
+    const response = await fetch(`${backendUrl}/api/matches`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        winner: winner.userId,
+        loser: loser.userId,
+        winner_score: winnerScore,
+        loser_score: loserScore,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Failed to save match result: ${response.status} ${errorText}`);
+    } else {
+      console.log(
+        `✅ Match result saved: ${winner.username} (${winnerScore}) vs ${loser.username} (${loserScore})`
+      );
+    }
+  } catch (error) {
+    console.error("Error sending match result to backend:", error);
+  }
+}
+
+// Factory function to create game with specified mode
+export function createGame(gameMode: GameMode): GameServer {
+  const game = new GameServer(gameMode);
 
   // Set up callbacks
   game.setUpdateCallback(updateGameState);
@@ -108,12 +153,20 @@ export function updateGameState(game: GameServer) {
   collideBallWithWalls(game);
 
   if (game.score1 >= game.maxScore || game.score2 >= game.maxScore) {
-    // stop the game loops
     try {
       game.stop();
     } catch (err) {
       console.error("Error stopping game:", err);
     }
+
+    // Send match result to backend database (async, don't wait)
+    sendMatchResult(game).catch((err) => {
+      console.error("Error sending match result:", err);
+    });
+
+    // Broadcast game result to clients (they will send nextGame acknowledgement)
+    broadcastGameResult(game);
+
     return;
   }
 

@@ -12,14 +12,36 @@ export class Home {
   }
 
   async initPage(): Promise<void> {
-    const pongBtn = document.getElementById("pong-btn");
+    const localBtn = document.getElementById("local-btn");
+    const aiBtn = document.getElementById("ai-btn");
+    const remoteBtn = document.getElementById("remote-btn");
+    const friendBtn = document.getElementById("friend-btn");
+    const tournamentBtn = document.getElementById("tournament-btn");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
     const userName = document.getElementById("user-name");
     const profileBtn = document.getElementById("profile-btn");
 
-    pongBtn?.addEventListener("click", () => this.router.navigate("/pong"));
+    localBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "local" }));
+    aiBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "ai" }));
+    remoteBtn?.addEventListener("click", () => {
+      if (!isUserAuthorized()) {
+        this.router.navigate("/login");
+        return;
+      }
+      this.router.navigate("/pong", { mode: "remote" });
+    });
+    friendBtn?.addEventListener("click", () => {
+      if (!isUserAuthorized()) {
+        this.router.navigate("/login");
+        return;
+      }
+      this.router.navigate("/pong", { mode: "friend" });
+    });
+    tournamentBtn?.addEventListener("click", () =>
+      this.router.navigate("/pong", { mode: "tournament" })
+    );
     profileBtn?.addEventListener("click", () => this.router.navigate("/profile"));
     loginBtn?.addEventListener("click", () => {
       this.router.navigate("/login");

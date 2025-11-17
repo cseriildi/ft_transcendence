@@ -1,5 +1,18 @@
 import { GameServer } from "./gameTypes.js";
 
+/**
+ * Removes a client from the game when sending fails
+ * Iterates through clients to find by connection reference
+ */
+function removeFailedClient(game: GameServer, failedConnection: any): void {
+  for (const [playerNum, { connection }] of game.clients.entries()) {
+    if (connection === failedConnection) {
+      game.clients.delete(playerNum);
+      break;
+    }
+  }
+}
+
 export function broadcastGameState(game: GameServer) {
   const gameState = {
     ball: {
@@ -31,12 +44,11 @@ export function broadcastGameState(game: GameServer) {
   });
 
   // Send to all connected clients
-  for (const client of game.clients) {
+  for (const { connection } of game.clients.values()) {
     try {
-      client.send(message);
+      connection.send(message);
     } catch (err) {
-      // Remove client if sending fails
-      game.clients.delete(client);
+      removeFailedClient(game, connection);
     }
   }
 }
@@ -80,18 +92,58 @@ export function broadcastGameSetup(game: GameServer) {
     countdown: game.countdown,
   };
 
-  const message = JSON.stringify({
-    type: "gameSetup",
-    data: gameState,
-  });
+  // Get player usernames from game clients
+  const player1Info = game.clients.get(1);
+  const player2Info = game.clients.get(2);
+  const player1Username = player1Info?.playerInfo?.username || "Player 1";
+  const player2Username = player2Info?.playerInfo?.username || "Player 2";
+
+  // Send to all connected clients - each gets told which player they are
+  for (const [playerNum, { connection }] of game.clients.entries()) {
+    if (!connection) continue; // Skip clients without connections (e.g., tournament AI)
+    try {
+      const message = JSON.stringify({
+        type: "gameSetup",
+        playerNumber: playerNum,
+        data: gameState,
+        player1Username,
+        player2Username,
+      });
+      connection.send(message);
+    } catch (err) {
+      removeFailedClient(game, connection);
+    }
+  }
+}
+
+export function broadcastGameResult(game: GameServer) {
+  broadcastGameSetup(game);
+
+  const result = game.getResult();
+  if (!result) {
+    console.warn("Cannot broadcast game result: missing player info");
+    return;
+  }
+
+  const { winner, loser, winnerScore, loserScore } = result;
 
   // Send to all connected clients
-  for (const client of game.clients) {
+  for (const [playerNum, { connection }] of game.clients.entries()) {
+    if (!connection) continue;
     try {
-      client.send(message);
+      const message = JSON.stringify({
+        type: "gameResult",
+        mode: game.gameMode,
+        data: {
+          winner: winner.username,
+          loser: loser.username,
+          winnerScore,
+          loserScore,
+        },
+      });
+      connection.send(message);
     } catch (err) {
-      // Remove client if sending fails
-      game.clients.delete(client);
+      console.error("Failed to send game result to client:", err);
     }
   }
 }

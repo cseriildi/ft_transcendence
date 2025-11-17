@@ -44,6 +44,11 @@ export const config = {
     publicPort: getOptionalEnvVar("PUBLIC_PORT", ""),
   },
 
+  // Backend database service URL
+  backendDatabase: {
+    url: getOptionalEnvVar("BACKEND_DATABASE_URL", "http://backend_database:3000"),
+  },
+
   // Logging
   logging: {
     level: getEnvVar("LOG_LEVEL"),

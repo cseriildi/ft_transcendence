@@ -1,5 +1,5 @@
 import { Router } from "./router/Router.js";
-import { Pong } from "./pong/Pong.js";
+import { Pong, GameMode } from "./pong/Pong.js";
 import { Login } from "./login/Login.js";
 import { Register } from "./register/Register.js";
 import { Home } from "./home/Home.js";
@@ -9,6 +9,8 @@ import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
+import { getUserId, getAccessToken, isUserAuthorized, getUsername } from "./utils/utils.js";
+import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
 let currentPong: Pong | null = null;
 
@@ -23,7 +25,143 @@ window.addEventListener("popstate", () => {
   }
 });
 
-const initPongPage = () => {
+const VALID_MODES = ["local", "ai", "remote", "friend", "tournament", "local-tournament"];
+
+const initPongPage = async () => {
+  const queryParams = router.getQueryParams();
+  const mode = queryParams.mode;
+
+  // Redirect to home if no mode is specified or if mode is invalid
+  if (!mode || !VALID_MODES.includes(mode)) {
+    console.warn(`Invalid or missing pong mode: ${mode}, redirecting to home`);
+    router.navigate("/");
+    return;
+  }
+
+  // Redirect to login if user is not authorized for remote or friend modes
+  if ((mode === "remote" || mode === "friend") && !isUserAuthorized()) {
+    console.warn(`You need to be logged in to play in ${mode} mode.`);
+    router.navigate("/login");
+    return;
+  }
+
+  // Initialize login/logout/profile buttons
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  const profileBtn = document.getElementById("profile-btn");
+  const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
+  const userName = document.getElementById("user-name");
+
+  loginBtn?.addEventListener("click", () => {
+    // Cleanup Pong before navigating
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
+    router.navigate("/login");
+  });
+
+  profileBtn?.addEventListener("click", () => {
+    // Cleanup Pong before navigating
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
+    router.navigate("/profile");
+  });
+
+  logoutBtn?.addEventListener("click", async () => {
+    try {
+      // Cleanup Pong before logging out
+      if (currentPong) {
+        currentPong.destroy();
+        currentPong = null;
+      }
+
+      const response = await fetch(`${config.apiUrl}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        sessionStorage.removeItem("accessToken");
+        sessionStorage.removeItem("userId");
+        sessionStorage.removeItem("username");
+        router.navigate("/");
+      } else {
+        console.error("Failed to log out", await response.json());
+      }
+    } catch (error) {
+      console.error("Error during logout", error);
+    }
+  });
+
+  // Handle button visibility based on authentication status
+  if (isUserAuthorized()) {
+    logoutBtn?.classList.remove("hidden");
+    profileBtn?.classList.remove("hidden");
+    loginBtn?.classList.add("hidden");
+
+    // Fetch user data if authorized
+    try {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+
+        if (userAvatar && userData.data.avatar_url) {
+          userAvatar.src = `${config.apiUrl}${userData.data.avatar_url}`;
+          userAvatar.classList.remove("hidden");
+        }
+
+        if (userName && userData.data.username) {
+          userName.innerHTML = userData.data.username;
+        }
+      } else {
+        console.error("Failed to fetch user data", await response.json());
+      }
+    } catch (error) {
+      console.error("Error fetching user data", error);
+    }
+  } else {
+    logoutBtn?.classList.add("hidden");
+    profileBtn?.classList.add("hidden");
+    loginBtn?.classList.remove("hidden");
+    userAvatar?.classList.add("hidden");
+  }
+
+  if (mode !== "local" && mode !== "remote") {
+    // Hide canvas and New Game button for unsupported modes
+    const canvas = document.getElementById("pong-canvas");
+    const newGameBtn = document.getElementById("new-game-btn");
+    if (canvas) canvas.style.display = "none";
+    if (newGameBtn) newGameBtn.style.display = "none";
+
+    // Hide score display and game description
+    const scoreDiv = document.querySelector(".flex.justify-center.gap-16") as HTMLElement | null;
+    const gameDescDiv = document.querySelector(
+      ".flex.flex-col.text-center.justify-center"
+    ) as HTMLElement | null;
+    if (scoreDiv) scoreDiv.style.display = "none";
+    if (gameDescDiv) gameDescDiv.style.display = "none";
+
+    // Show WIP message
+    const maxWidthContainer = document.querySelector(".max-w-4xl");
+    if (maxWidthContainer) {
+      const wipMessage = document.createElement("div");
+      wipMessage.className = "text-center py-16";
+      wipMessage.innerHTML = `
+      <p class="text-3xl font-bold text-neon-yellow drop-shadow-neon mb-8">🚧 Work In Progress 🚧</p>
+      <p class="text-lg text-neon-cyan mb-8">${mode.toUpperCase()} mode is coming soon!</p>
+      `;
+      maxWidthContainer.appendChild(wipMessage);
+    }
+  }
+
   const backBtn = document.getElementById("back-btn");
   backBtn?.addEventListener("click", () => {
     currentPong?.destroy();
@@ -44,7 +182,25 @@ const initPongPage = () => {
     if (canvas) {
       currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
       // Tell server to start a fresh game tied to this connection
-      currentPong.startGame();
+      const gameMode = mode === "local" ? GameMode.LOCAL : GameMode.ONLINE;
+
+      // For ONLINE mode, pass actual user data
+      if (gameMode === GameMode.ONLINE) {
+        const userId = getUserId();
+        const username = getUsername();
+
+        if (userId && username) {
+          currentPong.startGame(gameMode, {
+            userId: parseInt(userId),
+            username: username,
+          });
+        } else {
+          console.error("❌ User not authenticated for ONLINE mode");
+        }
+      } else {
+        // LOCAL mode doesn't need playerInfo
+        currentPong.startGame(gameMode);
+      }
     } else {
       console.error("❌ Pong canvas not found");
     }
@@ -59,7 +215,13 @@ const initPongPage = () => {
 
 const initNotFoundPage = () => {
   const homeBtn = document.getElementById("home-btn");
-  homeBtn?.addEventListener("click", () => router.navigate("/"));
+  homeBtn?.addEventListener("click", () => {
+    if (currentPong) {
+      currentPong.destroy();
+      currentPong = null;
+    }
+    router.navigate("/");
+  });
 };
 
 const router = new Router();
