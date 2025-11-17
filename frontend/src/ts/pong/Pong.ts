@@ -38,6 +38,8 @@ export class Pong {
   private currentPlayerInfo: PlayerInfo | null = null;
   private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
   private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
+  private player1Username: string = "Player 1";
+  private player2Username: string = "Player 2";
 
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
@@ -149,6 +151,17 @@ export class Pong {
           } else {
             this.assignedPlayerNumber = null;
           }
+          // Update player usernames if provided (for REMOTE and TOURNAMENT modes)
+          //if (["remote", "friend", "tournament"].includes(this.currentGameMode)) {
+          if (this.currentGameMode === GameMode.ONLINE) {
+            if (message.player1Username) {
+              this.player1Username = message.player1Username;
+            }
+            if (message.player2Username) {
+              this.player2Username = message.player2Username;
+            }
+            this.updatePlayerNamesDisplay();
+          }
 
           this.updateScoreDisplay();
         } else if (message.type === "gameState") {
@@ -216,6 +229,22 @@ export class Pong {
 
     if (score1El) score1El.textContent = this.gameState.score.player1.toString();
     if (score2El) score2El.textContent = this.gameState.score.player2.toString();
+  }
+
+  private updatePlayerNamesDisplay() {
+    const name1El = document.getElementById("name-player1");
+    const name2El = document.getElementById("name-player2");
+
+    // Show usernames for online, friend and tournament games
+    //if (["remote", "friend", "tournament"].includes(this.currentGameMode)) {
+    if (this.currentGameMode === GameMode.ONLINE) {
+      if (name1El) name1El.textContent = this.player1Username;
+      if (name2El) name2El.textContent = this.player2Username;
+    } else {
+      // For local games, reset to defaults
+      if (name1El) name1El.textContent = "Player 1";
+      if (name2El) name2El.textContent = "Player 2";
+    }
   }
 
   /**

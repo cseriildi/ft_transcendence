@@ -92,13 +92,22 @@ export function broadcastGameSetup(game: GameServer) {
     countdown: game.countdown,
   };
 
+  // Get player usernames from game clients
+  const player1Info = game.clients.get(1);
+  const player2Info = game.clients.get(2);
+  const player1Username = player1Info?.playerInfo?.username || "Player 1";
+  const player2Username = player2Info?.playerInfo?.username || "Player 2";
+
   // Send to all connected clients - each gets told which player they are
   for (const [playerNum, { connection }] of game.clients.entries()) {
+    if (!connection) continue; // Skip clients without connections (e.g., tournament AI)
     try {
       const message = JSON.stringify({
         type: "gameSetup",
         playerNumber: playerNum,
         data: gameState,
+        player1Username,
+        player2Username,
       });
       connection.send(message);
     } catch (err) {
