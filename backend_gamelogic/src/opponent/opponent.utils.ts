@@ -6,7 +6,7 @@ import { GameServer } from "../gameTypes.js";
  */
 function predictBallPosition(game: GameServer, timeMs: number): { x: number; y: number } {
   const ball = game.Ball;
-  const timeSteps = timeMs / (1000 / game.physicsInterval);
+  const timeSteps = Math.round(timeMs / (1000 / game.physicsInterval));
 
   let predictedX = ball.x;
   let predictedY = ball.y;
