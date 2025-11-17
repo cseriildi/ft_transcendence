@@ -57,8 +57,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should create a match", async () => {
     const payload = {
-      winner_Id: user1.id,
-      loser_Id: user2.id,
+      winner_id: user1.id,
+      loser_id: user2.id,
       winner_score: 21,
       loser_score: 15,
     };
@@ -72,8 +72,8 @@ describe("Match Routes", () => {
     expect(res.statusCode).toBe(201);
     const body = res.json() as any;
     expect(body.success).toBe(true);
-    expect(body.data?.winner_Id).toBe(user1.id);
-    expect(body.data?.loser_Id).toBe(user2.id);
+    expect(body.data?.winner_id).toBe(user1.id);
+    expect(body.data?.loser_id).toBe(user2.id);
     expect(body.data?.winner_score).toBe(21);
     expect(body.data?.loser_score).toBe(15);
     expect(body.data).toHaveProperty("id");
@@ -82,8 +82,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate required fields", async () => {
     const payload = {
-      winner_Id: user1.id,
-      // missing loser_Id, scores
+      winner_id: user1.id,
+      // missing loser_id, scores
     };
 
     const res = await app.inject({
@@ -99,8 +99,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate winner exists", async () => {
     const payload = {
-      winner_Id: 99999,
-      loser_Id: user2.id,
+      winner_id: 99999,
+      loser_id: user2.id,
       winner_score: 21,
       loser_score: 15,
     };
@@ -118,8 +118,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate loser exists", async () => {
     const payload = {
-      winner_Id: user1.id,
-      loser_Id: 99999,
+      winner_id: user1.id,
+      loser_id: 99999,
       winner_score: 21,
       loser_score: 15,
     };
@@ -137,8 +137,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate scores are positive", async () => {
     const payload = {
-      winner_Id: user1.id,
-      loser_Id: user2.id,
+      winner_id: user1.id,
+      loser_id: user2.id,
       winner_score: -5,
       loser_score: 15,
     };
@@ -160,8 +160,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner_Id: user1.id,
-        loser_Id: user2.id,
+        winner_id: user1.id,
+        loser_id: user2.id,
         winner_score: 21,
         loser_score: 15,
       },
@@ -171,8 +171,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner_Id: user2.id,
-        loser_Id: user1.id,
+        winner_id: user2.id,
+        loser_id: user1.id,
         winner_score: 21,
         loser_score: 18,
       },
@@ -191,7 +191,7 @@ describe("Match Routes", () => {
 
     // Check that matches include user1
     body.data.forEach((match: any) => {
-      expect(match.winner_Id === user1.id || match.loser_Id === user1.id).toBe(true);
+      expect(match.winner_id === user1.id || match.loser_id === user1.id).toBe(true);
     });
   });
 
@@ -225,8 +225,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner_Id: user1.id,
-        loser_Id: user2.id,
+        winner_id: user1.id,
+        loser_id: user2.id,
         winner_score: 21,
         loser_score: 15,
       },
@@ -238,8 +238,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner_Id: user2.id,
-        loser_Id: user1.id,
+        winner_id: user2.id,
+        loser_id: user1.id,
         winner_score: 21,
         loser_score: 18,
       },
@@ -266,8 +266,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner_Id: user1.id,
-        loser_Id: user2.id,
+        winner_id: user1.id,
+        loser_id: user2.id,
         winner_score: 21,
         loser_score: 15,
       },
@@ -277,8 +277,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner_Id: user1.id,
-        loser_Id: user2.id,
+        winner_id: user1.id,
+        loser_id: user2.id,
         winner_score: 21,
         loser_score: 10,
       },
@@ -293,8 +293,8 @@ describe("Match Routes", () => {
     const body = res.json() as any;
     expect(body.data.length).toBe(2);
     body.data.forEach((match: any) => {
-      expect(match.winner_Id).toBe(user1.id);
-      expect(match.loser_Id).toBe(user2.id);
+      expect(match.winner_id).toBe(user1.id);
+      expect(match.loser_id).toBe(user2.id);
     });
   });
 });

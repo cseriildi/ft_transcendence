@@ -11,12 +11,12 @@ export const MatchSchemas = {
     body: {
       type: "object" as const,
       properties: {
-        winner_Id: { type: "number", minimum: 1 },
-        loser_Id: { type: "number", minimum: 1 },
+        winner_id: { type: "number", minimum: 1 },
+        loser_id: { type: "number", minimum: 1 },
         winner_score: { type: "number", minimum: 0 },
         loser_score: { type: "number", minimum: 0 },
       },
-      required: ["winner_Id", "loser_Id", "winner_score", "loser_score"],
+      required: ["winner_id", "loser_id", "winner_score", "loser_score"],
       additionalProperties: false,
     },
     response: createResponseSchema(201, commonDataSchemas.match, [400, 404]),

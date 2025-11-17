@@ -108,8 +108,8 @@ export const commonDataSchemas = {
     type: "object" as const,
     properties: {
       id: { type: "number" as const },
-      winner_Id: { type: "number" as const },
-      loser_Id: { type: "number" as const },
+      winner_id: { type: "number" as const },
+      loser_id: { type: "number" as const },
       winner_score: { type: "number" as const },
       loser_score: { type: "number" as const },
       played_at: { type: "string" as const },
@@ -123,8 +123,8 @@ export const commonDataSchemas = {
       type: "object" as const,
       properties: {
         id: { type: "number" as const },
-        winner_Id: { type: "number" as const },
-        loser_Id: { type: "number" as const },
+        winner_id: { type: "number" as const },
+        loser_id: { type: "number" as const },
         winner_score: { type: "number" as const },
         loser_score: { type: "number" as const },
         played_at: { type: "string" as const },

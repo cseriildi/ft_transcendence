@@ -13,29 +13,29 @@ export const matchController = {
   ): Promise<ApiResponse<Match>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { winner_Id, loser_Id, winner_score, loser_score } = request.body;
+    const { winner_id, loser_id, winner_score, loser_score } = request.body;
 
     const playersExist = await db.get<{ count: number }>(
       `SELECT COUNT(*) as count FROM users WHERE id IN (?, ?)`,
-      [winner_Id, loser_Id]
+      [winner_id, loser_id]
     );
     if (!playersExist || playersExist.count < 2) {
       throw errors.notFound("One or both players do not exist", {
-        winner_Id,
-        loser_Id,
+        winner_id,
+        loser_id,
         foundCount: playersExist?.count || 0,
       });
     }
 
     const result = await db.run(
-      `INSERT INTO matches (winner_Id, loser_Id, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
-      [winner_Id, loser_Id, winner_score, loser_score]
+      `INSERT INTO matches (winner_id, loser_id, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
+      [winner_id, loser_id, winner_score, loser_score]
     );
 
     const match: Match = {
       id: result.lastID!,
-      winner_Id,
-      loser_Id,
+      winner_id,
+      loser_id,
       winner_score,
       loser_score,
       played_at: new Date().toISOString(),
@@ -65,8 +65,8 @@ export const matchController = {
 
     // Then get their matches
     const matches = await db.all<Match>(
-      `SELECT id, winner_Id, loser_Id, winner_score, loser_score, played_at 
-				 FROM matches WHERE winner_Id = ? OR loser_Id = ? ORDER BY played_at DESC`,
+      `SELECT id, winner_id, loser_id, winner_score, loser_score, played_at 
+				 FROM matches WHERE winner_id = ? OR loser_id = ? ORDER BY played_at DESC`,
       [userId, userId]
     );
     return ApiResponseHelper.success(matches, "Matches retrieved successfully");

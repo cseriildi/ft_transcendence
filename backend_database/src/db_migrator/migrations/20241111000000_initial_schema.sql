@@ -31,16 +31,16 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 -- Index for faster lookups of user's tokens
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);
 
--- Matches: Game records linking to users by username
+-- Matches: Game records linking to users by ID
 CREATE TABLE IF NOT EXISTS matches (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  winner_Id INTEGER NOT NULL,
-  loser_Id INTEGER NOT NULL,
+  winner_id INTEGER NOT NULL,
+  loser_id INTEGER NOT NULL,
   winner_score INTEGER NOT NULL,
   loser_score INTEGER NOT NULL,
   played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (winner_Id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (loser_Id) REFERENCES users(id) ON DELETE SET NULL
+  FOREIGN KEY (winner_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (loser_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Avatars: User profile pictures with file metadata
