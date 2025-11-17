@@ -526,7 +526,11 @@
         currentUsername = username;
         currentUserId = parseInt(userId);
 
-        const wsUrl = `ws://localhost:3002/ws?userId=${userId}&username=${username}`;
+        const proto = location.protocol === "https:" ? "wss" : "ws";
+        const host = location.hostname + (location.port ? `:${location.port}` : "");
+        const wsUrl = `${proto}://${host}/ws?userId=${userId}&username=${encodeURIComponent(
+          username
+        )}`;
 
         log(`Connecting to ${wsUrl}...`);
         ws = new WebSocket(wsUrl);
@@ -657,16 +661,19 @@
         }
 
         // Call the REST API to block the user
-        fetch("http://localhost:3002/lobby/block", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            blocker: currentUsername,
-            blocked: currentChatUser,
-          }),
-        })
+        fetch(
+          `${location.protocol === "https:" ? "https" : "http"}://${location.hostname}${location.port ? `:${location.port}` : ""}/lobby/block`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              blocker: currentUsername,
+              blocked: currentChatUser,
+            }),
+          }
+        )
           .then((response) => {
             if (!response.ok) {
               return response.json().then((data) => {
