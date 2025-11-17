@@ -246,9 +246,14 @@ fastify.register(async function (server: FastifyInstance) {
             stopGame();
             if (data.mode === GameMode.ONLINE && game) {
               activeGames.delete(game);
-              activePlayers.delete(game.clients.get(1)?.playerInfo.userId!);
-              activePlayers.delete(game.clients.get(2)?.playerInfo.userId!);
-            }
+              const client1 = game.clients.get(1);
+              if (client1?.playerInfo?.userId) {
+                activePlayers.delete(client1.playerInfo.userId);
+              }
+              const client2 = game.clients.get(2);
+              if (client2?.playerInfo?.userId) {
+                activePlayers.delete(client2.playerInfo.userId);
+              }
             break;
           }
           case "joinGame":
