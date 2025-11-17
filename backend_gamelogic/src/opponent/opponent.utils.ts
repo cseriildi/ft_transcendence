@@ -1,4 +1,4 @@
-import { GameServer } from "../gameTypes";
+import { GameServer } from "../gameTypes.js";
 
 /**
  * Predicts where the ball will be after a given time
