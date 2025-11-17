@@ -1,16 +1,19 @@
 import { config } from "../config.js";
 import { SecureTokenManager } from "./secureTokenManager.js";
 
-export async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
+export async function fetchWithRefresh(
+  url: string,
+  options: RequestInit,
+): Promise<Response> {
   try {
     const response = await fetch(url, options);
 
     if (response.status === 401) {
       const tokenManager = SecureTokenManager.getInstance();
-      
+
       try {
         await tokenManager.refreshAccessToken();
-        
+
         const newToken = tokenManager.getAccessToken();
         if (newToken) {
           options.headers = {

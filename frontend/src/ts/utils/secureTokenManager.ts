@@ -20,7 +20,7 @@ class SecureTokenManager {
 
   setAccessToken(token: string): void {
     this.accessToken = token;
-    
+
     this.scheduleTokenRefresh();
   }
 
@@ -30,14 +30,17 @@ class SecureTokenManager {
     }
 
     // Refresh token 3 minutes before expiration (15min - 3min = 12min)
-    this.refreshTimer = window.setTimeout(async () => {
-      try {
-        await this.refreshAccessToken();
-      } catch (error) {
-        console.error("Scheduled token refresh failed:", error);
-        this.handleTokenExpiry();
-      }
-    }, 12 * 60 * 1000);
+    this.refreshTimer = window.setTimeout(
+      async () => {
+        try {
+          await this.refreshAccessToken();
+        } catch (error) {
+          console.error("Scheduled token refresh failed:", error);
+          this.handleTokenExpiry();
+        }
+      },
+      12 * 60 * 1000,
+    );
   }
 
   getAccessToken(): string | null {
@@ -58,7 +61,7 @@ class SecureTokenManager {
 
   async refreshAccessToken(): Promise<void> {
     const { config } = await import("../config.js");
-    
+
     const response = await fetch(`${config.apiUrl}/auth/refresh`, {
       method: "POST",
       credentials: "include",
@@ -81,15 +84,17 @@ class SecureTokenManager {
 
   handleTokenExpiry(): void {
     this.clearTokens();
-    
+
     localStorage.removeItem("userId");
     localStorage.removeItem("username");
-    
+
     // Use callback if available, otherwise fall back to window.location
     if (this.onTokenExpiry) {
       this.onTokenExpiry();
     } else {
-      console.warn("No token expiry callback set, using window.location fallback");
+      console.warn(
+        "No token expiry callback set, using window.location fallback",
+      );
       this.router.navigate("/");
     }
   }

@@ -35,7 +35,9 @@ export class Chat {
       e.preventDefault();
       const message = chatInput.value.trim();
       if (message && this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
+        this.ws.send(
+          JSON.stringify({ action: "send_message", chatid: chatId, message }),
+        );
 
         const messageElement = document.createElement("div");
         messageElement.textContent = `You: ${message}`;
@@ -54,7 +56,9 @@ export class Chat {
   private connectWebSocket(chatBox: HTMLDivElement): void {
     const urlParams = new URLSearchParams(window.location.search);
     const chatId = urlParams.get("chatId");
-    this.ws = new WebSocket(`${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`);
+    this.ws = new WebSocket(
+      `${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`,
+    );
 
     this.ws.onopen = () => {
       console.log("Connected to WebSocket server");
@@ -73,13 +77,19 @@ export class Chat {
       if (data.type === "chat_connected") {
         if (data.history && Array.isArray(data.history)) {
           data.history.forEach(
-            (message: { username: string; message: string; timestamp: number }) => {
+            (message: {
+              username: string;
+              message: string;
+              timestamp: number;
+            }) => {
               const messageElement = document.createElement("div");
-              const timestamp = new Date(message.timestamp).toLocaleTimeString();
+              const timestamp = new Date(
+                message.timestamp,
+              ).toLocaleTimeString();
               messageElement.textContent = `[${timestamp}] ${message.username}: ${message.message}`;
               messageElement.classList.add("text-neon-green", "mb-2");
               chatBox.appendChild(messageElement);
-            }
+            },
           );
         }
       } else if (data.type === "message") {

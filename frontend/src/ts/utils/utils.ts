@@ -1,8 +1,10 @@
 import { SecureTokenManager } from "./secureTokenManager.js";
 
 export const isUserAuthorized = (): boolean => {
-  return SecureTokenManager.getInstance().isAuthenticated() && 
-         localStorage.getItem("userId") !== null;
+  return (
+    SecureTokenManager.getInstance().isAuthenticated() &&
+    localStorage.getItem("userId") !== null
+  );
 };
 
 export const showError = (message: string): void => {

@@ -15,12 +15,16 @@ export class Home {
     const pongBtn = document.getElementById("pong-btn");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
-    const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
+    const userAvatar = document.getElementById(
+      "user-avatar",
+    ) as HTMLImageElement;
     const userName = document.getElementById("user-name");
     const profileBtn = document.getElementById("profile-btn");
 
     pongBtn?.addEventListener("click", () => this.router.navigate("/pong"));
-    profileBtn?.addEventListener("click", () => this.router.navigate("/profile"));
+    profileBtn?.addEventListener("click", () =>
+      this.router.navigate("/profile"),
+    );
     loginBtn?.addEventListener("click", () => {
       this.router.navigate("/login");
     });
@@ -35,7 +39,7 @@ export class Home {
           SecureTokenManager.getInstance().clearTokens();
           localStorage.removeItem("userId");
           localStorage.removeItem("username");
-          
+
           this.router.navigate("/");
         } else {
           console.error("Failed to log out", await response.json());
@@ -52,11 +56,14 @@ export class Home {
 
       // Always try to fetch user data if authorized
       try {
-        const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
+        const response = await fetchWithRefresh(
+          `${config.apiUrl}/api/users/${getUserId()}`,
+          {
+            headers: {
+              Authorization: `Bearer ${getAccessToken()}`,
+            },
           },
-        });
+        );
 
         if (response.ok) {
           const userData = await response.json();

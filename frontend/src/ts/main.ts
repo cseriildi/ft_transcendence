@@ -101,15 +101,14 @@ export const showErrorPopup = (message: string) => {
 
 createPopup();
 
-
 (async () => {
   const tokenManager = SecureTokenManager.getInstance();
-  
+
   tokenManager.setTokenExpiryCallback(() => {
     showErrorPopup("Session expired. Please log in again.");
   });
-  
+
   await tokenManager.initialize();
-  
+
   router.init();
 })();

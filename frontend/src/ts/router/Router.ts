@@ -54,7 +54,8 @@ class Router {
   private handleRoute() {
     const currentPath = window.location.pathname;
     const route =
-      this.routes.find((r) => r.path === currentPath) || this.routes.find((r) => r.path === "/404");
+      this.routes.find((r) => r.path === currentPath) ||
+      this.routes.find((r) => r.path === "/404");
 
     if (route) {
       const template = this.templates.get(route.template);
