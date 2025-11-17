@@ -12,8 +12,9 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Oxygen, Ubuntu, Cantarell, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         padding: 20px;
@@ -405,9 +406,7 @@
               <label>Token</label>
               <input type="text" id="token" value="test-token-123" />
             </div>
-            <button class="btn btn-primary" id="connectBtn" onclick="connect()">
-              Connect
-            </button>
+            <button class="btn btn-primary" id="connectBtn" onclick="connect()">Connect</button>
             <button
               class="btn btn-secondary"
               id="disconnectBtn"
@@ -421,12 +420,7 @@
           <div class="users-section">
             <h3>Online Users</h3>
             <div style="margin-bottom: 12px">
-              <button
-                class="btn btn-secondary"
-                id="joinLobbyBtn"
-                onclick="joinLobby()"
-                disabled
-              >
+              <button class="btn btn-secondary" id="joinLobbyBtn" onclick="joinLobby()" disabled>
                 Join Lobby
               </button>
             </div>
@@ -481,15 +475,8 @@
 
           <div class="message-input">
             <div class="input-container">
-              <input
-                type="text"
-                id="messageInput"
-                placeholder="Type a message..."
-                disabled
-              />
-              <button id="sendBtn" onclick="sendMessage()" disabled>
-                Send
-              </button>
+              <input type="text" id="messageInput" placeholder="Type a message..." disabled />
+              <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
             </div>
           </div>
         </div>
@@ -540,8 +527,7 @@
         currentUserId = parseInt(userId);
 
         const proto = location.protocol === "https:" ? "wss" : "ws";
-        const host =
-          location.hostname + (location.port ? `:${location.port}` : "");
+        const host = location.hostname + (location.port ? `:${location.port}` : "");
         const wsUrl = `${proto}://${host}/ws?userId=${userId}&username=${encodeURIComponent(
           username
         )}`;
@@ -642,9 +628,7 @@
         log(`📤 Sent: join_chat (${chatId})`);
 
         // Update UI
-        document.getElementById(
-          "chatTitle"
-        ).textContent = `Chat with ${otherUser}`;
+        document.getElementById("chatTitle").textContent = `Chat with ${otherUser}`;
         document.getElementById("chatSubtitle").textContent = chatId;
         document.getElementById("messageInput").disabled = false;
         document.getElementById("sendBtn").disabled = false;
@@ -707,21 +691,13 @@
               leaveChat();
             } else {
               log(`❌ Failed to block user: ${data.error || "Unknown error"}`);
-              addMessage(
-                "system",
-                "",
-                `Error: ${data.error || "Failed to block user"}`
-              );
+              addMessage("system", "", `Error: ${data.error || "Failed to block user"}`);
             }
           })
           .catch((error) => {
             log(`❌ Error blocking user: ${error.message}`);
             console.error("Block error:", error);
-            addMessage(
-              "system",
-              "",
-              `Error: ${error.message || "Failed to block user"}`
-            );
+            addMessage("system", "", `Error: ${error.message || "Failed to block user"}`);
           });
       }
 
@@ -755,12 +731,10 @@
             document.getElementById("joinLobbyBtn").onclick = leaveLobby;
             updateUserList(data.allUsers);
             document.getElementById("chatTitle").textContent = "Lobby";
-            document.getElementById(
-              "chatSubtitle"
-            ).textContent = `${data.allUsers.length} users online`;
-            document.getElementById(
-              "messages"
-            ).innerHTML = `<div class="message system">${data.message}</div>`;
+            document.getElementById("chatSubtitle").textContent =
+              `${data.allUsers.length} users online`;
+            document.getElementById("messages").innerHTML =
+              `<div class="message system">${data.message}</div>`;
             break;
 
           case "lobby_left":
@@ -774,23 +748,16 @@
           case "user_list_update":
             updateUserList(data.allUsers);
             if (inLobby) {
-              document.getElementById(
-                "chatSubtitle"
-              ).textContent = `${data.allUsers.length} users online`;
+              document.getElementById("chatSubtitle").textContent =
+                `${data.allUsers.length} users online`;
             }
             break;
 
           case "chat_connected":
             if (data.history && data.history.length > 0) {
               data.history.forEach((msg) => {
-                const msgType =
-                  msg.username === currentUsername ? "outgoing" : "incoming";
-                addMessage(
-                  msgType,
-                  msg.username,
-                  msg.message,
-                  new Date(msg.timestamp)
-                );
+                const msgType = msg.username === currentUsername ? "outgoing" : "incoming";
+                addMessage(msgType, msg.username, msg.message, new Date(msg.timestamp));
               });
             }
             addMessage("system", "", data.message);
@@ -805,26 +772,17 @@
             document.getElementById("chatActions").style.display = "none";
             document.getElementById("chatTitle").textContent = "Lobby";
             document.getElementById("chatSubtitle").textContent = inLobby
-              ? `${
-                  document.getElementById("userList").children.length
-                } users online`
+              ? `${document.getElementById("userList").children.length} users online`
               : "Join lobby to see users";
             break;
 
           case "message":
             // Only show message if it's for the current chat
             if (data.chatid === currentChatId) {
-              addMessage(
-                "incoming",
-                data.username,
-                data.message,
-                new Date(data.timestamp)
-              );
+              addMessage("incoming", data.username, data.message, new Date(data.timestamp));
             } else {
               // Log that we received a message for a different chat
-              log(
-                `📨 Message from ${data.username} in ${data.chatid} (not current chat)`
-              );
+              log(`📨 Message from ${data.username} in ${data.chatid} (not current chat)`);
             }
             break;
 
@@ -883,13 +841,11 @@
       }
 
       // Allow sending message with Enter key
-      document
-        .getElementById("messageInput")
-        .addEventListener("keypress", (e) => {
-          if (e.key === "Enter") {
-            sendMessage();
-          }
-        });
+      document.getElementById("messageInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+      });
     </script>
   </body>
 </html>
