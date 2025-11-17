@@ -1,3 +1,9 @@
+// CRITICAL: Polyfill crypto for jose library BEFORE any other imports
+import nodeCrypto from "node:crypto";
+if (typeof globalThis.crypto === "undefined") {
+  (globalThis as any).crypto = nodeCrypto.webcrypto;
+}
+
 import fastify, { FastifyServerOptions } from "fastify";
 import router from "./router.ts";
 import dbConnector from "./plugins/databasePlugin.ts";

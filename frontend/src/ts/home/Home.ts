@@ -27,9 +27,6 @@ export class Home {
       try {
         const response = await fetch(`${config.apiUrl}/auth/logout`, {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
           credentials: "include",
         });
 
@@ -50,28 +47,31 @@ export class Home {
       logoutBtn?.classList.remove("hidden");
       profileBtn?.classList.remove("hidden");
       loginBtn?.classList.add("hidden");
-      if (userName || userAvatar) {
-        try {
-          const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
-            headers: {
-              Authorization: `Bearer ${getAccessToken()}`,
-            },
-          });
 
-          if (response.ok) {
-            const userData = await response.json();
-            if (userAvatar && userData.data.avatar_url) {
-              userAvatar.src = `${config.apiUrl}${userData.data.avatar_url}`;
-            }
-            console.log("avatar url:", userData.data.avatar_url);
+      // Always try to fetch user data if authorized
+      try {
+        const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+        });
+
+        if (response.ok) {
+          const userData = await response.json();
+
+          if (userAvatar && userData.data.avatar_url) {
+            userAvatar.src = `${config.apiUrl}${userData.data.avatar_url}`;
             userAvatar.classList.remove("hidden");
-            if (userName) userName.innerHTML = userData.data.username;
-          } else {
-            console.error("Failed to fetch user data");
           }
-        } catch (error) {
-          console.error("Error fetching user data", error);
+
+          if (userName && userData.data.username) {
+            userName.innerHTML = userData.data.username;
+          }
+        } else {
+          console.error("Failed to fetch user data", await response.json());
         }
+      } catch (error) {
+        console.error("Error fetching user data", error);
       }
     } else {
       logoutBtn?.classList.add("hidden");

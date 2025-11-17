@@ -21,7 +21,7 @@ function getConfigValue(
 
 // Export configuration
 export const config = {
-  apiUrl: getConfigValue("API_URL", "https://localhost:8443/api"),
+  apiUrl: getConfigValue("API_URL", "https://localhost:8443"),
   wsUrl: getConfigValue("WS_URL", "wss://localhost:8443/ws"),
 } as const;
 
