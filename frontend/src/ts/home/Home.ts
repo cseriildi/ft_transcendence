@@ -25,8 +25,20 @@ export class Home {
 
     localBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "local" }));
     aiBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "ai" }));
-    remoteBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "remote" }));
-    friendBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "friend" }));
+    remoteBtn?.addEventListener("click", () => {
+      if (!isUserAuthorized()) {
+        this.router.navigate("/login");
+        return;
+      }
+      this.router.navigate("/pong", { mode: "remote" });
+    });
+    friendBtn?.addEventListener("click", () => {
+      if (!isUserAuthorized()) {
+        this.router.navigate("/login");
+        return;
+      }
+      this.router.navigate("/pong", { mode: "friend" });
+    });
     tournamentBtn?.addEventListener("click", () =>
       this.router.navigate("/pong", { mode: "tournament" })
     );

@@ -38,6 +38,13 @@ const initPongPage = async () => {
     return;
   }
 
+  // Redirect to login if user is not authorized for remote or friend modes
+  if ((mode === "remote" || mode === "friend") && !isUserAuthorized()) {
+    console.warn(`You need to be logged in to play in ${mode} mode.`);
+    router.navigate("/login");
+    return;
+  }
+
   // Initialize login/logout/profile buttons
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
