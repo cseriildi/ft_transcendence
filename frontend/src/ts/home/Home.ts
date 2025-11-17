@@ -31,7 +31,7 @@ export class Home {
         });
 
         if (response.ok) {
-          localStorage.removeItem("accessToken");
+          sessionStorage.removeItem("accessToken");
           localStorage.removeItem("userId");
           localStorage.removeItem("username");
           this.router.navigate("/");

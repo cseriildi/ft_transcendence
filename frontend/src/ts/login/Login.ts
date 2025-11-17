@@ -33,7 +33,7 @@ export class Login {
       if (response.ok) {
         if (data.data?.tokens?.accessToken && data.data?.id) {
           localStorage.setItem("userId", data.data.id);
-          localStorage.setItem("accessToken", data.data.tokens.accessToken);
+          sessionStorage.setItem("accessToken", data.data.tokens.accessToken);
           localStorage.setItem("username", data.data.username);
         }
         return { success: true };
