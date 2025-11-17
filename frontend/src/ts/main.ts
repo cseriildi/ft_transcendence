@@ -8,6 +8,7 @@ import { Edit } from "./edit/Edit.js";
 import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
+import { SecureTokenManager } from "./utils/secureTokenManager.js";
 
 let currentPong: Pong | null = null;
 
@@ -99,3 +100,16 @@ export const showErrorPopup = (message: string) => {
 };
 
 createPopup();
+
+
+(async () => {
+  const tokenManager = SecureTokenManager.getInstance();
+  
+  tokenManager.setTokenExpiryCallback(() => {
+    showErrorPopup("Session expired. Please log in again.");
+  });
+  
+  await tokenManager.initialize();
+  
+  router.init();
+})();

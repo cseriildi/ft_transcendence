@@ -2,6 +2,7 @@ import { Router } from "../router/Router.js";
 import { isUserAuthorized, showError } from "../utils/utils.js";
 import { config } from "../config.js";
 import { showErrorPopup } from "../main.js";
+import { SecureTokenManager } from "../utils/secureTokenManager.js";
 
 export class Login {
   private router: Router;
@@ -33,8 +34,9 @@ export class Login {
       if (response.ok) {
         if (data.data?.tokens?.accessToken && data.data?.id) {
           localStorage.setItem("userId", data.data.id);
-          sessionStorage.setItem("accessToken", data.data.tokens.accessToken);
           localStorage.setItem("username", data.data.username);
+          
+          SecureTokenManager.getInstance().setAccessToken(data.data.tokens.accessToken);
         }
         return { success: true };
       } else {

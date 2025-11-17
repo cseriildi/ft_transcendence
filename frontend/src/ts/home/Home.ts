@@ -2,6 +2,7 @@ import { Router } from "../router/Router.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { config } from "../config.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
+import { SecureTokenManager } from "../utils/secureTokenManager.js";
 
 export class Home {
   private router: Router;
@@ -31,9 +32,10 @@ export class Home {
         });
 
         if (response.ok) {
-          sessionStorage.removeItem("accessToken");
+          SecureTokenManager.getInstance().clearTokens();
           localStorage.removeItem("userId");
           localStorage.removeItem("username");
+          
           this.router.navigate("/");
         } else {
           console.error("Failed to log out", await response.json());

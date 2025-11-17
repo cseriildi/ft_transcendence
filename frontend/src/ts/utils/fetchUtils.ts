@@ -1,29 +1,28 @@
 import { config } from "../config.js";
+import { SecureTokenManager } from "./secureTokenManager.js";
 
 export async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {
   try {
     const response = await fetch(url, options);
 
     if (response.status === 401) {
-      const refreshResponse = await fetch(`${config.apiUrl}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (refreshResponse.ok) {
-        const refreshData = await refreshResponse.json();
-        const accessToken = refreshData.data.tokens.accessToken;
-        sessionStorage.setItem("accessToken", accessToken);
-
-        options.headers = {
-          ...options.headers,
-          Authorization: `Bearer ${accessToken}`,
-        };
-        return fetch(url, options);
-      } else {
-        sessionStorage.removeItem("accessToken");
-        localStorage.removeItem("userId");
-        localStorage.removeItem("username");
+      const tokenManager = SecureTokenManager.getInstance();
+      
+      try {
+        await tokenManager.refreshAccessToken();
+        
+        const newToken = tokenManager.getAccessToken();
+        if (newToken) {
+          options.headers = {
+            ...options.headers,
+            Authorization: `Bearer ${newToken}`,
+          };
+          return fetch(url, options);
+        } else {
+          throw new Error("No token after refresh");
+        }
+      } catch (refreshError) {
+        tokenManager.handleTokenExpiry();
         throw new Error("Failed to refresh token");
       }
     }

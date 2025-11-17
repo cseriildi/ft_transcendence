@@ -1,5 +1,8 @@
+import { SecureTokenManager } from "./secureTokenManager.js";
+
 export const isUserAuthorized = (): boolean => {
-  return localStorage.getItem("username") !== null;
+  return SecureTokenManager.getInstance().isAuthenticated() && 
+         localStorage.getItem("userId") !== null;
 };
 
 export const showError = (message: string): void => {
@@ -15,7 +18,7 @@ export const getUserId = (): string | null => {
 };
 
 export const getAccessToken = (): string | null => {
-  return sessionStorage.getItem("accessToken");
+  return SecureTokenManager.getInstance().getAccessToken();
 };
 
 export const getUsername = (): string | null => {
