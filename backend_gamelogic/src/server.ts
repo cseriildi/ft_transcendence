@@ -242,6 +242,15 @@ fastify.register(async function (server: FastifyInstance) {
             }
             break;
           }
+          case "nextGame": {
+            stopGame();
+            if (message.mode === GameMode.ONLINE && game) {
+              activeGames.delete(game);
+              activePlayers.delete(game.clients.get(1)?.playerInfo.userId!);
+              activePlayers.delete(game.clients.get(2)?.playerInfo.userId!);
+            }
+            break;
+          }
           case "joinGame":
             // Handle player joining
             break;

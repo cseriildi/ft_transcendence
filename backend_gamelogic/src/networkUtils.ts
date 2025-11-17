@@ -106,3 +106,35 @@ export function broadcastGameSetup(game: GameServer) {
     }
   }
 }
+
+export function broadcastGameResult(game: GameServer) {
+  broadcastGameSetup(game);
+
+  const result = game.getResult();
+  if (!result) {
+    console.warn("Cannot broadcast game result: missing player info");
+    return;
+  }
+
+  const { winner, loser, winnerScore, loserScore } = result;
+
+  // Send to all connected clients
+  for (const [playerNum, { connection }] of game.clients.entries()) {
+    if (!connection) continue;
+    try {
+      const message = JSON.stringify({
+        type: "gameResult",
+        mode: game.gameMode,
+        data: {
+          winner: winner.username,
+          loser: loser.username,
+          winnerScore,
+          loserScore,
+        },
+      });
+      connection.send(message);
+    } catch (err) {
+      console.error("Failed to send game result to client:", err);
+    }
+  }
+}

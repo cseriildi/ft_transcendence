@@ -1,6 +1,6 @@
 import { Paddle, Ball, GameServer, GameMode } from "./gameTypes.js";
 import { config } from "./config.js";
-import { broadcastGameState } from "./networkUtils.js";
+import { broadcastGameState, broadcastGameResult } from "./networkUtils.js";
 
 /**
  * Send match result to backend_database service
@@ -153,20 +153,20 @@ export function updateGameState(game: GameServer) {
   collideBallWithWalls(game);
 
   if (game.score1 >= game.maxScore || game.score2 >= game.maxScore) {
-    // Broadcast the final game state before stopping
-    broadcastGameState(game);
-
-    // Send match result to backend (async, don't wait)
-    sendMatchResult(game).catch((err) => {
-      console.error("Error sending match result:", err);
-    });
-
-    // stop the game loops
     try {
       game.stop();
     } catch (err) {
       console.error("Error stopping game:", err);
     }
+
+    // Send match result to backend database (async, don't wait)
+    sendMatchResult(game).catch((err) => {
+      console.error("Error sending match result:", err);
+    });
+
+    // Broadcast game result to clients (they will send nextGame acknowledgement)
+    broadcastGameResult(game);
+
     return;
   }
 

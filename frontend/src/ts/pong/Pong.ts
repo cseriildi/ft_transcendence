@@ -126,6 +126,16 @@ export class Pong {
           this.isWaitingForOpponent = true;
         } else if (message.type === "ready") {
           this.isWaitingForOpponent = false;
+        } else if (message.type === "gameResult") {
+          console.log("🏆 Game Over! Result:", message.data);
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(
+              JSON.stringify({
+                type: "nextGame",
+                mode: this.currentGameMode,
+              })
+            );
+          }
         }
         if (["gameSetup", "ready", "waiting"].includes(message.type)) {
           this.gameState = message.data;
