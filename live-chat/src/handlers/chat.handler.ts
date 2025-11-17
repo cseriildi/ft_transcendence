@@ -1,10 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import {
-  chatRooms,
-  chatHistory,
-  banList,
-  MAX_MESSAGES,
-} from "../services/state.js";
+import { chatRooms, chatHistory, banList, MAX_MESSAGES } from "../services/state.js";
 
 /**
  * Handle join_chat action
@@ -16,9 +11,7 @@ export async function handleJoinChat(
   userChatRooms: Set<string>
 ) {
   if (!chatId) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Missing chatid" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Missing chatid" }));
     return;
   }
 
@@ -96,9 +89,7 @@ export async function handleLeaveChat(
   userChatRooms: Set<string>
 ) {
   if (!chatId) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Missing chatid" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Missing chatid" }));
     return;
   }
 
@@ -169,9 +160,7 @@ export async function handleSendMessage(
 
   const room = chatRooms.get(chatId);
   if (!room) {
-    connection.send(
-      JSON.stringify({ type: "error", message: "Chat room not found" })
-    );
+    connection.send(JSON.stringify({ type: "error", message: "Chat room not found" }));
     return;
   }
 

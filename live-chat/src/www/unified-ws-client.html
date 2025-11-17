@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -539,11 +539,7 @@
         currentUsername = username;
         currentUserId = parseInt(userId);
 
-        // Choose ws or wss depending on the page protocol. If the page is served over HTTPS
-        // use wss to ensure the connection is encrypted. For local development this falls back to ws.
         const proto = location.protocol === "https:" ? "wss" : "ws";
-        // Prefer connecting to same host/port the page was served from. If you need a custom host/port,
-        // replace location.host with a configured PUBLIC_HOST:PUBLIC_PORT.
         const host =
           location.hostname + (location.port ? `:${location.port}` : "");
         const wsUrl = `${proto}://${host}/ws?userId=${userId}&username=${encodeURIComponent(

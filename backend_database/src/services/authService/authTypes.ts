@@ -1,15 +1,22 @@
 import { User, TokenPair } from "../../types/commonTypes.ts";
 
-export interface JwtPayload {
+export interface BaseJwtPayload {
   sub: string;
-  jti: string;
   iat: number;
   exp: number;
   iss: string;
   aud: string;
 }
 
-// Request bodies
+export interface AccessTokenPayload extends BaseJwtPayload {}
+
+export interface RefreshTokenPayload extends BaseJwtPayload {
+  jti: string;
+}
+
+// Legacy type alias for backward compatibility during migration
+export type JwtPayload = AccessTokenPayload | RefreshTokenPayload;
+
 export interface CreateUserBody {
   username: string;
   email: string;
@@ -22,7 +29,6 @@ export interface UserLoginBody {
   password: string;
 }
 
-// Response data shapes (used with ApiResponse<T>)
 export interface AuthUserData extends User {
   tokens: TokenPair;
 }

@@ -5,14 +5,24 @@ import { ApiResponseHelper } from "../utils/responseUtils.ts";
 
 async function errorHandler(fastify: FastifyInstance) {
   fastify.setErrorHandler(async (error, request, reply) => {
-    // Log error with minimal context
-    fastify.log.error({
+    // Build structured log
+    const logContext: Record<string, unknown> = {
       error: error.message,
       url: request.url,
       method: request.method,
-    });
+      userId: request.user?.id,
+      reqId: request.id,
+    };
 
-    // Handle Fastify validation errors
+    //error-specific context if available
+    if (error instanceof AppError && error.context) {
+      logContext.context = error.context;
+      logContext.code = error.code;
+    }
+
+    fastify.log.error(logContext, "Request error occurred");
+
+    // Handle Fastify validation errors (like schema validation)
     if (error.validation) {
       reply.status(400);
       return ApiResponseHelper.error("VALIDATION_ERROR", error.message);

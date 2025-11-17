@@ -69,17 +69,13 @@ async function createTestApp() {
         blocker: string;
         blocked: string;
       };
-      
+
       if (!blocker || !blocked) {
-        return reply
-          .status(400)
-          .send({ error: "Missing blocker or blocked username" });
+        return reply.status(400).send({ error: "Missing blocker or blocked username" });
       }
 
       if (!userLobbyConnections.has(blocker)) {
-        return reply
-          .status(401)
-          .send({ error: "Blocking user is not authorized" });
+        return reply.status(401).send({ error: "Blocking user is not authorized" });
       }
 
       // Add to in-memory ban list
@@ -131,7 +127,7 @@ describe("Main Application - HTTP Endpoints", () => {
     testDbPath = testApp.testDbPath;
     userLobbyConnections = testApp.userLobbyConnections;
     banList = testApp.banList;
-    
+
     await app.ready();
   });
 

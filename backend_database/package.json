@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsup src/main.ts --format esm --clean --minify",
     "start": "node dist/main.js",
-    "dev": "../scripts/load-env.sh .env.development tsx src/main.ts",
+    "dev": "dotenv -e .env.development -- tsx src/main.ts",
     "clean": "rm -rf dist",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -34,8 +34,10 @@
     "@types/qrcode": "^1.5.5",
     "@types/speakeasy": "^2.0.10",
     "@types/sqlite3": "3.1.11",
+    "@types/validator": "^13.15.4",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
     "@typescript-eslint/parser": "^8.46.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9.39.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
@@ -62,6 +64,7 @@
     "jose": "^6.1.0",
     "qrcode": "^1.5.4",
     "speakeasy": "^2.0.0",
-    "sqlite3": "5.1.7"
+    "sqlite3": "5.1.7",
+    "validator": "^13.15.23"
   }
 }

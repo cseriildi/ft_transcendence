@@ -34,9 +34,7 @@ await app.register(registerWebSocketRoute);
 const start = async () => {
   try {
     await app.listen({ port: config.server.port, host: config.server.host });
-    console.log(
-      `Server is running on ${config.server.host}:${config.server.port}`
-    );
+    console.log(`Server is running on ${config.server.host}:${config.server.port}`);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

@@ -76,12 +76,6 @@ export const validateConfig = () => {
     gameSettings: config.game,
   });
 
-  console.log(
-    `⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(
-      2
-    )}ms)`
-  );
-  console.log(
-    `📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`
-  );
+  console.log(`⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(2)}ms)`);
+  console.log(`📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`);
 };
