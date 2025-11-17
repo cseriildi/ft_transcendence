@@ -71,28 +71,29 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
   if (dot < 0) {
     ball.speedX -= 2 * dot * nx;
     ball.speedY -= 2 * dot * ny;
-    
+
     // Restore ball to full speed if it was slowed down after reset
     const currentSpeed = Math.hypot(ball.speedX, ball.speedY);
     const normalSpeed = config.game.ballSpeed;
-    
-    if (currentSpeed < normalSpeed * 0.9) { // If speed is significantly lower than normal
+
+    if (currentSpeed < normalSpeed * 0.9) {
+      // If speed is significantly lower than normal
       const speedMultiplier = normalSpeed / currentSpeed;
       ball.speedX *= speedMultiplier;
       ball.speedY *= speedMultiplier;
     }
-    
+
     // Limit deflection angle to maximum 45 degrees
     const speed = Math.hypot(ball.speedX, ball.speedY);
     const angle = Math.atan2(ball.speedY, ball.speedX);
     const maxAngle = Math.PI / 4; // 45 degrees in radians
-    
+
     // Clamp the angle to [-45°, +45°]
     let clampedAngle = angle;
     if (Math.abs(angle) > maxAngle) {
       clampedAngle = Math.sign(angle) * maxAngle;
     }
-    
+
     // Ensure ball continues in the correct horizontal direction
     // If it was moving right, keep it moving right; if left, keep it moving left
     const movingRight = ball.speedX > 0;
@@ -101,7 +102,7 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
     } else if (!movingRight && clampedAngle < 0) {
       clampedAngle = -Math.PI - clampedAngle;
     }
-    
+
     // Apply the clamped angle
     ball.speedX = Math.cos(clampedAngle) * speed;
     ball.speedY = Math.sin(clampedAngle) * speed;
