@@ -254,7 +254,8 @@ fastify.register(async function (server: FastifyInstance) {
               if (client2?.playerInfo?.userId) {
                 activePlayers.delete(client2.playerInfo.userId);
               }
-            break;
+              break;
+            }
           }
           case "joinGame":
             // Handle player joining
