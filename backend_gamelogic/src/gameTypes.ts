@@ -79,6 +79,11 @@ export class GameServer {
   private renderLoopId?: NodeJS.Timeout;
   private isRunning: boolean = false;
 
+  // AI Config
+  aiEnabled: boolean = true;
+  aiPlayer: 1 | 2 | null = 2;
+  //aiDifficulty: "easy" | "medium" | "hard" = "medium"; for later use
+
   // Callbacks for game loops (injected from outside)
   private onPhysicsUpdate?: (game: GameServer) => void;
   private onRender?: (game: GameServer) => void;

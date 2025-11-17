@@ -1,6 +1,7 @@
 import { Paddle, Ball, GameServer } from "./gameTypes.js";
 import { config } from "./config.js";
 import { broadcastGameState } from "./networkUtils.js";
+import { updateDummyPaddle } from "./opponent/opponent.js";
 
 // Factory function to create
 export function createGame(): GameServer {
@@ -100,6 +101,9 @@ export function collideBallWithWalls(game: GameServer) {
 }
 
 export function updateGameState(game: GameServer) {
+  if (game.aiEnabled && game.aiPlayer) {
+    updateDummyPaddle(game, game.aiPlayer);
+  }
   // Update ball position
   game.Ball.x += game.Ball.speedX;
   game.Ball.y += game.Ball.speedY;
