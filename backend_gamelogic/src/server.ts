@@ -243,7 +243,7 @@ fastify.register(async function (server: FastifyInstance) {
               // VS_AI mode - start immediately (no player info needed)
               game = createGame(gameMode);
 
-              game.clients.set(1, {
+              game.clients.set(2, {
                 playerInfo: { userId: "Player", username: "Player" },
                 connection,
               });

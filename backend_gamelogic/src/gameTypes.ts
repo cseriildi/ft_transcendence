@@ -90,7 +90,7 @@ export class Paddle {
 }
 
 export class AIPlayer {
-  aiPlayerNo: 1 | 2 | null = 2;
+  aiPlayerNo: 1 | 2 | null = 1;
   aiDifficulty: "easy" | "medium" | "hard" = "medium";
   aiLastDecisionTime: number = Date.now();
   aiTargetY: number | null = null;
