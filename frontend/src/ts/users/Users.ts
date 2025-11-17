@@ -68,7 +68,7 @@ export class Users {
           }
 
           users.forEach((user: { username: string; avatar_url: string; id: number }) => {
-            if (user.id === Number(sessionStorage.getItem("userId"))) {
+            if (user.id === Number(localStorage.getItem("userId"))) {
               return;
             }
 

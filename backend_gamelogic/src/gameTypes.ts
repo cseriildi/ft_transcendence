@@ -1,5 +1,24 @@
 import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
 
+// Game mode types
+export enum GameMode {
+  LOCAL = "LOCAL", // Two players on same machine
+  ONLINE = "ONLINE", // Two players on different machines
+}
+
+// Player information
+export interface PlayerInfo {
+  userId: number | string;
+  username: string;
+  avatar?: string;
+}
+
+export interface GameStartPayload {
+  type: "startGame";
+  mode: GameMode;
+  player: PlayerInfo;
+}
+
 export class Field {
   width: number;
   height: number;
@@ -32,7 +51,13 @@ export class Paddle {
   width: number;
   speed: number;
   ySpeed: number;
-  private _capsule: { x1: number; y1: number; x2: number; y2: number; R: number } | null = null;
+  private _capsule: {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    R: number;
+  } | null = null;
   private _lastCy: number = -1;
 
   constructor(pos: number, field: Field, speed: number) {
@@ -79,9 +104,11 @@ export class GameServer {
   score2: number = 0;
   countdown: number = 3;
   maxScore: number;
-  clients = new Set<any>();
+  clients = new Map<1 | 2, { playerInfo: PlayerInfo; connection: any }>();
   physicsInterval: number;
   renderInterval: number;
+  gameMode: GameMode;
+
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;
   private isRunning: boolean = false;
@@ -94,7 +121,7 @@ export class GameServer {
   private onPhysicsUpdate?: (game: GameServer) => void;
   private onRender?: (game: GameServer) => void;
 
-  constructor() {
+  constructor(gameMode: GameMode) {
     this.Field = new Field(config.game.width, config.game.height);
     this.Ball = new Ball(this.Field);
     this.Paddle1 = new Paddle(1, this.Field, config.game.paddleSpeed);
@@ -102,6 +129,7 @@ export class GameServer {
     this.maxScore = config.game.maxScore;
     this.physicsInterval = PHYSICS_INTERVAL;
     this.renderInterval = RENDER_INTERVAL;
+    this.gameMode = gameMode;
   }
 
   // Set callback functions
@@ -165,6 +193,28 @@ export class GameServer {
 
     this.isRunning = false;
     console.log("✅ Game loops stopped");
+  }
+
+  // Get game result
+  getResult() {
+    const player1 = this.clients.get(1)?.playerInfo;
+    const player2 = this.clients.get(2)?.playerInfo;
+
+    if (!player1 || !player2) {
+      return null;
+    }
+
+    const winner = this.score1 > this.score2 ? player1 : player2;
+    const loser = this.score1 > this.score2 ? player2 : player1;
+    const winnerScore = Math.max(this.score1, this.score2);
+    const loserScore = Math.min(this.score1, this.score2);
+
+    return {
+      winner,
+      loser,
+      winnerScore,
+      loserScore,
+    };
   }
 
   // Get current state
