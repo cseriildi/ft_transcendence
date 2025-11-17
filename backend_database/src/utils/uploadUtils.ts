@@ -26,7 +26,10 @@ export async function ensureUploadsDirExists(): Promise<void> {
   try {
     await fs.mkdir(UPLOAD_CONFIG.uploadsDir, { recursive: true });
   } catch (error) {
-    throw errors.internal("Failed to create uploads directory");
+    throw errors.internal("Failed to create uploads directory", {
+      path: UPLOAD_CONFIG.uploadsDir,
+      function: "ensureUploadsDirExists",
+    });
   }
 }
 
@@ -43,13 +46,25 @@ export function validateFileType(mimetype: string, filename: string): void {
 
   if (!UPLOAD_CONFIG.allowedMimeTypes.includes(mimetype)) {
     throw errors.validation(
-      `Invalid file type. Only JPEG and PNG images are allowed. Received: ${mimetype}`
+      `Invalid file type. Only JPEG and PNG images are allowed. Received: ${mimetype}`,
+      {
+        mimetype,
+        filename,
+        allowedTypes: UPLOAD_CONFIG.allowedMimeTypes,
+        function: "validateFileType",
+      }
     );
   }
 
   if (!UPLOAD_CONFIG.allowedExtensions.includes(ext)) {
     throw errors.validation(
-      `Invalid file extension. Only .jpg, .jpeg, and .png are allowed. Received: ${ext}`
+      `Invalid file extension. Only .jpg, .jpeg, and .png are allowed. Received: ${ext}`,
+      {
+        extension: ext,
+        filename,
+        allowedExtensions: UPLOAD_CONFIG.allowedExtensions,
+        function: "validateFileType",
+      }
     );
   }
 }
@@ -58,7 +73,13 @@ export function validateFileType(mimetype: string, filename: string): void {
 export function validateFileSize(size: number): void {
   if (size > UPLOAD_CONFIG.maxFileSize) {
     throw errors.validation(
-      `File size exceeds maximum allowed size of ${UPLOAD_CONFIG.maxFileSize / 1024 / 1024}MB`
+      `File size exceeds maximum allowed size of ${UPLOAD_CONFIG.maxFileSize / 1024 / 1024}MB`,
+      {
+        fileSize: size,
+        maxSize: UPLOAD_CONFIG.maxFileSize,
+        fileSizeMB: (size / 1024 / 1024).toFixed(2),
+        function: "validateFileSize",
+      }
     );
   }
 }
@@ -102,7 +123,12 @@ export async function copyDefaultAvatar(userId: number): Promise<{
     await fs.access(UPLOAD_CONFIG.defaultAvatarPath);
   } catch (error) {
     throw errors.internal(
-      "Default avatar file not found. Please ensure default-avatar.png exists in uploads/avatars/default/"
+      "Default avatar file not found. Please ensure default-avatar.png exists in uploads/avatars/default/",
+      {
+        userId,
+        defaultAvatarPath: UPLOAD_CONFIG.defaultAvatarPath,
+        function: "copyDefaultAvatar",
+      }
     );
   }
 
@@ -134,7 +160,11 @@ export async function copyDefaultAvatar(userId: number): Promise<{
       await new Promise((resolve) => setTimeout(resolve, 10));
     }
   }
-  throw errors.internal("Failed to copy default avatar");
+  throw errors.internal("Failed to copy default avatar", {
+    userId,
+    attempts: maxAttempts,
+    function: "copyDefaultAvatar",
+  });
 }
 
 // Delete uploaded file (for cleanup)

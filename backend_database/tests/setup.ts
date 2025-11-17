@@ -2,6 +2,7 @@ import { FastifyInstance } from "fastify";
 import { build } from "../src/main.ts";
 import { promises as fs } from "fs";
 import path from "path";
+import { DatabaseHelper } from "../src/utils/databaseUtils.ts";
 
 export async function createTestApp(): Promise<FastifyInstance> {
   const app = await build({
@@ -41,33 +42,42 @@ export async function cleanupTestAvatars(): Promise<void> {
         if (stat.isFile()) {
           await fs.unlink(filePath);
         }
-      } catch (err) {
+      } catch {
         // File might have been already deleted, skip it
         continue;
       }
     }
-  } catch (error) {
+  } catch {
     // Silently fail if uploads directory doesn't exist or other errors
     // This is expected in test environments
   }
 }
 
+/**
+ * Reset database to clean state between tests
+ *
+ * Uses DatabaseHelper for clean async/await instead of callback nesting.
+ * Deletes in reverse dependency order to respect foreign key constraints:
+ * 1. refresh_tokens (depends on users)
+ * 2. friends (depends on users)
+ * 3. matches (depends on users)
+ * 4. avatars (depends on users)
+ * 5. users (root table)
+ *
+ * Alternative approach: Could use PRAGMA foreign_keys = OFF to allow
+ * deleting users first (cascades automatically), but explicit order is
+ * more readable and safer.
+ */
 export async function resetDatabase(app: FastifyInstance): Promise<void> {
-  await new Promise<void>((resolve, reject) => {
-    app.db.run("DELETE FROM refresh_tokens", [], (err) => {
-      if (err) return reject(err);
-      app.db.run("DELETE FROM friends", [], (err2) => {
-        if (err2) return reject(err2);
-        app.db.run("DELETE FROM matches", [], (err3) => {
-          if (err3) return reject(err3);
-          app.db.run("DELETE FROM avatars", [], (err4) => {
-            if (err4) return reject(err4);
-            app.db.run("DELETE FROM users", [], (err5) => (err5 ? reject(err5) : resolve()));
-          });
-        });
-      });
-    });
-  });
+  const db = new DatabaseHelper(app.db);
+
+  // Delete in reverse dependency order (child tables first, then parent)
+  await db.run("DELETE FROM refresh_tokens");
+  await db.run("DELETE FROM friends");
+  await db.run("DELETE FROM matches");
+  await db.run("DELETE FROM avatars");
+  await db.run("DELETE FROM users");
+
   // Clean up uploaded avatar files
   await cleanupTestAvatars();
 }

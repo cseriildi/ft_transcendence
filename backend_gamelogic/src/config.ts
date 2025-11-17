@@ -1,6 +1,6 @@
 // Helper function to get required environment variable
-function getEnvVar(name: string, defaultValue?: string): string {
-  const value = process.env[name] || defaultValue;
+function getEnvVar(name: string): string {
+  const value = process.env[name];
   if (!value) {
     throw new Error(`❌ Required environment variable ${name} is not set`);
   }
@@ -22,8 +22,11 @@ function parsePort(value: string | undefined, defaultValue: number): number {
 }
 
 // Helper function to parse positive integer with validation
-function parsePositiveInt(name: string, value: string | undefined, defaultValue: number): number {
-  const parsed = parseInt(value || String(defaultValue), 10);
+function parsePositiveInt(name: string, value: string | undefined): number {
+  if (!value) {
+    throw new Error(`❌ Required environment variable ${name} is not set`);
+  }
+  const parsed = parseInt(value, 10);
   if (Number.isNaN(parsed) || parsed <= 0) {
     throw new Error(`❌ Invalid ${name}: ${value}. Must be a positive integer`);
   }
@@ -35,27 +38,27 @@ export const config = {
   // Server configuration
   server: {
     port: parsePort(process.env.PORT, 3001),
-    host: getEnvVar("HOST", "::"),
-    env: getEnvVar("NODE_ENV", "production"),
-    publicHost: getEnvVar("PUBLIC_HOST", "localhost"),
+    host: getEnvVar("HOST"),
+    env: getEnvVar("NODE_ENV"),
+    publicHost: getEnvVar("PUBLIC_HOST"),
     publicPort: getOptionalEnvVar("PUBLIC_PORT", ""),
   },
 
   // Logging
   logging: {
-    level: getEnvVar("LOG_LEVEL", "info"),
+    level: getEnvVar("LOG_LEVEL"),
   },
 
   // Game configuration
   game: {
-    width: parsePositiveInt("GAME_WIDTH", process.env.GAME_WIDTH, 3200),
-    height: parsePositiveInt("GAME_HEIGHT", process.env.GAME_HEIGHT, 2000),
-    maxScore: parsePositiveInt("MAX_SCORE", process.env.MAX_SCORE, 10),
-    ballRadius: parsePositiveInt("BALL_RADIUS", process.env.BALL_RADIUS, 40),
-    ballSpeed: parsePositiveInt("BALL_SPEED", process.env.BALL_SPEED, 40),
-    paddleSpeed: parsePositiveInt("PADDLE_SPEED", process.env.PADDLE_SPEED, 40),
-    physicsFPS: parsePositiveInt("PHYSICS_FPS", process.env.PHYSICS_FPS, 60),
-    renderFPS: parsePositiveInt("RENDER_FPS", process.env.RENDER_FPS, 30),
+    width: parsePositiveInt("GAME_WIDTH", process.env.GAME_WIDTH),
+    height: parsePositiveInt("GAME_HEIGHT", process.env.GAME_HEIGHT),
+    maxScore: parsePositiveInt("MAX_SCORE", process.env.MAX_SCORE),
+    ballRadius: parsePositiveInt("BALL_RADIUS", process.env.BALL_RADIUS),
+    ballSpeed: parsePositiveInt("BALL_SPEED", process.env.BALL_SPEED),
+    paddleSpeed: parsePositiveInt("PADDLE_SPEED", process.env.PADDLE_SPEED),
+    physicsFPS: parsePositiveInt("PHYSICS_FPS", process.env.PHYSICS_FPS),
+    renderFPS: parsePositiveInt("RENDER_FPS", process.env.RENDER_FPS),
   },
 } as const;
 

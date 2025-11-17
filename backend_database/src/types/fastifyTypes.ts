@@ -1,5 +1,5 @@
 import { Database } from "sqlite3";
-import { JwtPayload } from "../services/authService/authTypes.ts";
+import { AccessTokenPayload } from "../services/authService/authTypes.ts";
 
 // Extend Fastify's types globally
 declare module "fastify" {
@@ -7,6 +7,7 @@ declare module "fastify" {
     db: Database;
   }
   interface FastifyRequest {
-    user?: JwtPayload & { id: number }; // Add user property for auth middleware
+    // User is populated from access token (which has no JTI)
+    user?: AccessTokenPayload & { id: number };
   }
 }

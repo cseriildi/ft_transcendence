@@ -1,19 +1,27 @@
 import fastify, { FastifyServerOptions } from "fastify";
-import routes from "./routes/index.ts";
-import dbConnector from "./database.ts";
-import { config as appConfig, validateConfig, getConfigWarnings } from "./config.ts";
+import router from "./router.ts";
+import dbConnector from "./plugins/databasePlugin.ts";
+import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
-
-// Validate configuration on startup
-validateConfig();
+import { randomBytes } from "node:crypto";
 
 export type BuildOptions = {
   logger?: boolean | FastifyServerOptions["logger"];
   database?: { path?: string };
   disableRateLimit?: boolean;
 };
+
+/**
+ * Generates a unique request ID
+ * Format: req-{timestamp}-{random} for easy chronological sorting
+ */
+function generateRequestId(): string {
+  const timestamp = Date.now().toString(36); // Base36 timestamp (shorter)
+  const random = randomBytes(4).toString("hex"); // 8 char random
+  return `req-${timestamp}-${random}`;
+}
 
 export async function build(opts: BuildOptions = {}) {
   const {
@@ -27,6 +35,7 @@ export async function build(opts: BuildOptions = {}) {
             url: request.url,
             hostname: request.hostname,
             remoteAddress: request.ip,
+            userId: request.user?.id, // Include authenticated user ID in logs
           };
         },
         res(reply) {
@@ -51,15 +60,23 @@ export async function build(opts: BuildOptions = {}) {
     database,
     disableRateLimit,
   } = opts;
-  const app = fastify({ logger });
 
-  // Log configuration warnings (env variables using fallbacks)
-  const warnings = getConfigWarnings();
-  if (warnings.length > 0) {
-    warnings.forEach((warning) => {
-      app.log.warn(`⚠️  ${warning}`);
-    });
-  }
+  const app = fastify({
+    logger,
+    // Custom request ID generation for distributed tracing
+    // Uses client-provided ID (x-request-id header) or generates unique ID
+    genReqId: (req) => {
+      const clientId = req.headers["x-request-id"];
+      if (typeof clientId === "string" && clientId.length > 0) {
+        return clientId;
+      }
+      return generateRequestId();
+    },
+    // Automatically set response header with request ID
+    requestIdHeader: "x-request-id",
+    // Use 'reqId' as log property name for consistency
+    requestIdLogLabel: "reqId",
+  });
 
   await app.register(cors, {
     origin: appConfig.cors.origins,
@@ -119,19 +136,12 @@ export async function build(opts: BuildOptions = {}) {
     if (!disableRateLimit) {
       await app.register(rateLimit, { max: 20, timeWindow: "1 second" });
     }
+
     await app.register(dbConnector, {
       path: database?.path ?? appConfig.database.path,
     });
     await app.register(errorHandler);
     await app.register(import("@fastify/cookie"));
-
-    // Optional: Add request/response logging hooks (only in development for now)
-    // Uncomment to enable detailed request logging
-    // if (appConfig.server.env === "development") {
-    //   const { requestLogger, responseLogger } = await import("./middleware/loggingMiddleware.ts");
-    //   app.addHook("onRequest", requestLogger);
-    //   app.addHook("onResponse", responseLogger);
-    // }
 
     // Register multipart for file uploads
     await app.register(import("@fastify/multipart"), {
@@ -148,7 +158,7 @@ export async function build(opts: BuildOptions = {}) {
       decorateReply: false,
     });
 
-    await app.register(routes);
+    await app.register(router);
 
     return app;
   } catch (err) {
@@ -158,7 +168,7 @@ export async function build(opts: BuildOptions = {}) {
 }
 
 const start = async () => {
-  let app;
+  let app: Awaited<ReturnType<typeof build>> | undefined;
   try {
     app = await build();
     await app.listen({
@@ -168,6 +178,28 @@ const start = async () => {
     if (appConfig.server.env === "development") {
       app.log.info(`📚 Swagger docs available at http://localhost:${appConfig.server.port}/docs`);
     }
+
+    // Graceful shutdown handlers for production environments
+    // Docker/K8s send SIGTERM before force-killing the container
+    const signals: NodeJS.Signals[] = ["SIGTERM", "SIGINT"];
+    signals.forEach((signal) => {
+      process.on(signal, async () => {
+        if (!app) return; // Should never happen, but TypeScript safety
+        app.log.info({ signal }, `Received ${signal}, closing server gracefully...`);
+        try {
+          // Fastify's close() method:
+          // 1. Stops accepting new connections
+          // 2. Waits for in-flight requests to complete
+          // 3. Triggers onClose hooks (closes DB connection via databasePlugin)
+          await app.close();
+          app.log.info("Server closed gracefully");
+          process.exit(0);
+        } catch (err) {
+          app.log.error({ err }, "Error during graceful shutdown");
+          process.exit(1);
+        }
+      });
+    });
   } catch (err) {
     if (app) {
       app.log.error(err, "Failed to start server");
