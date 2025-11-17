@@ -12,6 +12,17 @@ server {
 
     ssl_certificate     /etc/nginx/certs/cert.pem;
     ssl_certificate_key /etc/nginx/certs/key.pem;
+
+    # Security Headers
+    add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    # Use stricter referrer policy
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header X-XSS-Protection "0" always;
+
+    # Allow Google Fonts and local dev API calls (add or remove hosts as needed)
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; connect-src 'self' wss: https: http://localhost:3000; frame-ancestors 'none'; base-uri 'self';" always;
     ssl_protocols       TLSv1.2 TLSv1.3;
 
     location / {

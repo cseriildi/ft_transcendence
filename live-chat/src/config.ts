@@ -50,11 +50,8 @@ export const config = {
       "CORS_ORIGINS",
       `http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar(
         "NGINX_HTTP_PORT",
-        "8080",
-      )},http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar(
-        "FRONTEND_PORT",
-        "4200",
-      )}`,
+        "8080"
+      )},http://${getEnvVar("PUBLIC_HOST", "localhost")}:${getEnvVar("FRONTEND_PORT", "4200")}`
     )
       .split(",")
       .map((s) => s.trim()),

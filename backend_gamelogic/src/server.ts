@@ -26,10 +26,7 @@ const activeGames = new Set<GameServer>();
 
 // Health check endpoint
 fastify.get("/health", async () => {
-  const connectedClients = Array.from(activeGames).reduce(
-    (acc, g) => acc + g.clients.size,
-    0,
-  );
+  const connectedClients = Array.from(activeGames).reduce((acc, g) => acc + g.clients.size, 0);
   return {
     status: "healthy",
     timestamp: new Date().toISOString(),
@@ -119,10 +116,7 @@ fastify.register(async function (server: FastifyInstance) {
 });
 
 // Handle player input
-function handlePlayerInput(
-  game: GameServer,
-  input: { player: number; action: string },
-) {
+function handlePlayerInput(game: GameServer, input: { player: number; action: string }) {
   const { player, action } = input;
   const targetPaddle = player === 1 ? game.Paddle1 : game.Paddle2;
 
@@ -154,7 +148,7 @@ fastify.listen(
         : `ws://${config.server.publicHost}/game`;
     console.log(`🎮 Game server running at ${address}`);
     console.log(`🔌 WebSocket available at ${wsUrl}`);
-  },
+  }
 );
 
 // Graceful shutdown

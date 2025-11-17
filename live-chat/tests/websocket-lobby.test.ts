@@ -51,7 +51,7 @@ function closeWebSocket(ws: WebSocket): Promise<void> {
 function waitForAuthenticatedConnection(ws: WebSocket, timeout = 1000): Promise<void> {
   return new Promise((resolve, reject) => {
     let opened = false;
-    
+
     const timeoutId = setTimeout(() => {
       if (opened && ws.readyState === WebSocket.OPEN) {
         // Connection opened and stayed open - auth succeeded
@@ -142,11 +142,7 @@ describe("WebSocket - Lobby Connections", () => {
             [username],
             (err: any, rows: any) => {
               if (err) {
-                fastify.log.error(
-                  "Error fetching ban list for %s: %s",
-                  username,
-                  err.message
-                );
+                fastify.log.error("Error fetching ban list for %s: %s", username, err.message);
                 return;
               }
               for (const row of rows) {
@@ -164,9 +160,7 @@ describe("WebSocket - Lobby Connections", () => {
             switch (data.action) {
               case "join_lobby":
                 if (inLobby) {
-                  connection.send(
-                    JSON.stringify({ type: "error", message: "Already in lobby" })
-                  );
+                  connection.send(JSON.stringify({ type: "error", message: "Already in lobby" }));
                   return;
                 }
 
@@ -177,9 +171,9 @@ describe("WebSocket - Lobby Connections", () => {
                 userLobbyConnections.get(username)!.add(connection);
                 inLobby = true;
 
-                const allUsersList = Array.from(
-                  new Set(userLobbyConnections.keys())
-                ).filter((u) => u !== username);
+                const allUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(
+                  (u) => u !== username
+                );
 
                 connection.send(
                   JSON.stringify({
@@ -192,9 +186,9 @@ describe("WebSocket - Lobby Connections", () => {
                 // Broadcast to all lobby users
                 for (const [otherConn, otherUsername] of lobbyConnections) {
                   if (otherConn !== connection) {
-                    const otherUsersList = Array.from(
-                      new Set(userLobbyConnections.keys())
-                    ).filter((u) => u !== otherUsername);
+                    const otherUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(
+                      (u) => u !== otherUsername
+                    );
                     otherConn.send(
                       JSON.stringify({
                         type: "user_list_update",
@@ -207,9 +201,7 @@ describe("WebSocket - Lobby Connections", () => {
 
               case "leave_lobby":
                 if (!inLobby) {
-                  connection.send(
-                    JSON.stringify({ type: "error", message: "Not in lobby" })
-                  );
+                  connection.send(JSON.stringify({ type: "error", message: "Not in lobby" }));
                   return;
                 }
 
@@ -224,9 +216,7 @@ describe("WebSocket - Lobby Connections", () => {
                   }
                 }
 
-                const updatedUsersList = Array.from(
-                  new Set(userLobbyConnections.keys())
-                );
+                const updatedUsersList = Array.from(new Set(userLobbyConnections.keys()));
                 for (const [otherConn, otherUsername] of lobbyConnections) {
                   otherConn.send(
                     JSON.stringify({
@@ -236,9 +226,7 @@ describe("WebSocket - Lobby Connections", () => {
                   );
                 }
 
-                connection.send(
-                  JSON.stringify({ type: "lobby_left", message: "Left lobby" })
-                );
+                connection.send(JSON.stringify({ type: "lobby_left", message: "Left lobby" }));
                 break;
             }
           } catch (error) {
@@ -392,7 +380,7 @@ describe("WebSocket - Lobby Connections", () => {
     // 1. Query parameters (less secure, token visible in URL)
     // 2. Cookies (recommended, automatic with credentials: true)
     // 3. Send token in first WebSocket message after connection
-    
+
     // Helper to create app with authentication enabled
     async function createAuthEnabledApp() {
       const authApp = Fastify({ logger: false });
@@ -439,15 +427,12 @@ describe("WebSocket - Lobby Connections", () => {
 
           // Validate token against mock auth server
           try {
-            const response = await fetch(
-              `http://localhost:${mockAuthPort}/api/users/${userId}`,
-              {
-                method: "GET",
-                headers: {
-                  authorization: `Bearer ${token}`,
-                },
-              }
-            );
+            const response = await fetch(`http://localhost:${mockAuthPort}/api/users/${userId}`, {
+              method: "GET",
+              headers: {
+                authorization: `Bearer ${token}`,
+              },
+            });
 
             if (!response.ok) {
               connection.close();
@@ -472,11 +457,7 @@ describe("WebSocket - Lobby Connections", () => {
               [username],
               (err: any, rows: any) => {
                 if (err) {
-                  fastify.log.error(
-                    "Error fetching ban list for %s: %s",
-                    username,
-                    err.message
-                  );
+                  fastify.log.error("Error fetching ban list for %s: %s", username, err.message);
                   return;
                 }
                 for (const row of rows) {
@@ -510,9 +491,9 @@ describe("WebSocket - Lobby Connections", () => {
                   userLobbyConnections.get(username)!.add(connection);
                   inLobby = true;
 
-                  const allUsersList = Array.from(
-                    new Set(userLobbyConnections.keys())
-                  ).filter((u) => u !== username);
+                  const allUsersList = Array.from(new Set(userLobbyConnections.keys())).filter(
+                    (u) => u !== username
+                  );
 
                   connection.send(
                     JSON.stringify({
@@ -619,9 +600,7 @@ describe("WebSocket - Lobby Connections", () => {
     }
 
     it("should reject connection without token", async () => {
-      const validTokens = new Map([
-        ["valid-token-123", { userId: "1", username: "alice" }],
-      ]);
+      const validTokens = new Map([["valid-token-123", { userId: "1", username: "alice" }]]);
 
       await createMockAuthServer(validTokens);
       const authApp = await createAuthEnabledApp();
@@ -633,9 +612,7 @@ describe("WebSocket - Lobby Connections", () => {
         testServerAddress = `ws://127.0.0.1:${address.port}`;
       }
 
-      const ws = new WebSocket(
-        `${testServerAddress}/ws?username=alice&userId=1`
-      );
+      const ws = new WebSocket(`${testServerAddress}/ws?username=alice&userId=1`);
 
       await new Promise((resolve) => {
         ws.on("close", resolve);
@@ -648,9 +625,7 @@ describe("WebSocket - Lobby Connections", () => {
     });
 
     it("should reject connection with empty token", async () => {
-      const validTokens = new Map([
-        ["valid-token-123", { userId: "1", username: "alice" }],
-      ]);
+      const validTokens = new Map([["valid-token-123", { userId: "1", username: "alice" }]]);
 
       await createMockAuthServer(validTokens);
       const authApp = await createAuthEnabledApp();
@@ -680,9 +655,7 @@ describe("WebSocket - Lobby Connections", () => {
     });
 
     it("should reject connection with invalid token", async () => {
-      const validTokens = new Map([
-        ["valid-token-123", { userId: "1", username: "alice" }],
-      ]);
+      const validTokens = new Map([["valid-token-123", { userId: "1", username: "alice" }]]);
 
       await createMockAuthServer(validTokens);
       const authApp = await createAuthEnabledApp();
@@ -745,9 +718,7 @@ describe("WebSocket - Lobby Connections", () => {
     });
 
     it("should accept connection with valid token", async () => {
-      const validTokens = new Map([
-        ["valid-token-123", { userId: "1", username: "alice" }],
-      ]);
+      const validTokens = new Map([["valid-token-123", { userId: "1", username: "alice" }]]);
 
       await createMockAuthServer(validTokens);
       const authApp = await createAuthEnabledApp();
@@ -759,14 +730,11 @@ describe("WebSocket - Lobby Connections", () => {
         testServerAddress = `ws://127.0.0.1:${address.port}`;
       }
 
-      const ws = new WebSocket(
-        `${testServerAddress}/ws?username=alice&userId=1`,
-        {
-          headers: {
-            Authorization: "Bearer valid-token-123",
-          },
-        }
-      );
+      const ws = new WebSocket(`${testServerAddress}/ws?username=alice&userId=1`, {
+        headers: {
+          Authorization: "Bearer valid-token-123",
+        },
+      });
 
       // Wait for connection to open AND for async auth to complete
       await waitForAuthenticatedConnection(ws);
@@ -802,32 +770,26 @@ describe("WebSocket - Lobby Connections", () => {
       }
 
       // Connect alice
-      const ws1 = new WebSocket(
-        `${testServerAddress}/ws?username=alice&userId=1`,
-        {
-          headers: {
-            Authorization: "Bearer alice-token",
-          },
-        }
-      );
-      
+      const ws1 = new WebSocket(`${testServerAddress}/ws?username=alice&userId=1`, {
+        headers: {
+          Authorization: "Bearer alice-token",
+        },
+      });
+
       await waitForAuthenticatedConnection(ws1);
-      
+
       ws1.send(JSON.stringify({ action: "join_lobby" }));
       await waitForMessage(ws1);
 
       // Connect bob
-      const ws2 = new WebSocket(
-        `${testServerAddress}/ws?username=bob&userId=2`,
-        {
-          headers: {
-            Authorization: "Bearer bob-token",
-          },
-        }
-      );
-      
+      const ws2 = new WebSocket(`${testServerAddress}/ws?username=bob&userId=2`, {
+        headers: {
+          Authorization: "Bearer bob-token",
+        },
+      });
+
       await waitForAuthenticatedConnection(ws2);
-      
+
       ws2.send(JSON.stringify({ action: "join_lobby" }));
       const bobMessage = await waitForMessage(ws2);
 
@@ -950,7 +912,7 @@ describe("WebSocket - Lobby Connections", () => {
 
       ws3.close();
       const finalUpdate = await waitForMessage(ws1);
-      
+
       expect(finalUpdate.allUsers).not.toContain("bob");
       expect(finalUpdate.allUsers).not.toContain("charlie");
 

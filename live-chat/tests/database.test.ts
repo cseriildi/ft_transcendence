@@ -36,7 +36,7 @@ describe("Database Plugin", () => {
 
     it("should use custom path when provided", async () => {
       const customPath = "./custom-test.db";
-      
+
       try {
         await app.register(dbConnector, { path: customPath });
         await app.ready();
@@ -81,7 +81,7 @@ describe("Database Plugin", () => {
       });
 
       const columnNames = (columns as any[]).map((col) => col.name);
-      
+
       expect(columnNames).toContain("id");
       expect(columnNames).toContain("blocker");
       expect(columnNames).toContain("blocked_user");
@@ -126,14 +126,10 @@ describe("Database Plugin", () => {
 
       // Retrieve data
       const rows = await new Promise((resolve, reject) => {
-        app.db.all(
-          "SELECT * FROM blocks WHERE blocker = ?",
-          ["alice"],
-          (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-          }
-        );
+        app.db.all("SELECT * FROM blocks WHERE blocker = ?", ["alice"], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
       });
 
       expect(Array.isArray(rows)).toBe(true);
@@ -168,14 +164,10 @@ describe("Database Plugin", () => {
 
       // Retrieve all blocks for alice
       const rows = await new Promise((resolve, reject) => {
-        app.db.all(
-          "SELECT blocked_user FROM blocks WHERE blocker = ?",
-          ["alice"],
-          (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows);
-          }
-        );
+        app.db.all("SELECT blocked_user FROM blocks WHERE blocker = ?", ["alice"], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
       });
 
       expect((rows as any[]).length).toBe(2);
@@ -211,9 +203,7 @@ describe("Database Plugin", () => {
     it("should handle database connection errors gracefully", async () => {
       const invalidPath = "/invalid/path/that/does/not/exist/db.sqlite";
 
-      await expect(
-        app.register(dbConnector, { path: invalidPath })
-      ).rejects.toThrow();
+      await expect(app.register(dbConnector, { path: invalidPath })).rejects.toThrow();
     });
 
     it("should log error when table creation fails", async () => {
@@ -221,7 +211,7 @@ describe("Database Plugin", () => {
       // For now, we'll just ensure the plugin loads correctly
       await app.register(dbConnector, { path: testDbPath });
       await app.ready();
-      
+
       expect(app.db).toBeDefined();
     });
   });
