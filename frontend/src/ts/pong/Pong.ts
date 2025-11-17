@@ -225,15 +225,9 @@ export class Pong {
   /**
    * Handle keydown events based on game mode
    */
-  private handleKeyDown(
-    key: string,
-    sendInput: (type: string, data: any) => void,
-  ): void {
+  private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
     // Skip if waiting for opponent
-    if (
-      this.currentGameMode === GameMode.ONLINE &&
-      this.assignedPlayerNumber === null
-    ) {
+    if (this.currentGameMode === GameMode.ONLINE && this.assignedPlayerNumber === null) {
       return;
     }
 
@@ -279,24 +273,15 @@ export class Pong {
   /**
    * Handle keyup events based on game mode
    */
-  private handleKeyUp(
-    key: string,
-    sendInput: (type: string, data: any) => void,
-  ): void {
+  private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
     // Skip if waiting for opponent
-    if (
-      this.currentGameMode === GameMode.ONLINE &&
-      this.assignedPlayerNumber === null
-    ) {
+    if (this.currentGameMode === GameMode.ONLINE && this.assignedPlayerNumber === null) {
       return;
     }
 
     if (this.currentGameMode === GameMode.ONLINE) {
       // ONLINE mode: only stop assigned player
-      if (
-        (key === "arrowup" || key === "arrowdown") &&
-        this.assignedPlayerNumber
-      ) {
+      if ((key === "arrowup" || key === "arrowdown") && this.assignedPlayerNumber) {
         sendInput("playerInput", {
           player: this.assignedPlayerNumber,
           action: "stop",

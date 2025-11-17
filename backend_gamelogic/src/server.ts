@@ -2,12 +2,7 @@ import Fastify from "fastify";
 import { FastifyInstance } from "fastify";
 import { config, validateConfig } from "./config.js";
 import { createGame, resetBall } from "./gameUtils.js";
-import {
-  GameServer,
-  GameMode,
-  GameStartPayload,
-  PlayerInfo,
-} from "./gameTypes.js";
+import { GameServer, GameMode, GameStartPayload, PlayerInfo } from "./gameTypes.js";
 import { broadcastGameState, broadcastGameSetup } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
 
@@ -88,8 +83,7 @@ fastify.register(async function (server: FastifyInstance) {
           case "startGame": {
             // Validate and extract game mode and player info
             const gameStartData = data as GameStartPayload;
-            const { error, gameMode, player } =
-              validateGameStartMessage(gameStartData);
+            const { error, gameMode, player } = validateGameStartMessage(gameStartData);
 
             if (error || !gameMode || !player) {
               const errorMsg = error || "Missing required field: mode";
@@ -101,10 +95,7 @@ fastify.register(async function (server: FastifyInstance) {
             stopGame();
 
             if (gameMode === GameMode.ONLINE) {
-              if (
-                !waitingRemotePlayer ||
-                waitingRemotePlayer.connection === connection
-              ) {
+              if (!waitingRemotePlayer || waitingRemotePlayer.connection === connection) {
                 // Player 1 waiting for opponent - store in waiting room
                 game = createGame(gameMode);
                 waitingRemotePlayer = { playerInfo: player, connection, game };
@@ -116,7 +107,7 @@ fastify.register(async function (server: FastifyInstance) {
                     message: "Waiting for opponent to join...",
                     gameMode: gameMode,
                     playerNumber: 1,
-                  }),
+                  })
                 );
                 freezeBall(game);
               } else {
@@ -131,7 +122,7 @@ fastify.register(async function (server: FastifyInstance) {
                     message: "Ready",
                     gameMode: gameMode,
                     playerNumber: 2,
-                  }),
+                  })
                 );
                 game.clients.get(1)?.connection.send(
                   JSON.stringify({
@@ -139,11 +130,11 @@ fastify.register(async function (server: FastifyInstance) {
                     message: "Opponent joined! Starting game...",
                     gameMode: gameMode,
                     playerNumber: 1,
-                  }),
+                  })
                 );
                 broadcastGameSetup(game);
                 runGameCountdown(game).catch((err) =>
-                  console.error("Error during online game countdown:", err),
+                  console.error("Error during online game countdown:", err)
                 );
               }
             } else {
@@ -155,7 +146,7 @@ fastify.register(async function (server: FastifyInstance) {
               freezeBall(game);
 
               runGameCountdown(game).catch((err) =>
-                console.error("Error during local game countdown:", err),
+                console.error("Error during local game countdown:", err)
               );
             }
             break;
@@ -235,9 +226,7 @@ function validateGameStartMessage(data: any): {
   const validModes = Object.values(GameMode);
   if (!validModes.includes(data.mode)) {
     return {
-      error: `Invalid game mode: ${
-        data.mode
-      }. Must be one of: ${validModes.join(", ")}`,
+      error: `Invalid game mode: ${data.mode}. Must be one of: ${validModes.join(", ")}`,
     };
   }
 
@@ -265,7 +254,7 @@ function sendErrorToClient(connection: any, error: string) {
         type: "error",
         message: error,
         timestamp: new Date().toISOString(),
-      }),
+      })
     );
   } catch (err) {
     console.error("Failed to send error to client:", err);
