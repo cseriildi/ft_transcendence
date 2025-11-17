@@ -135,8 +135,8 @@ export function broadcastGameResult(game: GameServer) {
         type: "gameResult",
         mode: game.gameMode,
         data: {
-          winner: winner.userId,
-          loser: loser.userId,
+          winner: winner.username,
+          loser: loser.username,
           winnerScore,
           loserScore,
         },
