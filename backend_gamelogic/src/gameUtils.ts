@@ -163,7 +163,9 @@ export function resetBall(game: GameServer) {
   game.Ball.x = game.Field.width / 2;
   game.Ball.y = game.Field.height / 2;
   const angle = ((Math.random() - 0.5) * Math.PI) / 2; // -45 to +45 degrees
-  const speed = config.game.ballSpeed * 0.5; // Start at half speed
+  // Start at half speed to give players time to react after a goal.
+  // The ball's speed will gradually return to full speed during gameplay (handled in the game update loop).
+  const speed = config.game.ballSpeed * 0.5;
   game.Ball.speedX = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1); // randomize left/right
   game.Ball.speedY = Math.sin(angle) * speed;
 }
