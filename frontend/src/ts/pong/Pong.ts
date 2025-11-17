@@ -2,6 +2,7 @@
 export enum GameMode {
   LOCAL = "LOCAL",
   ONLINE = "ONLINE",
+  VS_AI = "VS_AI",
 }
 
 interface PlayerInfo {

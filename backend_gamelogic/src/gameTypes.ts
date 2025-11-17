@@ -4,6 +4,7 @@ import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
 export enum GameMode {
   LOCAL = "LOCAL", // Two players on same machine
   ONLINE = "ONLINE", // Two players on different machines
+  VS_AI = "VS_AI", // Player vs AI
 }
 
 // Player information
@@ -88,6 +89,13 @@ export class Paddle {
   }
 }
 
+export class AIPlayer {
+  aiPlayerNo: 1 | 2 | null = 1;
+  aiDifficulty: "easy" | "medium" | "hard" = "medium";
+  aiLastDecisionTime: number = Date.now();
+  aiTargetY: number | null = null;
+}
+
 export class GameServer {
   Field: Field;
   Ball: Ball;
@@ -105,6 +113,10 @@ export class GameServer {
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;
   private isRunning: boolean = false;
+
+  // AI Config
+  aiEnabled: boolean = false;
+  aiPlayer: AIPlayer = new AIPlayer();
 
   // Callbacks for game loops (injected from outside)
   private onPhysicsUpdate?: (game: GameServer) => void;
