@@ -71,6 +71,40 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
   if (dot < 0) {
     ball.speedX -= 2 * dot * nx;
     ball.speedY -= 2 * dot * ny;
+    
+    // Restore ball to full speed if it was slowed down after reset
+    const currentSpeed = Math.hypot(ball.speedX, ball.speedY);
+    const normalSpeed = config.game.ballSpeed;
+    
+    if (currentSpeed < normalSpeed * 0.9) { // If speed is significantly lower than normal
+      const speedMultiplier = normalSpeed / currentSpeed;
+      ball.speedX *= speedMultiplier;
+      ball.speedY *= speedMultiplier;
+    }
+    
+    // Limit deflection angle to maximum 45 degrees
+    const speed = Math.hypot(ball.speedX, ball.speedY);
+    const angle = Math.atan2(ball.speedY, ball.speedX);
+    const maxAngle = Math.PI / 4; // 45 degrees in radians
+    
+    // Clamp the angle to [-45°, +45°]
+    let clampedAngle = angle;
+    if (Math.abs(angle) > maxAngle) {
+      clampedAngle = Math.sign(angle) * maxAngle;
+    }
+    
+    // Ensure ball continues in the correct horizontal direction
+    // If it was moving right, keep it moving right; if left, keep it moving left
+    const movingRight = ball.speedX > 0;
+    if (!movingRight && clampedAngle > 0) {
+      clampedAngle = Math.PI - clampedAngle;
+    } else if (!movingRight && clampedAngle < 0) {
+      clampedAngle = -Math.PI - clampedAngle;
+    }
+    
+    // Apply the clamped angle
+    ball.speedX = Math.cos(clampedAngle) * speed;
+    ball.speedY = Math.sin(clampedAngle) * speed;
   }
 
   return true;
@@ -80,7 +114,7 @@ export function resetBall(game: GameServer) {
   game.Ball.x = game.Field.width / 2;
   game.Ball.y = game.Field.height / 2;
   const angle = ((Math.random() - 0.5) * Math.PI) / 2; // -45 to +45 degrees
-  const speed = config.game.ballSpeed;
+  const speed = config.game.ballSpeed * 0.5; // Start at half speed
   game.Ball.speedX = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1); // randomize left/right
   game.Ball.speedY = Math.sin(angle) * speed;
 }
@@ -101,8 +135,8 @@ export function collideBallWithWalls(game: GameServer) {
 }
 
 export function updateGameState(game: GameServer) {
-  if (game.aiEnabled && game.aiPlayer) {
-    updateDummyPaddle(game, game.aiPlayer);
+  if (game.aiEnabled && game.aiPlayer.aiPlayerNo) {
+    updateDummyPaddle(game, game.aiPlayer.aiPlayerNo);
   }
   // Update ball position
   game.Ball.x += game.Ball.speedX;

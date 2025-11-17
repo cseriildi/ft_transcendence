@@ -63,6 +63,13 @@ export class Paddle {
   }
 }
 
+export class AIPlayer {
+  aiPlayerNo: 1 | 2 | null = 2;
+  aiDifficulty: "easy" | "medium" | "hard" = "medium";
+  aiLastDecisionTime: number = Date.now();
+  aiTargetY: number | null = null;
+}
+
 export class GameServer {
   Field: Field;
   Ball: Ball;
@@ -81,8 +88,7 @@ export class GameServer {
 
   // AI Config
   aiEnabled: boolean = true;
-  aiPlayer: 1 | 2 | null = 2;
-  //aiDifficulty: "easy" | "medium" | "hard" = "medium"; for later use
+  aiPlayer: AIPlayer = new AIPlayer();
 
   // Callbacks for game loops (injected from outside)
   private onPhysicsUpdate?: (game: GameServer) => void;
