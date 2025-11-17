@@ -1,342 +1,432 @@
-# Copilot Instructions - Fastify TypeScript Backend
+# GitHub Copilot Instructions
 
-This is a production-ready Fastify-based TypeScript backend with SQLite database, JWT authentication, OAuth integration (GitHub), 2FA support, and comprehensive API documentation via Swagger.
+## Project Context
 
-## Architecture Overview
+This is a **university finishing project** - a TypeScript/Fastify REST API backend demonstrating production-ready patterns, authentication systems, and database operations with SQLite. This is a **showcase/learning project**, not enterprise software.
 
-- **Entry Point**: `src/main.ts` registers plugins in order: CORS → Swagger (dev) → rate limiting → database → error handler → cookie → multipart → static files → routes
-- **Plugin Pattern**: Uses Fastify plugins (`fp()`) for database connector and error handler
-- **Database**: SQLite with promisified callback pattern via `DatabaseHelper` utility class
-- **Type Safety**: Comprehensive TypeScript types in `src/types/` with strict typing across all services
-- **Service-Based Architecture**: Each feature is a self-contained service with its own controller, routes, types, and schemas
+**Stack:** Fastify + TypeScript + SQLite + Vitest + JWT + OAuth 2.0 + 2FA/TOTP
 
-## Project Structure
+**Test Coverage:** 172 passing tests - comprehensive test suite exists, maintain this standard.
 
+---
+
+## Core Principles
+
+### 1. **WHY Before HOW - Always Explain First**
+
+**NEVER implement changes without first explaining:**
+- **WHY** the change is needed
+- **WHAT** alternatives exist
+- **TRADEOFFS** of each approach
+- **IMPLICATIONS** for existing code
+
+**Be BLUNT and HONEST:**
+- If something is a hack, say it's a hack
+- If a pattern is suboptimal but acceptable for a uni project, explain why
+- If you're unsure, admit it - don't guess
+- If the user's request has downsides, warn them explicitly
+
+**Example Response Pattern:**
 ```
-src/
-├── main.ts                    # Application entry point
-├── config.ts                  # Centralized configuration with env validation
-├── database.ts                # Database plugin with schema initialization
-├── middleware/
-│   ├── authMiddleware.ts      # JWT authentication middleware (requireAuth, optionalAuth)
-│   └── loggingMiddleware.ts   # Optional request/response logging hooks
-├── plugins/
-│   └── errorHandlerPlugin.ts  # Global error handler for AppError instances
-├── routes/
-│   ├── index.ts               # Route registry (registers all service routes)
-│   ├── healthRoutes.ts        # Health check endpoints
-│   └── monitoringSchema.ts    # Health monitoring schemas
-├── services/
-│   ├── authService/           # Local authentication (register, login, refresh)
-│   ├── oAuthService/          # OAuth providers (GitHub, Google)
-│   ├── 2FAService/            # Two-factor authentication (TOTP)
-│   ├── userService/           # User profile management & avatar uploads
-│   ├── matchService/          # Match recording and statistics
-│   └── friendService/         # Friend requests and relationships
-├── types/
-│   ├── commonTypes.ts         # Shared types (User, ApiResponse, etc.)
-│   └── fastifyTypes.ts        # Fastify augmentations (request.user, request.server.db)
-└── utils/
-    ├── errorUtils.ts          # AppError class and error factory functions
-    ├── responseUtils.ts       # ApiResponseHelper for consistent responses
-    ├── handlerUtils.ts        # createHandler wrapper for DI pattern
-    ├── authUtils.ts           # JWT signing/verification, token management
-    ├── oauthUtils.ts          # OAuth state generation and validation
-    ├── databaseUtils.ts       # DatabaseHelper wrapper for promisified queries
-    ├── schemaUtils.ts         # Shared schema definitions
-    └── uploadUtils.ts         # File upload handling (avatars)
+I see you want to add feature X. Here's what that means:
+
+WHY THIS MATTERS:
+- [Business/technical reason]
+
+OPTIONS:
+1. [Approach A] - Pros: [...], Cons: [...]
+2. [Approach B] - Pros: [...], Cons: [...]
+
+MY RECOMMENDATION: [Choice] because [reason]
+
+TRADEOFFS:
+- We gain: [...]
+- We lose: [...]
+- Risk: [...]
+
+Should I proceed with [chosen approach]?
 ```
 
-## Key Patterns
+### 2. **Respect Existing Architecture**
 
-### Service Structure
+**STICK TO CURRENT PATTERNS UNLESS THEY'RE CLEARLY BAD:**
 
-Each service follows this pattern:
+- **Service-based structure:** Each feature lives in `src/services/{serviceName}/`
+  - Controller: Business logic
+  - Routes: Fastify route registration
+  - Types: Service-specific TypeScript interfaces
+  - Schemas: Typebox validation schemas
+  - Utils (optional): Service-specific helpers
 
-- `*Types.ts` - TypeScript interfaces for requests/responses
-- `*Schemas.ts` - JSON schemas for validation and Swagger documentation
-- `*Controller.ts` - Business logic using `createHandler` wrapper
-- `*Routes.ts` - Route registration with schema definitions and middleware
+- **File naming:** camelCase for all TypeScript files (e.g., `authController.ts`, not `auth-controller.ts`)
 
-### Database Access
+- **Route organization:**
+  - Auth/OAuth routes: No rate limiting (have specific limits in controllers)
+  - API routes (`/api/*`): Protected with `authenticatedRateLimit` (100 req/min)
+  - Register routes in `src/router.ts` with appropriate prefix from `config.routes`
 
-Use `DatabaseHelper` via `createHandler` for automatic dependency injection:
+- **Database access:** Use `DatabaseHelper` class with promisified async/await API
+  - `db.get<T>()` - Single row
+  - `db.all<T>()` - Multiple rows
+  - `db.run()` - INSERT/UPDATE/DELETE
+  - `db.transaction()` - Atomic operations
 
+- **Error handling:** Use `requestErrors(request)` helper, throws proper HTTP errors
+  - `errors.badRequest()`, `errors.unauthorized()`, `errors.notFound()`, etc.
+  - Errors automatically logged and formatted by error handler plugin
+
+- **Response format:** Use `ApiResponseHelper.success()` for consistent responses
+  ```typescript
+  return ApiResponseHelper.success(data, "Success message");
+  // Returns: { success: true, message: string, data: T }
+  ```
+
+- **Authentication middleware:** 
+  - `requireAuth` - Protects routes, extracts JWT, attaches `request.user`
+  - Apply to routes needing authentication via `onRequest` hook
+
+- **Validation:** Typebox schemas in `*Schemas.ts`, applied via Fastify's schema property
+
+### 3. **Type Safety is Non-Negotiable**
+
+- All database queries MUST be typed with generics: `db.get<User>(...)`
+- No `any` types unless interfacing with untyped external libraries
+- Use discriminated unions for multi-state types (e.g., friend status)
+- Extend Fastify types in `fastifyTypes.ts` when adding to request/reply
+
+### 4. **Security First (This is a Showcase Project)**
+
+**Current security measures to maintain:**
+- Passwords: bcrypt with work factor 10
+- JWTs: HS256 signing, 15min access tokens, 7d refresh tokens
+- Refresh tokens: Hashed in database, httpOnly cookies, atomic rotation
+- OAuth: HMAC-signed state tokens with CSRF protection
+- 2FA: Rate-limited TOTP (5 attempts per 15min)
+- Input sanitization: HTML escaping via `sanitize()` utility
+- SQL injection: Parameterized queries only (no string concatenation)
+- Rate limiting: Per-user quotas for API routes
+
+**Don't:**
+- Store secrets in code (use environment variables)
+- Disable CORS without understanding implications
+- Skip input validation "just for testing"
+- Use `eval()` or `Function()` constructor
+
+### 5. **Testing Standards**
+
+**All new features require tests:**
+- Unit tests for business logic
+- Integration tests for API endpoints
+- Use Vitest with existing test setup in `tests/setup.ts`
+- Mock database with in-memory SQLite (`:memory:`)
+- Test happy path AND error cases
+
+**Test file naming:** `{feature}.test.ts` (e.g., `auth.test.ts`)
+
+**Minimum coverage for new features:**
+- Controllers: Test all endpoints
+- Utils: Test all exported functions
+- Middleware: Test authentication pass/fail cases
+
+---
+
+## Common Tasks & Patterns
+
+### Adding a New Feature Service
+
+1. **Explain first:**
+   - What does this feature do?
+   - How does it fit with existing services?
+   - Any security implications?
+
+2. **Create service directory structure:**
+   ```
+   src/services/{featureName}/
+   ├── {featureName}Controller.ts  // Business logic
+   ├── {featureName}Routes.ts      // Route registration
+   ├── {featureName}Types.ts       // TypeScript interfaces
+   ├── {featureName}Schemas.ts     // Typebox validation
+   └── {featureName}Utils.ts       // Optional helpers
+   ```
+
+3. **Register routes in `router.ts`:**
+   - Determine if rate limiting needed
+   - Choose appropriate prefix from `config.routes`
+   - Add to correct registration block
+
+4. **Write tests in `tests/{featureName}.test.ts`**
+
+5. **Update `docs/FEATURES.md` with new capability**
+
+### Database Schema Changes
+
+1. **Create migration file:**
+   ```
+   src/database/migrations/{YYYYMMDDHHMMSS}_{description}.sql
+   ```
+
+2. **Write idempotent SQL:**
+   ```sql
+   -- Use CREATE TABLE IF NOT EXISTS
+   -- Use ALTER TABLE with careful checks
+   -- Wrap in transaction (BEGIN/COMMIT)
+   ```
+
+3. **Test migration:**
+   - Run on fresh database
+   - Run on existing database (idempotency check)
+   - Test rollback scenario
+
+4. **Update types in `commonTypes.ts` if adding new table**
+
+### Adding New Environment Variables
+
+1. **Add to `config.ts`:**
+   - Use `getEnvVar()` for required vars
+   - Use `getOptionalEnvVar()` for optional vars
+   - Add descriptive comment explaining purpose
+
+2. **Update `.env.example` (if it exists)**
+
+3. **Consider production behavior:**
+   - In development: Fallbacks allowed with warnings
+   - In production: Missing required vars = fatal error
+   - Never commit secrets
+
+---
+
+## Code Style & Conventions
+
+### Import Organization
 ```typescript
-import { createHandler } from "../../utils/handlerUtils.ts";
-
-export const userController = {
-  getUser: createHandler<{ Params: { id: string } }>(
-    async (request, { db }) => {
-      // db is DatabaseHelper with promisified methods
-      const user = await db.get<User>(
-        "SELECT id, username, email FROM users WHERE id = ?",
-        [request.params.id]
-      );
-      if (!user) throw errors.notFound("User");
-      return ApiResponseHelper.success(user);
-    }
-  ),
-};
-```
-
-Available `DatabaseHelper` methods:
-
-- `db.get<T>(sql, params)` - Returns single row or undefined
-- `db.all<T>(sql, params)` - Returns array of rows
-- `db.run(sql, params)` - Executes INSERT/UPDATE/DELETE, returns lastID/changes
-
-### Authentication & Authorization
-
-**JWT Token System:**
-
-- Access tokens: Short-lived (15m), signed with `JWT_ACCESS_SECRET`
-- Refresh tokens: Long-lived (7d), stored in database with bcrypt hash, httpOnly cookie
-- Token rotation: New refresh token issued on each refresh request, old one deleted
-
-**Middleware:**
-
-```typescript
-// Protected route - requires valid access token
-fastify.get("/profile", { preHandler: requireAuth }, userController.getProfile);
-
-// Optional auth - attaches user if token present, otherwise continues
-fastify.get("/public", { preHandler: optionalAuth }, controller.handler);
-```
-
-**Access user in controllers:**
-
-```typescript
-const userId = request.user!.id; // Available after requireAuth
-```
-
-### Error Handling
-
-Use `errors` factory from `utils/errorUtils.ts`:
-
-```typescript
-throw errors.notFound("User"); // 404
-throw errors.validation("Invalid"); // 400
-throw errors.unauthorized(); // 401
-throw errors.forbidden(); // 403
-throw errors.conflict("Exists"); // 409
-throw errors.internal("DB error"); // 500
-```
-
-Global error handler in `plugins/errorHandlerPlugin.ts` catches `AppError` instances and formats responses consistently.
-
-### Logging
-
-**Use Fastify's built-in Pino logger** (never `console.log`):
-
-```typescript
-// In controllers - use request.log
-export const userController = {
-  getUser: createHandler<{ Params: { id: string } }>(
-    async (request, { db }) => {
-      request.log.info({ userId: request.params.id }, "Fetching user");
-      const user = await db.get(/*...*/);
-      if (!user) {
-        request.log.warn({ userId: request.params.id }, "User not found");
-        throw errors.notFound("User");
-      }
-      return ApiResponseHelper.success(user);
-    }
-  ),
-};
-```
-
-**Structured logging format:**
-- First argument: Object with context data
-- Second argument: Message string
-
-**Log levels:** `trace`, `debug`, `info`, `warn`, `error`, `fatal`  
-**Configuration:** `LOG_LEVEL` env var (default: "info")  
-**Output:** JSON in production, pretty-printed in development
-
-See `LOGGING.md` for complete guide.
-
-### Response Format
-
-All responses use `ApiResponseHelper` from `utils/responseUtils.ts`:
-
-```typescript
-// Standard success response
-return ApiResponseHelper.success(data, "Optional message");
-
-// Paginated response
-return ApiResponseHelper.paginated(items, page, limit, total);
-
-// Error response (usually handled by error handler)
-return ApiResponseHelper.error("ERROR_CODE", "message");
-```
-
-**Standard response structure:**
-
-```typescript
-{
-  success: boolean,
-  data?: T,
-  message?: string,
-  timestamp: string,
-  pagination?: {
-    page: number,
-    limit: number,
-    total: number,
-    totalPages: number
-  }
-}
-```
-
-### Route Registration
-
-Routes use JSON schemas for validation and auto-generate Swagger docs:
-
-```typescript
+// 1. External dependencies
 import { FastifyInstance } from "fastify";
-import { requireAuth } from "../../middleware/authMiddleware.ts";
-import { userController } from "./userController.ts";
-import { getUserSchema, updateUserSchema } from "./userSchemas.ts";
+import bcrypt from "bcrypt";
 
-async function userRoutes(fastify: FastifyInstance) {
-  fastify.get(
-    "/users/:id",
-    {
-      schema: getUserSchema,
-      preHandler: requireAuth,
-    },
-    userController.getUser
-  );
+// 2. Internal types
+import { User, ApiResponse } from "../../types/commonTypes.ts";
 
-  fastify.patch(
-    "/users/:id",
-    {
-      schema: updateUserSchema,
-      preHandler: requireAuth,
-    },
-    userController.updateUser
-  );
-}
+// 3. Internal utilities
+import { DatabaseHelper } from "../../utils/databaseUtils.ts";
+import { requestErrors } from "../../utils/errorUtils.ts";
 
-export default userRoutes;
+// 4. Service-specific imports
+import { authSchemas } from "./authSchemas.ts";
 ```
 
-## Development Workflow
+### File Extensions
+- **Always use `.ts` in imports** (TypeScript with `allowImportingTsExtensions`)
+- Example: `import { config } from "./config.ts";`
 
-### Local Development (Dev Container)
+### Naming Conventions
+- **Files:** camelCase (e.g., `authController.ts`)
+- **Types/Interfaces:** PascalCase (e.g., `User`, `ApiResponse`)
+- **Functions/Variables:** camelCase (e.g., `getUserById`, `refreshToken`)
+- **Constants:** UPPER_SNAKE_CASE (e.g., `JWT_SECRET`, `SALT_ROUNDS`)
 
-```bash
-# Start dev server with hot reload (tsx)
-npm run dev
-
-# Build production bundle (tsup with minification)
-npm run build && npm start
-
-# Run tests with Vitest
-npm test                 # Run once
-npm run test:watch       # Watch mode
-npm run test:coverage    # With coverage report
-
-# Access Swagger documentation (dev only)
-http://localhost:3000/docs
-```
-
-### Database Schema
-
-SQLite auto-initialized in `database.ts` with the following tables:
-
-- **users** - id, username (unique), email (unique), password_hash, oauth_provider, oauth_id, twofa_secret, twofa_enabled, created_at, updated_at, last_seen
-- **refresh_tokens** - jti (PK), user_id, token_hash, revoked, created_at, expires_at
-- **matches** - id, winner_name, loser_name, winner_score, loser_score, played_at
-- **avatars** - id, user_id, file_path, file_url, file_name, mime_type, file_size, uploaded_at
-
-### Configuration
-
-Environment-based config in `config.ts` with validation on startup. Key env vars:
-
-**Server:**
-
-- `PORT` (default: 3000), `HOST` (default: "::"), `NODE_ENV` (default: production)
-- `PUBLIC_HOST`, `PUBLIC_PORT`, `PUBLIC_PROTOCOL` - For OAuth redirects
-
-**Database:**
-
-- `DATABASE_PATH` (default: "./src/database/database.db")
-
-**JWT:**
-
-- `JWT_ISSUER`, `JWT_AUDIENCE`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`
-- `JWT_ACCESS_TTL` (default: "15m"), `JWT_REFRESH_TTL` (default: "7d")
-
-**OAuth:**
-
-- `OAUTH_STATE_SECRET` (for CSRF protection)
-- `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_REDIRECT_URI`
-- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
-
-**Routes:**
-
-- `AUTH_PREFIX` (default: "/auth"), `OAUTH_PREFIX` (default: "/api/oauth"), `API_PREFIX` (default: "/api")
-
-**CORS:**
-
-- `CORS_ORIGINS` (comma-separated, default: "http://localhost:4200")
-
-**Logging:**
-
-- `LOG_LEVEL` (default: "info")
-
-### Testing
-
-Tests use Vitest with in-memory SQLite database. See `tests/setup.ts` for test server builder.
-
-Example test structure:
-
+### Error Handling Pattern
 ```typescript
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { buildTestServer, TestServer } from "./setup.ts";
+export const someController = {
+  someAction: async (request: FastifyRequest, reply: FastifyReply) => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
 
-describe("User API", () => {
-  let server: TestServer;
+    // Validate input
+    if (!someCondition) {
+      throw errors.badRequest("Reason for error");
+    }
 
-  beforeAll(async () => {
-    server = await buildTestServer();
-  });
+    // Database operation
+    const result = await db.get<SomeType>("SELECT ...", [param]);
+    if (!result) {
+      throw errors.notFound("ResourceName");
+    }
 
-  afterAll(async () => {
-    await server.close();
-  });
-
-  it("should get user by id", async () => {
-    const response = await server.inject({
-      method: "GET",
-      url: "/api/users/1",
-      headers: { authorization: `Bearer ${server.token}` },
-    });
-    expect(response.statusCode).toBe(200);
-  });
-});
+    // Success response
+    return ApiResponseHelper.success(result, "Success message");
+  },
+};
 ```
 
-## Adding New Features
+### Async/Await Over Callbacks
+- All database operations use async/await
+- No callback hell - promisify when needed
+- Handle errors with try/catch only when specific recovery logic needed
+- Let Fastify error handler catch unhandled rejections
 
-Follow this pattern when adding new features:
+---
 
-1. **Create service directory**: `src/services/myService/`
-2. **Define types**: `myTypes.ts` with request/response interfaces
-3. **Create schemas**: `mySchemas.ts` with JSON schemas for validation + Swagger
-4. **Implement controller**: `myController.ts` using `createHandler` wrapper
-5. **Register routes**: `myRoutes.ts` with schema and middleware
-6. **Add to route registry**: Import and register in `src/routes/index.ts`
-7. **Write tests**: `tests/my.test.ts` using test server builder
+## What NOT to Do
 
-## API Documentation
+### ❌ Don't Break These Rules
 
-In development mode, Swagger UI is available at `/docs` with:
+1. **Don't bypass validation schemas**
+   - All user input MUST go through Typebox schema validation
+   - Even "trusted" admin endpoints need validation
 
-- Full API documentation auto-generated from schemas
-- Bearer token authentication support
-- Try-it-out functionality for all endpoints
-- Organized by tags: health, auth, oauth, users, matches, friends
+2. **Don't mix patterns**
+   - If auth uses `requireAuth` middleware, don't create alternative auth checks
+   - If errors use `requestErrors()` helper, don't throw raw Error objects
+   - Consistency > "clever" solutions
 
-Configure via `main.ts` Swagger registration block.
+3. **Don't add dependencies without justification**
+   - Explain why existing utils can't solve the problem
+   - Consider bundle size impact
+   - Check license compatibility
+
+4. **Don't skip database transactions for multi-step operations**
+   - If operation modifies multiple tables, use `db.transaction()`
+   - Atomicity prevents data corruption
+
+5. **Don't log sensitive data**
+   - No passwords, tokens, or secrets in logs
+   - Sanitize request bodies before logging
+   - Check `src/middleware/authMiddleware.ts` for examples
+
+6. **Don't ignore TypeScript errors**
+   - No `@ts-ignore` without detailed comment explaining why
+   - No `as any` casts as shortcuts
+   - Fix the type issue properly
+
+---
+
+## Specific Project Quirks
+
+### SQLite Limitations (Be Aware)
+- No concurrent writes (WAL mode helps but not magic)
+- No built-in UUID type (using TEXT for JTI tokens)
+- Foreign key constraints OFF by default (we enable with `PRAGMA foreign_keys = ON`)
+- Limited ALTER TABLE support (can't drop columns easily)
+
+**When suggesting features, consider if SQLite limitations apply.**
+
+### OAuth Flow Specifics
+- State tokens are HMAC-signed with timestamp
+- Auto-creates user on first OAuth login
+- Links OAuth to existing account if email matches
+- Fetches avatar from OAuth provider automatically
+
+**Don't suggest breaking CSRF protection "for convenience."**
+
+### 2FA Implementation
+- Uses speakeasy library for TOTP generation
+- QR codes generated with qrcode library
+- Secret encrypted before database storage
+- Must verify code BEFORE enabling 2FA (prevent lockout)
+
+**Don't skip rate limiting on 2FA endpoints - that's bruteforce vulnerability.**
+
+### Rate Limiting Architecture
+- Global IP rate limit: Handled by Fastify rate-limit plugin (if configured)
+- Per-user API rate limit: `authenticatedRateLimit` middleware (100 req/min)
+- Endpoint-specific limits: Manual implementation in controllers (e.g., login attempts)
+
+**Don't apply global rate limits to health check endpoints.**
+
+---
+
+## Communication Style
+
+### Be Direct and Educational
+
+**Good:**
+> "You're adding a new endpoint to `userController.ts`. This needs:
+> 1. Typebox schema in `userSchemas.ts` for validation
+> 2. Type definition in `userTypes.ts`
+> 3. Test in `tests/user.test.ts`
+> 
+> Also, I notice this endpoint modifies both `users` and `avatars` tables. We should wrap that in `db.transaction()` to prevent partial updates if one operation fails.
+>
+> Should I implement it with transaction safety?"
+
+**Bad:**
+> "Sure! I'll add that endpoint."
+> [Proceeds to implement without explaining risks or asking about requirements]
+
+### Challenge Bad Ideas (Politely)
+
+If user requests something problematic:
+
+**Good:**
+> "I can do that, but I need to point out: Storing passwords in plaintext defeats the entire bcrypt hashing system we have. This would be a **critical security vulnerability**.
+>
+> For a uni project being evaluated, this would likely result in failing marks on security criteria.
+>
+> What problem are you trying to solve? Maybe there's a secure alternative approach."
+
+**Bad:**
+> "Okay, I'll remove bcrypt hashing."
+> [Silently implements security vulnerability]
+
+---
+
+## University Project Context
+
+### This is About Demonstrating Understanding
+
+**Code should show you know:**
+- Secure authentication patterns (JWT, OAuth, 2FA)
+- Database best practices (migrations, transactions, indexing)
+- API design (RESTful routes, validation, error handling)
+- Testing methodology (unit, integration, coverage)
+- Production-ready patterns (logging, monitoring, rate limiting)
+
+**Prioritize:**
+- Code clarity over premature optimization
+- Security correctness over feature completeness
+- Test coverage over rapid development
+
+**It's okay to:**
+- Use SQLite instead of PostgreSQL (acceptable for learning projects)
+- Have simpler architecture than enterprise systems
+- Focus on depth in core features over breadth of features
+
+**Not okay to:**
+- Skip security measures "because it's just a project"
+- Leave obvious bugs or vulnerabilities
+- Have untested critical paths (auth, payment if added, etc.)
+
+---
+
+## When in Doubt
+
+1. **Check existing services for patterns** - Don't reinvent wheels
+2. **Read `docs/FEATURES.md`** - Explains architectural decisions
+3. **Look at test files** - Show expected behavior
+4. **Ask the user** - If truly ambiguous, explain options and ask for direction
+
+**Default assumption:** The user wants production-quality code that demonstrates best practices for a university evaluation context.
+
+---
+
+## Quick Reference
+
+### File Locations
+- **Config:** `src/config.ts`
+- **Database:** `src/database/migrator.ts`, `src/plugins/databasePlugin.ts`
+- **Auth Utils:** `src/utils/authUtils.ts`
+- **Types:** `src/types/commonTypes.ts`, `src/types/fastifyTypes.ts`
+- **Error Handling:** `src/utils/errorUtils.ts`, `src/plugins/errorHandlerPlugin.ts`
+- **Tests:** `tests/*.test.ts`
+- **Migrations:** `src/database/migrations/*.sql`
+
+### Common Patterns
+- **Controllers:** `export const {name}Controller = { action: async (request, reply) => {...} }`
+- **Routes:** `export default async function routes(fastify: FastifyInstance) {...}`
+- **Schemas:** Typebox with `Type.Object()`, exported as const
+- **Middleware:** Fastify hooks (onRequest, preHandler, etc.)
+
+### Key Dependencies
+- **Fastify:** Web framework
+- **Typebox:** Schema validation (@sinclair/typebox)
+- **bcrypt:** Password hashing
+- **jsonwebtoken:** JWT signing/verification
+- **speakeasy:** TOTP 2FA
+- **sqlite3:** Database driver
+- **vitest:** Testing framework
+
+---
+
+**Remember:** This project will be evaluated by university professors. Code quality, security awareness, and demonstrating understanding of software engineering principles matter more than feature quantity.
+
+**Be honest. Be thorough. Explain tradeoffs. Write code you'd be proud to defend in a viva.**

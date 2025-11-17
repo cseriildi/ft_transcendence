@@ -1,4 +1,8 @@
 import { createResponseSchema, commonDataSchemas } from "../../utils/schemaUtils.ts";
+import { getPasswordRequirements } from "../../utils/passwordUtils.ts";
+import { config } from "../../config.ts";
+
+const isProduction = config.server.env === "production";
 
 export const AuthSchemas = {
   // POST /auth/register
@@ -8,8 +12,17 @@ export const AuthSchemas = {
       properties: {
         username: { type: "string", minLength: 3, maxLength: 15 },
         email: { type: "string", format: "email" },
-        password: { type: "string", minLength: 8, maxLength: 20 },
-        confirmPassword: { type: "string", minLength: 8 },
+        password: {
+          type: "string",
+          minLength: isProduction ? 10 : 1,
+          maxLength: 128,
+          description: getPasswordRequirements(),
+        },
+        confirmPassword: {
+          type: "string",
+          minLength: isProduction ? 10 : 1,
+          description: "Must match password field",
+        },
       },
       required: ["username", "email", "password", "confirmPassword"],
       additionalProperties: false,

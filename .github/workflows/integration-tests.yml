@@ -37,13 +37,16 @@ jobs:
           # Check if all containers are running
           docker compose ps
 
-          # Wait for nginx and services to be ready by checking frontend access
-          timeout=60
+          # Wait for nginx gateway to be ready
+          # Nginx has built-in health checks and waits for all backend services
+          # before starting, so if nginx responds, all backends are ready
+          echo "Waiting for nginx gateway and all backend services..."
+          timeout=90
           while [ $timeout -gt 0 ]; do
             # Check if we can reach the frontend through nginx
             # -k: accept self-signed cert, -s: silent, -f: fail on error, -I: HEAD request only
             if curl -k -s -f -I https://$NGINX_HOST:$NGINX_HTTPS_PORT > /dev/null 2>&1; then
-              echo "✓ Services are ready!"
+              echo "✓ Nginx gateway is ready (all backend services verified by nginx)"
               break
             fi
             echo "Waiting for services... ($timeout seconds left)"
@@ -56,10 +59,15 @@ jobs:
             echo "Final container status:"
             docker compose ps -a
             echo ""
-            echo "Service logs:"
-            docker compose logs
+            echo "Nginx logs:"
+            docker compose logs nginx
+            echo ""
+            echo "Database logs:"
+            docker compose logs databank
             exit 1
           fi
+
+          echo "✓ All services are ready!"
 
       - name: Test HTTPS frontend access
         run: |
