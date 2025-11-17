@@ -14,7 +14,7 @@ declare global {
 // Helper to get config value with fallback
 function getConfigValue(
   key: keyof NonNullable<typeof window.APP_CONFIG>,
-  fallback: string,
+  fallback: string
 ): string {
   return window.APP_CONFIG?.[key] || fallback;
 }

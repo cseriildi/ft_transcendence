@@ -11,9 +11,7 @@ export class Edit {
     this.router = router;
   }
 
-  async handleFormSubmit(
-    e: Event,
-  ): Promise<{ success: boolean; message?: string }> {
+  async handleFormSubmit(e: Event): Promise<{ success: boolean; message?: string }> {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -33,9 +31,7 @@ export class Edit {
     }
 
     const emailInput = document.getElementById("email") as HTMLInputElement;
-    const usernameInput = document.getElementById(
-      "username",
-    ) as HTMLInputElement;
+    const usernameInput = document.getElementById("username") as HTMLInputElement;
     const avatarInput = document.getElementById("avatar") as HTMLInputElement;
 
     const requests = [];
@@ -50,7 +46,7 @@ export class Edit {
           },
           body: JSON.stringify({ email }),
           credentials: "include",
-        }),
+        })
       );
     }
 
@@ -64,7 +60,7 @@ export class Edit {
           },
           body: JSON.stringify({ username }),
           credentials: "include",
-        }),
+        })
       );
     }
 
@@ -80,7 +76,7 @@ export class Edit {
             Authorization: `Bearer ${getAccessToken()}`,
           },
           credentials: "include",
-        }),
+        })
       );
     }
 
@@ -93,7 +89,7 @@ export class Edit {
             return data.message || "Unknown error";
           }
           return null;
-        }),
+        })
       );
 
       const errorMessages = errors.filter((error) => error !== null);
@@ -152,23 +148,18 @@ export class Edit {
     });
 
     try {
-      const response = await fetchWithRefresh(
-        `${config.apiUrl}/api/users/${getUserId()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-          method: "GET",
-          credentials: "include",
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
         },
-      );
+        method: "GET",
+        credentials: "include",
+      });
       if (response.ok) {
         const userData = await response.json();
         console.log(userData);
         const emailInput = document.getElementById("email") as HTMLInputElement;
-        const usernameInput = document.getElementById(
-          "username",
-        ) as HTMLInputElement;
+        const usernameInput = document.getElementById("username") as HTMLInputElement;
         if (emailInput && usernameInput) {
           emailInput.value = userData.data.email;
           usernameInput.value = userData.data.username;

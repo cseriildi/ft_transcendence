@@ -39,7 +39,7 @@ class SecureTokenManager {
           this.handleTokenExpiry();
         }
       },
-      12 * 60 * 1000,
+      12 * 60 * 1000
     );
   }
 
@@ -92,9 +92,7 @@ class SecureTokenManager {
     if (this.onTokenExpiry) {
       this.onTokenExpiry();
     } else {
-      console.warn(
-        "No token expiry callback set, using window.location fallback",
-      );
+      console.warn("No token expiry callback set, using window.location fallback");
       this.router.navigate("/");
     }
   }
