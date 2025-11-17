@@ -19,13 +19,13 @@ async function matchRoutes(fastify: FastifyInstance) {
     matchController.createMatch
   );
 
-  // GET /matches/:username - Get user's matches
+  // GET /matches/:userId - Get user's matches
   fastify.get<{ Params: GetMatchesQuery; Reply: ApiResponse<Match[]> }>(
-    "/matches/:username",
+    "/matches/:userId",
     {
       schema: {
         tags: ["matches"],
-        description: "Get all matches for a specific user",
+        description: "Get all matches for a specific user by user ID",
         ...MatchSchemas.getUserMatches,
       },
     },
