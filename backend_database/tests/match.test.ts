@@ -57,8 +57,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should create a match", async () => {
     const payload = {
-      winner: user1.username,
-      loser: user2.username,
+      winner_Id: user1.id,
+      loser_Id: user2.id,
       winner_score: 21,
       loser_score: 15,
     };
@@ -72,8 +72,8 @@ describe("Match Routes", () => {
     expect(res.statusCode).toBe(201);
     const body = res.json() as any;
     expect(body.success).toBe(true);
-    expect(body.data?.winner).toBe(user1.username);
-    expect(body.data?.loser).toBe(user2.username);
+    expect(body.data?.winner_Id).toBe(user1.id);
+    expect(body.data?.loser_Id).toBe(user2.id);
     expect(body.data?.winner_score).toBe(21);
     expect(body.data?.loser_score).toBe(15);
     expect(body.data).toHaveProperty("id");
@@ -82,8 +82,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate required fields", async () => {
     const payload = {
-      winner: user1.username,
-      // missing loser, scores
+      winner_Id: user1.id,
+      // missing loser_Id, scores
     };
 
     const res = await app.inject({
@@ -99,8 +99,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate winner exists", async () => {
     const payload = {
-      winner: "nonexistent",
-      loser: user2.username,
+      winner_Id: 99999,
+      loser_Id: user2.id,
       winner_score: 21,
       loser_score: 15,
     };
@@ -118,8 +118,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate loser exists", async () => {
     const payload = {
-      winner: user1.username,
-      loser: "nonexistent",
+      winner_Id: user1.id,
+      loser_Id: 99999,
       winner_score: 21,
       loser_score: 15,
     };
@@ -137,8 +137,8 @@ describe("Match Routes", () => {
 
   it("POST /matches should validate scores are positive", async () => {
     const payload = {
-      winner: user1.username,
-      loser: user2.username,
+      winner_Id: user1.id,
+      loser_Id: user2.id,
       winner_score: -5,
       loser_score: 15,
     };
@@ -154,14 +154,14 @@ describe("Match Routes", () => {
     expect(body.success).toBe(false);
   });
 
-  it(`GET ${API_PREFIX}/matches/:username should return user matches`, async () => {
+  it(`GET ${API_PREFIX}/matches/:userId should return user matches`, async () => {
     // Create some matches
     await app.inject({
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner: user1.username,
-        loser: user2.username,
+        winner_Id: user1.id,
+        loser_Id: user2.id,
         winner_score: 21,
         loser_score: 15,
       },
@@ -171,8 +171,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner: user2.username,
-        loser: user1.username,
+        winner_Id: user2.id,
+        loser_Id: user1.id,
         winner_score: 21,
         loser_score: 18,
       },
@@ -180,7 +180,7 @@ describe("Match Routes", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: `${API_PREFIX}/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.id}`,
     });
 
     expect(res.statusCode).toBe(200);
@@ -191,14 +191,14 @@ describe("Match Routes", () => {
 
     // Check that matches include user1
     body.data.forEach((match: any) => {
-      expect(match.winner === user1.username || match.loser === user1.username).toBe(true);
+      expect(match.winner_Id === user1.id || match.loser_Id === user1.id).toBe(true);
     });
   });
 
-  it(`GET ${API_PREFIX}/matches/:username should return empty array for no matches`, async () => {
+  it(`GET ${API_PREFIX}/matches/:userId should return empty array for no matches`, async () => {
     const res = await app.inject({
       method: "GET",
-      url: `${API_PREFIX}/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.id}`,
     });
 
     expect(res.statusCode).toBe(200);
@@ -208,10 +208,10 @@ describe("Match Routes", () => {
     expect(body.data.length).toBe(0);
   });
 
-  it(`GET ${API_PREFIX}/matches/:username should return 404 for non-existent user`, async () => {
+  it(`GET ${API_PREFIX}/matches/:userId should return 404 for non-existent user`, async () => {
     const res = await app.inject({
       method: "GET",
-      url: `${API_PREFIX}/matches/nonexistentuser`,
+      url: `${API_PREFIX}/matches/99999`,
     });
 
     expect(res.statusCode).toBe(404);
@@ -219,14 +219,14 @@ describe("Match Routes", () => {
     expect(body.success).toBe(false);
   });
 
-  it(`GET ${API_PREFIX}/matches/:username should order matches by date (newest first)`, async () => {
+  it(`GET ${API_PREFIX}/matches/:userId should order matches by date (newest first)`, async () => {
     // Create matches with slight delay
     await app.inject({
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner: user1.username,
-        loser: user2.username,
+        winner_Id: user1.id,
+        loser_Id: user2.id,
         winner_score: 21,
         loser_score: 15,
       },
@@ -238,8 +238,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner: user2.username,
-        loser: user1.username,
+        winner_Id: user2.id,
+        loser_Id: user1.id,
         winner_score: 21,
         loser_score: 18,
       },
@@ -247,7 +247,7 @@ describe("Match Routes", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: `${API_PREFIX}/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.id}`,
     });
 
     expect(res.statusCode).toBe(200);
@@ -266,8 +266,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner: user1.username,
-        loser: user2.username,
+        winner_Id: user1.id,
+        loser_Id: user2.id,
         winner_score: 21,
         loser_score: 15,
       },
@@ -277,8 +277,8 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload: {
-        winner: user1.username,
-        loser: user2.username,
+        winner_Id: user1.id,
+        loser_Id: user2.id,
         winner_score: 21,
         loser_score: 10,
       },
@@ -286,15 +286,15 @@ describe("Match Routes", () => {
 
     const res = await app.inject({
       method: "GET",
-      url: `${API_PREFIX}/matches/${user1.username}`,
+      url: `${API_PREFIX}/matches/${user1.id}`,
     });
 
     expect(res.statusCode).toBe(200);
     const body = res.json() as any;
     expect(body.data.length).toBe(2);
     body.data.forEach((match: any) => {
-      expect(match.winner).toBe(user1.username);
-      expect(match.loser).toBe(user2.username);
+      expect(match.winner_Id).toBe(user1.id);
+      expect(match.loser_Id).toBe(user2.id);
     });
   });
 });

@@ -1,19 +1,19 @@
 export interface Match {
   id: number;
-  winner: string;
-  loser: string;
+  winner_Id: number;
+  loser_Id: number;
   winner_score: number;
   loser_score: number;
   played_at: string;
 }
 
 export interface CreateMatchBody {
-  winner: string;
-  loser: string;
+  winner_Id: number;
+  loser_Id: number;
   winner_score: number;
   loser_score: number;
 }
 
 export interface GetMatchesQuery {
-  username: string;
+  userId: string; // URL params are always strings, parsed to number in controller
 }
