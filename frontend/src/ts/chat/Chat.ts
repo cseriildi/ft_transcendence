@@ -11,6 +11,40 @@ export class Chat {
     this.router = router;
   }
 
+  private escapeHtml(text: string): string {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  private createMessageElement(timestamp: string, username: string, message: string, isOwnMessage: boolean): HTMLElement {
+    const messageElement = document.createElement("div");
+    
+    // Escape all user-provided content
+    const escapedUsername = this.escapeHtml(username);
+    const escapedMessage = this.escapeHtml(message);
+    
+    const colorClass = isOwnMessage ? "text-neon-pink" : "text-neon-green";
+    const alignmentClasses = isOwnMessage ? "mb-2 text-right ml-auto max-w-s" : "mb-2 text-left mr-auto max-w-s";
+    
+    const timestampSpan = document.createElement("span");
+    timestampSpan.className = colorClass;
+    timestampSpan.textContent = `[${timestamp}] ${escapedUsername}:`;
+    
+    const messageSpan = document.createElement("span");
+    messageSpan.className = "text-white";
+    messageSpan.textContent = escapedMessage;
+    
+    // Append elements safely
+    messageElement.appendChild(timestampSpan);
+    messageElement.appendChild(document.createElement("br"));
+    messageElement.appendChild(messageSpan);
+    
+    messageElement.className = alignmentClasses;
+    
+    return messageElement;
+  }
+
   private async loadAllUsers(): Promise<void> {
     if (this.userCache.size > 0) {
       return;
@@ -75,11 +109,9 @@ export class Chat {
       if (message && this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
 
-        const messageElement = document.createElement("div");
         const timestamp = new Date().toLocaleTimeString();
-        const currentUsername = getUsername();
-        messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${currentUsername}:</span><br><span class="text-white">${message}</span>`;
-        messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
+        const currentUsername = getUsername() || "Unknown";
+        const messageElement = this.createMessageElement(timestamp, currentUsername, message, true);
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
         chatInput.value = "";
@@ -115,22 +147,13 @@ export class Chat {
         if (data.history && Array.isArray(data.history)) {
           const processMessages = async () => {
             for (const message of data.history) {
-              const messageElement = document.createElement("div");
               const timestamp = new Date(message.timestamp).toLocaleTimeString();
-              const currentUsername = getUsername();
               const currentUserId = getUserId();
 
               const displayUsername = await this.getUsernameById(message.username);
 
               const isOwnMessage = message.username === currentUserId;
-
-              if (isOwnMessage) {
-                messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${message.message}</span>`;
-                messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
-              } else {
-                messageElement.innerHTML = `<span class="text-neon-green">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${message.message}</span>`;
-                messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-s");
-              }
+              const messageElement = this.createMessageElement(timestamp, displayUsername, message.message, isOwnMessage);
 
               chatBox.appendChild(messageElement);
             }
@@ -141,21 +164,13 @@ export class Chat {
         }
       } else if (data.type === "message") {
         const handleIncomingMessage = async () => {
-          const messageElement = document.createElement("div");
           const timestamp = new Date(data.timestamp).toLocaleTimeString();
           const currentUserId = getUserId();
 
           const displayUsername = await this.getUsernameById(data.username);
 
           const isOwnMessage = data.username === currentUserId;
-
-          if (isOwnMessage) {
-            messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${data.message}</span>`;
-            messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
-          } else {
-            messageElement.innerHTML = `<span class="text-neon-green">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${data.message}</span>`;
-            messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-s");
-          }
+          const messageElement = this.createMessageElement(timestamp, displayUsername, data.message, isOwnMessage);
 
           chatBox.appendChild(messageElement);
           chatBox.scrollTop = chatBox.scrollHeight;

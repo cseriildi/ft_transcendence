@@ -15,18 +15,33 @@ export const startHeartbeat = () => {
       return;
     }
 
-    try {
+    const attemptHeartbeat = async (retryOnAuth = true): Promise<void> => {
       const userId = getUserId();
-      if (userId) {
-        // Use XMLHttpRequest to avoid any potential fetch middleware issues
+      if (!userId) return;
+
+      return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PATCH", `${config.apiUrl}/api/users/${userId}/heartbeat`);
         xhr.setRequestHeader("Authorization", `Bearer ${getAccessToken()}`);
         // Explicitly do NOT set Content-Type header
 
-        xhr.onload = function () {
+        xhr.onload = async function () {
           if (xhr.status === 200) {
             console.log("Heartbeat sent successfully (XHR method)");
+            resolve();
+          } else if (xhr.status === 401 && retryOnAuth) {
+            console.log("Heartbeat failed with 401, attempting token refresh...");
+            try {
+              await SecureTokenManager.getInstance().refreshAccessToken();
+              console.log("Token refreshed, retrying heartbeat...");
+              // Retry once with the new token
+              await attemptHeartbeat(false);
+              resolve();
+            } catch (refreshError) {
+              console.error("Token refresh failed during heartbeat:", refreshError);
+              stopHeartbeat();
+              reject(refreshError);
+            }
           } else {
             console.error("Heartbeat failed (XHR):", xhr.status, xhr.responseText);
 
@@ -34,15 +49,21 @@ export const startHeartbeat = () => {
               console.warn("Heartbeat endpoint not available, stopping heartbeat");
               stopHeartbeat();
             }
+            reject(new Error(`Heartbeat failed with status ${xhr.status}`));
           }
         };
 
         xhr.onerror = function () {
           console.error("Failed to send heartbeat (XHR error)");
+          reject(new Error("XHR error"));
         };
 
         xhr.send();
-      }
+      });
+    };
+
+    try {
+      await attemptHeartbeat();
     } catch (error) {
       console.error("Failed to send heartbeat:", error);
     }
