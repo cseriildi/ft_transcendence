@@ -2,11 +2,28 @@ import { SecureTokenManager } from "./secureTokenManager.js";
 import { config } from "../config.js";
 
 let heartbeatInterval: number | null = null;
+let isStartingHeartbeat = false;
 
 export const startHeartbeat = () => {
   console.log("Starting heartbeat - version 2.0 (no content-type header)");
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
+  
+  // Prevent concurrent calls
+  if (isStartingHeartbeat) {
+    console.log("Heartbeat start already in progress, ignoring duplicate call");
+    return;
+  }
+  
+  isStartingHeartbeat = true;
+  
+  try {
+    if (heartbeatInterval) {
+      console.log("Clearing existing heartbeat interval");
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+  } finally {
+    // Ensure flag is reset even if clearing fails
+    isStartingHeartbeat = false;
   }
 
   const sendHeartbeat = async () => {
@@ -76,9 +93,22 @@ export const startHeartbeat = () => {
 };
 
 export const stopHeartbeat = () => {
+  console.log("Stopping heartbeat");
+  
+  // Wait for any ongoing start operation to complete
+  if (isStartingHeartbeat) {
+    console.log("Waiting for heartbeat start to complete before stopping");
+    // Use a small timeout to allow the start operation to finish
+    setTimeout(() => stopHeartbeat(), 10);
+    return;
+  }
+  
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
     heartbeatInterval = null;
+    console.log("Heartbeat stopped successfully");
+  } else {
+    console.log("No active heartbeat to stop");
   }
 };
 
