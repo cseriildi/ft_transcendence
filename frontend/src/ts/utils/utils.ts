@@ -1,6 +1,5 @@
 import { SecureTokenManager } from "./secureTokenManager.js";
 import { config } from "../config.js";
-import { fetchWithRefresh } from "./fetchUtils.js";
 
 let heartbeatInterval: number | null = null;
 
