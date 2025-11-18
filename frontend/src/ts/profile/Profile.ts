@@ -23,7 +23,9 @@ export class Profile {
     const friendsListContainer = document.getElementById("friends-list");
     const userEmail = document.getElementById("user-email");
     const findFriendsBtn = document.getElementById("find-friends-btn");
-    let users: Array<{ id: number; username: string; avatar_url: string; last_seen?: string }> | undefined;
+    let users:
+      | Array<{ id: number; username: string; avatar_url: string; last_seen?: string }>
+      | undefined;
 
     findFriendsBtn?.addEventListener("click", () => this.router.navigate("/users"));
 
@@ -102,7 +104,7 @@ export class Profile {
                   userWithAvatar?.avatar_url || "/uploads/avatars/default/default-avatar.png";
 
                 const isOnline = friend.is_online;
-                
+
                 const isPending = friend.status === "pending";
                 const isInviter = friend.is_inviter;
 

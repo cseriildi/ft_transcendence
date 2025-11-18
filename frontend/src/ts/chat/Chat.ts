@@ -19,28 +19,28 @@ export class Chat {
     try {
       const response = await fetch(`${config.apiUrl}/api/users`, {
         headers: {
-          'Authorization': `Bearer ${getAccessToken()}`,
+          Authorization: `Bearer ${getAccessToken()}`,
         },
       });
 
       if (response.ok) {
         const userData = await response.json();
         const users = userData.data;
-        
+
         users.forEach((user: { id: number; username: string }) => {
           this.userCache.set(user.id.toString(), user.username);
         });
       } else {
-        console.error('Failed to fetch users list');
+        console.error("Failed to fetch users list");
       }
     } catch (error) {
-      console.error('Error fetching users list:', error);
+      console.error("Error fetching users list:", error);
     }
   }
 
   private async getUsernameById(userId: string): Promise<string> {
     await this.loadAllUsers();
-    
+
     if (this.userCache.has(userId)) {
       return this.userCache.get(userId)!;
     }
@@ -119,11 +119,11 @@ export class Chat {
               const timestamp = new Date(message.timestamp).toLocaleTimeString();
               const currentUsername = getUsername();
               const currentUserId = getUserId();
-              
+
               const displayUsername = await this.getUsernameById(message.username);
-              
+
               const isOwnMessage = message.username === currentUserId;
-              
+
               if (isOwnMessage) {
                 messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${message.message}</span>`;
                 messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
@@ -131,12 +131,12 @@ export class Chat {
                 messageElement.innerHTML = `<span class="text-neon-green">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${message.message}</span>`;
                 messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-s");
               }
-              
+
               chatBox.appendChild(messageElement);
             }
             chatBox.scrollTop = chatBox.scrollHeight;
           };
-          
+
           processMessages();
         }
       } else if (data.type === "message") {
@@ -144,11 +144,11 @@ export class Chat {
           const messageElement = document.createElement("div");
           const timestamp = new Date(data.timestamp).toLocaleTimeString();
           const currentUserId = getUserId();
-          
+
           const displayUsername = await this.getUsernameById(data.username);
-          
+
           const isOwnMessage = data.username === currentUserId;
-          
+
           if (isOwnMessage) {
             messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${data.message}</span>`;
             messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
@@ -156,11 +156,11 @@ export class Chat {
             messageElement.innerHTML = `<span class="text-neon-green">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${data.message}</span>`;
             messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-s");
           }
-          
+
           chatBox.appendChild(messageElement);
           chatBox.scrollTop = chatBox.scrollHeight;
         };
-        
+
         handleIncomingMessage();
       }
     };

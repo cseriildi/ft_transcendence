@@ -4,7 +4,7 @@ import { config } from "../config.js";
 let heartbeatInterval: number | null = null;
 
 export const startHeartbeat = () => {
-  console.log('Starting heartbeat - version 2.0 (no content-type header)');
+  console.log("Starting heartbeat - version 2.0 (no content-type header)");
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
   }
@@ -20,36 +20,36 @@ export const startHeartbeat = () => {
       if (userId) {
         // Use XMLHttpRequest to avoid any potential fetch middleware issues
         const xhr = new XMLHttpRequest();
-        xhr.open('PATCH', `${config.apiUrl}/api/users/${userId}/heartbeat`);
-        xhr.setRequestHeader('Authorization', `Bearer ${getAccessToken()}`);
+        xhr.open("PATCH", `${config.apiUrl}/api/users/${userId}/heartbeat`);
+        xhr.setRequestHeader("Authorization", `Bearer ${getAccessToken()}`);
         // Explicitly do NOT set Content-Type header
-        
-        xhr.onload = function() {
+
+        xhr.onload = function () {
           if (xhr.status === 200) {
-            console.log('Heartbeat sent successfully (XHR method)');
+            console.log("Heartbeat sent successfully (XHR method)");
           } else {
-            console.error('Heartbeat failed (XHR):', xhr.status, xhr.responseText);
-            
+            console.error("Heartbeat failed (XHR):", xhr.status, xhr.responseText);
+
             if (xhr.status === 404 || xhr.status === 405) {
-              console.warn('Heartbeat endpoint not available, stopping heartbeat');
+              console.warn("Heartbeat endpoint not available, stopping heartbeat");
               stopHeartbeat();
             }
           }
         };
-        
-        xhr.onerror = function() {
-          console.error('Failed to send heartbeat (XHR error)');
+
+        xhr.onerror = function () {
+          console.error("Failed to send heartbeat (XHR error)");
         };
-        
+
         xhr.send();
       }
     } catch (error) {
-      console.error('Failed to send heartbeat:', error);
+      console.error("Failed to send heartbeat:", error);
     }
   };
 
   sendHeartbeat();
-  
+
   // Send heartbeat every 30 seconds
   heartbeatInterval = window.setInterval(sendHeartbeat, 30000);
 };

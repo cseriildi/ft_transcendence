@@ -9,7 +9,14 @@ import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
-import { getUserId, getAccessToken, isUserAuthorized, getUsername, startHeartbeat, stopHeartbeat } from "./utils/utils.js";
+import {
+  getUserId,
+  getAccessToken,
+  isUserAuthorized,
+  getUsername,
+  startHeartbeat,
+  stopHeartbeat,
+} from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
 let currentPong: Pong | null = null;
