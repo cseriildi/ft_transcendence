@@ -11,9 +11,9 @@ class SecureTokenManager {
     this.router = router;
   }
 
-  static getInstance(): SecureTokenManager {
+  static getInstance(router?: Router): SecureTokenManager {
     if (!SecureTokenManager.instance) {
-      SecureTokenManager.instance = new SecureTokenManager(new Router());
+      SecureTokenManager.instance = new SecureTokenManager(router || new Router());
     }
     return SecureTokenManager.instance;
   }

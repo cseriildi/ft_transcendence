@@ -9,7 +9,14 @@ import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
-import { getUserId, getAccessToken, isUserAuthorized, getUsername } from "./utils/utils.js";
+import {
+  getUserId,
+  getAccessToken,
+  isUserAuthorized,
+  getUsername,
+  startHeartbeat,
+  stopHeartbeat,
+} from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
 const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
@@ -168,6 +175,7 @@ const initPongPage = async () => {
       });
 
       if (response.ok) {
+        stopHeartbeat();
         sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("userId");
         sessionStorage.removeItem("username");
@@ -427,16 +435,6 @@ const editPage = new Edit(router);
 const usersPage = new Users(router);
 const chatPage = new Chat(router);
 
-router.addRoute("/", "home", () => homePage.initPage());
-router.addRoute("/pong", "pong", initPongPage);
-router.addRoute("/login", "login", () => loginPage.initPage());
-router.addRoute("/register", "register", () => registerPage.initPage());
-router.addRoute("/profile", "profile", () => profilePage.initPage());
-router.addRoute("/edit", "edit", () => editPage.initPage());
-router.addRoute("/users", "users", () => usersPage.initPage());
-router.addRoute("/chat", "chat", () => chatPage.initPage());
-router.addRoute("/404", "404", initNotFoundPage);
-
 const createPopup = () => {
   const popup = document.getElementById("error-popup");
   if (!popup) {
@@ -458,13 +456,28 @@ export const showErrorPopup = (message: string) => {
 createPopup();
 
 (async () => {
-  const tokenManager = SecureTokenManager.getInstance();
+  const tokenManager = SecureTokenManager.getInstance(router);
 
   tokenManager.setTokenExpiryCallback(() => {
     showErrorPopup("Session expired. Please log in again.");
   });
 
   await tokenManager.initialize();
+
+  // Start heartbeat if user is authorized
+  if (isUserAuthorized()) {
+    startHeartbeat();
+  }
+
+  router.addRoute("/", "home", () => homePage.initPage());
+  router.addRoute("/pong", "pong", initPongPage);
+  router.addRoute("/login", "login", () => loginPage.initPage());
+  router.addRoute("/register", "register", () => registerPage.initPage());
+  router.addRoute("/profile", "profile", () => profilePage.initPage());
+  router.addRoute("/edit", "edit", () => editPage.initPage());
+  router.addRoute("/users", "users", () => usersPage.initPage());
+  router.addRoute("/chat", "chat", () => chatPage.initPage());
+  router.addRoute("/404", "404", initNotFoundPage);
 
   router.init();
 })();

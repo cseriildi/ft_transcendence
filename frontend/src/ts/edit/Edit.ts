@@ -35,6 +35,8 @@ export class Edit {
     const avatarInput = document.getElementById("avatar") as HTMLInputElement;
 
     const requests = [];
+    const requestTypes: string[] = [];
+    let newUsername: string | null = null;
 
     if (emailInput && email !== emailInput.defaultValue) {
       requests.push(
@@ -48,9 +50,11 @@ export class Edit {
           credentials: "include",
         })
       );
+      requestTypes.push("email");
     }
 
     if (usernameInput && username !== usernameInput.defaultValue) {
+      newUsername = username;
       requests.push(
         fetchWithRefresh(`${config.apiUrl}/api/users/${userId}/username`, {
           method: "PATCH",
@@ -62,6 +66,7 @@ export class Edit {
           credentials: "include",
         })
       );
+      requestTypes.push("username");
     }
 
     if (avatarInput?.files?.length) {
@@ -83,10 +88,16 @@ export class Edit {
     try {
       const responses = await Promise.all(requests);
       const errors = await Promise.all(
-        responses.map(async (response) => {
+        responses.map(async (response, index) => {
           if (!response.ok) {
             const data = await response.json();
             return data.message || "Unknown error";
+          } else {
+            // If username update was successful, update localStorage
+            if (requestTypes[index] === "username" && newUsername) {
+              localStorage.setItem("username", newUsername);
+              console.log("Username updated in localStorage:", newUsername);
+            }
           }
           return null;
         })
