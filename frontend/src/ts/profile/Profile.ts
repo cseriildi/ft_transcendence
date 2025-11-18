@@ -23,7 +23,7 @@ export class Profile {
     const friendsListContainer = document.getElementById("friends-list");
     const userEmail = document.getElementById("user-email");
     const findFriendsBtn = document.getElementById("find-friends-btn");
-    let users: Array<{ id: number; username: string; avatar_url: string }> | undefined;
+    let users: Array<{ id: number; username: string; avatar_url: string; last_seen?: string }> | undefined;
 
     findFriendsBtn?.addEventListener("click", () => this.router.navigate("/users"));
 
@@ -94,12 +94,15 @@ export class Profile {
                 username: string;
                 status: string;
                 is_inviter: boolean;
+                is_online: boolean;
               }) => {
                 // Find the avatar URL from the users list
                 const userWithAvatar = users?.find((u: any) => u.id === friend.user_id);
                 const avatarUrl =
                   userWithAvatar?.avatar_url || "/uploads/avatars/default/default-avatar.png";
 
+                const isOnline = friend.is_online;
+                
                 const isPending = friend.status === "pending";
                 const isInviter = friend.is_inviter;
 
@@ -114,27 +117,70 @@ export class Profile {
                   "cursor-pointer",
                   "w-64",
                   "rounded-lg",
-                  "text-white"
+                  "text-white",
+                  "relative"
                 );
+
+                // Avatar container with online indicator
+                const avatarContainer = document.createElement("div");
+                avatarContainer.classList.add("relative", "min-w-[2rem]");
 
                 const avatar = document.createElement("img");
                 avatar.src = `${config.apiUrl}${avatarUrl}`;
                 avatar.alt = `${friend.username}'s avatar`;
-                avatar.classList.add("w-8", "h-8", "rounded-full", "min-w-[2rem]");
+                avatar.classList.add("w-8", "h-8", "rounded-full");
 
                 // Add opacity if pending
                 if (isPending) {
                   avatar.classList.add("opacity-50");
                 }
 
+                avatarContainer.appendChild(avatar);
+
+                // Add online indicator
+                if (isOnline && !isPending) {
+                  const onlineIndicator = document.createElement("div");
+                  onlineIndicator.classList.add(
+                    "absolute",
+                    "-bottom-0.5",
+                    "-right-0.5",
+                    "w-3",
+                    "h-3",
+                    "bg-green-500",
+                    "rounded-full",
+                    "border-2",
+                    "border-gray-800"
+                  );
+                  avatarContainer.appendChild(onlineIndicator);
+                }
+
                 const usernameContainer = document.createElement("div");
                 usernameContainer.classList.add("flex", "flex-col", "flex-1", "min-w-0");
+
+                const usernameRow = document.createElement("div");
+                usernameRow.classList.add("flex", "items-center", "gap-2");
 
                 const username = document.createElement("span");
                 username.textContent = friend.username;
                 username.classList.add("text-sm", "font-medium", "truncate");
 
-                usernameContainer.appendChild(username);
+                usernameRow.appendChild(username);
+
+                // Add online status text
+                if (!isPending) {
+                  const onlineStatus = document.createElement("span");
+                  onlineStatus.textContent = isOnline ? "Online" : "Offline";
+                  onlineStatus.classList.add(
+                    "text-xs",
+                    "px-1.5",
+                    "py-0.5",
+                    "rounded",
+                    isOnline ? "text-green-400" : "text-gray-400"
+                  );
+                  usernameRow.appendChild(onlineStatus);
+                }
+
+                usernameContainer.appendChild(usernameRow);
 
                 // Add pending indicator
                 if (isPending) {
@@ -144,7 +190,7 @@ export class Profile {
                   usernameContainer.appendChild(statusLabel);
                 }
 
-                userItem.appendChild(avatar);
+                userItem.appendChild(avatarContainer);
                 userItem.appendChild(usernameContainer);
                 friendsListContainer.appendChild(userItem);
 

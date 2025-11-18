@@ -9,7 +9,7 @@ import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
-import { getUserId, getAccessToken, isUserAuthorized, getUsername } from "./utils/utils.js";
+import { getUserId, getAccessToken, isUserAuthorized, getUsername, startHeartbeat, stopHeartbeat } from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
 let currentPong: Pong | null = null;
@@ -84,6 +84,7 @@ const initPongPage = async () => {
       });
 
       if (response.ok) {
+        stopHeartbeat();
         sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("userId");
         sessionStorage.removeItem("username");
@@ -275,6 +276,11 @@ createPopup();
   });
 
   await tokenManager.initialize();
+
+  // Start heartbeat if user is authorized
+  if (isUserAuthorized()) {
+    startHeartbeat();
+  }
 
   router.addRoute("/", "home", () => homePage.initPage());
   router.addRoute("/pong", "pong", initPongPage);

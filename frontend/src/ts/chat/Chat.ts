@@ -79,7 +79,7 @@ export class Chat {
         const timestamp = new Date().toLocaleTimeString();
         const currentUsername = getUsername();
         messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${currentUsername}:</span><br><span class="text-white">${message}</span>`;
-        messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-xs");
+        messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
         chatInput.value = "";
@@ -126,10 +126,10 @@ export class Chat {
               
               if (isOwnMessage) {
                 messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${message.message}</span>`;
-                messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-xs");
+                messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
               } else {
                 messageElement.innerHTML = `<span class="text-neon-green">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${message.message}</span>`;
-                messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-xs");
+                messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-s");
               }
               
               chatBox.appendChild(messageElement);
@@ -151,10 +151,10 @@ export class Chat {
           
           if (isOwnMessage) {
             messageElement.innerHTML = `<span class="text-neon-pink">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${data.message}</span>`;
-            messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-xs");
+            messageElement.classList.add("mb-2", "text-right", "ml-auto", "max-w-s");
           } else {
             messageElement.innerHTML = `<span class="text-neon-green">[${timestamp}] ${displayUsername}:</span><br><span class="text-white">${data.message}</span>`;
-            messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-xs");
+            messageElement.classList.add("mb-2", "text-left", "mr-auto", "max-w-s");
           }
           
           chatBox.appendChild(messageElement);
