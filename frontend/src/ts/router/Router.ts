@@ -19,6 +19,11 @@ class Router {
   }
 
   private async loadTemplates() {
+    // Only load templates if they haven't been loaded yet
+    if (this.templates.size > 0) {
+      return;
+    }
+
     const templateFiles = [
       "home",
       "pong",

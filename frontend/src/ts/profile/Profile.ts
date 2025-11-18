@@ -148,25 +148,18 @@ export class Profile {
                 userItem.appendChild(usernameContainer);
                 friendsListContainer.appendChild(userItem);
 
-                // Only allow chat for accepted friends
-                if (!isPending) {
-                  userItem.addEventListener("click", () => {
-                    const currentUserId = getUserId();
-                    const friendId = friend.user_id;
-                    if (currentUserId === null) {
-                      console.error("Current user ID is null, cannot create chat ID.");
-                      return;
-                    }
-                    const chatId = [Number(currentUserId), Number(friendId)]
-                      .sort((a, b) => a - b)
-                      .join("-");
-                    this.router.navigate(`/chat?chatId=${chatId}&username=${friend.username}`);
-                  });
-                } else {
-                  // Change cursor for pending requests
-                  userItem.classList.remove("cursor-pointer");
-                  userItem.classList.add("cursor-not-allowed", "opacity-75");
-                }
+                userItem.addEventListener("click", () => {
+                  const currentUserId = getUserId();
+                  const friendId = friend.user_id;
+                  if (currentUserId === null) {
+                    console.error("Current user ID is null, cannot create chat ID.");
+                    return;
+                  }
+                  const chatId = [Number(currentUserId), Number(friendId)]
+                    .sort((a, b) => a - b)
+                    .join("-");
+                  this.router.navigate(`/chat?chatId=${chatId}&username=${friend.username}`);
+                });
               }
             );
           }
