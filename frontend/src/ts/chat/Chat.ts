@@ -146,37 +146,51 @@ export class Chat {
       if (data.type === "chat_connected") {
         if (data.history && Array.isArray(data.history)) {
           const processMessages = async () => {
-            for (const message of data.history) {
-              const timestamp = new Date(message.timestamp).toLocaleTimeString();
-              const currentUserId = getUserId();
+            try {
+              for (const message of data.history) {
+                const timestamp = new Date(message.timestamp).toLocaleTimeString();
+                const currentUserId = getUserId();
 
-              const displayUsername = await this.getUsernameById(message.username);
+                const displayUsername = await this.getUsernameById(message.username);
 
-              const isOwnMessage = message.username === currentUserId;
-              const messageElement = this.createMessageElement(timestamp, displayUsername, message.message, isOwnMessage);
+                const isOwnMessage = message.username === currentUserId;
+                const messageElement = this.createMessageElement(timestamp, displayUsername, message.message, isOwnMessage);
 
-              chatBox.appendChild(messageElement);
+                chatBox.appendChild(messageElement);
+              }
+              chatBox.scrollTop = chatBox.scrollHeight;
+            } catch (error) {
+              console.error("Error processing chat history messages:", error);
             }
-            chatBox.scrollTop = chatBox.scrollHeight;
           };
 
-          processMessages();
+          // Properly await the async function to handle errors and ensure completion
+          processMessages().catch(error => {
+            console.error("Failed to process chat history:", error);
+          });
         }
       } else if (data.type === "message") {
         const handleIncomingMessage = async () => {
-          const timestamp = new Date(data.timestamp).toLocaleTimeString();
-          const currentUserId = getUserId();
+          try {
+            const timestamp = new Date(data.timestamp).toLocaleTimeString();
+            const currentUserId = getUserId();
 
-          const displayUsername = await this.getUsernameById(data.username);
+            const displayUsername = await this.getUsernameById(data.username);
 
-          const isOwnMessage = data.username === currentUserId;
-          const messageElement = this.createMessageElement(timestamp, displayUsername, data.message, isOwnMessage);
+            const isOwnMessage = data.username === currentUserId;
+            const messageElement = this.createMessageElement(timestamp, displayUsername, data.message, isOwnMessage);
 
-          chatBox.appendChild(messageElement);
-          chatBox.scrollTop = chatBox.scrollHeight;
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          } catch (error) {
+            console.error("Error handling incoming message:", error);
+          }
         };
 
-        handleIncomingMessage();
+        // Properly handle the async function to catch any errors
+        handleIncomingMessage().catch(error => {
+          console.error("Failed to handle incoming message:", error);
+        });
       }
     };
 
