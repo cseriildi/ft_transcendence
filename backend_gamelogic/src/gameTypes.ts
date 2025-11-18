@@ -1,11 +1,4 @@
-import { config, PHYSICS_INTERVAL, RENDER_INTERVAL } from "./config.js";
-
-// Game mode types
-export enum GameMode {
-  LOCAL = "LOCAL", // Two players on same machine
-  ONLINE = "ONLINE", // Two players on different machines
-  VS_AI = "VS_AI", // Player vs AI
-}
+import { config, PHYSICS_INTERVAL, RENDER_INTERVAL, VALID_MODES } from "./config.js";
 
 // Player information
 export interface PlayerInfo {
@@ -16,8 +9,9 @@ export interface PlayerInfo {
 
 export interface GameStartPayload {
   type: "startGame";
-  mode: GameMode;
+  mode: string;
   player: PlayerInfo;
+  difficulty?: "easy" | "medium" | "hard";
 }
 
 export class Field {
@@ -108,21 +102,21 @@ export class GameServer {
   clients = new Map<1 | 2, { playerInfo: PlayerInfo; connection: any }>();
   physicsInterval: number;
   renderInterval: number;
-  gameMode: GameMode;
+  gameMode: string;
 
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;
   private isRunning: boolean = false;
 
   // AI Config
-  aiEnabled: boolean = false;
+  isServe: boolean = true;
   aiPlayer: AIPlayer = new AIPlayer();
 
   // Callbacks for game loops (injected from outside)
   private onPhysicsUpdate?: (game: GameServer) => void;
   private onRender?: (game: GameServer) => void;
 
-  constructor(gameMode: GameMode) {
+  constructor(gameMode: string) {
     this.Field = new Field(config.game.width, config.game.height);
     this.Ball = new Ball(this.Field);
     this.Paddle1 = new Paddle(1, this.Field, config.game.paddleSpeed);
