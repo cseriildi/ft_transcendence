@@ -2,17 +2,25 @@
   <div class="w-full px-4 py-4">
     <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
       <div class="flex items-center space-x-4 glass-card px-4 py-2 hidden" id="user-info-card">
-        <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-neon-green shadow-lg hidden" />
+        <img
+          id="user-avatar"
+          src=""
+          alt="Avatar"
+          class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-neon-green shadow-lg hidden"
+        />
         <div class="flex flex-col">
           <span class="text-xs text-neon-green opacity-75">Logged in as</span>
-          <div id="user-name" class="text-neon-pink font-bold text-sm sm:text-base drop-shadow-neon">
+          <div
+            id="user-name"
+            class="text-neon-pink font-bold text-sm sm:text-base drop-shadow-neon"
+          >
             <!-- Username will be dynamically inserted here -->
           </div>
         </div>
       </div>
-      
+
       <div class="flex-1 sm:block hidden"></div>
-      
+
       <div class="flex items-center sm:ml-auto">
         <button id="login-btn" class="btn-green">Log in</button>
         <button id="profile-btn" class="btn-green hidden">Profile</button>

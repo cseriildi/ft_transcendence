@@ -180,7 +180,7 @@ const initPongPage = async () => {
         SecureTokenManager.getInstance().clearTokens();
         localStorage.removeItem("userId");
         localStorage.removeItem("username");
-        
+
         // Update UI state immediately before navigation
         logoutBtn?.classList.add("hidden");
         profileBtn?.classList.add("hidden");
@@ -189,7 +189,7 @@ const initPongPage = async () => {
         if (userName) {
           userName.innerHTML = "";
         }
-        
+
         router.navigate("/");
       } else {
         console.error("Failed to log out", await response.json());
@@ -401,7 +401,7 @@ const initPongPage = async () => {
       const easyHandler = () => handleDifficultySelection("easy");
       const mediumHandler = () => handleDifficultySelection("medium");
       const hardHandler = () => handleDifficultySelection("hard");
-      
+
       // ESC key handler
       const escHandler = (event: KeyboardEvent) => {
         if (event.key === "Escape") {

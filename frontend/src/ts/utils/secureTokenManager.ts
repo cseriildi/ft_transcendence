@@ -30,17 +30,14 @@ class SecureTokenManager {
     }
 
     // Refresh token 3 minutes before expiration (15min - 3min = 12min)
-    this.refreshTimer = window.setTimeout(
-      async () => {
-        try {
-          await this.refreshAccessToken();
-        } catch (error) {
-          console.error("Scheduled token refresh failed:", error);
-          this.handleTokenExpiry();
-        }
-      },
-      12 * 60 * 1000
-    );
+    this.refreshTimer = window.setTimeout(async () => {
+      try {
+        await this.refreshAccessToken();
+      } catch (error) {
+        console.error("Scheduled token refresh failed:", error);
+        this.handleTokenExpiry();
+      }
+    }, 12 * 60 * 1000);
   }
 
   getAccessToken(): string | null {
