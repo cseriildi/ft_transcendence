@@ -45,6 +45,7 @@ export function broadcastGameState(game: GameServer) {
 
   // Send to all connected clients
   for (const { connection } of game.clients.values()) {
+    if (!connection) continue; // Skip clients without connections
     try {
       connection.send(message);
     } catch (err) {
@@ -126,6 +127,10 @@ export function broadcastGameResult(game: GameServer) {
   }
 
   const { winner, loser, winnerScore, loserScore } = result;
+
+  if (game.gameMode == "tournament" && game.tournament) {
+    game.tournament?.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
+  }
 
   // Send to all connected clients
   for (const [playerNum, { connection }] of game.clients.entries()) {

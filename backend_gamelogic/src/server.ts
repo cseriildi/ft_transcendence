@@ -5,6 +5,7 @@ import { createGame, resetBall } from "./gameUtils.js";
 import { GameServer, GameStartPayload, PlayerInfo } from "./gameTypes.js";
 import { broadcastGameState, broadcastGameSetup } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
+import { Tournament, TournamentPlayer } from "./Tournament.js";
 
 // Validate configuration on startup
 validateConfig();
@@ -20,13 +21,14 @@ await fastify.register(errorHandlerPlugin);
 await fastify.register(import("@fastify/websocket"));
 
 // NOTE: We create one game instance per WebSocket connection.
-// The client will ask to start a new game (via `startGame` message).
+// The client will ask to start a new game (via `newGame` message).
 // Track all active games so we can report health and perform graceful shutdown.
 const activeGames = new Set<GameServer>();
 
 // Track active players (userId -> game) to prevent multiple simultaneous games
 // Also enables future functionality to terminate games on user logout
 const activePlayers = new Map<string | number, GameServer>();
+const activeTournaments = new Set<Tournament>();
 
 // Track the single player waiting for an opponent in ONLINE mode
 // Only one player can wait at a time
@@ -110,6 +112,7 @@ fastify.register(async function (server: FastifyInstance) {
 
     // Each connection is assigned a player number and game
     let game: ReturnType<typeof createGame> | null = null;
+    let tournament: Tournament | null = null;
 
     const stopGame = () => {
       if (game) {
@@ -145,14 +148,14 @@ fastify.register(async function (server: FastifyInstance) {
             handlePlayerInput(game, input);
             break;
           }
-          case "startGame": {
+          case "newGame": {
             // Validate and extract game mode and player info
             const gameStartData = data as GameStartPayload;
-            const { error, gameMode, player, difficulty } = validateGameStartMessage(gameStartData);
+            const { error, gameMode, player, difficulty } = validateNewGameMessage(gameStartData);
 
             if (error || !gameMode) {
               const errorMsg = error || "Missing required field: mode";
-              console.warn("Invalid startGame message:", errorMsg);
+              console.warn("Invalid newGame message:", errorMsg);
               sendErrorToClient(connection, errorMsg);
               return;
             }
@@ -240,10 +243,77 @@ fastify.register(async function (server: FastifyInstance) {
             }
             break;
           }
+          case "newTournament": {
+            // Validate and extract game mode and player info (but it will send 4 or 8 playerInfos)
+            const tournamentData = data as {
+              mode: string;
+              players: string[];
+            };
+            const { error, mode, players } = validateTournamentMessage(tournamentData);
+
+            if (error || !players) {
+              const errorMsg = error || "Missing required field: players";
+              console.warn("Invalid newTournament message:", errorMsg);
+              sendErrorToClient(connection, errorMsg);
+              return;
+            }
+
+            if (mode !== "tournament") {
+              const errorMsg = "Game mode must be 'tournament' for newTournament";
+              console.warn("Invalid newTournament message:", errorMsg);
+              sendErrorToClient(connection, errorMsg);
+              return;
+            }
+
+            if (tournament) {
+              activeTournaments.delete(tournament);
+              tournament = null;
+            }
+
+            tournament = new Tournament(players);
+            activeTournaments.add(tournament);
+            game = startNextTournamentGame(connection, tournament);
+            break;
+          }
+
+          case "startGame": {
+            const mode = data.mode;
+            if (!mode || mode !== "tournament") return;
+            if (!tournament || !game) return;
+            if (game.countdown < 3) return;
+
+            connection.send(
+              JSON.stringify({
+                type: "ready",
+                message: "Tournament game starting!",
+                gameMode: mode,
+              })
+            );
+            broadcastGameSetup(game);
+            runGameCountdown(game).catch((err) =>
+              console.error("Error during tournament game countdown:", err)
+            );
+            break;
+          }
           case "nextGame": {
-            if (["remote", "friend", "tournament"].includes(data.gameMode)) {
+            if (
+              (data.mode === "tournament" && tournament) ||
+              ["friend", "remote"].includes(data.mode)
+            ) {
               stopGame();
-              if (data.gameMode === "tournament") {
+              if (data.mode === "tournament") {
+                game = startNextTournamentGame(connection, tournament);
+                if (!game) {
+                  // send tournament complete message with results
+                  connection.send(
+                    JSON.stringify({
+                      type: "tournamentComplete",
+                      mode: "tournament",
+                      results: tournament!.getResults() || [],
+                    })
+                  );
+                  tournament = null;
+                }
               }
             }
             break;
@@ -280,6 +350,46 @@ fastify.register(async function (server: FastifyInstance) {
     });
   });
 });
+
+function startNextTournamentGame(
+  connection: any,
+  tournament?: Tournament | null
+): GameServer | null {
+  if (!tournament) return null;
+  const pair = tournament.getNextPair();
+  if (!pair) {
+    console.log("🏆 No more pairs - tournament complete!");
+    tournament.getResults();
+    //send results
+    activeTournaments.delete(tournament);
+    tournament = null;
+    return null;
+  }
+
+  const game = createGame("tournament");
+  game.tournament = tournament;
+  game.clients.set(1, {
+    playerInfo: { username: pair.player1.username, userId: pair.player1.userId },
+    connection,
+  });
+  game.clients.set(2, {
+    playerInfo: { username: pair.player2.username, userId: pair.player2.userId },
+    connection: undefined,
+  });
+
+  activeGames.add(game);
+  connection.send(
+    JSON.stringify({
+      type: "waiting",
+      message: `${pair.player1.username} vs ${pair.player2.username}`,
+      gameMode: "tournament",
+      pair: { player1: pair.player1.username, player2: pair.player2.username },
+    })
+  );
+  freezeBall(game);
+
+  return game;
+}
 
 function freezeBall(game: GameServer): void {
   game.Ball.speedX = 0;
@@ -324,8 +434,8 @@ function handlePlayerInput(game: GameServer, input: { player: number; action: st
   }
 }
 
-// Helper function to validate startGame message
-function validateGameStartMessage(data: any): {
+// Helper function to validate newGame message
+function validateNewGameMessage(data: any): {
   error?: string;
   gameMode?: string;
   player?: PlayerInfo;
@@ -369,6 +479,46 @@ function validateGameStartMessage(data: any): {
     gameMode: data.mode,
     player: data.player,
     difficulty: data.difficulty,
+  };
+}
+
+function validateTournamentMessage(data: any): {
+  error?: string;
+  mode?: string;
+  players?: string[];
+} {
+  // Check if mode is present
+  if (!data.mode) {
+    return { error: "Missing required field: mode" };
+  }
+  if (data.mode !== "tournament") {
+    return { error: "Game mode must be 'tournament' for newTournament" };
+  }
+
+  if (!data.players) {
+    return { error: "Missing or invalid required field: players" };
+  }
+
+  // Additional validation: check for unique and non-empty usernames
+  const usernames = data.players.map((name: string) => name.trim());
+  const uniqueUsernames = new Set(usernames);
+
+  if (usernames.includes("")) {
+    return { error: "Player usernames must be non-empty" };
+  }
+
+  if (uniqueUsernames.size !== usernames.length) {
+    return { error: "Player usernames must be unique" };
+  }
+
+  //Check if there are 4 or 8 players
+  if (data.players.length !== 4 && data.players.length !== 8) {
+    return { error: "Tournament must have exactly 4 or 8 players" };
+  }
+
+  return {
+    mode: data.mode,
+    players: data.players,
   };
 }
 

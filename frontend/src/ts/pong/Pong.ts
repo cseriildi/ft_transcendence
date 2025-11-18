@@ -34,12 +34,13 @@ export class Pong {
   private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
   private player1Username: string = "Player 1";
   private player2Username: string = "Player 2";
+  private isWaitingForStart: boolean = false; // Tournament
 
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
   private keyupListener: ((event: KeyboardEvent) => void) | null = null;
 
-  constructor(canvasId: string, wsUrl: string) {
+  constructor(canvasId: string, wsUrl: string, gameMode: string) {
     const canvasEl = document.getElementById(canvasId);
     if (!canvasEl) throw new Error(`Canvas element with id "${canvasId}" not found.`);
     const canvas = canvasEl as HTMLCanvasElement;
@@ -49,7 +50,7 @@ export class Pong {
     this.canvas = canvas;
     this.ctx = ctx;
     this.wsUrl = wsUrl;
-
+    this.currentGameMode = gameMode;
     this.setupInputHandlers();
     this.connect();
     this.renderLoop();
@@ -79,7 +80,7 @@ export class Pong {
     const sendStart = () => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         const message: any = {
-          type: "startGame",
+          type: "newGame",
           mode: this.currentGameMode,
         };
 
@@ -111,6 +112,64 @@ export class Pong {
     }
   }
 
+  /**
+   * Get the current game score
+   */
+  public getScore(): { player1: number; player2: number } | null {
+    return this.gameState?.score || null;
+  }
+
+  newTournament(playerNames: string[]) {
+    const sendStart = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const message: any = {
+          type: "newTournament",
+          mode: this.currentGameMode,
+          players: playerNames,
+        };
+
+        this.ws.send(JSON.stringify(message));
+      }
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      sendStart();
+    } else if (this.ws) {
+      this.ws.addEventListener(
+        "open",
+        () => {
+          sendStart();
+        },
+        { once: true }
+      );
+    }
+  }
+
+  startTournamentGame() {
+    const sendStart = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const message: any = {
+          type: "startGame",
+          mode: this.currentGameMode,
+        };
+
+        this.ws.send(JSON.stringify(message));
+      }
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      sendStart();
+    } else if (this.ws) {
+      this.ws.addEventListener(
+        "open",
+        () => {
+          sendStart();
+        },
+        { once: true }
+      );
+    }
+  }
+
   private connect() {
     this.ws = new WebSocket(this.wsUrl);
 
@@ -128,10 +187,14 @@ export class Pong {
           console.error("❌ Game server error:", message.message);
           alert(`Game Error: ${message.message}`);
         } else if (message.type === "waiting") {
-          // Set waiting state and store player number
-          this.isWaitingForOpponent = true;
+          if (this.currentGameMode === "tournament") {
+            this.isWaitingForStart = true;
+          } else if (this.currentGameMode === "remote") {
+            this.isWaitingForOpponent = true;
+          }
         } else if (message.type === "ready") {
           this.isWaitingForOpponent = false;
+          this.isWaitingForStart = false;
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
             console.log("🏆 Game Over! Result:", message.data);
@@ -196,6 +259,8 @@ export class Pong {
               this.updateScoreDisplay();
             }
           }
+        } else if (message.type === "tournamentComplete" && message.mode === "tournament") {
+          console.log("🎉 Tournament Complete! Results:", message.data);
         }
       } catch (err) {
         console.error("Error parsing game message:", err);
@@ -410,13 +475,24 @@ export class Pong {
       return;
     }
 
-    // Draw count down
-    if (!this.isWaitingForOpponent && countdown && countdown > 0) {
+    // Draw waiting for start message
+    if (this.isWaitingForStart) {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 150px Arial";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.fillText("When ready click Start Game", width / 2, height / 2);
+      return;
+    }
+
+    // Draw count down - after waiting messages so it takes priority when countdown is active
+    if (!this.isWaitingForStart && !this.isWaitingForOpponent && countdown && countdown > 0) {
       this.ctx.fillStyle = "#fff";
       this.ctx.font = "bold 500px Arial";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
       this.ctx.fillText(countdown.toString(), width / 2, height / 2);
+      return;
     }
   }
 
