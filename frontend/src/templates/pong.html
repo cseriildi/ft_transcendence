@@ -1,10 +1,32 @@
-<div class="page-bg py-8">
-  <div class="max-w-4xl mx-auto px-4">
+<div class="page-bg py-6 min-h-screen">
+  <div class="w-full px-4 py-4">
+    <div class="max-w-4xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center space-x-4 glass-card px-4 py-2 hidden" id="user-info-card">
+        <img id="user-avatar" src="" alt="Avatar" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-neon-green shadow-lg hidden" />
+        <div class="flex flex-col">
+          <span class="text-xs text-neon-green opacity-75">Logged in as</span>
+          <div id="user-name" class="text-neon-pink font-bold text-sm sm:text-base drop-shadow-neon">
+            <!-- Username will be dynamically inserted here -->
+          </div>
+        </div>
+      </div>
+      
+      <div class="flex-1 sm:block hidden"></div>
+      
+      <div class="flex items-center sm:ml-auto">
+        <button id="login-btn" class="btn-green">Log in</button>
+        <button id="profile-btn" class="btn-green hidden">Profile</button>
+        <button id="logout-btn" class="btn-pink hidden ml-4">Log out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-4xl mx-auto px-4 flex-1">
     <h1 class="page-title text-neon-pink">Pong Game</h1>
 
     <!-- Tournament Setup (shown only in tournament mode) -->
     <div id="tournament-setup" class="hidden text-center mb-8">
-      <h2 class="text-2xl font-bold text-neon-cyan mb-6">Tournament Setup</h2>
+      <h2 class="text-2xl font-bold text-white mb-6">Tournament Setup</h2>
 
       <div class="mb-6">
         <label class="text-lg text-neon-green mb-4 block">How many players?</label>
@@ -25,7 +47,7 @@
 
     <!-- Tournament Setup (shown only in tournament mode) -->
     <div id="tournament-setup" class="hidden text-center mb-8">
-      <h2 class="text-2xl font-bold text-neon-cyan mb-6">Tournament Setup</h2>
+      <h2 class="text-2xl font-bold text-white mb-6">Tournament Setup</h2>
 
       <div class="mb-6">
         <label class="text-lg text-neon-green mb-4 block">How many players?</label>
@@ -54,8 +76,14 @@
       class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
     >
       <div
-        class="bg-gradient-to-br from-gray-900 to-black border-2 border-neon-pink rounded-lg p-8 max-w-md shadow-neon"
+        class="bg-gradient-to-br from-gray-900 to-black border-2 border-neon-pink rounded-lg p-8 max-w-md shadow-neon relative"
       >
+        <button
+          id="difficulty-close"
+          class="absolute top-2 right-2 text-neon-pink hover:text-white text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-neon-pink hover:bg-opacity-20 transition-colors"
+        >
+          x
+        </button>
         <h2 class="text-2xl font-bold text-neon-green text-center mb-6 drop-shadow-neon">
           Select Difficulty
         </h2>
@@ -76,7 +104,7 @@
         <p id="name-player1" class="text-neon-green text-sm mb-1">Player 1</p>
         <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
       </div>
-      <div class="text-neon-cyan text-4xl font-bold self-center">:</div>
+      <div class="text-neon-pink text-4xl font-bold self-center">:</div>
       <div class="text-center">
         <p id="name-player2" class="text-neon-green text-sm mb-1">Player 2</p>
         <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
@@ -96,16 +124,5 @@
     <div class="text-center">
       <button id="back-btn" class="btn-green">Back to Home</button>
     </div>
-  </div>
-  <div class="absolute top-4 left-8 space-x-4 flex items-center">
-    <img id="user-avatar" src="" alt="Avatar" class="w-16 h-16 rounded-full shadow-neon hidden" />
-    <div id="user-name" class="text-center text-white mt-4 mb-4">
-      <!-- Username will be dynamically inserted here -->
-    </div>
-  </div>
-  <div class="absolute top-4 right-4 space-x-4 flex items-center">
-    <button id="login-btn" class="btn-green">Log in</button>
-    <button id="profile-btn" class="btn-green hidden">Profile</button>
-    <button id="logout-btn" class="btn-pink hidden">Log out</button>
   </div>
 </div>

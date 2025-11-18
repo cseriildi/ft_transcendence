@@ -22,6 +22,7 @@ export class Home {
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
     const userName = document.getElementById("user-name");
     const profileBtn = document.getElementById("profile-btn");
+    const userInfoCard = document.getElementById("user-info-card");
 
     localBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "local" }));
     aiBtn?.addEventListener("click", () => this.router.navigate("/pong", { mode: "ai" }));
@@ -71,6 +72,7 @@ export class Home {
       logoutBtn?.classList.remove("hidden");
       profileBtn?.classList.remove("hidden");
       loginBtn?.classList.add("hidden");
+      userInfoCard?.classList.remove("hidden");
 
       // Always try to fetch user data if authorized
       try {
@@ -101,7 +103,7 @@ export class Home {
       logoutBtn?.classList.add("hidden");
       profileBtn?.classList.add("hidden");
       loginBtn?.classList.remove("hidden");
-      userAvatar?.classList.add("hidden");
+      userInfoCard?.classList.add("hidden");
     }
   }
 }
