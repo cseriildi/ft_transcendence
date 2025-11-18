@@ -34,6 +34,90 @@ window.addEventListener("popstate", () => {
   }
 });
 
+// Helper functions for tournament
+const showPlayerNamesForm = (playerCount: number) => {
+  const form = document.getElementById("player-names-form");
+  const container = document.getElementById("player-inputs-container");
+
+  if (!form || !container) return;
+
+  container.innerHTML = "";
+
+  for (let i = 1; i <= playerCount; i++) {
+    const inputWrapper = document.createElement("div");
+    inputWrapper.className = "";
+    inputWrapper.innerHTML = `
+      <input
+        type="text"
+        id="player-${i}"
+        class="form-input"
+        placeholder="Player ${i} name"
+        maxlength="20"
+      />
+    `;
+    container.appendChild(inputWrapper);
+  }
+
+  form.classList.remove("hidden");
+};
+
+const savePlayerNames = (): string[] | undefined => {
+  const inputs = document.querySelectorAll(
+    "#player-inputs-container input"
+  ) as NodeListOf<HTMLInputElement>;
+  const playerCount = inputs.length;
+
+  if (playerCount === 0) return;
+
+  const playerNames: string[] = [];
+
+  inputs.forEach((input) => {
+    playerNames.push(input.value);
+  });
+
+  // Validate names
+  const trimmedNames = playerNames.map((name) => name.trim());
+
+  // Check for empty names
+  const emptyNames = trimmedNames.filter((name) => name.length === 0);
+  if (emptyNames.length > 0) {
+    alert("All player names must be non-empty");
+    return;
+  }
+
+  // Check for duplicates
+  const uniqueNames = new Set(trimmedNames);
+  if (uniqueNames.size !== trimmedNames.length) {
+    alert("All player names must be unique");
+    return;
+  }
+
+  // Try to create tournament with validation
+  try {
+    // Hide the form and show game elements (but NOT start-game-btn yet)
+    const form = document.getElementById("player-names-form");
+    const setup = document.getElementById("tournament-setup");
+    const canvas = document.getElementById("pong-canvas");
+    const scoreDiv = document.querySelector(".flex.justify-center.gap-16") as HTMLElement | null;
+    const gameDescDiv = document.querySelector(
+      ".flex.flex-col.text-center.justify-center"
+    ) as HTMLElement | null;
+
+    if (form) form.classList.add("hidden");
+    if (setup) setup.classList.add("hidden");
+    if (canvas) canvas.style.display = "";
+    if (scoreDiv) scoreDiv.style.display = "";
+    if (gameDescDiv) gameDescDiv.style.display = "";
+
+    // Game has been set up, ready to start
+    console.log("Tournament ready to start");
+  } catch (error) {
+    alert(`Tournament setup failed: ${(error as Error).message}`);
+    return;
+  }
+  return trimmedNames;
+};
+
 const initPongPage = async () => {
   const queryParams = router.getQueryParams();
   const mode = queryParams.mode;
@@ -142,7 +226,7 @@ const initPongPage = async () => {
     userAvatar?.classList.add("hidden");
   }
 
-  if (!["local", "remote", "ai"].includes(mode)) {
+  if (mode === "friend") {
     // Hide canvas and New Game button for unsupported modes
     const canvas = document.getElementById("pong-canvas");
     const newGameBtn = document.getElementById("new-game-btn");
@@ -177,6 +261,80 @@ const initPongPage = async () => {
     router.navigate("/");
   });
 
+  // Handle tournament mode
+  if (mode === "tournament") {
+    // Hide game elements
+    const canvas = document.getElementById("pong-canvas");
+    const scoreDiv = document.querySelector(".flex.justify-center.gap-16") as HTMLElement | null;
+    const gameDescDiv = document.querySelector(
+      ".flex.flex-col.text-center.justify-center"
+    ) as HTMLElement | null;
+    const startGameBtn = document.getElementById("start-game-btn");
+
+    const newGameBtn = document.getElementById("new-game-btn");
+    if (newGameBtn) newGameBtn.style.display = "none";
+    if (startGameBtn) startGameBtn.style.display = "none";
+
+    if (canvas) canvas.style.display = "none";
+    if (scoreDiv) scoreDiv.style.display = "none";
+    if (gameDescDiv) gameDescDiv.style.display = "none";
+
+    // Show tournament setup
+    const tournamentSetup = document.getElementById("tournament-setup");
+    if (tournamentSetup) {
+      tournamentSetup.classList.remove("hidden");
+    }
+
+    // Handle 4 players button
+    const tournament4Btn = document.getElementById("tournament-4-btn");
+    tournament4Btn?.addEventListener("click", () => {
+      showPlayerNamesForm(4);
+    });
+
+    // Handle 8 players button
+    const tournament8Btn = document.getElementById("tournament-8-btn");
+    tournament8Btn?.addEventListener("click", () => {
+      showPlayerNamesForm(8);
+    });
+
+    const backToSetupBtn = document.getElementById("back-to-setup-btn");
+    backToSetupBtn?.addEventListener("click", () => {
+      const form = document.getElementById("player-names-form");
+      if (form) form.classList.add("hidden");
+    });
+
+    const startTournamentBtn = document.getElementById("start-tournament-btn");
+    startTournamentBtn?.addEventListener("click", () => {
+      const playerNames = savePlayerNames();
+      if (!playerNames) return;
+      if (currentPong) {
+        currentPong.destroy();
+        currentPong = null;
+      }
+
+      const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
+      if (canvas) {
+        currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
+        currentPong.newTournament(playerNames);
+        // Show Start Game button after tournament is created
+        if (startGameBtn) startGameBtn.style.display = "";
+      } else {
+        console.error("❌ Pong canvas not found");
+      }
+    });
+
+    startGameBtn?.addEventListener("click", () => {
+      if (!currentPong) {
+        alert("Pong instance not created.");
+        return;
+      }
+      currentPong.startTournamentGame();
+    });
+
+    return;
+  }
+  const startGameBtn = document.getElementById("start-game-btn");
+  if (startGameBtn) startGameBtn.style.display = "none";
   // New Game button: destroy existing game instance for this tab and create a fresh one
   const newGameBtn = document.getElementById("new-game-btn");
   newGameBtn?.addEventListener("click", () => {
@@ -206,7 +364,7 @@ const initPongPage = async () => {
       // Handle difficulty selection
       const handleDifficultySelection = (difficulty: "easy" | "medium" | "hard") => {
         modal.classList.add("hidden");
-        currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+        currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
         currentPong.startGame(mode, undefined, difficulty);
 
         // Remove event listeners
@@ -231,7 +389,7 @@ const initPongPage = async () => {
       mediumBtn?.addEventListener("click", mediumHandler);
       hardBtn?.addEventListener("click", hardHandler);
     } else if (["remote", "friend"].includes(mode)) {
-      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
 
       const userId = getUserId();
       const username = getUsername();
@@ -245,7 +403,7 @@ const initPongPage = async () => {
         console.error("❌ User not authenticated for ONLINE mode");
       }
     } else {
-      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
       currentPong.startGame(mode);
     }
   });

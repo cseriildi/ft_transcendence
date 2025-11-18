@@ -2,6 +2,48 @@
   <div class="max-w-4xl mx-auto px-4">
     <h1 class="page-title text-neon-pink">Pong Game</h1>
 
+    <!-- Tournament Setup (shown only in tournament mode) -->
+    <div id="tournament-setup" class="hidden text-center mb-8">
+      <h2 class="text-2xl font-bold text-neon-cyan mb-6">Tournament Setup</h2>
+
+      <div class="mb-6">
+        <label class="text-lg text-neon-green mb-4 block">How many players?</label>
+        <div class="flex gap-4 justify-center mb-6">
+          <button id="tournament-4-btn" class="btn-pink">4 Players</button>
+          <button id="tournament-8-btn" class="btn-pink">8 Players</button>
+        </div>
+      </div>
+
+      <div id="player-names-form" class="hidden form-card max-w-md mx-auto">
+        <h3 class="text-xl text-neon-green mb-4">Enter Player Names</h3>
+        <div id="player-inputs-container" class="space-y-4 mb-4">
+          <!-- Player input fields will be generated here -->
+        </div>
+        <button id="start-tournament-btn" class="w-full btn-pink">Start Tournament</button>
+      </div>
+    </div>
+
+    <!-- Tournament Setup (shown only in tournament mode) -->
+    <div id="tournament-setup" class="hidden text-center mb-8">
+      <h2 class="text-2xl font-bold text-neon-cyan mb-6">Tournament Setup</h2>
+
+      <div class="mb-6">
+        <label class="text-lg text-neon-green mb-4 block">How many players?</label>
+        <div class="flex gap-4 justify-center mb-6">
+          <button id="tournament-4-btn" class="btn-pink">4 Players</button>
+          <button id="tournament-8-btn" class="btn-pink">8 Players</button>
+        </div>
+      </div>
+
+      <div id="player-names-form" class="hidden form-card max-w-md mx-auto">
+        <h3 class="text-xl text-neon-green mb-4">Enter Player Names</h3>
+        <div id="player-inputs-container" class="space-y-4 mb-4">
+          <!-- Player input fields will be generated here -->
+        </div>
+        <button id="start-tournament-btn" class="w-full btn-pink">Start Tournament</button>
+      </div>
+    </div>
+
     <div class="text-center mb-8">
       <button id="new-game-btn" class="btn-pink">New Game</button>
     </div>
@@ -23,6 +65,10 @@
           <button id="difficulty-hard" class="btn-pink">Hard</button>
         </div>
       </div>
+    </div>
+
+    <div class="text-center mb-8">
+      <button id="start-game-btn" class="btn-pink">Start Game</button>
     </div>
 
     <div class="flex justify-center gap-16 mb-6">
