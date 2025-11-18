@@ -78,27 +78,23 @@ export function getErrorConfig(difficulty: string) {
   switch (difficulty) {
     case "easy":
       return {
-        positionError: 0.7, // 70% of paddle length
-        reactionTime: 1100, // 1.1 seconds
-        chanceToMissPredict: 0.3, // 30% chance to predict wrong direction
+        positionError: 0.6, // 60% of paddle length
+        reactionTime: 1500, // 1.5 seconds
+        chanceToExtraError: 0.3, // 30% chance for double error
       };
     case "medium":
       return {
-        positionError: 0.5, // 50% of paddle length
-        reactionTime: 1000, // 1.0 seconds
-        chanceToMissPredict: 0.1, // 10% chance to predict wrong
+        positionError: 0.55, // 55% of paddle length
+        reactionTime: 1250, // 1.25 seconds
+        chanceToExtraError: 0.175, // 17.5% chance for double error
       };
     case "hard":
       return {
-        positionError: 0.2, // 20% of paddle length
+        positionError: 0.5, // 50% of paddle length
         reactionTime: 1000, // 1 second
-        chanceToMissPredict: 0.0, // 0% chance to predict wrong
+        chanceToExtraError: 0.1, // 10% chance for double error
       };
     default:
-      return {
-        positionError: 0.5,
-        reactionTime: 1000,
-        chanceToMissPredict: 0.1,
-      };
+      return getErrorConfig("medium");
   }
 }
