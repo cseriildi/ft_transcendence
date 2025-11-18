@@ -6,9 +6,33 @@ export class Chat {
   private router: Router;
   private ws: WebSocket | null = null;
   private userCache: Map<string, string> = new Map(); // userId -> username cache
+  private cacheTimestamp: number = 0; // Track when cache was last loaded
+  private readonly CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes cache expiry
 
   constructor(router: Router) {
     this.router = router;
+  }
+
+  private clearUserCache(): void {
+    console.log(`Clearing user cache (${this.userCache.size} entries)`);
+    this.userCache.clear();
+    this.cacheTimestamp = 0;
+  }
+
+  private isCacheExpired(): boolean {
+    if (this.cacheTimestamp === 0) return true;
+    return Date.now() - this.cacheTimestamp > this.CACHE_EXPIRY_MS;
+  }
+
+  private cleanup(): void {
+    console.log("Cleaning up chat resources...");
+    this.ws?.close();
+    this.clearUserCache();
+  }
+
+  public destroy(): void {
+    console.log("Destroying chat instance...");
+    this.cleanup();
   }
 
   private escapeHtml(text: string): string {
@@ -17,40 +41,54 @@ export class Chat {
     return div.innerHTML;
   }
 
-  private createMessageElement(timestamp: string, username: string, message: string, isOwnMessage: boolean): HTMLElement {
+  private createMessageElement(
+    timestamp: string,
+    username: string,
+    message: string,
+    isOwnMessage: boolean
+  ): HTMLElement {
     const messageElement = document.createElement("div");
-    
+
     // Escape all user-provided content
     const escapedUsername = this.escapeHtml(username);
     const escapedMessage = this.escapeHtml(message);
-    
+
     const colorClass = isOwnMessage ? "text-neon-pink" : "text-neon-green";
-    const alignmentClasses = isOwnMessage ? "mb-2 text-right ml-auto max-w-s" : "mb-2 text-left mr-auto max-w-s";
-    
+    const alignmentClasses = isOwnMessage
+      ? "mb-2 text-right ml-auto max-w-s"
+      : "mb-2 text-left mr-auto max-w-s";
+
     const timestampSpan = document.createElement("span");
     timestampSpan.className = colorClass;
     timestampSpan.textContent = `[${timestamp}] ${escapedUsername}:`;
-    
+
     const messageSpan = document.createElement("span");
     messageSpan.className = "text-white";
     messageSpan.textContent = escapedMessage;
-    
+
     // Append elements safely
     messageElement.appendChild(timestampSpan);
     messageElement.appendChild(document.createElement("br"));
     messageElement.appendChild(messageSpan);
-    
+
     messageElement.className = alignmentClasses;
-    
+
     return messageElement;
   }
 
   private async loadAllUsers(): Promise<void> {
-    if (this.userCache.size > 0) {
+    // Check if cache is still valid
+    if (this.userCache.size > 0 && !this.isCacheExpired()) {
       return;
     }
 
+    // Clear expired cache
+    if (this.isCacheExpired()) {
+      this.clearUserCache();
+    }
+
     try {
+      console.log("Loading users cache...");
       const response = await fetch(`${config.apiUrl}/api/users`, {
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
@@ -64,6 +102,9 @@ export class Chat {
         users.forEach((user: { id: number; username: string }) => {
           this.userCache.set(user.id.toString(), user.username);
         });
+
+        this.cacheTimestamp = Date.now();
+        console.log(`Loaded ${users.length} users into cache`);
       } else {
         console.error("Failed to fetch users list");
       }
@@ -119,7 +160,7 @@ export class Chat {
     });
 
     backBtn?.addEventListener("click", () => {
-      this.ws?.close();
+      this.cleanup();
       this.router.navigate("/profile");
     });
   }
@@ -154,7 +195,12 @@ export class Chat {
                 const displayUsername = await this.getUsernameById(message.username);
 
                 const isOwnMessage = message.username === currentUserId;
-                const messageElement = this.createMessageElement(timestamp, displayUsername, message.message, isOwnMessage);
+                const messageElement = this.createMessageElement(
+                  timestamp,
+                  displayUsername,
+                  message.message,
+                  isOwnMessage
+                );
 
                 chatBox.appendChild(messageElement);
               }
@@ -165,7 +211,7 @@ export class Chat {
           };
 
           // Properly await the async function to handle errors and ensure completion
-          processMessages().catch(error => {
+          processMessages().catch((error) => {
             console.error("Failed to process chat history:", error);
           });
         }
@@ -178,7 +224,12 @@ export class Chat {
             const displayUsername = await this.getUsernameById(data.username);
 
             const isOwnMessage = data.username === currentUserId;
-            const messageElement = this.createMessageElement(timestamp, displayUsername, data.message, isOwnMessage);
+            const messageElement = this.createMessageElement(
+              timestamp,
+              displayUsername,
+              data.message,
+              isOwnMessage
+            );
 
             chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -188,7 +239,7 @@ export class Chat {
         };
 
         // Properly handle the async function to catch any errors
-        handleIncomingMessage().catch(error => {
+        handleIncomingMessage().catch((error) => {
           console.error("Failed to handle incoming message:", error);
         });
       }
@@ -196,6 +247,8 @@ export class Chat {
 
     this.ws.onclose = () => {
       console.log("Disconnected from WebSocket server");
+      // Clear cache when WebSocket connection is lost
+      this.clearUserCache();
     };
 
     this.ws.onerror = (error) => {
