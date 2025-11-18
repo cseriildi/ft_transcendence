@@ -1,10 +1,3 @@
-// Game mode types (must match backend)
-export enum GameMode {
-  LOCAL = "LOCAL",
-  ONLINE = "ONLINE",
-  VS_AI = "VS_AI",
-}
-
 interface PlayerInfo {
   userId: number | string;
   username: string;
@@ -35,7 +28,7 @@ export class Pong {
   private gameState: GameState | null = null;
   private readonly wsUrl: string;
   private isConnected: boolean = false;
-  private currentGameMode: GameMode = GameMode.LOCAL;
+  private currentGameMode: string = "local";
   private currentPlayerInfo: PlayerInfo | null = null;
   private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
   private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
@@ -66,13 +59,18 @@ export class Pong {
    * Start a game with optional game mode and player information
    * @param gameMode - The game mode (LOCAL, ONLINE, TOURNAMENT). Defaults to LOCAL.
    * @param playerInfo - Optional player information (userId, username, avatar). Required for ONLINE mode.
+   * @param difficulty - Optional difficulty level for AI mode ("easy", "medium", "hard").
    */
-  public startGame(gameMode: GameMode, playerInfo?: PlayerInfo) {
+  public startGame(
+    gameMode: string,
+    playerInfo?: PlayerInfo,
+    difficulty?: "easy" | "medium" | "hard"
+  ) {
     this.currentGameMode = gameMode;
 
     // For ONLINE mode, playerInfo is required
-    if (gameMode === GameMode.ONLINE && !playerInfo) {
-      console.error("❌ Player info is required for ONLINE mode");
+    if (["remote", "friend"].includes(gameMode) && !playerInfo) {
+      console.error(`❌ Player info is required for ${gameMode} mode`);
       return;
     }
 
@@ -88,6 +86,11 @@ export class Pong {
         // Only include player field if playerInfo is provided
         if (this.currentPlayerInfo) {
           message.player = this.currentPlayerInfo;
+        }
+
+        // Include difficulty for AI mode
+        if (difficulty) {
+          message.difficulty = difficulty;
         }
 
         this.ws.send(JSON.stringify(message));
@@ -148,7 +151,7 @@ export class Pong {
         if (["gameSetup", "ready", "waiting"].includes(message.type)) {
           this.gameState = message.data;
 
-          if (this.currentGameMode === GameMode.ONLINE) {
+          if (["friend", "remote"].includes(this.currentGameMode)) {
             if (message.playerNumber) {
               this.assignedPlayerNumber = message.playerNumber;
             } else {
@@ -157,9 +160,7 @@ export class Pong {
           } else {
             this.assignedPlayerNumber = null;
           }
-          // Update player usernames if provided (for REMOTE and TOURNAMENT modes)
-          //if (["remote", "friend", "tournament"].includes(this.currentGameMode)) {
-          if (this.currentGameMode === GameMode.ONLINE) {
+          if (["remote", "friend", "tournament", "ai"].includes(this.currentGameMode)) {
             if (message.player1Username) {
               this.player1Username = message.player1Username;
             }
@@ -241,15 +242,20 @@ export class Pong {
     const name1El = document.getElementById("name-player1");
     const name2El = document.getElementById("name-player2");
 
-    // Show usernames for online, friend and tournament games
-    //if (["remote", "friend", "tournament"].includes(this.currentGameMode)) {
-    if (this.currentGameMode === GameMode.ONLINE) {
-      if (name1El) name1El.textContent = this.player1Username;
-      if (name2El) name2El.textContent = this.player2Username;
-    } else {
-      // For local games, reset to defaults
-      if (name1El) name1El.textContent = "Player 1";
-      if (name2El) name2El.textContent = "Player 2";
+    if (!name1El || !name2El) return;
+
+    switch (this.currentGameMode) {
+      case "ai":
+        name1El.textContent = "AI";
+        name2El.textContent = "You";
+        break;
+      case "local":
+        name1El.textContent = "Player 1";
+        name2El.textContent = "Player 2";
+        break;
+      default:
+        name1El.textContent = this.player1Username;
+        name2El.textContent = this.player2Username;
     }
   }
 
@@ -258,12 +264,11 @@ export class Pong {
    */
   private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
     // Skip if waiting for opponent
-    if (this.currentGameMode === GameMode.ONLINE && this.assignedPlayerNumber === null) {
+    if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
       return;
     }
 
-    if (this.currentGameMode === GameMode.ONLINE) {
-      // ONLINE mode: only control assigned player
+    if (["friend", "remote"].includes(this.currentGameMode)) {
       switch (key) {
         case "arrowup":
           if (this.assignedPlayerNumber) {
@@ -283,7 +288,6 @@ export class Pong {
           break;
       }
     } else {
-      // LOCAL mode: both players controllable (S/X for player 1, arrows for player 2)
       switch (key) {
         case "s":
           sendInput("playerInput", { player: 1, action: "up" });
@@ -306,11 +310,11 @@ export class Pong {
    */
   private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
     // Skip if waiting for opponent
-    if (this.currentGameMode === GameMode.ONLINE && this.assignedPlayerNumber === null) {
+    if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
       return;
     }
 
-    if (this.currentGameMode === GameMode.ONLINE) {
+    if (["friend", "remote"].includes(this.currentGameMode)) {
       // ONLINE mode: only stop assigned player
       if ((key === "arrowup" || key === "arrowdown") && this.assignedPlayerNumber) {
         sendInput("playerInput", {

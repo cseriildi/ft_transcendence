@@ -1,5 +1,5 @@
 import { Router } from "./router/Router.js";
-import { Pong, GameMode } from "./pong/Pong.js";
+import { Pong } from "./pong/Pong.js";
 import { Login } from "./login/Login.js";
 import { Register } from "./register/Register.js";
 import { Home } from "./home/Home.js";
@@ -11,6 +11,8 @@ import { Users } from "./users/Users.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
 import { getUserId, getAccessToken, isUserAuthorized, getUsername } from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
+
+const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
 
 let currentPong: Pong | null = null;
 
@@ -24,8 +26,6 @@ window.addEventListener("popstate", () => {
     }
   }
 });
-
-const VALID_MODES = ["local", "ai", "remote", "friend", "tournament", "local-tournament"];
 
 const initPongPage = async () => {
   const queryParams = router.getQueryParams();
@@ -134,7 +134,7 @@ const initPongPage = async () => {
     userAvatar?.classList.add("hidden");
   }
 
-  if (mode !== "local" && mode !== "remote" && mode !== "ai") {
+  if (!["local", "remote", "ai"].includes(mode)) {
     // Hide canvas and New Game button for unsupported modes
     const canvas = document.getElementById("pong-canvas");
     const newGameBtn = document.getElementById("new-game-btn");
@@ -179,44 +179,66 @@ const initPongPage = async () => {
     }
 
     const canvas = document.getElementById("pong-canvas") as HTMLCanvasElement;
-    if (canvas) {
-      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
-      // Tell server to start a fresh game tied to this connection
-      let gameMode: GameMode;
-      switch (mode) {
-        case "local":
-          gameMode = GameMode.LOCAL;
-          break;
-        case "ai":
-          gameMode = GameMode.VS_AI;
-          break;
-        case "remote":
-          gameMode = GameMode.ONLINE;
-          break;
-        default:
-          console.error(`❌ Invalid game mode: ${mode}`);
-          return;
+    if (!canvas) {
+      console.error("❌ Pong canvas not found");
+      return;
+    }
+
+    // For AI mode, show difficulty selection modal
+    if (mode === "ai") {
+      const modal = document.getElementById("difficulty-modal");
+      if (!modal) {
+        console.error("❌ Difficulty modal not found");
+        return;
       }
 
-      // For ONLINE mode, pass actual user data
-      if (gameMode === GameMode.ONLINE) {
-        const userId = getUserId();
-        const username = getUsername();
+      // Show modal
+      modal.classList.remove("hidden");
 
-        if (userId && username) {
-          currentPong.startGame(gameMode, {
-            userId: parseInt(userId),
-            username: username,
-          });
-        } else {
-          console.error("❌ User not authenticated for ONLINE mode");
-        }
+      // Handle difficulty selection
+      const handleDifficultySelection = (difficulty: "easy" | "medium" | "hard") => {
+        modal.classList.add("hidden");
+        currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+        currentPong.startGame(mode, undefined, difficulty);
+
+        // Remove event listeners
+        cleanup();
+      };
+
+      const cleanup = () => {
+        easyBtn?.removeEventListener("click", easyHandler);
+        mediumBtn?.removeEventListener("click", mediumHandler);
+        hardBtn?.removeEventListener("click", hardHandler);
+      };
+
+      const easyHandler = () => handleDifficultySelection("easy");
+      const mediumHandler = () => handleDifficultySelection("medium");
+      const hardHandler = () => handleDifficultySelection("hard");
+
+      const easyBtn = document.getElementById("difficulty-easy");
+      const mediumBtn = document.getElementById("difficulty-medium");
+      const hardBtn = document.getElementById("difficulty-hard");
+
+      easyBtn?.addEventListener("click", easyHandler);
+      mediumBtn?.addEventListener("click", mediumHandler);
+      hardBtn?.addEventListener("click", hardHandler);
+    } else if (["remote", "friend"].includes(mode)) {
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+
+      const userId = getUserId();
+      const username = getUsername();
+
+      if (userId && username) {
+        currentPong.startGame(mode, {
+          userId: parseInt(userId),
+          username: username,
+        });
       } else {
-        // LOCAL mode doesn't need playerInfo
-        currentPong.startGame(gameMode);
+        console.error("❌ User not authenticated for ONLINE mode");
       }
     } else {
-      console.error("❌ Pong canvas not found");
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`);
+      currentPong.startGame(mode);
     }
   });
 

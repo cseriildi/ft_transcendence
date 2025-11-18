@@ -11,21 +11,19 @@ export function updateDummyPaddle(game: GameServer, playerNumber: 1 | 2) {
   const timeElapsed = now - game.aiPlayer.aiLastDecisionTime;
 
   const errorConfig = getErrorConfig(game.aiPlayer.aiDifficulty);
+  let positionError = errorConfig.positionError;
 
   // AI makes decisions based on difficulty reaction time
-  if (timeElapsed >= errorConfig.reactionTime) {
+  if (timeElapsed >= errorConfig.reactionTime || game.isServe) {
     let predictedY = predictInterceptionPoint(game, playerNumber);
 
-    // Random chance to completely miss the prediction
-    if (Math.random() < errorConfig.chanceToMissPredict) {
-      // Predict in wrong direction (go opposite way)
-      const centerY = game.Field.height / 2;
-      const diff = predictedY - centerY;
-      predictedY = centerY - diff; // Mirror prediction
+    // Random chance to increase error
+    if (Math.random() < errorConfig.chanceToExtraError) {
+      positionError *= 2;
     }
 
     // Add random position error
-    const maxError = paddle.length * errorConfig.positionError;
+    const maxError = paddle.length * positionError;
     const error = (Math.random() - 0.5) * maxError * 2; // Range: [-maxError, +maxError]
 
     // Apply error and clamp to field bounds
@@ -35,6 +33,9 @@ export function updateDummyPaddle(game: GameServer, playerNumber: 1 | 2) {
     );
 
     game.aiPlayer.aiLastDecisionTime = now;
+    if (game.isServe) {
+      game.isServe = false;
+    }
   }
 
   // Move towards the predicted target position
