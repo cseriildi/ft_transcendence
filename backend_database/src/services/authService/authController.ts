@@ -120,6 +120,10 @@ export const authController = {
       // Revoke the refresh token in database
       await db.run("UPDATE refresh_tokens SET revoked = 1 WHERE jti = ?", [jti]);
 
+      // Set user as offline immediately after logout by setting last_seen to past time
+      const pastTime = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 minutes ago
+      await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [pastTime, decoded.sub]);
+
       // Log successful logout
       request.log.info(
         {
@@ -136,9 +140,12 @@ export const authController = {
         { message: "Logged out successfully" },
         "Logged out successfully"
       );
-    } catch {
+    } catch (error) {
       // Even if token is invalid/expired, clear the cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
+
+      request.log.warn("Logout attempted with invalid refresh token");
+
       throw errors.unauthorized("Invalid refresh token");
     }
   },
@@ -292,6 +299,10 @@ export const authController = {
 
       // Clear rate limit on successful login
       resetRateLimit(`login:${clientIp}`);
+
+      // Set user as online immediately after successful login
+      const now = new Date().toISOString();
+      await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [now, result.id]);
 
       // Retrieve avatar URL using helper
       const avatar_url = await getAvatarUrl(db, result.id);
