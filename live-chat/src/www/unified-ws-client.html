@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -12,8 +12,9 @@
       }
 
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
-          Cantarell, sans-serif;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell,
+          sans-serif;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         padding: 20px;
@@ -732,12 +733,10 @@
             document.getElementById("joinLobbyBtn").onclick = leaveLobby;
             updateUserList(data.allUsers);
             document.getElementById("chatTitle").textContent = "Lobby";
-            document.getElementById(
-              "chatSubtitle"
-            ).textContent = `${data.allUsers.length} users online`;
-            document.getElementById(
-              "messages"
-            ).innerHTML = `<div class="message system">${data.message}</div>`;
+            document.getElementById("chatSubtitle").textContent =
+              `${data.allUsers.length} users online`;
+            document.getElementById("messages").innerHTML =
+              `<div class="message system">${data.message}</div>`;
             break;
 
           case "lobby_left":
@@ -751,9 +750,8 @@
           case "user_list_update":
             updateUserList(data.allUsers);
             if (inLobby) {
-              document.getElementById(
-                "chatSubtitle"
-              ).textContent = `${data.allUsers.length} users online`;
+              document.getElementById("chatSubtitle").textContent =
+                `${data.allUsers.length} users online`;
             }
             break;
 
