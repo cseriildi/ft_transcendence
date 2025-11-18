@@ -109,7 +109,7 @@ export class GameServer {
   private isRunning: boolean = false;
 
   // AI Config
-  aiEnabled: boolean = false;
+  isServe: boolean = true;
   aiPlayer: AIPlayer = new AIPlayer();
 
   // Callbacks for game loops (injected from outside)

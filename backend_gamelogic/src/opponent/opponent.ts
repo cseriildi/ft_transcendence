@@ -13,7 +13,7 @@ export function updateDummyPaddle(game: GameServer, playerNumber: 1 | 2) {
   const errorConfig = getErrorConfig(game.aiPlayer.aiDifficulty);
 
   // AI makes decisions based on difficulty reaction time
-  if (timeElapsed >= errorConfig.reactionTime) {
+  if (timeElapsed >= errorConfig.reactionTime || game.isServe) {
     let predictedY = predictInterceptionPoint(game, playerNumber);
 
     // Random chance to completely miss the prediction
@@ -35,6 +35,9 @@ export function updateDummyPaddle(game: GameServer, playerNumber: 1 | 2) {
     );
 
     game.aiPlayer.aiLastDecisionTime = now;
+    if (game.isServe) {
+      game.isServe = false;
+    }
   }
 
   // Move towards the predicted target position

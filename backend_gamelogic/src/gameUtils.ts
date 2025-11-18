@@ -51,9 +51,6 @@ async function sendMatchResult(game: GameServer): Promise<void> {
 // Factory function to create game with specified mode
 export function createGame(gameMode: string): GameServer {
   const game = new GameServer(gameMode);
-  if (gameMode === "ai") {
-    game.aiEnabled = true;
-  }
 
   // Set up callbacks
   game.setUpdateCallback(updateGameState);
@@ -120,17 +117,6 @@ export function collideBallCapsule(paddle: Paddle, ball: Ball): boolean {
     ball.speedX -= 2 * dot * nx;
     ball.speedY -= 2 * dot * ny;
 
-    // Restore ball to full speed if it was slowed down after reset
-    const currentSpeed = Math.hypot(ball.speedX, ball.speedY);
-    const normalSpeed = config.game.ballSpeed;
-
-    if (currentSpeed < normalSpeed * 0.9) {
-      // If speed is significantly lower than normal
-      const speedMultiplier = normalSpeed / currentSpeed;
-      ball.speedX *= speedMultiplier;
-      ball.speedY *= speedMultiplier;
-    }
-
     // Limit deflection angle to maximum 45 degrees
     const speed = Math.hypot(ball.speedX, ball.speedY);
     const angle = Math.atan2(ball.speedY, ball.speedX);
@@ -163,11 +149,10 @@ export function resetBall(game: GameServer) {
   game.Ball.x = game.Field.width / 2;
   game.Ball.y = game.Field.height / 2;
   const angle = ((Math.random() - 0.5) * Math.PI) / 2; // -45 to +45 degrees
-  // Start at half speed to give players time to react after a goal.
-  // The ball's speed will gradually return to full speed during gameplay (handled in the game update loop).
-  const speed = config.game.ballSpeed * 0.5;
+  const speed = config.game.ballSpeed;
   game.Ball.speedX = Math.cos(angle) * speed * (Math.random() < 0.5 ? 1 : -1); // randomize left/right
   game.Ball.speedY = Math.sin(angle) * speed;
+  game.isServe = true;
 }
 
 export function collideBallWithWalls(game: GameServer) {
@@ -186,7 +171,7 @@ export function collideBallWithWalls(game: GameServer) {
 }
 
 export function updateGameState(game: GameServer) {
-  if (game.aiEnabled && game.aiPlayer.aiPlayerNo) {
+  if (game.gameMode == "ai" && game.aiPlayer.aiPlayerNo) {
     updateDummyPaddle(game, game.aiPlayer.aiPlayerNo);
   }
   // Update ball position

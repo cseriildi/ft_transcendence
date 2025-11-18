@@ -14,11 +14,11 @@ process.env.PUBLIC_HOST = process.env.PUBLIC_HOST || "localhost";
 process.env.PUBLIC_PORT = process.env.PUBLIC_PORT || "8443";
 
 // Game configuration
-process.env.GAME_WIDTH = process.env.GAME_WIDTH || "4000";
+process.env.GAME_WIDTH = process.env.GAME_WIDTH || "3200";
 process.env.GAME_HEIGHT = process.env.GAME_HEIGHT || "2000";
 process.env.MAX_SCORE = process.env.MAX_SCORE || "10";
 process.env.BALL_RADIUS = process.env.BALL_RADIUS || "40";
-process.env.BALL_SPEED = process.env.BALL_SPEED || "40";
+process.env.BALL_SPEED = process.env.BALL_SPEED || "35";
 process.env.PADDLE_SPEED = process.env.PADDLE_SPEED || "40";
 process.env.PHYSICS_FPS = process.env.PHYSICS_FPS || "60";
 process.env.RENDER_FPS = process.env.RENDER_FPS || "30";
