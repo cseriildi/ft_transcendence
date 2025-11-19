@@ -13,29 +13,29 @@ export const matchController = {
   ): Promise<ApiResponse<Match>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { winner, loser, winner_score, loser_score } = request.body;
+    const { winner_id, loser_id, winner_score, loser_score } = request.body;
 
     const playersExist = await db.get<{ count: number }>(
-      `SELECT COUNT(*) as count FROM users WHERE username IN (?, ?)`,
-      [winner, loser]
+      `SELECT COUNT(*) as count FROM users WHERE id IN (?, ?)`,
+      [winner_id, loser_id]
     );
     if (!playersExist || playersExist.count < 2) {
       throw errors.notFound("One or both players do not exist", {
-        winner,
-        loser,
+        winner_id,
+        loser_id,
         foundCount: playersExist?.count || 0,
       });
     }
 
     const result = await db.run(
-      `INSERT INTO matches (winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
-      [winner, loser, winner_score, loser_score]
+      `INSERT INTO matches (winner_id, loser_id, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
+      [winner_id, loser_id, winner_score, loser_score]
     );
 
     const match: Match = {
       id: result.lastID!,
-      winner,
-      loser,
+      winner_id,
+      loser_id,
       winner_score,
       loser_score,
       played_at: new Date().toISOString(),
@@ -51,20 +51,24 @@ export const matchController = {
   ): Promise<ApiResponse<Match[]>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { username } = request.params;
+    const userId = parseInt(request.params.userId, 10);
+
+    if (isNaN(userId) || userId <= 0) {
+      throw errors.validation("Invalid user ID - must be a positive integer");
+    }
 
     // First check if the user exists
-    const user = await db.get<User>(`SELECT * FROM users WHERE username = ?`, [username]);
+    const user = await db.get<User>(`SELECT * FROM users WHERE id = ?`, [userId]);
     if (!user) {
-      throw errors.notFound("User", { username });
+      throw errors.notFound("User", { userId });
     }
 
     // Then get their matches
     const matches = await db.all<Match>(
-      `SELECT id, winner_name as winner, loser_name as loser, winner_score, loser_score, played_at 
-				 FROM matches WHERE winner_name = ? OR loser_name = ? ORDER BY played_at DESC`,
-      [username, username]
+      `SELECT id, winner_id, loser_id, winner_score, loser_score, played_at 
+				 FROM matches WHERE winner_id = ? OR loser_id = ? ORDER BY played_at DESC`,
+      [userId, userId]
     );
-    return ApiResponseHelper.success(matches, "Match retrieved successfully");
+    return ApiResponseHelper.success(matches, "Matches retrieved successfully");
   },
 };

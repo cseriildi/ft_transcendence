@@ -30,6 +30,11 @@ class Router {
   }
 
   private async loadTemplates() {
+    // Only load templates if they haven't been loaded yet
+    if (this.templates.size > 0) {
+      return;
+    }
+
     const templateFiles = [
       "home",
       "pong",
@@ -57,16 +62,29 @@ class Router {
     this.routes.push({ path, template, init });
   }
 
-  navigate(path: string) {
-    window.history.pushState({}, "", path);
+  navigate(path: string, params?: Record<string, string>) {
+    let fullPath = path;
+    if (params) {
+      const queryString = new URLSearchParams(params).toString();
+      fullPath = `${path}?${queryString}`;
+    }
+    window.history.pushState({}, "", fullPath);
     this.handleRoute();
+  }
+
+  getQueryParams(): Record<string, string> {
+    const params: Record<string, string> = {};
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.forEach((value, key) => {
+      params[key] = value;
+    });
+    return params;
   }
 
   private handleRoute() {
     const currentPath = window.location.pathname;
     const route =
-      this.routes.find((r) => r.path === currentPath) ||
-      this.routes.find((r) => r.path === "/404");
+      this.routes.find((r) => r.path === currentPath) || this.routes.find((r) => r.path === "/404");
 
     if (route) {
       const template = this.templates.get(route.template);

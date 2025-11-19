@@ -1,10 +1,11 @@
 import Fastify from "fastify";
 import { FastifyInstance } from "fastify";
-import { config, validateConfig } from "./config.js";
+import { config, VALID_MODES, validateConfig } from "./config.js";
 import { createGame, resetBall } from "./gameUtils.js";
-import { GameServer } from "./gameTypes.js";
+import { GameServer, GameStartPayload, PlayerInfo } from "./gameTypes.js";
 import { broadcastGameState, broadcastGameSetup } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
+import { Tournament, TournamentPlayer } from "./Tournament.js";
 
 // Validate configuration on startup
 validateConfig();
@@ -20,16 +21,26 @@ await fastify.register(errorHandlerPlugin);
 await fastify.register(import("@fastify/websocket"));
 
 // NOTE: We create one game instance per WebSocket connection.
-// The client will ask to start a new game (via `startGame` message).
+// The client will ask to start a new game (via `newGame` message).
 // Track all active games so we can report health and perform graceful shutdown.
 const activeGames = new Set<GameServer>();
 
+// Track active players (userId -> game) to prevent multiple simultaneous games
+// Also enables future functionality to terminate games on user logout
+const activePlayers = new Map<string | number, GameServer>();
+const activeTournaments = new Set<Tournament>();
+
+// Track the single player waiting for an opponent in ONLINE mode
+// Only one player can wait at a time
+let waitingRemotePlayer: {
+  playerInfo: PlayerInfo;
+  connection: any;
+  game: GameServer;
+} | null = null;
+
 // Health check endpoint
 fastify.get("/health", async () => {
-  const connectedClients = Array.from(activeGames).reduce(
-    (acc, g) => acc + g.clients.size,
-    0,
-  );
+  const connectedClients = Array.from(activeGames).reduce((acc, g) => acc + g.clients.size, 0);
   return {
     status: "healthy",
     timestamp: new Date().toISOString(),
@@ -39,21 +50,86 @@ fastify.get("/health", async () => {
   };
 });
 
+// Helper function to terminate all games for a specific user (e.g., on logout)
+// Can be called from an HTTP endpoint in the future
+function terminateUserGames(userId: string | number): void {
+  const game = activePlayers.get(userId);
+  if (game) {
+    try {
+      // Notify clients in the game with different messages
+      game.clients.forEach((client) => {
+        try {
+          if (client.playerInfo && client.playerInfo.userId === userId) {
+            // Message for the user who logged out
+            client.connection.send(
+              JSON.stringify({
+                type: "error",
+                message: "Game terminated: You have been logged out",
+              })
+            );
+          } else {
+            // Message for the opponent
+            client.connection.send(
+              JSON.stringify({
+                type: "error",
+                message: "Game terminated: Opponent logged out",
+              })
+            );
+          }
+        } catch (err) {
+          console.error("Failed to notify client:", err);
+        }
+      });
+
+      // Stop the game
+      game.stop();
+
+      // Remove all players from the game from activePlayers
+      game.clients.forEach((client) => {
+        if (client.playerInfo && client.playerInfo.userId) {
+          activePlayers.delete(client.playerInfo.userId);
+        }
+      });
+
+      // Clear waiting room if needed
+      if (waitingRemotePlayer && waitingRemotePlayer.game === game) {
+        waitingRemotePlayer = null;
+      }
+
+      // Remove from active games
+      activeGames.delete(game);
+      game.clients.clear();
+    } catch (err) {
+      console.error(`Error terminating games for user ${userId}:`, err);
+    }
+  }
+}
+
 // WebSocket route for game
 fastify.register(async function (server: FastifyInstance) {
   server.get("/game", { websocket: true }, (connection: any, req: any) => {
     console.log("Client connected");
 
-    // Each connection manages its own game instance (so each tab has a separate game)
+    // Each connection is assigned a player number and game
     let game: ReturnType<typeof createGame> | null = null;
+    let tournament: Tournament | null = null;
 
-    const stopgame = () => {
+    const stopGame = () => {
       if (game) {
         try {
           game.stop();
         } catch (err) {
-          console.error("Error stopping local game:", err);
+          console.error("Error stopping game:", err);
         }
+        if (waitingRemotePlayer && waitingRemotePlayer.game === game) {
+          waitingRemotePlayer = null;
+        }
+        // Remove players from active set
+        game.clients.forEach((client) => {
+          if (client.playerInfo && client.playerInfo.userId) {
+            activePlayers.delete(client.playerInfo.userId);
+          }
+        });
         game.clients.clear();
         activeGames.delete(game);
         game = null;
@@ -63,66 +139,285 @@ fastify.register(async function (server: FastifyInstance) {
     connection.on("message", (message: any) => {
       try {
         const data = JSON.parse(message.toString());
-        console.log("Received:", data);
 
         // Handle different message types
         switch (data.type) {
           case "playerInput": {
-            if (!game) return; // ignore inputs if no game
+            if (!game) return;
             const input = data.data as { player: number; action: string };
             handlePlayerInput(game, input);
             break;
           }
-          case "startGame": {
-            // Stop previous game for this connection and start a fresh one
-            stopgame();
-            game = createGame();
-            activeGames.add(game);
-            game.clients.add(connection);
-            game.Ball.speedX = 0;
-            game.Ball.speedY = 0;
-            broadcastGameSetup(game);
-            game.start();
+          case "newGame": {
+            // Validate and extract game mode and player info
+            const gameStartData = data as GameStartPayload;
+            const { error, gameMode, player, difficulty } = validateNewGameMessage(gameStartData);
 
-            // Run countdown and release ball when done
-            (async () => {
-              const thisGame = game;
-              for (let i = 3; i > 0; i--) {
-                if (game !== thisGame || !game) break;
-                game.countdown = i;
-                broadcastGameState(game);
-                await new Promise((resolve) => setTimeout(resolve, 500));
-              }
-              // Countdown complete, reset ball (gives it speed)
-              if (game === thisGame && game) {
-                game.countdown = 0;
-                resetBall(game);
+            if (error || !gameMode) {
+              const errorMsg = error || "Missing required field: mode";
+              console.warn("Invalid newGame message:", errorMsg);
+              sendErrorToClient(connection, errorMsg);
+              return;
+            }
+
+            // Check if player already has an active game (ONLINE mode only)
+            // Note: validateGameStartMessage already ensures player exists for ONLINE mode
+            if (gameMode === "remote" && player!.userId && activePlayers.has(player!.userId)) {
+              sendErrorToClient(
+                connection,
+                "You already have an active game. Please finish it before starting a new one."
+              );
+              return;
+            }
+
+            // Stop previous game for this connection and start a fresh one
+            stopGame();
+
+            if (gameMode === "remote") {
+              if (!waitingRemotePlayer || waitingRemotePlayer.connection === connection) {
+                // Player 1 waiting for opponent - store in waiting room
+                game = createGame(gameMode);
+                waitingRemotePlayer = { playerInfo: player!, connection, game };
+                game.clients.set(1, { playerInfo: player!, connection });
+                activeGames.add(game);
+                activePlayers.set(player!.userId, game);
+
+                connection.send(
+                  JSON.stringify({
+                    type: "waiting",
+                    message: "Waiting for opponent to join...",
+                    gameMode: gameMode,
+                    playerNumber: 1,
+                  })
+                );
+                freezeBall(game);
+              } else {
+                // Player 2 joining - check if different user
+                if (waitingRemotePlayer.playerInfo.userId === player!.userId) {
+                  sendErrorToClient(connection, "Cannot play against yourself");
+                  return;
+                }
+
+                game = waitingRemotePlayer.game;
+                waitingRemotePlayer = null;
+                game.clients.set(2, { playerInfo: player!, connection });
+                activePlayers.set(player!.userId, game);
+
+                connection.send(
+                  JSON.stringify({
+                    type: "ready",
+                    message: "Ready",
+                    gameMode: gameMode,
+                    playerNumber: 2,
+                  })
+                );
+                game.clients.get(1)?.connection.send(
+                  JSON.stringify({
+                    type: "ready",
+                    message: "Opponent joined! Starting game...",
+                    gameMode: gameMode,
+                    playerNumber: 1,
+                  })
+                );
                 broadcastGameSetup(game);
+                runGameCountdown(game).catch((err) =>
+                  console.error("Error during online game countdown:", err)
+                );
               }
-            })();
+            } else if (["local", "ai"].includes(gameMode)) {
+              game = createGame(gameMode);
+              if (gameMode === "ai") {
+                game.aiPlayer.aiDifficulty = difficulty!;
+              }
+
+              game.clients.set(2, {
+                playerInfo: { userId: gameMode, username: gameMode },
+                connection,
+              });
+              activeGames.add(game);
+              freezeBall(game);
+
+              runGameCountdown(game).catch((err) =>
+                console.error("Error during local game countdown:", err)
+              );
+            }
             break;
           }
-          case "joinGame":
-            // Handle player joining
+          case "newTournament": {
+            // Validate and extract game mode and player info (but it will send 4 or 8 playerInfos)
+            const tournamentData = data as {
+              mode: string;
+              players: string[];
+            };
+            const { error, mode, players } = validateTournamentMessage(tournamentData);
+
+            if (error || !players) {
+              const errorMsg = error || "Missing required field: players";
+              console.warn("Invalid newTournament message:", errorMsg);
+              sendErrorToClient(connection, errorMsg);
+              return;
+            }
+
+            if (mode !== "tournament") {
+              const errorMsg = "Game mode must be 'tournament' for newTournament";
+              console.warn("Invalid newTournament message:", errorMsg);
+              sendErrorToClient(connection, errorMsg);
+              return;
+            }
+
+            if (tournament) {
+              activeTournaments.delete(tournament);
+              tournament = null;
+            }
+
+            tournament = new Tournament(players);
+            activeTournaments.add(tournament);
+            game = startNextTournamentGame(connection, tournament);
             break;
+          }
+
+          case "startGame": {
+            const mode = data.mode;
+            if (!mode || mode !== "tournament") return;
+            if (!tournament || !game) return;
+            if (game.countdown < 3) return;
+
+            connection.send(
+              JSON.stringify({
+                type: "ready",
+                message: "Tournament game starting!",
+                gameMode: mode,
+              })
+            );
+            broadcastGameSetup(game);
+            runGameCountdown(game).catch((err) =>
+              console.error("Error during tournament game countdown:", err)
+            );
+            break;
+          }
+          case "nextGame": {
+            if (
+              (data.mode === "tournament" && tournament) ||
+              ["friend", "remote"].includes(data.mode)
+            ) {
+              stopGame();
+              if (data.mode === "tournament") {
+                game = startNextTournamentGame(connection, tournament);
+                if (!game) {
+                  // send tournament complete message with results
+                  connection.send(
+                    JSON.stringify({
+                      type: "tournamentComplete",
+                      mode: "tournament",
+                      results: tournament!.getResults() || [],
+                    })
+                  );
+                  tournament = null;
+                }
+              }
+            }
+            break;
+          }
         }
       } catch (err) {
         console.error("Error parsing message:", err);
+        sendErrorToClient(connection, "Failed to parse message");
       }
     });
 
     connection.on("close", () => {
       console.log("Client disconnected");
-      stopgame();
+
+      // Notify other players in the game that someone left
+      if (game && ["remote", "friend"].includes(game.gameMode)) {
+        // Find the player who left and notify others
+        game.clients.forEach((client) => {
+          if (client.connection !== connection) {
+            try {
+              client.connection.send(
+                JSON.stringify({
+                  type: "playerLeft",
+                  message: "Your opponent has left the game",
+                })
+              );
+            } catch (err) {
+              console.error("Failed to notify client about player leaving:", err);
+            }
+          }
+        });
+      }
+      stopGame();
     });
   });
 });
 
+function startNextTournamentGame(
+  connection: any,
+  tournament?: Tournament | null
+): GameServer | null {
+  if (!tournament) return null;
+  const pair = tournament.getNextPair();
+  if (!pair) {
+    console.log("🏆 No more pairs - tournament complete!");
+    tournament.getResults();
+    //send results
+    activeTournaments.delete(tournament);
+    tournament = null;
+    return null;
+  }
+
+  const game = createGame("tournament");
+  game.tournament = tournament;
+  game.clients.set(1, {
+    playerInfo: { username: pair.player1.username, userId: pair.player1.userId },
+    connection,
+  });
+  game.clients.set(2, {
+    playerInfo: { username: pair.player2.username, userId: pair.player2.userId },
+    connection: undefined,
+  });
+
+  activeGames.add(game);
+  connection.send(
+    JSON.stringify({
+      type: "waiting",
+      message: `${pair.player1.username} vs ${pair.player2.username}`,
+      gameMode: "tournament",
+      pair: { player1: pair.player1.username, player2: pair.player2.username },
+    })
+  );
+  freezeBall(game);
+
+  return game;
+}
+
+function freezeBall(game: GameServer): void {
+  game.Ball.speedX = 0;
+  game.Ball.speedY = 0;
+  broadcastGameSetup(game);
+  game.start();
+}
+
+// Helper function to run game countdown and start play
+async function runGameCountdown(game: GameServer): Promise<void> {
+  // Run 3-second countdown
+  for (let i = 3; i > 0; i--) {
+    if (!game.running()) break;
+    game.countdown = i;
+    broadcastGameState(game);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  // Countdown complete, release ball
+  if (game.running()) {
+    game.countdown = 0;
+    resetBall(game);
+    broadcastGameSetup(game);
+  }
+}
+
 // Handle player input
-function handlePlayerInput(
-  game: GameServer,
-  input: { player: number; action: string },
-) {
+function handlePlayerInput(game: GameServer, input: { player: number; action: string }) {
   const { player, action } = input;
   const targetPaddle = player === 1 ? game.Paddle1 : game.Paddle2;
 
@@ -136,6 +431,109 @@ function handlePlayerInput(
     case "stop":
       targetPaddle.ySpeed = 0;
       break;
+  }
+}
+
+// Helper function to validate newGame message
+function validateNewGameMessage(data: any): {
+  error?: string;
+  gameMode?: string;
+  player?: PlayerInfo;
+  difficulty?: "easy" | "medium" | "hard";
+} {
+  // Check if mode is present
+  if (!data.mode) {
+    return { error: "Missing required field: mode" };
+  }
+
+  // Validate game mode
+  const validModes = Object.values(VALID_MODES);
+  if (!validModes.includes(data.mode)) {
+    return {
+      error: `Invalid game mode: ${data.mode}. Must be one of: ${validModes.join(", ")}`,
+    };
+  }
+
+  // Validate difficulty if provided
+  if (data.mode == "ai" && !["easy", "medium", "hard"].includes(data.difficulty)) {
+    return {
+      error: `Invalid difficulty: ${data.difficulty}. Must be one of: easy, medium, hard`,
+    };
+  }
+
+  if (["remote", "friend"].includes(data.mode)) {
+    if (!data.player) {
+      return { error: "Missing required field: player" };
+    }
+
+    if (!data.player.username) {
+      return { error: "Player must have a username" };
+    }
+
+    if (!data.player.userId) {
+      return { error: "Player must have a userId" };
+    }
+  }
+
+  return {
+    gameMode: data.mode,
+    player: data.player,
+    difficulty: data.difficulty,
+  };
+}
+
+function validateTournamentMessage(data: any): {
+  error?: string;
+  mode?: string;
+  players?: string[];
+} {
+  // Check if mode is present
+  if (!data.mode) {
+    return { error: "Missing required field: mode" };
+  }
+  if (data.mode !== "tournament") {
+    return { error: "Game mode must be 'tournament' for newTournament" };
+  }
+
+  if (!data.players) {
+    return { error: "Missing or invalid required field: players" };
+  }
+
+  // Additional validation: check for unique and non-empty usernames
+  const usernames = data.players.map((name: string) => name.trim());
+  const uniqueUsernames = new Set(usernames);
+
+  if (usernames.includes("")) {
+    return { error: "Player usernames must be non-empty" };
+  }
+
+  if (uniqueUsernames.size !== usernames.length) {
+    return { error: "Player usernames must be unique" };
+  }
+
+  //Check if there are 4 or 8 players
+  if (data.players.length !== 4 && data.players.length !== 8) {
+    return { error: "Tournament must have exactly 4 or 8 players" };
+  }
+
+  return {
+    mode: data.mode,
+    players: data.players,
+  };
+}
+
+// Helper function to send error message to client
+function sendErrorToClient(connection: any, error: string) {
+  try {
+    connection.send(
+      JSON.stringify({
+        type: "error",
+        message: error,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  } catch (err) {
+    console.error("Failed to send error to client:", err);
   }
 }
 
@@ -154,7 +552,7 @@ fastify.listen(
         : `ws://${config.server.publicHost}/game`;
     console.log(`🎮 Game server running at ${address}`);
     console.log(`🔌 WebSocket available at ${wsUrl}`);
-  },
+  }
 );
 
 // Graceful shutdown

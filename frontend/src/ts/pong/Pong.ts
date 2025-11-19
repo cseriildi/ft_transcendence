@@ -1,3 +1,9 @@
+interface PlayerInfo {
+  userId: number | string;
+  username: string;
+  avatar?: string;
+}
+
 export interface GameState {
   field: { width: number; height: number };
   ball: { x: number; y: number; radius: number };
@@ -22,11 +28,21 @@ export class Pong {
   private gameState: GameState | null = null;
   private readonly wsUrl: string;
   private isConnected: boolean = false;
+  private currentGameMode: string = "local";
+  private currentPlayerInfo: PlayerInfo | null = null;
+  private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
+  private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
+  private player1Username: string = "Player 1";
+  private player2Username: string = "Player 2";
+  private isWaitingForStart: boolean = false; // Tournament
 
-  constructor(canvasId: string, wsUrl: string) {
+  // Store references to event listeners for cleanup
+  private keydownListener: ((event: KeyboardEvent) => void) | null = null;
+  private keyupListener: ((event: KeyboardEvent) => void) | null = null;
+
+  constructor(canvasId: string, wsUrl: string, gameMode: string) {
     const canvasEl = document.getElementById(canvasId);
-    if (!canvasEl)
-      throw new Error(`Canvas element with id "${canvasId}" not found.`);
+    if (!canvasEl) throw new Error(`Canvas element with id "${canvasId}" not found.`);
     const canvas = canvasEl as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Could not get 2D rendering context.");
@@ -34,16 +50,51 @@ export class Pong {
     this.canvas = canvas;
     this.ctx = ctx;
     this.wsUrl = wsUrl;
-
+    this.currentGameMode = gameMode;
     this.setupInputHandlers();
     this.connect();
     this.renderLoop();
   }
 
-  public startGame() {
+  /**
+   * Start a game with optional game mode and player information
+   * @param gameMode - The game mode (LOCAL, ONLINE, TOURNAMENT). Defaults to LOCAL.
+   * @param playerInfo - Optional player information (userId, username, avatar). Required for ONLINE mode.
+   * @param difficulty - Optional difficulty level for AI mode ("easy", "medium", "hard").
+   */
+  public startGame(
+    gameMode: string,
+    playerInfo?: PlayerInfo,
+    difficulty?: "easy" | "medium" | "hard"
+  ) {
+    this.currentGameMode = gameMode;
+
+    // For ONLINE mode, playerInfo is required
+    if (["remote", "friend"].includes(gameMode) && !playerInfo) {
+      console.error(`❌ Player info is required for ${gameMode} mode`);
+      return;
+    }
+
+    this.currentPlayerInfo = playerInfo || null;
+
     const sendStart = () => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type: "startGame" }));
+        const message: any = {
+          type: "newGame",
+          mode: this.currentGameMode,
+        };
+
+        // Only include player field if playerInfo is provided
+        if (this.currentPlayerInfo) {
+          message.player = this.currentPlayerInfo;
+        }
+
+        // Include difficulty for AI mode
+        if (difficulty) {
+          message.difficulty = difficulty;
+        }
+
+        this.ws.send(JSON.stringify(message));
       }
     };
 
@@ -56,7 +107,65 @@ export class Pong {
         () => {
           sendStart();
         },
-        { once: true },
+        { once: true }
+      );
+    }
+  }
+
+  /**
+   * Get the current game score
+   */
+  public getScore(): { player1: number; player2: number } | null {
+    return this.gameState?.score || null;
+  }
+
+  newTournament(playerNames: string[]) {
+    const sendStart = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const message: any = {
+          type: "newTournament",
+          mode: this.currentGameMode,
+          players: playerNames,
+        };
+
+        this.ws.send(JSON.stringify(message));
+      }
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      sendStart();
+    } else if (this.ws) {
+      this.ws.addEventListener(
+        "open",
+        () => {
+          sendStart();
+        },
+        { once: true }
+      );
+    }
+  }
+
+  startTournamentGame() {
+    const sendStart = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        const message: any = {
+          type: "startGame",
+          mode: this.currentGameMode,
+        };
+
+        this.ws.send(JSON.stringify(message));
+      }
+    };
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      sendStart();
+    } else if (this.ws) {
+      this.ws.addEventListener(
+        "open",
+        () => {
+          sendStart();
+        },
+        { once: true }
       );
     }
   }
@@ -73,10 +182,57 @@ export class Pong {
       try {
         const message = JSON.parse(event.data);
 
-        if (message.type === "gameSetup") {
-          // Store initial full state
+        if (message.type === "error") {
+          // Handle error messages from server
+          console.error("❌ Game server error:", message.message);
+          alert(`Game Error: ${message.message}`);
+        } else if (message.type === "waiting") {
+          if (this.currentGameMode === "tournament") {
+            this.isWaitingForStart = true;
+          } else if (this.currentGameMode === "remote") {
+            this.isWaitingForOpponent = true;
+          }
+        } else if (message.type === "ready") {
+          this.isWaitingForOpponent = false;
+          this.isWaitingForStart = false;
+        } else if (["playerLeft", "gameResult"].includes(message.type)) {
+          if (message.type === "gameResult") {
+            console.log("🏆 Game Over! Result:", message.data);
+          } else {
+            console.warn("⚠️ Player left:", message.message);
+            alert(`⚠️ ${message.message}`);
+          }
+          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+            this.ws.send(
+              JSON.stringify({
+                type: "nextGame",
+                mode: this.currentGameMode,
+              })
+            );
+          }
+        }
+        if (["gameSetup", "ready", "waiting"].includes(message.type)) {
           this.gameState = message.data;
-          console.log("📦 Received game setup:", this.gameState);
+
+          if (["friend", "remote"].includes(this.currentGameMode)) {
+            if (message.playerNumber) {
+              this.assignedPlayerNumber = message.playerNumber;
+            } else {
+              this.assignedPlayerNumber = 1;
+            }
+          } else {
+            this.assignedPlayerNumber = null;
+          }
+          if (["remote", "friend", "tournament", "ai"].includes(this.currentGameMode)) {
+            if (message.player1Username) {
+              this.player1Username = message.player1Username;
+            }
+            if (message.player2Username) {
+              this.player2Username = message.player2Username;
+            }
+            this.updatePlayerNamesDisplay();
+          }
+
           this.updateScoreDisplay();
         } else if (message.type === "gameState") {
           // Merge updates with existing state
@@ -103,9 +259,11 @@ export class Pong {
               this.updateScoreDisplay();
             }
           }
+        } else if (message.type === "tournamentComplete" && message.mode === "tournament") {
+          console.log("🎉 Tournament Complete! Results:", message.data);
         }
       } catch (err) {
-        console.error("Error parsing game state:", err);
+        console.error("Error parsing game message:", err);
       }
     };
 
@@ -119,22 +277,13 @@ export class Pong {
     };
   }
 
-  private updateCapsule(paddle: {
-    cx?: number;
-    cy?: number;
-    capsule: Capsule;
-  }) {
+  private updateCapsule(paddle: { cx?: number; cy?: number; capsule: Capsule }) {
     const cap = paddle.capsule;
     const dx = cap.x2 - cap.x1;
     const dy = cap.y2 - cap.y1;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    if (
-      paddle.cx === undefined ||
-      paddle.cy === undefined ||
-      !isFinite(length) ||
-      length === 0
-    )
+    if (paddle.cx === undefined || paddle.cy === undefined || !isFinite(length) || length === 0)
       return;
 
     const halfLength = length / 2;
@@ -150,21 +299,60 @@ export class Pong {
     const score1El = document.getElementById("score-player1");
     const score2El = document.getElementById("score-player2");
 
-    if (score1El)
-      score1El.textContent = this.gameState.score.player1.toString();
-    if (score2El)
-      score2El.textContent = this.gameState.score.player2.toString();
+    if (score1El) score1El.textContent = this.gameState.score.player1.toString();
+    if (score2El) score2El.textContent = this.gameState.score.player2.toString();
   }
 
-  private setupInputHandlers() {
-    const sendInput = (type: string, data: any) => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ type, data }));
-      }
-    };
+  private updatePlayerNamesDisplay() {
+    const name1El = document.getElementById("name-player1");
+    const name2El = document.getElementById("name-player2");
 
-    document.addEventListener("keydown", (event) => {
-      const key = event.key.toLowerCase();
+    if (!name1El || !name2El) return;
+
+    switch (this.currentGameMode) {
+      case "ai":
+        name1El.textContent = "AI";
+        name2El.textContent = "You";
+        break;
+      case "local":
+        name1El.textContent = "Player 1";
+        name2El.textContent = "Player 2";
+        break;
+      default:
+        name1El.textContent = this.player1Username;
+        name2El.textContent = this.player2Username;
+    }
+  }
+
+  /**
+   * Handle keydown events based on game mode
+   */
+  private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
+    // Skip if waiting for opponent
+    if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
+      return;
+    }
+
+    if (["friend", "remote"].includes(this.currentGameMode)) {
+      switch (key) {
+        case "arrowup":
+          if (this.assignedPlayerNumber) {
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "up",
+            });
+          }
+          break;
+        case "arrowdown":
+          if (this.assignedPlayerNumber) {
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "down",
+            });
+          }
+          break;
+      }
+    } else {
       switch (key) {
         case "s":
           sendInput("playerInput", { player: 1, action: "up" });
@@ -179,10 +367,28 @@ export class Pong {
           sendInput("playerInput", { player: 2, action: "down" });
           break;
       }
-    });
+    }
+  }
 
-    document.addEventListener("keyup", (event) => {
-      const key = event.key.toLowerCase();
+  /**
+   * Handle keyup events based on game mode
+   */
+  private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
+    // Skip if waiting for opponent
+    if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
+      return;
+    }
+
+    if (["friend", "remote"].includes(this.currentGameMode)) {
+      // ONLINE mode: only stop assigned player
+      if ((key === "arrowup" || key === "arrowdown") && this.assignedPlayerNumber) {
+        sendInput("playerInput", {
+          player: this.assignedPlayerNumber,
+          action: "stop",
+        });
+      }
+    } else {
+      // LOCAL mode: stop both players
       switch (key) {
         case "s":
         case "x":
@@ -193,7 +399,31 @@ export class Pong {
           sendInput("playerInput", { player: 2, action: "stop" });
           break;
       }
-    });
+    }
+  }
+
+  private setupInputHandlers() {
+    const sendInput = (type: string, data: any) => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type, data }));
+      }
+    };
+
+    // Create and store keydown listener
+    this.keydownListener = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      this.handleKeyDown(key, sendInput);
+    };
+
+    // Create and store keyup listener
+    this.keyupListener = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      this.handleKeyUp(key, sendInput);
+    };
+
+    // Add event listeners
+    document.addEventListener("keydown", this.keydownListener);
+    document.addEventListener("keyup", this.keyupListener);
   }
 
   private renderLoop = () => {
@@ -227,13 +457,7 @@ export class Pong {
     // Draw ball
     this.ctx.fillStyle = "#ff00cc";
     this.ctx.beginPath();
-    this.ctx.arc(
-      ball.x * scale,
-      ball.y * scale,
-      ball.radius * scale,
-      0,
-      Math.PI * 2,
-    );
+    this.ctx.arc(ball.x * scale, ball.y * scale, ball.radius * scale, 0, Math.PI * 2);
     this.ctx.fill();
 
     // Draw paddles
@@ -241,13 +465,34 @@ export class Pong {
     this.drawCapsule(paddle1.capsule, scale);
     this.drawCapsule(paddle2.capsule, scale);
 
-    // Draw count down
-    if (countdown && countdown > 0) {
-      this.ctx.fillStyle = "#fff"; //"rgba(255, 255, 255, 0.8)";
+    // Draw waiting for opponent message
+    if (this.isWaitingForOpponent) {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 200px Arial";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.fillText("Waiting for opponent...", width / 2, height / 2);
+      return;
+    }
+
+    // Draw waiting for start message
+    if (this.isWaitingForStart) {
+      this.ctx.fillStyle = "#fff";
+      this.ctx.font = "bold 150px Arial";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.fillText("When ready click Start Game", width / 2, height / 2);
+      return;
+    }
+
+    // Draw count down - after waiting messages so it takes priority when countdown is active
+    if (!this.isWaitingForStart && !this.isWaitingForOpponent && countdown && countdown > 0) {
+      this.ctx.fillStyle = "#fff";
       this.ctx.font = "bold 500px Arial";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
       this.ctx.fillText(countdown.toString(), width / 2, height / 2);
+      return;
     }
   }
 
@@ -289,6 +534,14 @@ export class Pong {
   }
 
   public destroy(): void {
+    // Remove event listeners
+    if (this.keydownListener) {
+      document.removeEventListener("keydown", this.keydownListener);
+    }
+    if (this.keyupListener) {
+      document.removeEventListener("keyup", this.keyupListener);
+    }
+
     this.ws?.close();
     this.ws = null;
     this.isConnected = false;

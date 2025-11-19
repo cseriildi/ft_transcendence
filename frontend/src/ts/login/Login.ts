@@ -2,6 +2,7 @@ import { Router } from "../router/Router.js";
 import { isUserAuthorized, showError } from "../utils/utils.js";
 import { config } from "../config.js";
 import { showErrorPopup } from "../main.js";
+import { SecureTokenManager } from "../utils/secureTokenManager.js";
 
 export class Login {
   private router: Router;
@@ -10,9 +11,7 @@ export class Login {
     this.router = router;
   }
 
-  async handleFormSubmit(
-    e: Event
-  ): Promise<{ success: boolean; message?: string }> {
+  async handleFormSubmit(e: Event): Promise<{ success: boolean; message?: string }> {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
@@ -34,9 +33,10 @@ export class Login {
       const data = await response.json();
       if (response.ok) {
         if (data.data?.tokens?.accessToken && data.data?.id) {
-          sessionStorage.setItem("userId", data.data.id);
-          sessionStorage.setItem("accessToken", data.data.tokens.accessToken);
-          sessionStorage.setItem("username", data.data.username);
+          localStorage.setItem("userId", data.data.id);
+          localStorage.setItem("username", data.data.username);
+
+          SecureTokenManager.getInstance().setAccessToken(data.data.tokens.accessToken);
         }
         return { success: true };
       } else {
@@ -70,8 +70,6 @@ export class Login {
         showError(result.message || "An error occurred.");
       }
     });
-    registerBtn?.addEventListener("click", () =>
-      this.router.navigate("/register")
-    );
+    registerBtn?.addEventListener("click", () => this.router.navigate("/register"));
   }
 }

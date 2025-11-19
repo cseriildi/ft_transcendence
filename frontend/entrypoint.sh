@@ -4,7 +4,7 @@
 set -e
 
 # Default values if not provided
-PUBLIC_API_URL="${PUBLIC_API_URL:-https://localhost:8443/api}"
+PUBLIC_API_URL="${PUBLIC_API_URL:-https://localhost:8443}"
 PUBLIC_WS_URL="${PUBLIC_WS_URL:-wss://localhost:8443/ws}"
 
 echo "🔧 Frontend runtime configuration:"

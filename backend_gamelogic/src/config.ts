@@ -1,3 +1,5 @@
+export const VALID_MODES = ["local", "ai", "remote", "friend", "tournament"];
+
 // Helper function to get required environment variable
 function getEnvVar(name: string): string {
   const value = process.env[name];
@@ -44,6 +46,11 @@ export const config = {
     publicPort: getOptionalEnvVar("PUBLIC_PORT", ""),
   },
 
+  // Backend database service URL
+  backendDatabase: {
+    url: getOptionalEnvVar("BACKEND_DATABASE_URL", "http://backend_database:3000"),
+  },
+
   // Logging
   logging: {
     level: getEnvVar("LOG_LEVEL"),
@@ -76,12 +83,6 @@ export const validateConfig = () => {
     gameSettings: config.game,
   });
 
-  console.log(
-    `⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(
-      2
-    )}ms)`
-  );
-  console.log(
-    `📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`
-  );
+  console.log(`⚡ Physics: ${config.game.physicsFPS} FPS (${PHYSICS_INTERVAL.toFixed(2)}ms)`);
+  console.log(`📡 Network: ${config.game.renderFPS} FPS (${RENDER_INTERVAL.toFixed(2)}ms)`);
 };

@@ -239,6 +239,10 @@ export const oauthController = {
     const refreshToken = await generateAndStoreRefreshToken(db, user.id);
     setRefreshTokenCookie(reply, refreshToken);
 
+    // Set user as online immediately after successful OAuth login
+    const now = new Date().toISOString();
+    await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [now, user.id]);
+
     // Retrieve avatar URL using helper (throws error if not found)
     const avatar_url = await getAvatarUrl(db, user.id);
 
