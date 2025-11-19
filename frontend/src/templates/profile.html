@@ -1,6 +1,6 @@
 <div class="page-bg py-24">
   <div class="max-w-4xl mx-auto px-4">
-    <h1 class="page-title text-neon-green mt-10">My Profile</h1>
+  <h1 class="page-title text-neon-green mt-10" data-i18n="profile.title">My Profile</h1>
     <div class="flex flex-col sm:flex-row gap-8">
       <div class="flex-1">
         <div class="form-card py-10 flex flex-col items-center">
@@ -15,21 +15,21 @@
             class="text-3xl font-bold text-white mb-2 max-w-xs rounded-lg truncate"
           ></h2>
           <p id="user-email" class="text-neon-pink mb-4 max-w-xs rounded-lg truncate"></p>
-          <button id="edit-btn" class="btn-green">Edit Profile</button>
+          <button id="edit-btn" class="btn-green" data-i18n="profile.editButton">Edit Profile</button>
         </div>
       </div>
       <div class="flex-1">
         <div class="form-card py-10 flex flex-col items-center">
-          <h3 class="text-xl font-bold text-neon-pink mb-4">Friends</h3>
+          <h3 class="text-xl font-bold text-neon-pink mb-4" data-i18n="profile.friendsHeading">Friends</h3>
           <div id="friends-list">
             <!-- Users list will be dynamically loaded here -->
           </div>
-          <button id="find-friends-btn" class="mt-6 btn-green">Friend Management</button>
+          <button id="find-friends-btn" class="mt-6 btn-green" data-i18n="profile.friendManagementButton">Friend Management</button>
         </div>
       </div>
     </div>
     <div class="text-center">
-      <button id="back-btn" class="btn-pink">Back to Home</button>
+  <button id="back-btn" class="btn-pink" data-i18n="common.backToHome">Back to Home</button>
     </div>
   </div>
 </div>

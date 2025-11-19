@@ -1,34 +1,36 @@
 <div class="page-bg py-8">
   <div class="max-w-md mx-auto px-4">
-    <h1 class="page-title text-neon-green break-words">Authentication</h1>
+  <h1 class="page-title text-neon-green break-words" data-i18n="auth.title">Authentication</h1>
     <div class="form-card">
       <form id="login-form" class="space-y-4">
         <div>
-          <label class="form-label" for="email">Email</label>
+          <label class="form-label" for="email" data-i18n="auth.emailLabel">Email</label>
           <input
             type="email"
             id="email"
             name="email"
             class="form-input"
+            data-i18n-placeholder="auth.emailPlaceholder"
             placeholder="Enter your email"
           />
         </div>
         <div>
-          <label class="form-label" for="password">Password</label>
+          <label class="form-label" for="password" data-i18n="auth.passwordLabel">Password</label>
           <input
             type="password"
             id="password"
             name="password"
             class="form-input"
+            data-i18n-placeholder="auth.passwordPlaceholder"
             placeholder="Enter your password"
           />
         </div>
-        <button type="submit" class="w-full btn-green">Log In</button>
+  <button type="submit" class="w-full btn-green" data-i18n="auth.loginButton">Log In</button>
       </form>
     </div>
     <div class="text-center space-x-4">
-      <button id="back-btn" class="btn-pink">Back to Home</button>
-      <button id="register-btn" class="btn-green">Register</button>
+  <button id="back-btn" class="btn-pink" data-i18n="common.backToHome">Back to Home</button>
+  <button id="register-btn" class="btn-green" data-i18n="auth.registerButton">Register</button>
     </div>
   </div>
 </div>

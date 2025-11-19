@@ -11,5 +11,113 @@
     "loginButton": "Log in",
     "logoutButton": "Log out",
     "profileButton": "Profile"
+  },
+
+  "common": {
+    "backToHome": "Back to Home",
+    "backToProfile": "Back to Profile",
+    "goHome": "Go Home"
+  },
+
+  "auth": {
+    "title": "Authentication",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "loginButton": "Log In",
+    "registerButton": "Register"
+  },
+
+  "register": {
+    "title": "Register",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "usernameLabel": "Nickname",
+    "usernamePlaceholder": "Enter your nickname",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "repeatPasswordLabel": "Repeat Password",
+    "repeatPasswordPlaceholder": "Confirm your password",
+    "registerButton": "Register"
+  },
+
+  "pong": {
+    "title": "Pong Game",
+    "newGame": "New Game",
+    "selectDifficulty": "Select Difficulty",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "startGame": "Start Game",
+    "streamInfo": "Pong game streamed via WebSocket"
+  },
+
+  "pong_dynamic": {
+    "ai": "AI",
+    "you": "You",
+    "player1": "Player 1",
+    "player2": "Player 2"
+  },
+
+  "tournament": {
+    "heading": "Tournament Setup",
+    "howMany": "How many players?",
+    "players4": "4 Players",
+    "players8": "8 Players",
+    "enterNames": "Enter Player Names",
+    "startTournament": "Start Tournament"
+  },
+
+  "profile": {
+    "title": "My Profile",
+    "editButton": "Edit Profile",
+    "friendsHeading": "Friends",
+    "friendManagementButton": "Friend Management",
+    "noFriends": "You don't have friends yet",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Request sent)",
+    "pendingApproval": "(Pending approval)"
+  },
+  "profile_extra": {
+    "noFriends": "You don't have friends yet",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Request sent)",
+    "pendingApproval": "(Pending approval)"
+  },
+
+  "users": {
+    "title": "Users",
+    "noOtherUsers": "No other users found.",
+    "deleteFriend": "Delete Friend",
+    "cancelRequest": "Cancel Request",
+    "accept": "Accept",
+    "decline": "Decline",
+    "addFriend": "Add Friend"
+  },
+
+  "chat": {
+    "title": "Chat",
+    "inputPlaceholder": "Type your message...",
+    "sendButton": "Send"
+  },
+
+  "edit": {
+    "title": "Edit Profile",
+    "chooseFile": "Choose File",
+    "noFileChosen": "No file chosen",
+    "invalidAvatar": "Only JPEG and PNG files are allowed for avatars.",
+    "saveButton": "Save"
+  },
+
+  "error": {
+    "404": {
+      "title": "404 - Page Not Found",
+      "message": "The page you're looking for doesn't exist."
+    }
   }
 }

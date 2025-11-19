@@ -2,6 +2,7 @@ import { Router } from "../router/Router.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { config } from "../config.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
+import { i18n } from "../utils/i18n.js";
 
 export class Profile {
   private router: Router;
@@ -87,7 +88,7 @@ export class Profile {
           friendsListContainer.innerHTML = "";
           console.log(data);
           if (data.data.friends.length === 0) {
-            friendsListContainer.innerHTML = "<p>You don't have friends yet</p>";
+            friendsListContainer.innerHTML = `<p>${i18n.t("profile.noFriends")}</p>`;
             friendsListContainer.classList.add("text-white");
           } else {
             data.data.friends.forEach(
@@ -171,7 +172,7 @@ export class Profile {
                 // Add online status text
                 if (!isPending) {
                   const onlineStatus = document.createElement("span");
-                  onlineStatus.textContent = isOnline ? "Online" : "Offline";
+                  onlineStatus.textContent = isOnline ? i18n.t("profile.online") : i18n.t("profile.offline");
                   onlineStatus.classList.add(
                     "text-xs",
                     "px-1.5",
@@ -187,7 +188,7 @@ export class Profile {
                 // Add pending indicator
                 if (isPending) {
                   const statusLabel = document.createElement("span");
-                  statusLabel.textContent = isInviter ? "(Request sent)" : "(Pending approval)";
+                  statusLabel.textContent = isInviter ? i18n.t("profile.requestSent") : i18n.t("profile.pendingApproval");
                   statusLabel.classList.add("text-xs", "text-gray-400", "italic");
                   usernameContainer.appendChild(statusLabel);
                 }

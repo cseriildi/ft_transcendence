@@ -1,54 +1,58 @@
 <div class="page-bg py-8">
   <div class="max-w-md mx-auto px-4">
-    <h1 class="page-title text-neon-green break-words">Register</h1>
+  <h1 class="page-title text-neon-green break-words" data-i18n="register.title">Register</h1>
     <div class="form-card">
       <form id="register-form" class="space-y-4">
         <div>
-          <label class="form-label" for="email">Email</label>
+          <label class="form-label" for="email" data-i18n="register.emailLabel">Email</label>
           <input
             type="email"
             id="email"
             name="email"
             class="form-input"
+            data-i18n-placeholder="register.emailPlaceholder"
             placeholder="Enter your email"
           />
         </div>
         <div>
-          <label class="form-label" for="username">Nickname</label>
+          <label class="form-label" for="username" data-i18n="register.usernameLabel">Nickname</label>
           <input
             type="text"
             id="username"
             name="username"
             class="form-input"
+            data-i18n-placeholder="register.usernamePlaceholder"
             placeholder="Enter your nickname"
           />
         </div>
         <div>
-          <label class="form-label" for="password">Password</label>
+          <label class="form-label" for="password" data-i18n="register.passwordLabel">Password</label>
           <input
             type="password"
             id="password"
             name="password"
             class="form-input"
+            data-i18n-placeholder="register.passwordPlaceholder"
             placeholder="Enter your password"
           />
         </div>
         <div>
-          <label class="form-label" for="repeatPassword">Repeat Password</label>
+          <label class="form-label" for="repeatPassword" data-i18n="register.repeatPasswordLabel">Repeat Password</label>
           <input
             type="password"
             id="repeatPassword"
             name="confirmPassword"
             class="form-input"
+            data-i18n-placeholder="register.repeatPasswordPlaceholder"
             placeholder="Confirm your password"
           />
         </div>
-        <button type="submit" class="w-full btn-green">Register</button>
+  <button type="submit" class="w-full btn-green" data-i18n="register.registerButton">Register</button>
       </form>
     </div>
     <div class="text-center space-x-4">
-      <button id="back-btn" class="btn-pink">Back to Home</button>
-      <button id="login-btn" class="btn-green">Log in</button>
+  <button id="back-btn" class="btn-pink" data-i18n="common.backToHome">Back to Home</button>
+  <button id="login-btn" class="btn-green" data-i18n="auth.loginButton">Log in</button>
     </div>
   </div>
 </div>

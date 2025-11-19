@@ -11,5 +11,113 @@
     "loginButton": "Anmelden",
     "logoutButton": "Abmelden",
     "profileButton": "Profil"
+  },
+
+  "common": {
+    "backToHome": "Zurück zur Startseite",
+    "backToProfile": "Zurück zum Profil",
+    "goHome": "Zur Startseite"
+  },
+
+  "auth": {
+    "title": "Authentifizierung",
+    "emailLabel": "E-Mail",
+    "emailPlaceholder": "Gib deine E-Mail ein",
+    "passwordLabel": "Passwort",
+    "passwordPlaceholder": "Gib dein Passwort ein",
+    "loginButton": "Anmelden",
+    "registerButton": "Registrieren"
+  },
+
+  "register": {
+    "title": "Registrieren",
+    "emailLabel": "E-Mail",
+    "emailPlaceholder": "Gib deine E-Mail ein",
+    "usernameLabel": "Nickname",
+    "usernamePlaceholder": "Gib deinen Nickname ein",
+    "passwordLabel": "Passwort",
+    "passwordPlaceholder": "Gib dein Passwort ein",
+    "repeatPasswordLabel": "Passwort wiederholen",
+    "repeatPasswordPlaceholder": "Bestätige dein Passwort",
+    "registerButton": "Registrieren"
+  },
+
+  "pong": {
+    "title": "Pong Spiel",
+    "newGame": "Neues Spiel",
+    "selectDifficulty": "Schwierigkeitsgrad wählen",
+    "difficulty": {
+      "easy": "Einfach",
+      "medium": "Mittel",
+      "hard": "Schwer"
+    },
+    "startGame": "Spiel starten",
+    "streamInfo": "Pong-Spiel wird via WebSocket gestreamt"
+  },
+
+  "pong_dynamic": {
+    "ai": "KI",
+    "you": "Du",
+    "player1": "Spieler 1",
+    "player2": "Spieler 2"
+  },
+
+  "tournament": {
+    "heading": "Turnier-Einstellungen",
+    "howMany": "Wie viele Spieler?",
+    "players4": "4 Spieler",
+    "players8": "8 Spieler",
+    "enterNames": "Spielernamen eingeben",
+    "startTournament": "Turnier starten"
+  },
+
+  "profile": {
+    "title": "Mein Profil",
+    "editButton": "Profil bearbeiten",
+    "friendsHeading": "Freunde",
+    "friendManagementButton": "Freunde verwalten",
+    "noFriends": "Du hast noch keine Freunde",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Anfrage gesendet)",
+    "pendingApproval": "(Warten auf Bestätigung)"
+  },
+  "profile_extra": {
+    "noFriends": "Du hast noch keine Freunde",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Anfrage gesendet)",
+    "pendingApproval": "(Warten auf Bestätigung)"
+  },
+
+  "users": {
+    "title": "Benutzer",
+    "noOtherUsers": "Keine weiteren Benutzer gefunden.",
+    "deleteFriend": "Freund entfernen",
+    "cancelRequest": "Anfrage abbrechen",
+    "accept": "Akzeptieren",
+    "decline": "Ablehnen",
+    "addFriend": "Freund hinzufügen"
+  },
+
+  "chat": {
+    "title": "Chat",
+    "inputPlaceholder": "Gib deine Nachricht ein...",
+    "sendButton": "Senden"
+  },
+
+  "edit": {
+    "title": "Profil bearbeiten",
+    "chooseFile": "Datei auswählen",
+    "noFileChosen": "Keine Datei ausgewählt",
+    "invalidAvatar": "Nur JPEG- und PNG-Dateien sind für Avatar erlaubt.",
+    "saveButton": "Speichern"
+  },
+
+  "error": {
+    "404": {
+      "title": "404 - Seite nicht gefunden",
+      "message": "Die gesuchte Seite existiert nicht."
+    }
   }
 }

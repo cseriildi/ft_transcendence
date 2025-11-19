@@ -8,7 +8,7 @@
   <body>
     <div id="chat-container" class="page-bg py-8">
       <div class="max-w-2xl mx-auto px-4">
-        <h1 class="page-title text-neon-green">Chat</h1>
+  <h1 class="page-title text-neon-green" data-i18n="chat.title">Chat</h1>
         <div id="chat-box" class="form-card h-96 overflow-y-auto">
           <!-- Chat messages will appear here -->
         </div>
@@ -17,12 +17,13 @@
             type="text"
             id="chat-input"
             class="flex-1 p-2 rounded border-2 border-neon-pink bg-gray-800 text-white"
+            data-i18n-placeholder="chat.inputPlaceholder"
             placeholder="Type your message..."
           />
-          <button type="submit" class="btn-green">Send</button>
+          <button type="submit" class="btn-green" data-i18n="chat.sendButton">Send</button>
         </form>
         <div class="text-center mt-4">
-          <button id="back-btn" class="btn-pink">Back to Profile</button>
+          <button id="back-btn" class="btn-pink" data-i18n="common.backToProfile">Back to Profile</button>
         </div>
       </div>
     </div>

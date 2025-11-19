@@ -1,25 +1,25 @@
 <div class="page-bg py-8">
   <div class="max-w-4xl mx-auto px-4">
-    <h1 class="page-title text-neon-pink">Pong Game</h1>
+  <h1 class="page-title text-neon-pink" data-i18n="pong.title">Pong Game</h1>
 
     <!-- Tournament Setup (shown only in tournament mode) -->
     <div id="tournament-setup" class="hidden text-center mb-8">
-      <h2 class="text-2xl font-bold text-neon-cyan mb-6">Tournament Setup</h2>
+  <h2 class="text-2xl font-bold text-neon-cyan mb-6" data-i18n="tournament.heading">Tournament Setup</h2>
 
       <div class="mb-6">
-        <label class="text-lg text-neon-green mb-4 block">How many players?</label>
+  <label class="text-lg text-neon-green mb-4 block" data-i18n="tournament.howMany">How many players?</label>
         <div class="flex gap-4 justify-center mb-6">
-          <button id="tournament-4-btn" class="btn-pink">4 Players</button>
-          <button id="tournament-8-btn" class="btn-pink">8 Players</button>
+          <button id="tournament-4-btn" class="btn-pink" data-i18n="tournament.players4">4 Players</button>
+          <button id="tournament-8-btn" class="btn-pink" data-i18n="tournament.players8">8 Players</button>
         </div>
       </div>
 
       <div id="player-names-form" class="hidden form-card max-w-md mx-auto">
-        <h3 class="text-xl text-neon-green mb-4">Enter Player Names</h3>
+  <h3 class="text-xl text-neon-green mb-4" data-i18n="tournament.enterNames">Enter Player Names</h3>
         <div id="player-inputs-container" class="space-y-4 mb-4">
           <!-- Player input fields will be generated here -->
         </div>
-        <button id="start-tournament-btn" class="w-full btn-pink">Start Tournament</button>
+  <button id="start-tournament-btn" class="w-full btn-pink" data-i18n="tournament.startTournament">Start Tournament</button>
       </div>
     </div>
 
@@ -45,7 +45,7 @@
     </div>
 
     <div class="text-center mb-8">
-      <button id="new-game-btn" class="btn-pink">New Game</button>
+      <button id="new-game-btn" class="btn-pink" data-i18n="pong.newGame">New Game</button>
     </div>
 
     <!-- AI Difficulty Selection Modal -->
@@ -56,19 +56,19 @@
       <div
         class="bg-gradient-to-br from-gray-900 to-black border-2 border-neon-pink rounded-lg p-8 max-w-md shadow-neon"
       >
-        <h2 class="text-2xl font-bold text-neon-green text-center mb-6 drop-shadow-neon">
+        <h2 class="text-2xl font-bold text-neon-green text-center mb-6 drop-shadow-neon" data-i18n="pong.selectDifficulty">
           Select Difficulty
         </h2>
         <div class="flex flex-col space-y-4">
-          <button id="difficulty-easy" class="btn-pink">Easy</button>
-          <button id="difficulty-medium" class="btn-pink">Medium</button>
-          <button id="difficulty-hard" class="btn-pink">Hard</button>
+          <button id="difficulty-easy" class="btn-pink" data-i18n="pong.difficulty.easy">Easy</button>
+          <button id="difficulty-medium" class="btn-pink" data-i18n="pong.difficulty.medium">Medium</button>
+          <button id="difficulty-hard" class="btn-pink" data-i18n="pong.difficulty.hard">Hard</button>
         </div>
       </div>
     </div>
 
     <div class="text-center mb-8">
-      <button id="start-game-btn" class="btn-pink">Start Game</button>
+  <button id="start-game-btn" class="btn-pink" data-i18n="pong.startGame">Start Game</button>
     </div>
 
     <div class="flex justify-center gap-16 mb-6">
@@ -91,10 +91,10 @@
         width="3200"
         height="2000"
       ></canvas>
-      <p class="mt-4 text-neon-green drop-shadow-neon">Pong game streamed via WebSocket</p>
+  <p class="mt-4 text-neon-green drop-shadow-neon" data-i18n="pong.streamInfo">Pong game streamed via WebSocket</p>
     </div>
     <div class="text-center">
-      <button id="back-btn" class="btn-green">Back to Home</button>
+  <button id="back-btn" class="btn-green" data-i18n="common.backToHome">Back to Home</button>
     </div>
   </div>
   <div class="absolute top-4 left-8 space-x-4 flex items-center">

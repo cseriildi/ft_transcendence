@@ -3,6 +3,7 @@ import { showErrorPopup } from "../main.js";
 import { config } from "../config.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
+import { i18n } from "../utils/i18n.js";
 
 export class Edit {
   private router: Router;
@@ -138,15 +139,15 @@ export class Edit {
         const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
         if (!allowedTypes.includes(file.type)) {
-          showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
+          showErrorPopup(i18n.t("edit.invalidAvatar"));
           fileInput.value = ""; // Clear the input
-          fileNameDisplay.textContent = "No file chosen";
+          fileNameDisplay.textContent = i18n.t("edit.noFileChosen");
           return;
         }
 
         fileNameDisplay.textContent = file.name;
       } else {
-        fileNameDisplay.textContent = "No file chosen";
+        fileNameDisplay.textContent = i18n.t("edit.noFileChosen");
       }
     });
 

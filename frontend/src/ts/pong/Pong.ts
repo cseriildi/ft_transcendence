@@ -21,6 +21,8 @@ interface Capsule {
   R: number;
 }
 
+import { i18n } from "../utils/i18n.js";
+
 export class Pong {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -310,13 +312,13 @@ export class Pong {
     if (!name1El || !name2El) return;
 
     switch (this.currentGameMode) {
-      case "ai":
-        name1El.textContent = "AI";
-        name2El.textContent = "You";
+        case "ai":
+          name1El.textContent = i18n.t("pong_dynamic.ai");
+          name2El.textContent = i18n.t("pong_dynamic.you");
         break;
       case "local":
-        name1El.textContent = "Player 1";
-        name2El.textContent = "Player 2";
+          name1El.textContent = i18n.t("pong_dynamic.player1");
+          name2El.textContent = i18n.t("pong_dynamic.player2");
         break;
       default:
         name1El.textContent = this.player1Username;
