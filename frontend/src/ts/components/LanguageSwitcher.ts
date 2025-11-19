@@ -17,7 +17,8 @@ export class LanguageSwitcher {
   private createContainer(): void {
     this.container = document.createElement("div");
     this.container.id = "language-switcher";
-    this.container.className = "fixed top-4 left-4 z-50";
+    // Move the language picker later without interfering with other elements.
+    this.container.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50";
     document.body.appendChild(this.container);
   }
 

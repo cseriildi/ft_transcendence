@@ -3,6 +3,11 @@
     "title": "Pong Portal: The Ultimate Paddle Playground",
     "subtitle": "Play Pong. Be legendary.",
     "playButton": "Play Pong",
+    "local2P": "Local 2 Player",
+    "playAi": "Play vs AI",
+    "playOnline": "Play Online",
+    "playFriend": "Play with Friend",
+    "tournament": "Tournament",
     "loginButton": "Log in",
     "logoutButton": "Log out",
     "profileButton": "Profile"
