@@ -89,7 +89,7 @@ export class Users {
               "mb-4",
               "p-2",
               "rounded-lg",
-              "hover:bg-gray-800"
+              "hover:bg-neon-pink"
             );
 
             const userInfo = document.createElement("div");

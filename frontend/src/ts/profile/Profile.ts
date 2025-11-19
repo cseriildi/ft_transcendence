@@ -177,7 +177,7 @@ export class Profile {
                     "px-1.5",
                     "py-0.5",
                     "rounded",
-                    isOnline ? "text-green-400" : "text-gray-400"
+                    isOnline ? "text-neon-green" : "text-neon-pink"
                   );
                   usernameRow.appendChild(onlineStatus);
                 }

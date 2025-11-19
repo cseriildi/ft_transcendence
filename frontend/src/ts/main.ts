@@ -142,6 +142,7 @@ const initPongPage = async () => {
   const profileBtn = document.getElementById("profile-btn");
   const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
   const userName = document.getElementById("user-name");
+  const userInfoCard = document.getElementById("user-info-card");
 
   loginBtn?.addEventListener("click", () => {
     // Cleanup Pong before navigating
@@ -176,9 +177,19 @@ const initPongPage = async () => {
 
       if (response.ok) {
         stopHeartbeat();
-        sessionStorage.removeItem("accessToken");
-        sessionStorage.removeItem("userId");
-        sessionStorage.removeItem("username");
+        SecureTokenManager.getInstance().clearTokens();
+        localStorage.removeItem("userId");
+        localStorage.removeItem("username");
+
+        // Update UI state immediately before navigation
+        logoutBtn?.classList.add("hidden");
+        profileBtn?.classList.add("hidden");
+        loginBtn?.classList.remove("hidden");
+        userInfoCard?.classList.add("hidden");
+        if (userName) {
+          userName.innerHTML = "";
+        }
+
         router.navigate("/");
       } else {
         console.error("Failed to log out", await response.json());
@@ -193,6 +204,7 @@ const initPongPage = async () => {
     logoutBtn?.classList.remove("hidden");
     profileBtn?.classList.remove("hidden");
     loginBtn?.classList.add("hidden");
+    userInfoCard?.classList.remove("hidden");
 
     // Fetch user data if authorized
     try {
@@ -223,7 +235,7 @@ const initPongPage = async () => {
     logoutBtn?.classList.add("hidden");
     profileBtn?.classList.add("hidden");
     loginBtn?.classList.remove("hidden");
-    userAvatar?.classList.add("hidden");
+    userInfoCard?.classList.add("hidden");
   }
 
   if (mode === "friend") {
@@ -248,7 +260,7 @@ const initPongPage = async () => {
       wipMessage.className = "text-center py-16";
       wipMessage.innerHTML = `
       <p class="text-3xl font-bold text-neon-yellow drop-shadow-neon mb-8">🚧 Work In Progress 🚧</p>
-      <p class="text-lg text-neon-cyan mb-8">${mode.toUpperCase()} mode is coming soon!</p>
+      <p class="text-lg text-neon-pink mb-8">${mode.toUpperCase()} mode is coming soon!</p>
       `;
       maxWidthContainer.appendChild(wipMessage);
     }
@@ -371,23 +383,50 @@ const initPongPage = async () => {
         cleanup();
       };
 
+      // Handle modal close
+      const handleCloseModal = () => {
+        modal.classList.add("hidden");
+        cleanup();
+      };
+
       const cleanup = () => {
         easyBtn?.removeEventListener("click", easyHandler);
         mediumBtn?.removeEventListener("click", mediumHandler);
         hardBtn?.removeEventListener("click", hardHandler);
+        closeBtn?.removeEventListener("click", handleCloseModal);
+        modal?.removeEventListener("click", backdropHandler);
+        document.removeEventListener("keydown", escHandler);
       };
 
       const easyHandler = () => handleDifficultySelection("easy");
       const mediumHandler = () => handleDifficultySelection("medium");
       const hardHandler = () => handleDifficultySelection("hard");
 
+      // ESC key handler
+      const escHandler = (event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+          handleCloseModal();
+        }
+      };
+
+      // Backdrop click handler (close when clicking outside modal content)
+      const backdropHandler = (event: MouseEvent) => {
+        if (event.target === modal) {
+          handleCloseModal();
+        }
+      };
+
       const easyBtn = document.getElementById("difficulty-easy");
       const mediumBtn = document.getElementById("difficulty-medium");
       const hardBtn = document.getElementById("difficulty-hard");
+      const closeBtn = document.getElementById("difficulty-close");
 
       easyBtn?.addEventListener("click", easyHandler);
       mediumBtn?.addEventListener("click", mediumHandler);
       hardBtn?.addEventListener("click", hardHandler);
+      closeBtn?.addEventListener("click", handleCloseModal);
+      modal?.addEventListener("click", backdropHandler);
+      document.addEventListener("keydown", escHandler);
     } else if (["remote", "friend"].includes(mode)) {
       currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
 

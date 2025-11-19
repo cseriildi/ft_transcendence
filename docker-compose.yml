@@ -23,6 +23,7 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
     volumes:
       - ./backend_database/database:/app/data
+      - ./backend_database/uploads:/app/uploads
     restart: unless-stopped
     networks:
       - transcendence
