@@ -123,7 +123,51 @@ export class Chat {
     return userId;
   }
 
-  initPage(): void {
+  private async setupChatPartnerInfo(partnerUsername: string): Promise<void> {
+    const partnerUsernameElement = document.getElementById("partner-username");
+    const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
+    const viewProfileBtn = document.getElementById("view-profile-btn");
+
+    if (partnerUsernameElement) {
+      partnerUsernameElement.textContent = partnerUsername;
+    }
+
+    // Fetch partner's user data to get avatar and user ID
+    try {
+      const response = await fetch(`${config.apiUrl}/api/users`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const users = data.data;
+        const partner = users.find((user: any) => user.username === partnerUsername);
+        
+        if (partner) {
+          // Set avatar
+          if (partnerAvatarElement && partner.avatar_url) {
+            partnerAvatarElement.src = `${config.apiUrl}${partner.avatar_url}`;
+          }
+
+          // Set up profile button click handler
+          if (viewProfileBtn) {
+            viewProfileBtn.addEventListener("click", () => {
+              this.cleanup();
+              this.router.navigate(`/profile?userId=${partner.id}`);
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching partner info:", error);
+    }
+  }
+
+  async initPage(): Promise<void> {
     if (!isUserAuthorized()) {
       this.router.navigate("/");
       return;
@@ -136,10 +180,16 @@ export class Chat {
 
     const urlParams = new URLSearchParams(window.location.search);
     const chatId = urlParams.get("chatId");
+    const partnerUsername = urlParams.get("username");
 
     if (!chatId) {
       console.error("Chat ID is missing in the URL");
       return;
+    }
+
+    // Initialize chat partner info
+    if (partnerUsername) {
+      await this.setupChatPartnerInfo(partnerUsername);
     }
 
     this.connectWebSocket(chatBox);

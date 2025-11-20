@@ -16,24 +16,64 @@ export class Profile {
       return;
     }
 
+    // Get query parameters to check if we're viewing another user's profile
+    const queryParams = this.router.getQueryParams();
+    const viewingUserId = queryParams.userId;
+    const currentUserId = getUserId();
+    const isOwnProfile = !viewingUserId || viewingUserId === currentUserId?.toString();
+
     const editBtn = document.getElementById("edit-btn");
+    const chatBtn = document.getElementById("chat-btn");
     const backBtn = document.getElementById("back-btn");
     const userName = document.getElementById("user-name");
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
     const friendsListContainer = document.getElementById("friends-list");
     const userEmail = document.getElementById("user-email");
     const findFriendsBtn = document.getElementById("find-friends-btn");
+    const pageTitle = document.querySelector(".page-title");
+    const friendsSection = friendsListContainer?.closest(".flex-1");
+    
     let users:
       | Array<{ id: number; username: string; avatar_url: string; last_seen?: string }>
       | undefined;
 
+    // Update page title based on whose profile we're viewing
+    if (pageTitle) {
+      pageTitle.textContent = isOwnProfile ? "My Profile" : "User Profile";
+    }
+
+    // Hide edit button and friends section when viewing another user's profile
+    // Show chat button only when viewing someone else's profile
+    if (!isOwnProfile) {
+      if (editBtn) editBtn.style.display = "none";
+      if (chatBtn) chatBtn.style.display = "inline-block";
+      if (friendsSection) (friendsSection as HTMLElement).style.display = "none";
+    } else {
+      if (editBtn) editBtn.style.display = "inline-block";
+      if (chatBtn) chatBtn.style.display = "none";
+      if (friendsSection) (friendsSection as HTMLElement).style.display = "block";
+    }
+
     findFriendsBtn?.addEventListener("click", () => this.router.navigate("/users"));
 
-    backBtn?.addEventListener("click", () => this.router.navigate("/"));
+    backBtn?.addEventListener("click", () => this.router.navigate(isOwnProfile ? "/" : "/users"));
     editBtn?.addEventListener("click", () => this.router.navigate("/edit"));
 
+    // Chat button event listener - only for other users' profiles
+    chatBtn?.addEventListener("click", () => {
+      if (!isOwnProfile && viewingUserId && currentUserId) {
+        const chatId = [Number(currentUserId), Number(viewingUserId)]
+          .sort((a, b) => a - b)
+          .join("-");
+        const username = userName?.textContent || "Unknown";
+        this.router.navigate(`/chat?chatId=${chatId}&username=${username}`);
+      }
+    });
+
+    const targetUserId = isOwnProfile ? currentUserId : viewingUserId;
+
     try {
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${targetUserId}`, {
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
         },
@@ -54,38 +94,39 @@ export class Profile {
       console.error("Error fetching user data", error);
     }
 
-    try {
-      const usersResponse = await fetchWithRefresh(`${config.apiUrl}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        method: "GET",
-        credentials: "include",
-      });
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        users = usersData.data;
-      } else {
-        console.error("Failed to fetch users", await usersResponse.json());
+    // Only load friends list for own profile
+    if (isOwnProfile) {
+      try {
+        const usersResponse = await fetchWithRefresh(`${config.apiUrl}/api/users`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          method: "GET",
+          credentials: "include",
+        });
+        if (usersResponse.ok) {
+          const usersData = await usersResponse.json();
+          users = usersData.data;
+        } else {
+          console.error("Failed to fetch users", await usersResponse.json());
+        }
+      } catch (error) {
+        console.error("Error fetching users", error);
       }
-    } catch (error) {
-      console.error("Error fetching users", error);
-    }
 
-    try {
-      const response = await fetch(`${config.apiUrl}/api/friends/status`, {
-        headers: {
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        method: "GET",
-        credentials: "include",
-      });
+      try {
+        const response = await fetch(`${config.apiUrl}/api/friends/status`, {
+          headers: {
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          method: "GET",
+          credentials: "include",
+        });
 
       if (response.ok) {
         const data = await response.json();
         if (friendsListContainer) {
           friendsListContainer.innerHTML = "";
-          console.log(data);
           if (data.data.friends.length === 0) {
             friendsListContainer.innerHTML = "<p>You don't have friends yet</p>";
             friendsListContainer.classList.add("text-white");
@@ -113,24 +154,28 @@ export class Profile {
                   "user-item",
                   "flex",
                   "items-center",
-                  "space-x-4",
+                  "space-x-2",
+                  "sm:space-x-4",
                   "p-2",
-                  "hover:bg-neon-pink",
+                  "sm:p-3",
+                  "hover:bg-blue-600",
                   "cursor-pointer",
-                  "w-64",
+                  "w-full",
+                  "max-w-md",
                   "rounded-lg",
                   "text-white",
-                  "relative"
+                  "relative",
+                  "min-w-0"
                 );
 
                 // Avatar container with online indicator
                 const avatarContainer = document.createElement("div");
-                avatarContainer.classList.add("relative", "min-w-[2rem]");
+                avatarContainer.classList.add("relative", "min-w-[2rem]", "flex-shrink-0");
 
                 const avatar = document.createElement("img");
                 avatar.src = `${config.apiUrl}${avatarUrl}`;
                 avatar.alt = `${friend.username}'s avatar`;
-                avatar.classList.add("w-8", "h-8", "rounded-full");
+                avatar.classList.add("w-8", "h-8", "sm:w-10", "sm:h-10", "rounded-full");
 
                 // Add opacity if pending
                 if (isPending) {
@@ -164,7 +209,7 @@ export class Profile {
 
                 const username = document.createElement("span");
                 username.textContent = friend.username;
-                username.classList.add("text-sm", "font-medium", "truncate");
+                username.classList.add("text-xs", "sm:text-sm", "font-medium", "truncate");
 
                 usernameRow.appendChild(username);
 
@@ -174,9 +219,11 @@ export class Profile {
                   onlineStatus.textContent = isOnline ? "Online" : "Offline";
                   onlineStatus.classList.add(
                     "text-xs",
-                    "px-1.5",
+                    "px-1",
+                    "sm:px-1.5",
                     "py-0.5",
                     "rounded",
+                    "flex-shrink-0",
                     isOnline ? "text-neon-green" : "text-neon-pink"
                   );
                   usernameRow.appendChild(onlineStatus);
@@ -192,11 +239,23 @@ export class Profile {
                   usernameContainer.appendChild(statusLabel);
                 }
 
-                userItem.appendChild(avatarContainer);
-                userItem.appendChild(usernameContainer);
-                friendsListContainer.appendChild(userItem);
-
-                userItem.addEventListener("click", () => {
+                // Create chat button
+                const chatButton = document.createElement("button");
+                chatButton.innerHTML = "Chat";
+                chatButton.title = "Start Chat";
+                chatButton.classList.add(
+                  "btn-green",
+                  "text-xs",
+                  "sm:text-sm",
+                  "px-2",
+                  "sm:px-4",
+                  "py-1",
+                  "sm:py-2",
+                  "flex-shrink-0"
+                );
+                
+                chatButton.addEventListener("click", (e) => {
+                  e.stopPropagation(); // Prevent triggering the profile navigation
                   const currentUserId = getUserId();
                   const friendId = friend.user_id;
                   if (currentUserId === null) {
@@ -208,15 +267,28 @@ export class Profile {
                     .join("-");
                   this.router.navigate(`/chat?chatId=${chatId}&username=${friend.username}`);
                 });
+
+                userItem.appendChild(avatarContainer);
+                userItem.appendChild(usernameContainer);
+                if (!isPending) {
+                  userItem.appendChild(chatButton);
+                }
+                friendsListContainer.appendChild(userItem);
+
+                // Make the entire user item clickable to view profile
+                userItem.addEventListener("click", () => {
+                  this.router.navigate(`/profile?userId=${friend.user_id}`);
+                });
               }
             );
           }
         }
-      } else {
-        console.error("Failed to fetch user list", await response.json());
+        } else {
+          console.error("Failed to fetch user list", await response.json());
+        }
+      } catch (error) {
+        console.error("Error fetching user list", error);
       }
-    } catch (error) {
-      console.error("Error fetching user list", error);
     }
   }
 }

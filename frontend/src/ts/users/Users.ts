@@ -89,7 +89,7 @@ export class Users {
               "mb-4",
               "p-2",
               "rounded-lg",
-              "hover:bg-neon-pink"
+              "hover:bg-blue-600"
             );
 
             const userInfo = document.createElement("div");
@@ -107,15 +107,10 @@ export class Users {
             userInfo.appendChild(avatar);
             userInfo.appendChild(username);
 
-            // Add click handler to open chat with any user
+            // Add click handler to view user profile
             userInfo.classList.add("cursor-pointer");
             userInfo.addEventListener("click", () => {
-              const currentUserId = getUserId();
-              const friendId = user.id;
-              const chatId = [currentUserId, friendId]
-                .sort((a, b) => Number(a) - Number(b))
-                .join("-");
-              this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
+              this.router.navigate(`/profile?userId=${user.id}`);
             });
 
             // Create action button(s) based on status
@@ -250,7 +245,7 @@ export class Users {
                   const response = await fetchWithRefresh(
                     `${config.apiUrl}/api/friends/${user.id}/decline`,
                     {
-                      method: "DELETE",
+                      method: "PATCH",
                       headers: {
                         Authorization: `Bearer ${getAccessToken()}`,
                       },
@@ -275,14 +270,7 @@ export class Users {
               const addButton = document.createElement("button");
               addButton.textContent = "Add Friend";
               addButton.classList.add(
-                "bg-neon-green",
-                "hover:bg-neon-pink",
-                "text-purple-900",
-                "font-bold",
-                "py-1",
-                "px-3",
-                "rounded",
-                "transition"
+                "btn-green"
               );
               addButton.addEventListener("click", async () => {
                 try {
@@ -308,6 +296,22 @@ export class Users {
               });
               buttonContainer.appendChild(addButton);
             }
+
+            // Add Chat button for all users
+            const chatButton = document.createElement("button");
+            chatButton.textContent = "Chat";
+            chatButton.classList.add(
+              "btn-pink"
+            );
+            chatButton.addEventListener("click", () => {
+              const currentUserId = getUserId();
+              const friendId = user.id;
+              const chatId = [currentUserId, friendId]
+                .sort((a, b) => Number(a) - Number(b))
+                .join("-");
+              this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
+            });
+            buttonContainer.appendChild(chatButton);
 
             userItem.appendChild(userInfo);
             userItem.appendChild(buttonContainer);
