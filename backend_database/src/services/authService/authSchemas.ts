@@ -50,6 +50,29 @@ export const AuthSchemas = {
     response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401]),
   },
 
+  // POST /auth/login/2fa
+  login2FA: {
+    body: {
+      type: "object" as const,
+      properties: {
+        tempToken: {
+          type: "string",
+          description: "Temporary token from /login response (valid for 5 minutes)",
+        },
+        twofa_token: {
+          type: "string",
+          minLength: 6,
+          maxLength: 6,
+          pattern: "^[0-9]{6}$",
+          description: "6-digit TOTP code from authenticator app",
+        },
+      },
+      required: ["tempToken", "twofa_token"],
+      additionalProperties: false,
+    },
+    response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401, 404, 429]),
+  },
+
   // POST /auth/refresh
   refresh: {
     response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401]),
