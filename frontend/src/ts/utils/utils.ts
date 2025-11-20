@@ -5,8 +5,6 @@ let heartbeatInterval: number | null = null;
 let isStartingHeartbeat = false;
 
 export const startHeartbeat = () => {
-  console.log("Starting heartbeat - version 2.0 (no content-type header)");
-
   // Prevent concurrent calls
   if (isStartingHeartbeat) {
     console.log("Heartbeat start already in progress, ignoring duplicate call");
@@ -44,7 +42,6 @@ export const startHeartbeat = () => {
 
         xhr.onload = async function () {
           if (xhr.status === 200) {
-            console.log("Heartbeat sent successfully (XHR method)");
             resolve();
           } else if (xhr.status === 401 && retryOnAuth) {
             console.log("Heartbeat failed with 401, attempting token refresh...");

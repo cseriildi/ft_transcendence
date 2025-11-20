@@ -86,20 +86,6 @@ describe("User Routes", () => {
     expect(body.data.avatar_url).toContain("/uploads/avatars/");
   });
 
-  it("GET /users/:id should return 403 when accessing another user", async () => {
-    const res = await app.inject({
-      method: "GET",
-      url: `${API_PREFIX}/users/99999`,
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-      },
-    });
-    expect(res.statusCode).toBe(403);
-    const body = res.json() as any;
-    expect(body.success).toBe(false);
-    expect(body.message).toContain("does not match");
-  });
-
   it("GET /users/:id should return 400 for invalid id", async () => {
     const res = await app.inject({
       method: "GET",
@@ -546,7 +532,7 @@ describe("User Routes", () => {
         authorization: `Bearer ${accessToken}`,
       },
     });
-    expect(res.statusCode).toBe(403); // Ownership check happens first
+    expect(res.statusCode).toBe(404); // User existence check happens first
     const body = res.json() as any;
     expect(body.success).toBe(false);
   });

@@ -20,7 +20,6 @@ export const userController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { id } = request.params;
-    ensureUserOwnership(request.user!.id, id);
 
     const user = await db.get<User>("SELECT id,username,email,created_at FROM users WHERE id = ?", [
       id,

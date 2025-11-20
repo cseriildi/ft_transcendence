@@ -60,6 +60,12 @@ class SecureTokenManager {
   }
 
   async refreshAccessToken(): Promise<void> {
+    const hasUserData = localStorage.getItem("userId") || localStorage.getItem("username");
+
+    if (!hasUserData) {
+      throw new Error("No session data found - likely no refresh token available");
+    }
+
     const { config } = await import("../config.js");
 
     const response = await fetch(`${config.apiUrl}/auth/refresh`, {

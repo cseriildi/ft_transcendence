@@ -84,12 +84,16 @@ export class Users {
             const userItem = document.createElement("div");
             userItem.classList.add(
               "flex",
-              "items-center",
-              "justify-between",
+              "flex-col",
+              "sm:flex-row",
+              "sm:items-center",
+              "sm:justify-between",
               "mb-4",
-              "p-2",
+              "p-3",
               "rounded-lg",
-              "hover:bg-neon-pink"
+              "hover:bg-blue-600",
+              "gap-3",
+              "sm:gap-0"
             );
 
             const userInfo = document.createElement("div");
@@ -107,20 +111,23 @@ export class Users {
             userInfo.appendChild(avatar);
             userInfo.appendChild(username);
 
-            // Add click handler to open chat with any user
+            // Add click handler to view user profile
             userInfo.classList.add("cursor-pointer");
             userInfo.addEventListener("click", () => {
-              const currentUserId = getUserId();
-              const friendId = user.id;
-              const chatId = [currentUserId, friendId]
-                .sort((a, b) => Number(a) - Number(b))
-                .join("-");
-              this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
+              this.router.navigate(`/profile?userId=${user.id}`);
             });
 
             // Create action button(s) based on status
             const buttonContainer = document.createElement("div");
-            buttonContainer.classList.add("flex", "gap-2");
+            buttonContainer.classList.add(
+              "flex",
+              "flex-wrap",
+              "gap-2",
+              "w-full",
+              "sm:w-auto",
+              "justify-center",
+              "sm:justify-end"
+            );
 
             if (isFriend) {
               // Show Delete Friend button
@@ -250,7 +257,7 @@ export class Users {
                   const response = await fetchWithRefresh(
                     `${config.apiUrl}/api/friends/${user.id}/decline`,
                     {
-                      method: "DELETE",
+                      method: "PATCH",
                       headers: {
                         Authorization: `Bearer ${getAccessToken()}`,
                       },
@@ -274,16 +281,7 @@ export class Users {
               // No relationship - show Add Friend button
               const addButton = document.createElement("button");
               addButton.textContent = "Add Friend";
-              addButton.classList.add(
-                "bg-neon-green",
-                "hover:bg-neon-pink",
-                "text-purple-900",
-                "font-bold",
-                "py-1",
-                "px-3",
-                "rounded",
-                "transition"
-              );
+              addButton.classList.add("btn-green");
               addButton.addEventListener("click", async () => {
                 try {
                   const response = await fetchWithRefresh(
@@ -308,6 +306,20 @@ export class Users {
               });
               buttonContainer.appendChild(addButton);
             }
+
+            // Add Chat button for all users
+            const chatButton = document.createElement("button");
+            chatButton.textContent = "Chat";
+            chatButton.classList.add("btn-pink");
+            chatButton.addEventListener("click", () => {
+              const currentUserId = getUserId();
+              const friendId = user.id;
+              const chatId = [currentUserId, friendId]
+                .sort((a, b) => Number(a) - Number(b))
+                .join("-");
+              this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
+            });
+            buttonContainer.appendChild(chatButton);
 
             userItem.appendChild(userInfo);
             userItem.appendChild(buttonContainer);
