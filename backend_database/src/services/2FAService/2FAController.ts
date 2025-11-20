@@ -13,6 +13,7 @@ import type {
 } from "./2FATypes";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
+import { ensureUserOwnership } from "../../utils/authUtils.ts";
 
 export const twoFAController = {
   setup2FA: async (
@@ -28,6 +29,9 @@ export const twoFAController = {
         userIdParam: request.params.userId,
       });
     }
+
+    // Authorization: Ensure authenticated user matches the userId parameter
+    ensureUserOwnership(request.user!.id, userId);
 
     // Check if user exists
     const user = await db.get<{ username: string }>("SELECT username FROM users WHERE id = ?", [
@@ -68,6 +72,9 @@ export const twoFAController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { userId, token } = request.body;
+
+    // Authorization: Ensure authenticated user matches the userId in request body
+    ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (brute force protection)
     // 6-digit code = 1,000,000 combinations, lockout prevents enumeration
@@ -111,6 +118,9 @@ export const twoFAController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { userId, token } = request.body;
+
+    // Authorization: Ensure authenticated user matches the userId in request body
+    ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (same as verify)
     checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
@@ -159,6 +169,10 @@ export const twoFAController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { userId, token } = request.body;
+
+    // Authorization: Ensure authenticated user matches the userId in request body
+    ensureUserOwnership(request.user!.id, userId);
+
     const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
       "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
       [userId]

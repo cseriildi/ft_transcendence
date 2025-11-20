@@ -4,6 +4,7 @@ import authRoutes from "./services/authService/authRoutes.ts";
 import monitoringRoutes from "./services/monitoringService/monitoringRoutes.ts";
 import matchRoutes from "./services/matchService/matchRoutes.ts";
 import oauthRoutes from "./services/oAuthService/oAuthRoutes.ts";
+import twoFARoutes from "./services/2FAService/2FARoutes.ts";
 import { config } from "./config.ts";
 import friendRoutes from "./services/friendService/friendRoutes.ts";
 import { authenticatedRateLimit } from "./middleware/rateLimitMiddleware.ts";
@@ -15,6 +16,7 @@ async function routes(fastify: FastifyInstance) {
     fastify.register(monitoringRoutes),
     fastify.register(authRoutes, { prefix: config.routes.auth }),
     fastify.register(oauthRoutes, { prefix: config.routes.oauth }),
+    fastify.register(twoFARoutes, { prefix: config.routes.auth }),
   ]);
 
   // Register API routes WITH per-user rate limiting (100 req/min)
