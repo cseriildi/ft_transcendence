@@ -19,6 +19,7 @@ export class Profile {
     const winBar = document.getElementById("win-bar");
     const lossBar = document.getElementById("loss-bar");
     const winRateElement = document.getElementById("win-rate");
+    const statsCard = document.getElementById("stats-card");
     
     if (totalGamesElement) totalGamesElement.textContent = "0";
     if (totalWinsElement) totalWinsElement.textContent = "0";
@@ -30,6 +31,9 @@ export class Profile {
     if (winRateElement) {
       winRateElement.textContent = "0%";
       winRateElement.className = "font-bold text-white";
+    }
+    if (statsCard) {
+      statsCard.classList.remove("border-neon-green");
     }
   }
 
@@ -65,11 +69,53 @@ export class Profile {
       winRateElement.textContent = `${winPercentage}%`;
       winRateElement.className = `font-bold ${winPercentage >= 50 ? 'text-neon-green' : 'text-neon-pink'}`;
     }
+    
+    // Update stats card border based on win percentage
+    const statsCard = document.getElementById("stats-card");
+    if (statsCard) {
+      if (winPercentage >= 50) {
+        statsCard.classList.add("border-neon-green");
+      } else {
+        statsCard.classList.remove("border-neon-green");
+      }
+    }
+  }
+
+  private userCache: Map<number, string> = new Map();
+
+  private async getUserName(userId: number): Promise<string> {
+    // Check cache first
+    if (this.userCache.has(userId)) {
+      return this.userCache.get(userId)!;
+    }
+
+    try {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        const userName = userData.data?.username || `User ${userId}`;
+        this.userCache.set(userId, userName);
+        return userName;
+      } else {
+        console.error(`Failed to fetch user ${userId}`, await response.json());
+        return `User ${userId}`;
+      }
+    } catch (error) {
+      console.error(`Error fetching user ${userId}`, error);
+      return `User ${userId}`;
+    }
   }
 
   private allMatches: any[] = [];
   private displayedMatchesCount: number = 0;
-  private readonly MATCHES_PER_PAGE = 10;
+  private readonly MATCHES_PER_PAGE = 5;
 
   private async loadGameHistory(userId: string | number | null, container: HTMLElement | null, statsContainer: HTMLElement | null): Promise<void> {
     if (!container || !userId) {
@@ -108,7 +154,7 @@ export class Profile {
 
         // Reset displayed count and show initial matches
         this.displayedMatchesCount = 0;
-        this.showMoreMatches(userId, container);
+        await this.showMoreMatches(userId, container);
 
       } else {
         console.error("Failed to fetch match history", await response.json());
@@ -120,7 +166,7 @@ export class Profile {
     }
   }
 
-  private showMoreMatches(userId: string | number, container: HTMLElement): void {
+  private async showMoreMatches(userId: string | number, container: HTMLElement): Promise<void> {
     const startIndex = this.displayedMatchesCount;
     const endIndex = Math.min(startIndex + this.MATCHES_PER_PAGE, this.allMatches.length);
     
@@ -134,31 +180,44 @@ export class Profile {
     for (let i = startIndex; i < endIndex; i++) {
       const match = this.allMatches[i];
       const matchElement = document.createElement("div");
-      matchElement.classList.add(
-        "bg-gray-800",
-        "rounded-lg",
-        "p-4",
-        "mb-3",
-        "border",
-        "border-gray-600"
-      );
-
+      
       const isWinner = match.winner_id === Number(userId);
       const playerScore = isWinner ? match.winner_score : match.loser_score;
       const opponentScore = isWinner ? match.loser_score : match.winner_score;
       const opponentId = isWinner ? match.loser_id : match.winner_id;
+
+      // Apply different styling based on win/loss
+      if (isWinner) {
+        // WIN card: glass-card with neon-green border
+        matchElement.classList.add(
+          "glass-card",
+          "border-neon-green",
+          "p-4",
+          "mb-3"
+        );
+      } else {
+        // LOSS card: just glass-card
+        matchElement.classList.add(
+          "glass-card",
+          "p-4",
+          "mb-3"
+        );
+      }
       
       const resultColor = isWinner ? "text-neon-green" : "text-neon-pink";
       const resultText = isWinner ? "WIN" : "LOSS";
 
       const matchDate = new Date(match.played_at).toLocaleDateString();
 
+      // Get opponent name
+      const opponentName = await this.getUserName(opponentId);
+
       matchElement.innerHTML = `
         <div class="flex justify-between items-center">
           <div class="flex-1">
             <div class="flex items-center gap-3">
               <span class="${resultColor} font-bold text-sm">${resultText}</span>
-              <span class="text-white">vs User ${opponentId}</span>
+              <span class="text-white">vs ${opponentName}</span>
             </div>
             <div class="text-gray-400 text-xs mt-1">${matchDate}</div>
           </div>
@@ -186,8 +245,8 @@ export class Profile {
       );
       seeMoreBtn.textContent = `See More (${this.allMatches.length - this.displayedMatchesCount} remaining)`;
       
-      seeMoreBtn.addEventListener("click", () => {
-        this.showMoreMatches(userId, container);
+      seeMoreBtn.addEventListener("click", async () => {
+        await this.showMoreMatches(userId, container);
       });
 
       container.appendChild(seeMoreBtn);
@@ -452,9 +511,7 @@ export class Profile {
 
                 userItem.appendChild(avatarContainer);
                 userItem.appendChild(usernameContainer);
-                if (!isPending) {
-                  userItem.appendChild(chatButton);
-                }
+                userItem.appendChild(chatButton);
                 friendsListContainer.appendChild(userItem);
 
                 // Make the entire user item clickable to view profile
