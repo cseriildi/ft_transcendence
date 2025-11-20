@@ -1,5 +1,5 @@
 interface PlayerInfo {
-  userId: number | string;
+  userId: number;
   username: string;
   avatar?: string;
 }

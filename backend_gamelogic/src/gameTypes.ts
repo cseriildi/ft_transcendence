@@ -3,7 +3,7 @@ import { Tournament } from "./Tournament.js";
 
 // Player information
 export interface PlayerInfo {
-  userId: number | string;
+  userId: number;
   username: string;
   avatar?: string;
 }

@@ -52,7 +52,7 @@ fastify.get("/health", async () => {
 
 // Helper function to terminate all games for a specific user (e.g., on logout)
 // Can be called from an HTTP endpoint in the future
-function terminateUserGames(userId: string | number): void {
+function terminateUserGames(userId: number): void {
   const game = activePlayers.get(userId);
   if (game) {
     try {
@@ -231,7 +231,7 @@ fastify.register(async function (server: FastifyInstance) {
               }
 
               game.clients.set(2, {
-                playerInfo: { userId: gameMode, username: gameMode },
+                playerInfo: { userId: 0, username: gameMode },
                 connection,
               });
               activeGames.add(game);
