@@ -30,17 +30,14 @@ class SecureTokenManager {
     }
 
     // Refresh token 3 minutes before expiration (15min - 3min = 12min)
-    this.refreshTimer = window.setTimeout(
-      async () => {
-        try {
-          await this.refreshAccessToken();
-        } catch (error) {
-          console.error("Scheduled token refresh failed:", error);
-          this.handleTokenExpiry();
-        }
-      },
-      12 * 60 * 1000
-    );
+    this.refreshTimer = window.setTimeout(async () => {
+      try {
+        await this.refreshAccessToken();
+      } catch (error) {
+        console.error("Scheduled token refresh failed:", error);
+        this.handleTokenExpiry();
+      }
+    }, 12 * 60 * 1000);
   }
 
   getAccessToken(): string | null {
@@ -61,7 +58,7 @@ class SecureTokenManager {
 
   async refreshAccessToken(): Promise<void> {
     const hasUserData = localStorage.getItem("userId") || localStorage.getItem("username");
-    
+
     if (!hasUserData) {
       throw new Error("No session data found - likely no refresh token available");
     }

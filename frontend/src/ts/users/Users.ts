@@ -119,7 +119,15 @@ export class Users {
 
             // Create action button(s) based on status
             const buttonContainer = document.createElement("div");
-            buttonContainer.classList.add("flex", "flex-wrap", "gap-2", "w-full", "sm:w-auto", "justify-center", "sm:justify-end");
+            buttonContainer.classList.add(
+              "flex",
+              "flex-wrap",
+              "gap-2",
+              "w-full",
+              "sm:w-auto",
+              "justify-center",
+              "sm:justify-end"
+            );
 
             if (isFriend) {
               // Show Delete Friend button
@@ -273,9 +281,7 @@ export class Users {
               // No relationship - show Add Friend button
               const addButton = document.createElement("button");
               addButton.textContent = "Add Friend";
-              addButton.classList.add(
-                "btn-green"
-              );
+              addButton.classList.add("btn-green");
               addButton.addEventListener("click", async () => {
                 try {
                   const response = await fetchWithRefresh(
@@ -304,9 +310,7 @@ export class Users {
             // Add Chat button for all users
             const chatButton = document.createElement("button");
             chatButton.textContent = "Chat";
-            chatButton.classList.add(
-              "btn-pink"
-            );
+            chatButton.classList.add("btn-pink");
             chatButton.addEventListener("click", () => {
               const currentUserId = getUserId();
               const friendId = user.id;

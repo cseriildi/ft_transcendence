@@ -146,7 +146,7 @@ export class Chat {
         const data = await response.json();
         const users = data.data;
         const partner = users.find((user: any) => user.username === partnerUsername);
-        
+
         if (partner) {
           // Set avatar
           if (partnerAvatarElement && partner.avatar_url) {

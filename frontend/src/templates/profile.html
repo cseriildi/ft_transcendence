@@ -2,7 +2,9 @@
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
     <h1 class="page-title text-2xl sm:text-5xl text-neon-green mt-4 sm:mt-10">My Profile</h1>
     <!-- User Info Section -->
-    <div class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center mx-auto">
+    <div
+      class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center mx-auto"
+    >
       <img
         id="user-avatar"
         src=""
@@ -13,17 +15,22 @@
         id="user-name"
         class="text-lg sm:text-xl font-bold text-white mb-2 max-w-xs rounded-lg truncate text-center"
       ></h2>
-      <p id="user-email" class="text-sm sm:text-base text-neon-pink mb-4 max-w-xs rounded-lg truncate text-center"></p>
+      <p
+        id="user-email"
+        class="text-sm sm:text-base text-neon-pink mb-4 max-w-xs rounded-lg truncate text-center"
+      ></p>
       <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
         <button id="edit-btn" class="btn-green text-sm sm:text-base">Edit Profile</button>
-        <button id="chat-btn" class="btn-pink text-sm sm:text-base" style="display: none;">Start Chat</button>
+        <button id="chat-btn" class="btn-pink text-sm sm:text-base" style="display: none">
+          Start Chat
+        </button>
       </div>
     </div>
-    
+
     <!-- Stats Dashboard -->
     <div class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10">
       <h3 class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center">Game Statistics</h3>
-      
+
       <!-- Win/Loss Graph -->
       <div id="stats-overview" class="mb-6">
         <div id="stats-card" class="glass-card p-4 mb-4">
@@ -41,19 +48,30 @@
               <div class="text-xs text-gray-400">Losses</div>
             </div>
           </div>
-          
+
           <!-- Win/Loss Bar Chart -->
           <div class="mb-3">
             <div class="flex justify-between text-sm mb-1">
               <span id="win-percentage-label" class="text-neon-green">Wins -%</span>
               <span id="loss-percentage-label" class="text-neon-pink">Losses -%</span>
             </div>
-            <div id="progress-bar-container" class="w-full bg-gray-700 rounded-full h-6 flex overflow-hidden">
-              <div id="win-bar" class="bg-neon-green h-full transition-all duration-500 ease-out" style="width: 0%"></div>
-              <div id="loss-bar" class="bg-neon-pink h-full transition-all duration-500 ease-out" style="width: 0%"></div>
+            <div
+              id="progress-bar-container"
+              class="w-full bg-gray-700 rounded-full h-6 flex overflow-hidden"
+            >
+              <div
+                id="win-bar"
+                class="bg-neon-green h-full transition-all duration-500 ease-out"
+                style="width: 0%"
+              ></div>
+              <div
+                id="loss-bar"
+                class="bg-neon-pink h-full transition-all duration-500 ease-out"
+                style="width: 0%"
+              ></div>
             </div>
           </div>
-          
+
           <!-- Win Rate Indicator -->
           <div class="text-center">
             <span class="text-white text-sm">Win Rate: </span>
@@ -61,21 +79,26 @@
           </div>
         </div>
       </div>
-      
+
       <h4 class="text-md sm:text-lg font-bold text-neon-green mb-4 text-center">Match History</h4>
       <div id="game-history" class="w-full">
         <!-- Game history will be dynamically loaded here -->
       </div>
     </div>
-    
+
     <!-- Friends Section -->
-    <div id="friends-card" class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center">
+    <div
+      id="friends-card"
+      class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center"
+    >
       <h3 class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center">Friends</h3>
       <div id="friends-list" class="w-full max-w-md mx-auto">
         <!-- Users list will be dynamically loaded here -->
       </div>
       <div class="w-full flex justify-center mt-4 sm:mt-6">
-        <button id="find-friends-btn" class="btn-green text-sm sm:text-base">Friends Management</button>
+        <button id="find-friends-btn" class="btn-green text-sm sm:text-base">
+          Friends Management
+        </button>
       </div>
     </div>
     <div class="text-center mt-6 sm:mt-8">
