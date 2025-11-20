@@ -21,8 +21,7 @@ export class GameHistory {
 
   public async loadGameHistory(
     userId: string | number | null,
-    container: HTMLElement | null,
-    statsContainer: HTMLElement | null
+    container: HTMLElement | null
   ): Promise<void> {
     if (!container || !userId) {
       return;
