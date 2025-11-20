@@ -62,12 +62,7 @@ export class Profile {
 
     // Load game history for the profile being viewed
     const gameHistoryContainer = document.getElementById("game-history");
-    const statsOverviewContainer = document.getElementById("stats-overview");
-    await this.gameHistory.loadGameHistory(
-      targetUserId,
-      gameHistoryContainer,
-      statsOverviewContainer
-    );
+    await this.gameHistory.loadGameHistory(targetUserId, gameHistoryContainer);
 
     // Only load friends list for own profile
     if (isOwnProfile) {
