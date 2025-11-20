@@ -7,7 +7,7 @@ import {
   handleSendMessage,
   cleanupChatConnections,
 } from "../../src/handlers/chat.handler.ts";
-import { chatRooms, chatHistory, banList } from "../../src/services/state.ts";
+import { chatRooms, chatHistory, banList, userConnections } from "../../src/services/state.ts";
 
 export interface ChatTestContext {
   app: FastifyInstance;
@@ -19,7 +19,7 @@ export interface ChatTestContext {
  * Setup chat test server
  */
 export async function setupChatTestServer(): Promise<ChatTestContext> {
-  const testDbPath = "./test-chat-rooms.db";
+  const testDbPath = `./test-chat-rooms-${Date.now()}-${Math.random()}.db`;
 
   const app = Fastify({ logger: false });
 
@@ -30,15 +30,15 @@ export async function setupChatTestServer(): Promise<ChatTestContext> {
   chatRooms.clear();
   banList.clear();
   chatHistory.clear();
+  userConnections.clear();
 
   await app.register(async (fastify) => {
     fastify.get("/ws", { websocket: true }, async (connection, req) => {
-      const { username, userId } = req.query as {
-        username: string;
+      const { userId } = req.query as {
         userId: string;
       };
 
-      if (!username || !userId) {
+      if (!userId) {
         connection.close();
         return;
       }
@@ -51,17 +51,11 @@ export async function setupChatTestServer(): Promise<ChatTestContext> {
 
           switch (data.action) {
             case "join_chat":
-              await handleJoinChat(connection, username, data.chatid, userChatRooms);
+              await handleJoinChat(connection, userId, data.chatid, userChatRooms, fastify);
               break;
 
             case "send_message":
-              await handleSendMessage(
-                connection,
-                username,
-                data.chatid,
-                data.message,
-                userChatRooms
-              );
+              await handleSendMessage(connection, userId, data.chatid, data.message, userChatRooms);
               break;
 
             default:
@@ -78,7 +72,7 @@ export async function setupChatTestServer(): Promise<ChatTestContext> {
       });
 
       connection.on("close", () => {
-        cleanupChatConnections(connection, username, userChatRooms);
+        cleanupChatConnections(connection, userId, userChatRooms);
       });
     });
   });

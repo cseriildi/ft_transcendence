@@ -33,7 +33,8 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             blocker TEXT NOT NULL,
 			      blocked_user TEXT NOT NULL,
-            blocked_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            blocked_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(blocker, blocked_user)
             )
             `,
           (err) => {
