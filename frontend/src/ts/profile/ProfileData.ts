@@ -44,8 +44,8 @@ export class ProfileData {
     const userEmail = document.getElementById("user-email");
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
 
-    if (userName) userName.innerHTML = userData.username;
-    if (userEmail) userEmail.innerHTML = userData.email;
+    if (userName) userName.textContent = userData.username;
+    if (userEmail) userEmail.textContent = userData.email;
     if (userAvatar && userData.avatar_url) {
       userAvatar.src = `${config.apiUrl}${userData.avatar_url}`;
     }
@@ -56,8 +56,8 @@ export class ProfileData {
     const userEmail = document.getElementById("user-email");
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
 
-    if (userName) userName.innerHTML = "Unknown";
-    if (userEmail) userEmail.innerHTML = "";
+    if (userName) userName.textContent = "Unknown";
+    if (userEmail) userEmail.textContent = "";
     if (userAvatar) userAvatar.src = "";
   }
 }
