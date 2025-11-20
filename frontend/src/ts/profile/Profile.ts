@@ -90,6 +90,15 @@ export class Profile {
 
   private userCache: Map<number, string> = new Map();
 
+  private clearUserCache(): void {
+    this.userCache.clear();
+  }
+
+  public destroy(): void {
+    console.log("Destroying profile instance...");
+    this.clearUserCache();
+  }
+
   private async getUserName(userId: number): Promise<string> {
     // Check cache first
     if (this.userCache.has(userId)) {
@@ -133,6 +142,19 @@ export class Profile {
       return;
     }
 
+    // Validate userId is a valid number
+    const numericUserId = Number(userId);
+    if (isNaN(numericUserId) || numericUserId <= 0) {
+      console.error("Invalid user ID provided to loadGameHistory:", userId);
+      container.innerHTML = "<p class='text-red-400 text-center'>Invalid user ID</p>";
+      this.resetStatsOverview();
+      return;
+    }
+
+    // Reset instance properties to avoid stale data when viewing different profiles
+    this.allMatches = [];
+    this.displayedMatchesCount = 0;
+
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/matches/${userId}`, {
         headers: {
@@ -156,7 +178,7 @@ export class Profile {
 
         // Calculate win/loss statistics based on all matches
         const wins = this.allMatches.filter(
-          (match: any) => match.winner_id === Number(userId)
+          (match: any) => match.winner_id === numericUserId
         ).length;
         const losses = this.allMatches.length - wins;
         const winPercentage = Math.round((wins / this.allMatches.length) * 100);
@@ -179,6 +201,13 @@ export class Profile {
   }
 
   private async showMoreMatches(userId: string | number, container: HTMLElement): Promise<void> {
+    // Validate userId is a valid number
+    const numericUserId = Number(userId);
+    if (isNaN(numericUserId) || numericUserId <= 0) {
+      console.error("Invalid user ID provided to showMoreMatches:", userId);
+      return;
+    }
+
     const startIndex = this.displayedMatchesCount;
     const endIndex = Math.min(startIndex + this.MATCHES_PER_PAGE, this.allMatches.length);
 
@@ -188,12 +217,28 @@ export class Profile {
       existingSeeMoreBtn.remove();
     }
 
-    // Add new matches
+    // Collect all unique opponent IDs for this batch of matches
+    const matchesToDisplay = this.allMatches.slice(startIndex, endIndex);
+    const uniqueOpponentIds = new Set<number>();
+    
+    matchesToDisplay.forEach(match => {
+      const isWinner = match.winner_id === numericUserId;
+      const opponentId = isWinner ? match.loser_id : match.winner_id;
+      uniqueOpponentIds.add(opponentId);
+    });
+
+    // Fetch all opponent names in parallel for IDs not in cache
+    const uncachedIds = Array.from(uniqueOpponentIds).filter(id => !this.userCache.has(id));
+    if (uncachedIds.length > 0) {
+      await Promise.all(uncachedIds.map(id => this.getUserName(id)));
+    }
+
+    // Add new matches (now all opponent names are cached)
     for (let i = startIndex; i < endIndex; i++) {
       const match = this.allMatches[i];
       const matchElement = document.createElement("div");
 
-      const isWinner = match.winner_id === Number(userId);
+      const isWinner = match.winner_id === numericUserId;
       const playerScore = isWinner ? match.winner_score : match.loser_score;
       const opponentScore = isWinner ? match.loser_score : match.winner_score;
       const opponentId = isWinner ? match.loser_id : match.winner_id;
@@ -212,23 +257,50 @@ export class Profile {
 
       const matchDate = new Date(match.played_at).toLocaleDateString();
 
-      // Get opponent name
-      const opponentName = await this.getUserName(opponentId);
+      // Get opponent name (now guaranteed to be in cache)
+      const opponentName = this.userCache.get(opponentId) || `User ${opponentId}`;
 
-      matchElement.innerHTML = `
-        <div class="flex justify-between items-center">
-          <div class="flex-1">
-            <div class="flex items-center gap-3">
-              <span class="${resultColor} font-bold text-sm">${resultText}</span>
-              <span class="text-white">vs ${opponentName}</span>
-            </div>
-            <div class="text-gray-400 text-xs mt-1">${matchDate}</div>
-          </div>
-          <div class="text-white font-bold">
-            ${playerScore} - ${opponentScore}
-          </div>
-        </div>
-      `;
+      // Create match structure using safe DOM methods
+      const matchContainer = document.createElement("div");
+      matchContainer.classList.add("flex", "justify-between", "items-center");
+
+      // Left side container
+      const leftContainer = document.createElement("div");
+      leftContainer.classList.add("flex-1");
+
+      // Result and opponent row
+      const resultRow = document.createElement("div");
+      resultRow.classList.add("flex", "items-center", "gap-3");
+
+      // Result span
+      const resultSpan = document.createElement("span");
+      resultSpan.className = `${resultColor} font-bold text-sm`;
+      resultSpan.textContent = resultText;
+
+      // Opponent span
+      const opponentSpan = document.createElement("span");
+      opponentSpan.classList.add("text-white");
+      opponentSpan.textContent = `vs ${opponentName}`;
+
+      resultRow.appendChild(resultSpan);
+      resultRow.appendChild(opponentSpan);
+
+      // Date row
+      const dateDiv = document.createElement("div");
+      dateDiv.classList.add("text-gray-400", "text-xs", "mt-1");
+      dateDiv.textContent = matchDate;
+
+      leftContainer.appendChild(resultRow);
+      leftContainer.appendChild(dateDiv);
+
+      // Right side - score
+      const scoreDiv = document.createElement("div");
+      scoreDiv.classList.add("text-white", "font-bold");
+      scoreDiv.textContent = `${playerScore} - ${opponentScore}`;
+
+      matchContainer.appendChild(leftContainer);
+      matchContainer.appendChild(scoreDiv);
+      matchElement.appendChild(matchContainer);
 
       container.appendChild(matchElement);
     }
@@ -257,6 +329,9 @@ export class Profile {
       this.router.navigate("/");
       return;
     }
+
+    // Clear cache to ensure fresh user data on each page load
+    this.clearUserCache();
 
     // Get query parameters to check if we're viewing another user's profile
     const queryParams = this.router.getQueryParams();
@@ -315,6 +390,15 @@ export class Profile {
     });
 
     const targetUserId = isOwnProfile ? currentUserId : viewingUserId;
+
+    if (!targetUserId) {
+      console.error("No valid user ID found for profile fetch.");
+      this.resetStatsOverview();
+      if (userName) userName.innerHTML = "Unknown";
+      if (userEmail) userEmail.innerHTML = "";
+      if (userAvatar) userAvatar.src = "";
+      return;
+    }
 
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${targetUserId}`, {
