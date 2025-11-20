@@ -28,7 +28,7 @@ export async function handleJoinChat(
     userConnections.set(userId, new Set([connection]));
 
     // Load block list from database
-    const db = (fastify as any).db;
+    const db = fastify.db;
     await new Promise<void>((resolve) => {
       db.all(
         "SELECT blocked_user FROM blocks WHERE blocker = ?",
