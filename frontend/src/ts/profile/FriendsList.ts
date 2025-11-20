@@ -246,7 +246,7 @@ export class FriendsList {
     is_online: boolean;
   }): HTMLButtonElement {
     const chatButton = document.createElement("button");
-    chatButton.innerHTML = "Chat";
+    chatButton.textContent = "Chat";
     chatButton.title = "Start Chat";
     chatButton.classList.add("btn-pink");
 
