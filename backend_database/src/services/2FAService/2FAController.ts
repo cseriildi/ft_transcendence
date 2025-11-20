@@ -80,13 +80,17 @@ export const twoFAController = {
     // 6-digit code = 1,000,000 combinations, lockout prevents enumeration
     checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
 
-    const user = await db.get<{ username: string; twofa_secret: string }>(
-      "SELECT username, twofa_secret FROM users WHERE id = ?",
+    const user = await db.get<{ username: string; twofa_secret: string; twofa_enabled: number }>(
+      "SELECT username, twofa_secret, twofa_enabled FROM users WHERE id = ?",
       [userId]
     );
 
     if (!user) {
       throw errors.notFound("User", { targetUserId: userId });
+    }
+
+    if (!user.twofa_enabled) {
+      throw errors.validation("2FA is not enabled for this user", { targetUserId: userId });
     }
 
     if (!user.twofa_secret) {
@@ -173,6 +177,9 @@ export const twoFAController = {
     // Authorization: Ensure authenticated user matches the userId in request body
     ensureUserOwnership(request.user!.id, userId);
 
+    // Rate limit: 5 attempts per 15 minutes per user (same as verify/enable)
+    checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
+
     const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
       "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
       [userId]
@@ -182,13 +189,14 @@ export const twoFAController = {
       throw errors.notFound("User", { targetUserId: userId });
     }
 
+    if (!user.twofa_enabled) {
+      throw errors.validation("2FA is not enabled for this user", { targetUserId: userId });
+    }
+
     if (!user.twofa_secret) {
       throw errors.validation("2FA is not set up for this user", { targetUserId: userId });
     }
 
-    if (!user.twofa_enabled) {
-      throw errors.validation("2FA is not enabled", { targetUserId: userId });
-    }
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
@@ -199,6 +207,9 @@ export const twoFAController = {
     if (!verified) {
       throw errors.validation("Invalid 2FA token", { targetUserId: userId });
     }
+
+    // Clear rate limit on successful disable
+    resetRateLimit(`2fa:${userId}`);
 
     await db.run("UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?", [userId]);
 
