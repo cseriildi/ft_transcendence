@@ -1,6 +1,6 @@
 export interface TournamentPlayer {
   username: string;
-  userId: string | number;
+  userId: number;
   score: number;
 }
 
@@ -41,7 +41,7 @@ export class Tournament {
     trimmedNames.forEach((username) => {
       this.activePlayers.add({
         username: username,
-        userId: username,
+        userId: 0,
         score: 0,
       });
     });
