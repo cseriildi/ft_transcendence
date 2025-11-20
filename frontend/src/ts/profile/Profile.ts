@@ -10,6 +10,190 @@ export class Profile {
     this.router = router;
   }
 
+  private resetStatsOverview(): void {
+    const totalGamesElement = document.getElementById("total-games");
+    const totalWinsElement = document.getElementById("total-wins");
+    const totalLossesElement = document.getElementById("total-losses");
+    const winPercentageLabel = document.getElementById("win-percentage-label");
+    const lossPercentageLabel = document.getElementById("loss-percentage-label");
+    const winBar = document.getElementById("win-bar");
+    const lossBar = document.getElementById("loss-bar");
+    const winRateElement = document.getElementById("win-rate");
+    
+    if (totalGamesElement) totalGamesElement.textContent = "0";
+    if (totalWinsElement) totalWinsElement.textContent = "0";
+    if (totalLossesElement) totalLossesElement.textContent = "0";
+    if (winPercentageLabel) winPercentageLabel.textContent = "Wins 0%";
+    if (lossPercentageLabel) lossPercentageLabel.textContent = "Losses 0%";
+    if (winBar) winBar.style.width = "0%";
+    if (lossBar) lossBar.style.width = "0%";
+    if (winRateElement) {
+      winRateElement.textContent = "0%";
+      winRateElement.className = "font-bold text-white";
+    }
+  }
+
+  private updateStatsOverview(wins: number, losses: number, winPercentage: number, lossPercentage: number): void {
+    const totalGames = wins + losses;
+    
+    // Update the numbers
+    const totalGamesElement = document.getElementById("total-games");
+    const totalWinsElement = document.getElementById("total-wins");
+    const totalLossesElement = document.getElementById("total-losses");
+    
+    if (totalGamesElement) totalGamesElement.textContent = totalGames.toString();
+    if (totalWinsElement) totalWinsElement.textContent = wins.toString();
+    if (totalLossesElement) totalLossesElement.textContent = losses.toString();
+    
+    // Update percentage labels
+    const winPercentageLabel = document.getElementById("win-percentage-label");
+    const lossPercentageLabel = document.getElementById("loss-percentage-label");
+    
+    if (winPercentageLabel) winPercentageLabel.textContent = `Wins ${winPercentage}%`;
+    if (lossPercentageLabel) lossPercentageLabel.textContent = `Losses ${lossPercentage}%`;
+    
+    // Update progress bars
+    const winBar = document.getElementById("win-bar");
+    const lossBar = document.getElementById("loss-bar");
+    
+    if (winBar) winBar.style.width = `${winPercentage}%`;
+    if (lossBar) lossBar.style.width = `${lossPercentage}%`;
+    
+    // Update win rate with color
+    const winRateElement = document.getElementById("win-rate");
+    if (winRateElement) {
+      winRateElement.textContent = `${winPercentage}%`;
+      winRateElement.className = `font-bold ${winPercentage >= 50 ? 'text-neon-green' : 'text-neon-pink'}`;
+    }
+  }
+
+  private allMatches: any[] = [];
+  private displayedMatchesCount: number = 0;
+  private readonly MATCHES_PER_PAGE = 10;
+
+  private async loadGameHistory(userId: string | number | null, container: HTMLElement | null, statsContainer: HTMLElement | null): Promise<void> {
+    if (!container || !userId) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/matches/${userId}`, {
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.allMatches = data.data || [];
+
+        container.innerHTML = "";
+
+        if (this.allMatches.length === 0) {
+          container.innerHTML = "<p class='text-white text-center'>No games played yet</p>";
+          this.resetStatsOverview();
+          return;
+        }
+
+        // Calculate win/loss statistics based on all matches
+        const wins = this.allMatches.filter((match: any) => match.winner_id === Number(userId)).length;
+        const losses = this.allMatches.length - wins;
+        const winPercentage = Math.round((wins / this.allMatches.length) * 100);
+        const lossPercentage = 100 - winPercentage;
+
+        // Update stats overview
+        this.updateStatsOverview(wins, losses, winPercentage, lossPercentage);
+
+        // Reset displayed count and show initial matches
+        this.displayedMatchesCount = 0;
+        this.showMoreMatches(userId, container);
+
+      } else {
+        console.error("Failed to fetch match history", await response.json());
+        container.innerHTML = "<p class='text-red-400 text-center'>Failed to load game history</p>";
+      }
+    } catch (error) {
+      console.error("Error fetching match history", error);
+      container.innerHTML = "<p class='text-red-400 text-center'>Error loading game history</p>";
+    }
+  }
+
+  private showMoreMatches(userId: string | number, container: HTMLElement): void {
+    const startIndex = this.displayedMatchesCount;
+    const endIndex = Math.min(startIndex + this.MATCHES_PER_PAGE, this.allMatches.length);
+    
+    // Remove existing "see more" button if it exists
+    const existingSeeMoreBtn = container.querySelector('#see-more-btn');
+    if (existingSeeMoreBtn) {
+      existingSeeMoreBtn.remove();
+    }
+
+    // Add new matches
+    for (let i = startIndex; i < endIndex; i++) {
+      const match = this.allMatches[i];
+      const matchElement = document.createElement("div");
+      matchElement.classList.add(
+        "bg-gray-800",
+        "rounded-lg",
+        "p-4",
+        "mb-3",
+        "border",
+        "border-gray-600"
+      );
+
+      const isWinner = match.winner_id === Number(userId);
+      const playerScore = isWinner ? match.winner_score : match.loser_score;
+      const opponentScore = isWinner ? match.loser_score : match.winner_score;
+      const opponentId = isWinner ? match.loser_id : match.winner_id;
+      
+      const resultColor = isWinner ? "text-neon-green" : "text-neon-pink";
+      const resultText = isWinner ? "WIN" : "LOSS";
+
+      const matchDate = new Date(match.played_at).toLocaleDateString();
+
+      matchElement.innerHTML = `
+        <div class="flex justify-between items-center">
+          <div class="flex-1">
+            <div class="flex items-center gap-3">
+              <span class="${resultColor} font-bold text-sm">${resultText}</span>
+              <span class="text-white">vs User ${opponentId}</span>
+            </div>
+            <div class="text-gray-400 text-xs mt-1">${matchDate}</div>
+          </div>
+          <div class="text-white font-bold">
+            ${playerScore} - ${opponentScore}
+          </div>
+        </div>
+      `;
+
+      container.appendChild(matchElement);
+    }
+
+    this.displayedMatchesCount = endIndex;
+
+    // Add "see more" button if there are more matches to show
+    if (this.displayedMatchesCount < this.allMatches.length) {
+      const seeMoreBtn = document.createElement("button");
+      seeMoreBtn.id = "see-more-btn";
+      seeMoreBtn.classList.add(
+        "btn-green",
+        "text-sm",
+        "sm:text-base",
+        "w-full",
+        "mt-4"
+      );
+      seeMoreBtn.textContent = `See More (${this.allMatches.length - this.displayedMatchesCount} remaining)`;
+      
+      seeMoreBtn.addEventListener("click", () => {
+        this.showMoreMatches(userId, container);
+      });
+
+      container.appendChild(seeMoreBtn);
+    }
+  }
+
   async initPage(): Promise<void> {
     if (!isUserAuthorized()) {
       this.router.navigate("/");
@@ -31,7 +215,9 @@ export class Profile {
     const userEmail = document.getElementById("user-email");
     const findFriendsBtn = document.getElementById("find-friends-btn");
     const pageTitle = document.querySelector(".page-title");
-    const friendsSection = friendsListContainer?.closest(".flex-1");
+    const friendsSection = document.getElementById("friends-card");
+    const gameHistoryContainer = document.getElementById("game-history");
+    const statsOverviewContainer = document.getElementById("stats-overview");
     
     let users:
       | Array<{ id: number; username: string; avatar_url: string; last_seen?: string }>
@@ -56,7 +242,7 @@ export class Profile {
 
     findFriendsBtn?.addEventListener("click", () => this.router.navigate("/users"));
 
-    backBtn?.addEventListener("click", () => this.router.navigate(isOwnProfile ? "/" : "/users"));
+    backBtn?.addEventListener("click", () => this.router.navigate("/"));
     editBtn?.addEventListener("click", () => this.router.navigate("/edit"));
 
     // Chat button event listener - only for other users' profiles
@@ -93,6 +279,9 @@ export class Profile {
     } catch (error) {
       console.error("Error fetching user data", error);
     }
+
+    // Load game history for the profile being viewed
+    await this.loadGameHistory(targetUserId, gameHistoryContainer, statsOverviewContainer);
 
     // Only load friends list for own profile
     if (isOwnProfile) {
@@ -244,14 +433,7 @@ export class Profile {
                 chatButton.innerHTML = "Chat";
                 chatButton.title = "Start Chat";
                 chatButton.classList.add(
-                  "btn-green",
-                  "text-xs",
-                  "sm:text-sm",
-                  "px-2",
-                  "sm:px-4",
-                  "py-1",
-                  "sm:py-2",
-                  "flex-shrink-0"
+                  "btn-pink"
                 );
                 
                 chatButton.addEventListener("click", (e) => {

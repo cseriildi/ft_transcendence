@@ -84,12 +84,16 @@ export class Users {
             const userItem = document.createElement("div");
             userItem.classList.add(
               "flex",
-              "items-center",
-              "justify-between",
+              "flex-col",
+              "sm:flex-row",
+              "sm:items-center",
+              "sm:justify-between",
               "mb-4",
-              "p-2",
+              "p-3",
               "rounded-lg",
-              "hover:bg-blue-600"
+              "hover:bg-blue-600",
+              "gap-3",
+              "sm:gap-0"
             );
 
             const userInfo = document.createElement("div");
@@ -115,7 +119,7 @@ export class Users {
 
             // Create action button(s) based on status
             const buttonContainer = document.createElement("div");
-            buttonContainer.classList.add("flex", "gap-2");
+            buttonContainer.classList.add("flex", "flex-wrap", "gap-2", "w-full", "sm:w-auto", "justify-center", "sm:justify-end");
 
             if (isFriend) {
               // Show Delete Friend button
