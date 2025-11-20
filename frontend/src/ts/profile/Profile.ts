@@ -220,17 +220,17 @@ export class Profile {
     // Collect all unique opponent IDs for this batch of matches
     const matchesToDisplay = this.allMatches.slice(startIndex, endIndex);
     const uniqueOpponentIds = new Set<number>();
-    
-    matchesToDisplay.forEach(match => {
+
+    matchesToDisplay.forEach((match) => {
       const isWinner = match.winner_id === numericUserId;
       const opponentId = isWinner ? match.loser_id : match.winner_id;
       uniqueOpponentIds.add(opponentId);
     });
 
     // Fetch all opponent names in parallel for IDs not in cache
-    const uncachedIds = Array.from(uniqueOpponentIds).filter(id => !this.userCache.has(id));
+    const uncachedIds = Array.from(uniqueOpponentIds).filter((id) => !this.userCache.has(id));
     if (uncachedIds.length > 0) {
-      await Promise.all(uncachedIds.map(id => this.getUserName(id)));
+      await Promise.all(uncachedIds.map((id) => this.getUserName(id)));
     }
 
     // Add new matches (now all opponent names are cached)

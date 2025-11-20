@@ -140,8 +140,8 @@ export class Chat {
     }
 
     // Chat ID format is "userId1-userId2" where IDs are sorted
-    const userIds = chatId.split("-").map(id => parseInt(id));
-    const partnerId = userIds.find(id => id !== Number(currentUserId));
+    const userIds = chatId.split("-").map((id) => parseInt(id));
+    const partnerId = userIds.find((id) => id !== Number(currentUserId));
 
     if (!partnerId) {
       console.error("Partner ID could not be extracted from chat ID:", chatId);
