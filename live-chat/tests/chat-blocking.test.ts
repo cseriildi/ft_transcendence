@@ -22,8 +22,8 @@ describe("WebSocket - Chat User Blocking", () => {
   });
 
   it("should prevent blocked user from joining chat", async () => {
-    // Add user 1 to ban list for user 2
-    banList.set("2", new Set(["1"]));
+    // User 1 blocks user 2 (user 1 has user 2 in their ban list)
+    banList.set("1", new Set(["2"]));
 
     const ws = new WebSocket(`${serverAddress}/ws?userId=1`);
     await new Promise((resolve) => ws.on("open", resolve));
@@ -31,7 +31,7 @@ describe("WebSocket - Chat User Blocking", () => {
 
     const errorMsg = await waitForMessage(ws);
     expect(errorMsg.type).toBe("error");
-    expect(errorMsg.message).toContain("blocked");
+    expect(errorMsg.message).toContain("block");
 
     // The handler doesn't close the connection, it just sends an error
     await closeWebSocket(ws);
@@ -42,15 +42,15 @@ describe("WebSocket - Chat User Blocking", () => {
     const ws2 = await connectAndJoinChat(serverAddress, "2", "1-2");
     await waitForMessage(ws1);
 
-    // User 2 blocks User 1
-    banList.set("2", new Set(["1"]));
+    // User 1 blocks User 2 (user 1 has user 2 in their ban list)
+    banList.set("1", new Set(["2"]));
 
     ws1.send(JSON.stringify({ action: "send_message", chatid: "1-2", message: "Hello User 2!" }));
 
-    // User 1 should receive error
+    // User 1 should receive error (they blocked user 2, so they can't send messages)
     const error = await waitForMessage(ws1);
     expect(error.type).toBe("error");
-    expect(error.message).toContain("blocked");
+    expect(error.message).toContain("block");
 
     await closeWebSocket(ws1);
     await closeWebSocket(ws2);
