@@ -1,4 +1,5 @@
 import { Router } from "../router/Router.js";
+import { i18n } from "../utils/i18n.js";
 import { config } from "../config.js";
 import { getAccessToken, getUserId } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
@@ -56,7 +57,7 @@ export class FriendsList {
         friendsListContainer.innerHTML = "";
 
         if (data.data.friends.length === 0) {
-          friendsListContainer.innerHTML = "<p>You don't have friends yet</p>";
+          friendsListContainer.innerHTML = `<p>${i18n.t("profile.noFriends")}</p>`;
           friendsListContainer.classList.add("text-white");
         } else {
           data.data.friends.forEach(
@@ -212,7 +213,7 @@ export class FriendsList {
     // Add online status text
     if (!isPending) {
       const onlineStatus = document.createElement("span");
-      onlineStatus.textContent = isOnline ? "Online" : "Offline";
+      onlineStatus.textContent = isOnline ? i18n.t("profile.online") : i18n.t("profile.offline");
       onlineStatus.classList.add(
         "text-xs",
         "px-1",
@@ -230,7 +231,9 @@ export class FriendsList {
     // Add pending indicator
     if (isPending) {
       const statusLabel = document.createElement("span");
-      statusLabel.textContent = isInviter ? "(Request sent)" : "(Pending approval)";
+      statusLabel.textContent = isInviter
+        ? i18n.t("profile.requestSent")
+        : i18n.t("profile.pendingApproval");
       statusLabel.classList.add("text-xs", "text-gray-400", "italic");
       usernameContainer.appendChild(statusLabel);
     }
@@ -246,8 +249,8 @@ export class FriendsList {
     is_online: boolean;
   }): HTMLButtonElement {
     const chatButton = document.createElement("button");
-    chatButton.textContent = "Chat";
-    chatButton.title = "Start Chat";
+    chatButton.textContent = i18n.t("chat.title");
+    chatButton.title = i18n.t("chat.startTitle");
     chatButton.classList.add("btn-pink");
 
     chatButton.addEventListener("click", (e) => {

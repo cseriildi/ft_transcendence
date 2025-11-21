@@ -1,6 +1,11 @@
 <div class="page-bg py-8 sm:py-24">
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1 class="page-title text-2xl sm:text-5xl text-neon-green mt-4 sm:mt-10">My Profile</h1>
+    <h1
+      class="page-title text-2xl sm:text-5xl text-neon-green mt-4 sm:mt-10"
+      data-i18n="profile.title"
+    >
+      My Profile
+    </h1>
     <!-- User Info Section -->
     <div
       class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center mx-auto"
@@ -20,8 +25,15 @@
         class="text-sm sm:text-base text-neon-pink mb-4 max-w-xs rounded-lg truncate text-center"
       ></p>
       <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
-        <button id="edit-btn" class="btn-green text-sm sm:text-base">Edit Profile</button>
-        <button id="chat-btn" class="btn-pink text-sm sm:text-base" style="display: none">
+        <button id="edit-btn" class="btn-green text-sm sm:text-base" data-i18n="profile.editButton">
+          Edit Profile
+        </button>
+        <button
+          id="chat-btn"
+          class="btn-pink text-sm sm:text-base"
+          style="display: none"
+          data-i18n="chat.title"
+        >
           Start Chat
         </button>
       </div>
@@ -91,18 +103,29 @@
       id="friends-card"
       class="glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center"
     >
-      <h3 class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center">Friends</h3>
+      <h3
+        class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center"
+        data-i18n="profile.friendsHeading"
+      >
+        Friends
+      </h3>
       <div id="friends-list" class="w-full max-w-md mx-auto">
         <!-- Users list will be dynamically loaded here -->
       </div>
       <div class="w-full flex justify-center mt-4 sm:mt-6">
-        <button id="find-friends-btn" class="btn-green text-sm sm:text-base">
+        <button
+          id="find-friends-btn"
+          class="btn-green text-sm sm:text-base"
+          data-i18n="profile.friendManagementButton"
+        >
           Friends Management
         </button>
       </div>
     </div>
     <div class="text-center mt-6 sm:mt-8">
-      <button id="back-btn" class="btn-pink text-sm sm:text-base">Back to Home</button>
+      <button id="back-btn" class="btn-pink text-sm sm:text-base" data-i18n="common.backToHome">
+        Back to Home
+      </button>
     </div>
   </div>
 </div>

@@ -16,7 +16,8 @@
   "common": {
     "backToHome": "Back to Home",
     "backToProfile": "Back to Profile",
-    "goHome": "Go Home"
+    "goHome": "Go Home",
+    "loading": "Loading..."
   },
 
   "auth": {
@@ -52,7 +53,11 @@
       "hard": "Hard"
     },
     "startGame": "Start Game",
-    "streamInfo": "Pong game streamed via WebSocket"
+    "streamInfo": "Pong game streamed via WebSocket",
+    "instanceNotCreated": "Pong instance not created.",
+    "gameError": "Game Error",
+    "waitingForOpponent": "Waiting for opponent...",
+    "waitingForStart": "When ready click Start Game"
   },
 
   "pong_dynamic": {
@@ -68,7 +73,10 @@
     "players4": "4 Players",
     "players8": "8 Players",
     "enterNames": "Enter Player Names",
-    "startTournament": "Start Tournament"
+    "startTournament": "Start Tournament",
+    "emptyNames": "All player names must be non-empty",
+    "duplicateNames": "All player names must be unique",
+    "setupFailed": "Tournament setup failed"
   },
 
   "profile": {
@@ -80,7 +88,18 @@
     "online": "Online",
     "offline": "Offline",
     "requestSent": "(Request sent)",
-    "pendingApproval": "(Pending approval)"
+    "pendingApproval": "(Pending approval)",
+    "unknown": "Unknown",
+    "invalidUserId": "Invalid user ID",
+    "noGamesPlayed": "No games played yet",
+    "failedLoadHistory": "Failed to load game history",
+    "errorLoadHistory": "Error loading game history",
+    "win": "WIN",
+    "loss": "LOSS",
+    "seeMore": "See More",
+    "remaining": "remaining",
+    "winsLabel": "Wins",
+    "lossesLabel": "Losses"
   },
   "profile_extra": {
     "noFriends": "You don't have friends yet",
@@ -103,7 +122,10 @@
   "chat": {
     "title": "Chat",
     "inputPlaceholder": "Type your message...",
-    "sendButton": "Send"
+    "sendButton": "Send",
+    "chattingWith": "Chatting with",
+    "viewProfile": "View Profile",
+    "viewProfileButton": "View Profile"
   },
 
   "edit": {
@@ -118,6 +140,7 @@
     "404": {
       "title": "404 - Page Not Found",
       "message": "The page you're looking for doesn't exist."
-    }
+    },
+    "sessionExpired": "Session expired. Please log in again."
   }
 }

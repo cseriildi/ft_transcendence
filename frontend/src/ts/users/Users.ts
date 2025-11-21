@@ -281,7 +281,7 @@ export class Users {
             } else {
               // No relationship - show Add Friend button
               const addButton = document.createElement("button");
-              addButton.textContent = "Add Friend";
+              addButton.textContent = i18n.t("users.addFriend");
               addButton.classList.add("btn-green");
               addButton.addEventListener("click", async () => {
                 try {
@@ -310,7 +310,7 @@ export class Users {
 
             // Add Chat button for all users
             const chatButton = document.createElement("button");
-            chatButton.textContent = "Chat";
+            chatButton.textContent = i18n.t("chat.title");
             chatButton.classList.add("btn-pink");
             chatButton.addEventListener("click", () => {
               const currentUserId = getUserId();

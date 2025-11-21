@@ -16,7 +16,10 @@
   "common": {
     "backToHome": "Zurück zur Startseite",
     "backToProfile": "Zurück zum Profil",
-    "goHome": "Zur Startseite"
+    "goHome": "Zur Startseite",
+    "loading": "Laden..."
+    ,
+    "vs": "vs"
   },
 
   "auth": {
@@ -53,6 +56,11 @@
     },
     "startGame": "Spiel starten",
     "streamInfo": "Pong-Spiel wird via WebSocket gestreamt"
+    ,
+    "instanceNotCreated": "Pong-Instanz nicht erstellt.",
+    "gameError": "Spiel-Fehler",
+    "waitingForOpponent": "Warten auf Gegner...",
+    "waitingForStart": "Wenn bereit, klicke Spiel starten"
   },
 
   "pong_dynamic": {
@@ -68,7 +76,10 @@
     "players4": "4 Spieler",
     "players8": "8 Spieler",
     "enterNames": "Spielernamen eingeben",
-    "startTournament": "Turnier starten"
+    "startTournament": "Turnier starten",
+    "emptyNames": "Alle Spielernamen dürfen nicht leer sein",
+    "duplicateNames": "Alle Spielernamen müssen einzigartig sein",
+    "setupFailed": "Turnieraufbau fehlgeschlagen"
   },
 
   "profile": {
@@ -80,7 +91,18 @@
     "online": "Online",
     "offline": "Offline",
     "requestSent": "(Anfrage gesendet)",
-    "pendingApproval": "(Warten auf Bestätigung)"
+    "pendingApproval": "(Warten auf Bestätigung)",
+    "unknown": "Unbekannt",
+    "invalidUserId": "Ungültige Benutzer-ID",
+    "noGamesPlayed": "Noch keine Spiele gespielt",
+    "failedLoadHistory": "Fehler beim Laden der Spielhistorie",
+    "errorLoadHistory": "Fehler beim Laden der Spielhistorie",
+    "win": "SIEG",
+    "loss": "NIEDERLAGE",
+    "seeMore": "Mehr anzeigen",
+    "remaining": "verbleibend",
+    "winsLabel": "Siege",
+    "lossesLabel": "Niederlagen"
   },
   "profile_extra": {
     "noFriends": "Du hast noch keine Freunde",
@@ -103,7 +125,10 @@
   "chat": {
     "title": "Chat",
     "inputPlaceholder": "Gib deine Nachricht ein...",
-    "sendButton": "Senden"
+    "sendButton": "Senden",
+    "chattingWith": "Chat mit",
+    "viewProfile": "Profil anzeigen",
+    "viewProfileButton": "Profil anzeigen"
   },
 
   "edit": {
@@ -119,5 +144,7 @@
       "title": "404 - Seite nicht gefunden",
       "message": "Die gesuchte Seite existiert nicht."
     }
+    ,
+    "sessionExpired": "Sitzung abgelaufen. Bitte erneut anmelden."
   }
 }

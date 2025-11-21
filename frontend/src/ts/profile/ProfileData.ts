@@ -1,5 +1,6 @@
 import { config } from "../config.js";
 import { UserCache, CachedUser } from "./UserCache.js";
+import { i18n } from "../utils/i18n.js";
 
 /**
  * Handles profile data fetching and display
@@ -56,7 +57,7 @@ export class ProfileData {
     const userEmail = document.getElementById("user-email");
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
 
-    if (userName) userName.textContent = "Unknown";
+    if (userName) userName.textContent = i18n.t("profile.unknown");
     if (userEmail) userEmail.textContent = "";
     if (userAvatar) userAvatar.src = "";
   }

@@ -83,14 +83,14 @@ const savePlayerNames = (): string[] | undefined => {
   // Check for empty names
   const emptyNames = trimmedNames.filter((name) => name.length === 0);
   if (emptyNames.length > 0) {
-    alert("All player names must be non-empty");
+    alert(i18n.t("tournament.emptyNames"));
     return;
   }
 
   // Check for duplicates
   const uniqueNames = new Set(trimmedNames);
   if (uniqueNames.size !== trimmedNames.length) {
-    alert("All player names must be unique");
+    alert(i18n.t("tournament.duplicateNames"));
     return;
   }
 
@@ -114,7 +114,7 @@ const savePlayerNames = (): string[] | undefined => {
     // Game has been set up, ready to start
     console.log("Tournament ready to start");
   } catch (error) {
-    alert(`Tournament setup failed: ${(error as Error).message}`);
+    alert(`${i18n.t("tournament.setupFailed")}: ${(error as Error).message}`);
     return;
   }
   return trimmedNames;
@@ -339,7 +339,7 @@ const initPongPage = async () => {
 
     startGameBtn?.addEventListener("click", () => {
       if (!currentPong) {
-        alert("Pong instance not created.");
+        alert(i18n.t("pong.instanceNotCreated"));
         return;
       }
       currentPong.startTournamentGame();
@@ -507,7 +507,7 @@ createPopup();
   const tokenManager = SecureTokenManager.getInstance(router);
 
   tokenManager.setTokenExpiryCallback(() => {
-    showErrorPopup("Session expired. Please log in again.");
+    showErrorPopup(i18n.t("error.sessionExpired") || "Session expired. Please log in again.");
   });
 
   await tokenManager.initialize();

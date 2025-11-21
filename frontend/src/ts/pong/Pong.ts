@@ -187,7 +187,7 @@ export class Pong {
         if (message.type === "error") {
           // Handle error messages from server
           console.error("❌ Game server error:", message.message);
-          alert(`Game Error: ${message.message}`);
+          alert(`${i18n.t("pong.gameError")}: ${message.message}`);
         } else if (message.type === "waiting") {
           if (this.currentGameMode === "tournament") {
             this.isWaitingForStart = true;
@@ -312,13 +312,13 @@ export class Pong {
     if (!name1El || !name2El) return;
 
     switch (this.currentGameMode) {
-        case "ai":
-          name1El.textContent = i18n.t("pong_dynamic.ai");
-          name2El.textContent = i18n.t("pong_dynamic.you");
+      case "ai":
+        name1El.textContent = i18n.t("pong_dynamic.ai");
+        name2El.textContent = i18n.t("pong_dynamic.you");
         break;
       case "local":
-          name1El.textContent = i18n.t("pong_dynamic.player1");
-          name2El.textContent = i18n.t("pong_dynamic.player2");
+        name1El.textContent = i18n.t("pong_dynamic.player1");
+        name2El.textContent = i18n.t("pong_dynamic.player2");
         break;
       default:
         name1El.textContent = this.player1Username;
@@ -473,7 +473,7 @@ export class Pong {
       this.ctx.font = "bold 200px Arial";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
-      this.ctx.fillText("Waiting for opponent...", width / 2, height / 2);
+      this.ctx.fillText(i18n.t("pong.waitingForOpponent"), width / 2, height / 2);
       return;
     }
 
@@ -483,7 +483,7 @@ export class Pong {
       this.ctx.font = "bold 150px Arial";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
-      this.ctx.fillText("When ready click Start Game", width / 2, height / 2);
+      this.ctx.fillText(i18n.t("pong.waitingForStart"), width / 2, height / 2);
       return;
     }
 

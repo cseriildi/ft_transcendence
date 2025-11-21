@@ -8,7 +8,7 @@
   <body>
     <div id="chat-container" class="page-bg py-8">
       <div class="max-w-2xl mx-auto px-4">
-        <h1 class="page-title text-neon-green">Chat</h1>
+        <h1 class="page-title text-neon-green" data-i18n="chat.title">Chat</h1>
 
         <!-- Chat partner info -->
         <div
@@ -23,11 +23,17 @@
               class="w-10 h-10 rounded-full border-2 border-neon-green"
             />
             <div>
-              <h3 id="partner-username" class="text-white font-semibold">Loading...</h3>
-              <span id="partner-status" class="text-xs text-neon-pink">Chatting with</span>
+              <h3 id="partner-username" class="text-white font-semibold" data-i18n="common.loading">
+                Loading...
+              </h3>
+              <span id="partner-status" class="text-xs text-neon-pink" data-i18n="chat.chattingWith"
+                >Chatting with</span
+              >
             </div>
           </div>
-          <button id="view-profile-btn" class="btn-green">View Profile</button>
+          <button id="view-profile-btn" class="btn-green" data-i18n="chat.viewProfile">
+            View Profile
+          </button>
         </div>
 
         <div id="chat-box" class="form-card h-96 overflow-y-auto">
@@ -44,7 +50,9 @@
           <button type="submit" class="btn-green" data-i18n="chat.sendButton">Send</button>
         </form>
         <div class="text-center mt-4">
-          <button id="back-btn" class="btn-pink" data-i18n="common.backToProfile">Back to Profile</button>
+          <button id="back-btn" class="btn-pink" data-i18n="common.backToProfile">
+            Back to Profile
+          </button>
         </div>
       </div>
     </div>

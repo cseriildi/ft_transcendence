@@ -2,6 +2,7 @@ import { config } from "../config.js";
 import { getAccessToken } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { UserCache } from "./UserCache.js";
+import { i18n } from "../utils/i18n.js";
 import { ProfileStats } from "./ProfileStats.js";
 
 /**
@@ -31,7 +32,7 @@ export class GameHistory {
     const numericUserId = Number(userId);
     if (isNaN(numericUserId) || numericUserId <= 0) {
       console.error("Invalid user ID provided to loadGameHistory:", userId);
-      container.innerHTML = "<p class='text-red-400 text-center'>Invalid user ID</p>";
+      container.innerHTML = `<p class='text-red-400 text-center'>${i18n.t("profile.invalidUserId")}</p>`;
       this.profileStats.reset();
       return;
     }
@@ -56,7 +57,7 @@ export class GameHistory {
         container.innerHTML = "";
 
         if (this.allMatches.length === 0) {
-          container.innerHTML = "<p class='text-white text-center'>No games played yet</p>";
+          container.innerHTML = `<p class='text-white text-center'>${i18n.t("profile.noGamesPlayed")}</p>`;
           this.profileStats.reset();
           return;
         }
@@ -75,11 +76,11 @@ export class GameHistory {
         await this.showMoreMatches(userId, container);
       } else {
         console.error("Failed to fetch match history", await response.json());
-        container.innerHTML = "<p class='text-red-400 text-center'>Failed to load game history</p>";
+        container.innerHTML = `<p class='text-red-400 text-center'>${i18n.t("profile.failedLoadHistory")}</p>`;
       }
     } catch (error) {
       console.error("Error fetching match history", error);
-      container.innerHTML = "<p class='text-red-400 text-center'>Error loading game history</p>";
+      container.innerHTML = `<p class='text-red-400 text-center'>${i18n.t("profile.errorLoadHistory")}</p>`;
     }
   }
 
@@ -147,7 +148,7 @@ export class GameHistory {
     }
 
     const resultColor = isWinner ? "text-neon-green" : "text-neon-pink";
-    const resultText = isWinner ? "WIN" : "LOSS";
+    const resultText = isWinner ? i18n.t("profile.win") : i18n.t("profile.loss");
     const matchDate = new Date(match.played_at).toLocaleDateString();
     const cachedUser = this.userCache.get(opponentId);
     const opponentName = cachedUser?.username || `User ${opponentId}`;
@@ -170,7 +171,7 @@ export class GameHistory {
 
     const opponentSpan = document.createElement("span");
     opponentSpan.classList.add("text-white");
-    opponentSpan.textContent = `vs ${opponentName}`;
+    opponentSpan.textContent = `${i18n.t("common.vs")} ${opponentName}`;
 
     resultRow.appendChild(resultSpan);
     resultRow.appendChild(opponentSpan);
@@ -199,9 +200,8 @@ export class GameHistory {
     const seeMoreBtn = document.createElement("button");
     seeMoreBtn.id = "see-more-btn";
     seeMoreBtn.classList.add("btn-green", "text-sm", "sm:text-base", "w-full", "mt-4");
-    seeMoreBtn.textContent = `See More (${
-      this.allMatches.length - this.displayedMatchesCount
-    } remaining)`;
+    const remaining = this.allMatches.length - this.displayedMatchesCount;
+    seeMoreBtn.textContent = `${i18n.t("profile.seeMore")} (${remaining} ${i18n.t("profile.remaining")})`;
 
     seeMoreBtn.addEventListener("click", async () => {
       await this.showMoreMatches(userId, container);
