@@ -222,7 +222,9 @@ export class Chat {
         // Set up block button click handler
         if (blockUserBtn) {
           blockUserBtn.addEventListener("click", async () => {
-            const confirmed = confirm(`Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`);
+            const confirmed = confirm(
+              `Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`
+            );
             if (confirmed) {
               await this.blockUser(partnerId);
             }
