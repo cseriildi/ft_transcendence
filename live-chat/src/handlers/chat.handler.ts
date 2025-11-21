@@ -23,28 +23,27 @@ export async function handleJoinChat(
     return;
   }
 
-  // If this is user's first chat join, add to connections and load block list
+  // Track user connections
   if (!userConnections.has(userId)) {
     userConnections.set(userId, new Set([connection]));
-
-    // Load block list from database
-    const db = fastify.db;
-    await new Promise<void>((resolve) => {
-      db.all(
-        "SELECT blocked_user FROM blocks WHERE blocker = ?",
-        [userId],
-        (err: Error, rows: any[]) => {
-          if (!err && rows) {
-            const blocks = new Set(rows.map((row: any) => row.blocked_user));
-            banList.set(userId, blocks);
-          }
-          resolve();
-        }
-      );
-    });
   } else {
     // Add this connection to existing user connections
     userConnections.get(userId)!.add(connection);
+  }
+
+  // Check if there is a ban between users (bidirectional)
+  const secondUserId = chatId.split("-").find((u: string) => u !== userId);
+  if (secondUserId && banList.has(userId)) {
+    const bans = banList.get(userId)!;
+    if (bans.has(secondUserId)) {
+      connection.send(
+        JSON.stringify({
+          type: "error",
+          message: "You cannot chat with this user due to a block.",
+        })
+      );
+      return;
+    }
   }
 
   // If already in this specific chat, just resend history
@@ -60,20 +59,6 @@ export async function handleJoinChat(
     return;
   }
 
-  // Check if user is banned by the other user in chat
-  const secondUserId = chatId.split("-").find((u: string) => u !== userId);
-  if (secondUserId && banList.has(secondUserId)) {
-    const bans = banList.get(secondUserId)!;
-    if (bans.has(userId)) {
-      connection.send(
-        JSON.stringify({
-          type: "error",
-          message: "You are blocked by this user.",
-        })
-      );
-      return;
-    }
-  }
 
   // Initialize chat room if needed
   if (!chatRooms.has(chatId)) {
@@ -195,16 +180,14 @@ export async function handleSendMessage(
     return;
   }
 
-  // Check if sender is blocked
+  // Check if there is a ban (bidirectional check)
   let isBlocked = false;
-  for (const [client, clientUserId] of room) {
-    if (client !== connection) {
-      if (banList.has(clientUserId)) {
-        const bans = banList.get(clientUserId)!;
-        if (Array.from(bans).some((ban) => ban === userId)) {
-          isBlocked = true;
-          break;
-        }
+  if (banList.has(userId)) {
+    const bans = banList.get(userId)!;
+    for (const [client, clientUserId] of room) {
+      if (client !== connection && bans.has(clientUserId)) {
+        isBlocked = true;
+        break;
       }
     }
   }
@@ -213,7 +196,7 @@ export async function handleSendMessage(
     connection.send(
       JSON.stringify({
         type: "error",
-        message: "You are blocked by this user and cannot send messages.",
+        message: "You cannot send messages to this user due to a block.",
       })
     );
     return;
@@ -262,10 +245,10 @@ export function cleanupChatConnections(
     const connections = userConnections.get(userId)!;
     connections.delete(connection);
 
-    // If user has no more connections, remove from tracking and clear block list
+    // If user has no more connections, remove from tracking
+    // Note: We keep banList in memory since it's preloaded at startup
     if (connections.size === 0) {
       userConnections.delete(userId);
-      banList.delete(userId);
     }
   }
 

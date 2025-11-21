@@ -75,4 +75,46 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
   });
 }
 
+/**
+ * Preload all bans from database into memory
+ * Creates bidirectional bans so both blocker and blocked cannot message each other
+ */
+export async function preloadBanList(db: sqlite3.Database): Promise<Map<string, Set<string>>> {
+  return new Promise((resolve, reject) => {
+    db.all(
+      "SELECT blocker, blocked_user FROM blocks",
+      [],
+      (err: Error, rows: any[]) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        const banMap = new Map<string, Set<string>>();
+        
+        if (rows) {
+          rows.forEach((row: any) => {
+            const blocker = row.blocker;
+            const blocked = row.blocked_user;
+            
+            // Add blocker -> blocked
+            if (!banMap.has(blocker)) {
+              banMap.set(blocker, new Set());
+            }
+            banMap.get(blocker)!.add(blocked);
+            
+            // Add blocked -> blocker (bidirectional)
+            if (!banMap.has(blocked)) {
+              banMap.set(blocked, new Set());
+            }
+            banMap.get(blocked)!.add(blocker);
+          });
+        }
+        
+        resolve(banMap);
+      }
+    );
+  });
+}
+
 export default fp(dbConnector, { name: "dbConnector" });
