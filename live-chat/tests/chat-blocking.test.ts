@@ -22,37 +22,35 @@ describe("WebSocket - Chat User Blocking", () => {
   });
 
   it("should prevent blocked user from joining chat", async () => {
-    // Add alice to ban list for bob
-    banList.set("bob", new Set(["alice"]));
+    // User 1 blocks user 2 (user 1 has user 2 in their ban list)
+    banList.set("1", new Set(["2"]));
 
-    const ws = new WebSocket(`${serverAddress}/ws?username=alice&userId=1`);
+    const ws = new WebSocket(`${serverAddress}/ws?userId=1`);
     await new Promise((resolve) => ws.on("open", resolve));
-    ws.send(JSON.stringify({ action: "join_chat", chatid: "alice-bob" }));
+    ws.send(JSON.stringify({ action: "join_chat", chatid: "1-2" }));
 
     const errorMsg = await waitForMessage(ws);
     expect(errorMsg.type).toBe("error");
-    expect(errorMsg.message).toContain("blocked");
+    expect(errorMsg.message).toContain("block");
 
     // The handler doesn't close the connection, it just sends an error
     await closeWebSocket(ws);
   });
 
   it("should prevent blocked user from sending messages", async () => {
-    const ws1 = await connectAndJoinChat(serverAddress, "alice", "1", "alice-bob");
-    const ws2 = await connectAndJoinChat(serverAddress, "bob", "2", "alice-bob");
+    const ws1 = await connectAndJoinChat(serverAddress, "1", "1-2");
+    const ws2 = await connectAndJoinChat(serverAddress, "2", "1-2");
     await waitForMessage(ws1);
 
-    // Bob blocks Alice
-    banList.set("bob", new Set(["alice"]));
+    // User 1 blocks User 2 (user 1 has user 2 in their ban list)
+    banList.set("1", new Set(["2"]));
 
-    ws1.send(
-      JSON.stringify({ action: "send_message", chatid: "alice-bob", message: "Hello Bob!" })
-    );
+    ws1.send(JSON.stringify({ action: "send_message", chatid: "1-2", message: "Hello User 2!" }));
 
-    // Alice should receive error
+    // User 1 should receive error (they blocked user 2, so they can't send messages)
     const error = await waitForMessage(ws1);
     expect(error.type).toBe("error");
-    expect(error.message).toContain("blocked");
+    expect(error.message).toContain("block");
 
     await closeWebSocket(ws1);
     await closeWebSocket(ws2);
