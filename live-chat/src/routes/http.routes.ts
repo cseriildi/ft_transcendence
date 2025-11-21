@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { userLobbyConnections, banList } from "../services/state.js";
+import { banList, userConnections } from "../services/state.js";
 
 /**
  * Register HTTP routes
@@ -19,7 +19,7 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
           if (err) {
             reject(err);
           } else {
-            resolve(true);
+            resolve({ database: "ready" });
           }
         });
       });
@@ -35,12 +35,18 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
       blocked: string;
     };
 
+    // Validation
     if (!blocker || !blocked) {
-      return reply.status(400).send({ error: "Missing blocker or blocked username" });
+      return reply.status(400).send({ error: "Missing blocker or blocked userId" });
     }
 
-    if (!userLobbyConnections.has(blocker)) {
-      return reply.status(401).send({ error: "Blocking user is not authorized" });
+    if (blocker === blocked) {
+      return reply.status(400).send({ error: "Cannot block yourself" });
+    }
+
+    // Check if blocker is connected (has active connections)
+    if (!userConnections.has(blocker)) {
+      return reply.status(401).send({ error: "Blocker must be connected to block users" });
     }
 
     // Add to in-memory ban list
@@ -58,7 +64,12 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
           [blocker, blocked],
           (err) => {
             if (err) {
-              fastify.log.error("Error blocking user %s for %s: %s", blocked, blocker, err.message);
+              fastify.log.error(
+                "Error blocking userId %s for userId %s: %s",
+                blocked,
+                blocker,
+                err.message
+              );
               reject(err);
             }
             resolve({ success: true });

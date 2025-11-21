@@ -26,6 +26,21 @@ await app.register(cors, {
   credentials: true,
 });
 
+// Preload ban list from database
+import { preloadBanList } from "./database.js";
+import { banList } from "./services/state.js";
+
+try {
+  const loadedBans = await preloadBanList(app.db);
+  loadedBans.forEach((bans, userId) => {
+    banList.set(userId, bans);
+  });
+  app.log.info(`Preloaded ${loadedBans.size} users with ban lists`);
+} catch (err) {
+  app.log.error("Failed to preload ban list: %s", err);
+  process.exit(1);
+}
+
 // Register routes
 await app.register(registerHttpRoutes);
 await app.register(registerWebSocketRoute);
