@@ -28,8 +28,8 @@ async function sendMatchResult(game: GameServer): Promise<void> {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        winner: winner.userId,
-        loser: loser.userId,
+        winner_id: winner.userId,
+        loser_id: loser.userId,
         winner_score: winnerScore,
         loser_score: loserScore,
       }),

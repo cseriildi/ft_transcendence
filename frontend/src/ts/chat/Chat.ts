@@ -123,7 +123,81 @@ export class Chat {
     return userId;
   }
 
-  initPage(): void {
+  private async setupChatPartnerInfo(partnerUsername: string, chatId: string): Promise<void> {
+    const partnerUsernameElement = document.getElementById("partner-username");
+    const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
+    const viewProfileBtn = document.getElementById("view-profile-btn");
+
+    if (partnerUsernameElement) {
+      partnerUsernameElement.textContent = partnerUsername;
+    }
+
+    // Extract partner ID from chat ID
+    const currentUserId = getUserId();
+    if (!currentUserId) {
+      console.error("Current user ID not found");
+      return;
+    }
+
+    // Chat ID format is "userId1-userId2" where IDs are sorted
+    const userIds = chatId.split("-").map((id) => parseInt(id));
+    const partnerId = userIds.find((id) => id !== Number(currentUserId));
+
+    if (!partnerId) {
+      console.error("Partner ID could not be extracted from chat ID:", chatId);
+      // Still set meaningful alt text
+      if (partnerAvatarElement) {
+        partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
+      }
+      return;
+    }
+
+    // Fetch specific partner's user data - much more efficient than fetching all users
+    try {
+      const response = await fetch(`${config.apiUrl}/api/users/${partnerId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const partner = data.data;
+
+        // Set avatar and alt text
+        if (partnerAvatarElement) {
+          partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
+          if (partner.avatar_url) {
+            partnerAvatarElement.src = `${config.apiUrl}${partner.avatar_url}`;
+          }
+        }
+
+        // Set up profile button click handler
+        if (viewProfileBtn) {
+          viewProfileBtn.addEventListener("click", () => {
+            this.cleanup();
+            this.router.navigate(`/profile?userId=${partnerId}`);
+          });
+        }
+      } else {
+        console.error("Failed to fetch partner info:", await response.json());
+        // Still set meaningful alt text
+        if (partnerAvatarElement) {
+          partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching partner info:", error);
+      // Still set meaningful alt text
+      if (partnerAvatarElement) {
+        partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
+      }
+    }
+  }
+
+  async initPage(): Promise<void> {
     if (!isUserAuthorized()) {
       this.router.navigate("/");
       return;
@@ -136,10 +210,16 @@ export class Chat {
 
     const urlParams = new URLSearchParams(window.location.search);
     const chatId = urlParams.get("chatId");
+    const partnerUsername = urlParams.get("username");
 
     if (!chatId) {
       console.error("Chat ID is missing in the URL");
       return;
+    }
+
+    // Initialize chat partner info
+    if (partnerUsername && chatId) {
+      await this.setupChatPartnerInfo(partnerUsername, chatId);
     }
 
     this.connectWebSocket(chatBox);

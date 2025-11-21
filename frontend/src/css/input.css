@@ -28,7 +28,11 @@
   }
 
   .form-card {
-    @apply bg-black p-6 rounded-lg shadow-neon border-2 border-neon-pink mb-10;
+    @apply bg-gradient-to-br from-gray-900 to-black p-6 rounded-lg shadow-neon border-2 border-neon-pink mb-10;
+  }
+
+  .glass-card {
+    @apply bg-black bg-opacity-20 backdrop-blur-sm rounded-lg border-2 border-neon-pink;
   }
 
   .page-title {

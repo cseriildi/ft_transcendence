@@ -12,14 +12,8 @@
             class="hidden"
             accept="image/jpeg,image/jpg,image/png"
           />
-          <label
-            for="avatar"
-            class="flex bg-neon-pink text-white font-bold py-2 px-4 rounded cursor-pointer shadow-neon hover:bg-neon-green w-full justify-center items-center"
-            data-i18n="edit.chooseFile"
-          >
-            Choose File
-          </label>
-          <span id="file-name" class="block mt-2 text-sm text-gray-400 text-center" data-i18n="edit.noFileChosen"
+          <label for="avatar" class="flex btn-pink"> Choose File </label>
+          <span id="file-name" class="block mt-2 text-sm text-gray-400 text-center"
             >No file chosen</span
           >
         </div>
@@ -31,13 +25,7 @@
           <label class="form-label" for="username">Nickname</label>
           <input type="text" id="username" name="username" class="form-input" />
         </div>
-        <button
-          type="submit"
-          class="w-full bg-neon-green hover:bg-neon-pink text-purple-900 font-bold py-2 px-4 rounded shadow-neon transition"
-          data-i18n="edit.saveButton"
-        >
-          Save
-        </button>
+        <button type="submit" class="w-full btn-green">Save</button>
       </form>
     </div>
     <div class="text-center space-x-4">

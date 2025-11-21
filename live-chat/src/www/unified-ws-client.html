@@ -662,7 +662,9 @@
 
         // Call the REST API to block the user
         fetch(
-          `${location.protocol === "https:" ? "https" : "http"}://${location.hostname}${location.port ? `:${location.port}` : ""}/lobby/block`,
+          `${location.protocol === "https:" ? "https" : "http"}://${location.hostname}${
+            location.port ? `:${location.port}` : ""
+          }/lobby/block`,
           {
             method: "POST",
             headers: {
