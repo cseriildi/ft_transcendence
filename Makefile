@@ -81,19 +81,36 @@ restart: down up
 	@echo "🔄 Services restarted"
 
 # Full rebuild
-re: fclean env certs setup-dirs build up
+re: clean env certs setup-dirs build up
+	@echo "🔄 Full rebuild complete"
+
+# Deep clean and full rebuild
+fre: fclean env certs setup-dirs build up
 	@echo "🔄 Full rebuild complete"
 
 # Clean up containers and networks
 clean:
-	@echo "🧹 Cleaning up containers and networks..."
-	@docker compose down -v
+	@echo "🧹 Cleaning up containers and networks"
+	@docker compose down
 	@docker system prune -f
 	@echo "✅ Cleanup complete"
 
 # Deep clean - remove everything including images
-fclean: clean
-	@echo "🧹 Deep cleaning - removing images..."
+fclean:
+	@echo "⚠️  WARNING: This will DELETE EVERYTHING including:"
+	@echo "   - All containers and images"
+	@echo "   - All volumes (database data)"
+	@echo "   - All unused Docker resources"
+	@echo ""
+	@printf "Are you sure you want to continue? [y/N] "; \
+	read REPLY; \
+	case "$$REPLY" in \
+		[Yy]*) echo "Proceeding with deep clean..." ;; \
+		*) echo "❌ fclean cancelled"; exit 1 ;; \
+	esac
+	@$(MAKE) clean
+	@$(MAKE) db-reset
+	@echo "🧹 Deep cleaning - removing images and volumes..."
 	@docker compose down -v --rmi all
 	@docker system prune -af
 	@echo "✅ Deep cleanup complete"
@@ -173,6 +190,10 @@ help:
 	@echo "  make clean            - Remove containers, networks, and volumes"
 	@echo "  make fclean           - Deep clean: remove everything including images"
 	@echo "  make re               - Full rebuild (clean + all)"
+	@echo "  make db-reset         - Reset the database"
+	@echo "  make status           - Show status of all services"
+	@echo "  make stats            - Show resource usage of all containers"
+	@echo "  make fre			   - Deep clean and full rebuild (fclean + all)"
 
 ${SERVICES}:
 	@:
@@ -180,4 +201,4 @@ ${SERVICES}:
 .DEFAULT:
 	@make help
 
-.PHONY: all env certs build up dev down stop restart logs shell clean fclean re db-reset status stats help ${SERVICES}
+.PHONY: all env certs build up dev down stop restart logs shell clean fclean fre re db-reset status stats help ${SERVICES}
