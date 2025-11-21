@@ -132,10 +132,16 @@
     "title": "Edit Profile",
     "chooseFile": "Choose File",
     "noFileChosen": "No file chosen",
-    "invalidAvatar": "Only JPEG and PNG files are allowed for avatars.",
-    "saveButton": "Save"
-  },
-
+    "chattingWith": "Chatting with",
+    "viewProfile": "View Profile",
+    "viewProfileButton": "View Profile",
+    "startTitle": "Start Chat",
+    "blockUser": "Block User",
+    "blockSuccess": "User blocked successfully. You will no longer receive messages from this user.",
+    "blockFailed": "Failed to block user. Please try again.",
+    "blockError": "An error occurred while blocking the user. Please try again.",
+    "blockConfirmPrefix": "Are you sure you want to block",
+    "blockConfirmSuffix": "You will no longer be able to send or receive messages from this user."
   "error": {
     "404": {
       "title": "404 - Page Not Found",

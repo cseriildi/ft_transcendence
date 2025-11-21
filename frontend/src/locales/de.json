@@ -128,7 +128,14 @@
     "sendButton": "Senden",
     "chattingWith": "Chat mit",
     "viewProfile": "Profil anzeigen",
-    "viewProfileButton": "Profil anzeigen"
+    "viewProfileButton": "Profil anzeigen",
+    "startTitle": "Chat starten",
+    "blockUser": "Benutzer sperren",
+    "blockSuccess": "Benutzer erfolgreich gesperrt. Du erhältst keine Nachrichten mehr von diesem Benutzer.",
+    "blockFailed": "Fehler beim Sperren des Benutzers. Bitte versuche es erneut.",
+    "blockError": "Beim Sperren des Benutzers ist ein Fehler aufgetreten. Bitte versuche es erneut.",
+    "blockConfirmPrefix": "Bist du sicher, dass du",
+    "blockConfirmSuffix": "sperren möchtest? Du kannst keine Nachrichten mehr mit diesem Benutzer senden oder empfangen."
   },
 
   "edit": {

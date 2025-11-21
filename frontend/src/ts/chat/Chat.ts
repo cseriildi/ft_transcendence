@@ -1,6 +1,7 @@
 import { Router } from "../router/Router.js";
 import { getUserId, isUserAuthorized, getUsername, getAccessToken } from "../utils/utils.js";
 import { config } from "../config.js";
+import { i18n } from "../utils/i18n.js";
 
 export class Chat {
   private router: Router;
@@ -145,17 +146,17 @@ export class Chat {
       });
 
       if (response.ok) {
-        alert("User blocked successfully. You will no longer receive messages from this user.");
+        alert(i18n.t("chat.blockSuccess"));
         this.cleanup();
         this.router.navigate("/profile");
       } else {
         const error = await response.json();
         console.error("Failed to block user:", error);
-        alert(error.error || "Failed to block user. Please try again.");
+        alert(error.error || i18n.t("chat.blockFailed"));
       }
     } catch (error) {
       console.error("Error blocking user:", error);
-      alert("An error occurred while blocking the user. Please try again.");
+      alert(i18n.t("chat.blockError"));
     }
   }
 
@@ -223,7 +224,9 @@ export class Chat {
         if (blockUserBtn) {
           blockUserBtn.addEventListener("click", async () => {
             const confirmed = confirm(
-              `Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`
+              `${i18n.t("chat.blockConfirmPrefix")} ${partnerUsername}? ${i18n.t(
+                "chat.blockConfirmSuffix"
+              )}`
             );
             if (confirmed) {
               await this.blockUser(partnerId);
