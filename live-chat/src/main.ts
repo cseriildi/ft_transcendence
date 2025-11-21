@@ -26,6 +26,7 @@ await app.register(cors, {
   credentials: true,
 });
 
+
 // Preload ban list from database
 import { preloadBanList } from "./database.js";
 import { banList } from "./services/state.js";
