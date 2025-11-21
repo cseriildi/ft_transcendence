@@ -8,7 +8,6 @@ import {
 import { waitForMessage, closeWebSocket, connectAndJoinChat } from "./helpers/websocket-helpers.ts";
 import { banList } from "../src/services/state.ts";
 
-
 describe("WebSocket - Chat User Blocking", () => {
   let context: ChatTestContext;
   let serverAddress: string;

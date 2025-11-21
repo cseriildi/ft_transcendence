@@ -7,7 +7,6 @@ import {
   userConnections,
 } from "../services/state.js";
 
-
 /**
  * Handle join_chat action
  * Loads user's block list on first connection
@@ -59,7 +58,6 @@ export async function handleJoinChat(
     );
     return;
   }
-
 
   // Initialize chat room if needed
   if (!chatRooms.has(chatId)) {
