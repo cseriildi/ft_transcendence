@@ -37,6 +37,9 @@ export const AuthSchemas = {
   },
 
   // POST /auth/login
+  // Response can have two shapes:
+  // 1. Normal login (no 2FA): Returns user data with tokens
+  // 2. 2FA enabled: Returns requires2fa=true and tempToken
   login: {
     body: {
       type: "object" as const,
@@ -55,9 +58,51 @@ export const AuthSchemas = {
           message: { type: "string" as const },
           timestamp: { type: "string" as const },
           data: {
-            // Allow any object since login can return different shapes
             type: "object" as const,
-            additionalProperties: true,
+            description: "Response data - shape varies based on 2FA status",
+            properties: {
+              // Normal login fields (when 2FA is NOT enabled)
+              id: {
+                type: "number" as const,
+                description: "User ID (present when 2FA not required)",
+              },
+              username: {
+                type: "string" as const,
+                description: "Username (present when 2FA not required)",
+              },
+              email: {
+                type: "string" as const,
+                description: "Email address (present when 2FA not required)",
+              },
+              avatar_url: {
+                type: "string" as const,
+                description: "Avatar URL (present when 2FA not required)",
+              },
+              created_at: {
+                type: "string" as const,
+                description: "Account creation timestamp (present when 2FA not required)",
+              },
+              tokens: {
+                type: "object" as const,
+                description: "Authentication tokens (present when 2FA not required)",
+                properties: {
+                  accessToken: { type: "string" as const, description: "JWT access token" },
+                },
+              },
+              // 2FA required fields (when 2FA IS enabled)
+              requires2fa: {
+                type: "boolean" as const,
+                description: "Indicates 2FA verification is required (present when 2FA enabled)",
+              },
+              tempToken: {
+                type: "string" as const,
+                description:
+                  "Temporary token for 2FA verification (present when 2FA enabled, valid 5 minutes)",
+              },
+            },
+            // All properties optional - response shape changes based on 2FA status
+            // Either (id, username, email, tokens) OR (requires2fa, tempToken)
+            additionalProperties: false,
           },
         },
         required: ["success", "timestamp"],
