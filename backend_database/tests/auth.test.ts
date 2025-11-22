@@ -122,6 +122,76 @@ describe("Auth Routes", () => {
     expect(refreshCookie?.httpOnly).toBe(true);
   });
 
+  it("POST /login should return tempToken (not access token) when 2FA is enabled", async () => {
+    // This test verifies the first step of 2FA login flow
+    // Full 2FA flow tests are in 2fa.test.ts
+    const payload = {
+      username: "twofa_user",
+      email: "twofa@example.com",
+      password: "securepassword123",
+      confirmPassword: "securepassword123",
+    };
+    const registerRes = await app.inject({
+      method: "POST",
+      url: `${AUTH_PREFIX}/register`,
+      payload,
+    });
+    const userId = registerRes.json().data?.id;
+
+    // Enable 2FA for this user (simplified - directly in DB for this test)
+    await app.db.run("UPDATE users SET twofa_enabled = 1, twofa_secret = ? WHERE id = ?", [
+      "JBSWY3DPEHPK3PXP", // Test secret
+      userId,
+    ]);
+
+    // Now login - should get tempToken instead of access token
+    const loginRes = await app.inject({
+      method: "POST",
+      url: `${AUTH_PREFIX}/login`,
+      payload: { email: payload.email, password: payload.password },
+    });
+
+    expect(loginRes.statusCode).toBe(200);
+    const loginBody = loginRes.json() as any;
+    expect(loginBody.success).toBe(true);
+    expect(loginBody.data?.requires2fa).toBe(true);
+    expect(loginBody.data?.tempToken).toBeDefined();
+    expect(loginBody.data?.tokens).toBeUndefined(); // Should NOT have access tokens
+    expect(loginBody.message).toContain("2FA verification required");
+
+    // Should NOT have refresh token cookie yet
+    const refreshCookie = loginRes.cookies.find((c: any) => c.name === "refresh_token");
+    expect(refreshCookie).toBeUndefined();
+  });
+
+  it("POST /login should work normally when 2FA is disabled", async () => {
+    const payload = {
+      username: "no2fa_user",
+      email: "no2fa@example.com",
+      password: "securepassword123",
+      confirmPassword: "securepassword123",
+    };
+    await app.inject({ method: "POST", url: `${AUTH_PREFIX}/register`, payload });
+
+    // Login without 2FA - should work as before
+    const loginRes = await app.inject({
+      method: "POST",
+      url: `${AUTH_PREFIX}/login`,
+      payload: { email: payload.email, password: payload.password },
+    });
+
+    expect(loginRes.statusCode).toBe(200);
+    const loginBody = loginRes.json() as any;
+    expect(loginBody.success).toBe(true);
+    expect(loginBody.data?.requires2fa).toBeUndefined();
+    expect(loginBody.data?.tempToken).toBeUndefined();
+    expect(loginBody.data?.tokens?.accessToken).toBeDefined(); // Should have tokens immediately
+
+    // Should have refresh token cookie
+    const refreshCookie = loginRes.cookies.find((c: any) => c.name === "refresh_token");
+    expect(refreshCookie).toBeDefined();
+  });
+
   it("POST /refresh should rotate tokens with valid refresh cookie", async () => {
     const payload = {
       username: "refreshuser",

@@ -74,6 +74,8 @@ describe("Match Routes", () => {
     expect(body.success).toBe(true);
     expect(body.data?.winner_id).toBe(user1.id);
     expect(body.data?.loser_id).toBe(user2.id);
+    expect(body.data?.winner_name).toBe(user1.username);
+    expect(body.data?.loser_name).toBe(user2.username);
     expect(body.data?.winner_score).toBe(21);
     expect(body.data?.loser_score).toBe(15);
     expect(body.data).toHaveProperty("id");
@@ -189,9 +191,18 @@ describe("Match Routes", () => {
     expect(Array.isArray(body.data)).toBe(true);
     expect(body.data.length).toBe(2);
 
-    // Check that matches include user1
+    // Check that matches include user1 with both IDs and names
     body.data.forEach((match: any) => {
       expect(match.winner_id === user1.id || match.loser_id === user1.id).toBe(true);
+      expect(match).toHaveProperty("winner_name");
+      expect(match).toHaveProperty("loser_name");
+      // Verify names match the IDs
+      if (match.winner_id === user1.id) {
+        expect(match.winner_name).toBe(user1.username);
+      }
+      if (match.loser_id === user1.id) {
+        expect(match.loser_name).toBe(user1.username);
+      }
     });
   });
 
