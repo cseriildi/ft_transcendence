@@ -62,7 +62,7 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenPaylo
       audience: AUDIENCE,
     });
     const typedPayload = payload as unknown as AccessTokenPayload;
-    
+
     // Verify this is actually an access token, not a temp token
     if (typedPayload.type !== "access") {
       throw errors.unauthorized("Invalid token type", {
@@ -70,7 +70,7 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenPaylo
         received: typedPayload.type,
       });
     }
-    
+
     return typedPayload;
   } catch (error) {
     // If it's our own validation error, rethrow it with original context
@@ -91,7 +91,7 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
       audience: AUDIENCE,
     });
     const typedPayload = payload as unknown as RefreshTokenPayload;
-    
+
     // Verify this is actually a refresh token
     if (typedPayload.type !== "refresh") {
       throw errors.unauthorized("Invalid token type", {
@@ -99,7 +99,7 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
         received: typedPayload.type,
       });
     }
-    
+
     return typedPayload;
   } catch (error) {
     // If it's our own validation error, rethrow it with original context
@@ -120,7 +120,7 @@ export async function verifyTemporaryToken(token: string): Promise<TempTokenPayl
       audience: AUDIENCE,
     });
     const typedPayload = payload as unknown as TempTokenPayload;
-    
+
     // Verify this is actually a temporary 2FA token
     if (typedPayload.type !== "temp_2fa") {
       throw errors.unauthorized("Invalid token type", {
@@ -128,7 +128,7 @@ export async function verifyTemporaryToken(token: string): Promise<TempTokenPayl
         received: typedPayload.type,
       });
     }
-    
+
     return typedPayload;
   } catch (error) {
     // If it's our own validation error, rethrow it with original context
