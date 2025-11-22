@@ -16,7 +16,6 @@ async function routes(fastify: FastifyInstance) {
     fastify.register(monitoringRoutes),
     fastify.register(authRoutes, { prefix: config.routes.auth }),
     fastify.register(oauthRoutes, { prefix: config.routes.oauth }),
-    fastify.register(twoFARoutes, { prefix: config.routes.auth }),
   ]);
 
   // Register API routes WITH per-user rate limiting (100 req/min)
@@ -31,6 +30,7 @@ async function routes(fastify: FastifyInstance) {
         await apiInstance.register(userRoutes, { prefix: config.routes.api });
         await apiInstance.register(matchRoutes, { prefix: config.routes.api });
         await apiInstance.register(friendRoutes, { prefix: config.routes.api });
+        await apiInstance.register(twoFARoutes, { prefix: config.routes.api });
       },
       { prefix: "" }
     ),

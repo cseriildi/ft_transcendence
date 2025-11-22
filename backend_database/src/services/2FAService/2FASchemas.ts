@@ -28,17 +28,23 @@ export const TwoFASchemas = {
     ),
   },
 
-  // POST /auth/2fa/verify
+  // POST /api/users/:userId/2fa/verify
   verify: {
-    body: {
+    params: {
       type: "object" as const,
       properties: {
         userId: {
-          type: "integer",
-          minimum: 1,
+          type: "string",
+          pattern: "^[0-9]+$",
           description: "User ID",
         },
-        token: {
+      },
+      required: ["userId"],
+    },
+    body: {
+      type: "object" as const,
+      properties: {
+        twofa_code: {
           type: "string",
           minLength: 6,
           maxLength: 6,
@@ -46,7 +52,7 @@ export const TwoFASchemas = {
           description: "6-digit TOTP code",
         },
       },
-      required: ["userId", "token"],
+      required: ["twofa_code"],
       additionalProperties: false,
     },
     response: createResponseSchema(
@@ -61,17 +67,23 @@ export const TwoFASchemas = {
     ),
   },
 
-  // POST /auth/2fa/enable
+  // POST /api/users/:userId/2fa/enable
   enable: {
-    body: {
+    params: {
       type: "object" as const,
       properties: {
         userId: {
-          type: "integer",
-          minimum: 1,
+          type: "string",
+          pattern: "^[0-9]+$",
           description: "User ID",
         },
-        token: {
+      },
+      required: ["userId"],
+    },
+    body: {
+      type: "object" as const,
+      properties: {
+        twofa_code: {
           type: "string",
           minLength: 6,
           maxLength: 6,
@@ -79,7 +91,7 @@ export const TwoFASchemas = {
           description: "6-digit TOTP code",
         },
       },
-      required: ["userId", "token"],
+      required: ["twofa_code"],
       additionalProperties: false,
     },
     response: createResponseSchema(
@@ -94,17 +106,23 @@ export const TwoFASchemas = {
     ),
   },
 
-  // POST /auth/2fa/disable
+  // POST /api/users/:userId/2fa/disable
   disable: {
-    body: {
+    params: {
       type: "object" as const,
       properties: {
         userId: {
-          type: "integer",
-          minimum: 1,
+          type: "string",
+          pattern: "^[0-9]+$",
           description: "User ID",
         },
-        token: {
+      },
+      required: ["userId"],
+    },
+    body: {
+      type: "object" as const,
+      properties: {
+        twofa_code: {
           type: "string",
           minLength: 6,
           maxLength: 6,
@@ -112,7 +130,7 @@ export const TwoFASchemas = {
           description: "6-digit TOTP code",
         },
       },
-      required: ["userId", "token"],
+      required: ["twofa_code"],
       additionalProperties: false,
     },
     response: createResponseSchema(

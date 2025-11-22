@@ -13,11 +13,11 @@ import { TwoFASchemas } from "./2FASchemas.ts";
 
 export default async function twoFARoutes(fastify: FastifyInstance) {
   // Setup 2FA - generates secret and QR code
-  fastify.get<{
+  fastify.post<{
     Params: { userId: string };
     Reply: ApiResponse<Setup2FAData>;
   }>(
-    "/2fa/setup/:userId",
+    "/users/:userId/2fa/setup",
     {
       preHandler: requireAuth,
       schema: {
@@ -35,7 +35,7 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
     Body: Verify2FARequest;
     Reply: ApiResponse<Verify2FAData>;
   }>(
-    "/2fa/verify",
+    "/users/:userId/2fa/verify",
     {
       preHandler: requireAuth,
       schema: {
@@ -53,7 +53,7 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
     Body: Enable2FARequest;
     Reply: ApiResponse<{ enabled: boolean }>;
   }>(
-    "/2fa/enable",
+    "/users/:userId/2fa/enable",
     {
       preHandler: requireAuth,
       schema: {
@@ -71,7 +71,7 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
     Body: Disable2FARequest;
     Reply: ApiResponse<{ enabled: boolean }>;
   }>(
-    "/2fa/disable",
+    "/users/:userId/2fa/disable",
     {
       preHandler: requireAuth,
       schema: {

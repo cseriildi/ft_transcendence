@@ -66,14 +66,15 @@ export const twoFAController = {
   },
 
   verify2FA: async (
-    request: FastifyRequest<{ Body: Verify2FARequest }>,
+    request: FastifyRequest<{ Body: Verify2FARequest; Params: { userId: string } }>,
     _reply: FastifyReply
   ): Promise<ApiResponse<Verify2FAData>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { userId, token } = request.body;
+    const { twofa_code } = request.body;
+    const userId = parseInt(request.params.userId, 10);
 
-    // Authorization: Ensure authenticated user matches the userId in request body
+    // Authorization: Ensure authenticated user matches the userId in request params
     ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (brute force protection)
@@ -100,7 +101,7 @@ export const twoFAController = {
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token,
+      token: twofa_code,
       window: 1, // Allow a 1-step window (30 seconds before or after)
     });
 
@@ -116,14 +117,15 @@ export const twoFAController = {
   },
 
   enable2FA: async (
-    request: FastifyRequest<{ Body: Enable2FARequest }>,
+    request: FastifyRequest<{ Body: Enable2FARequest; Params: { userId: string } }>,
     reply: FastifyReply
   ): Promise<ApiResponse<{ enabled: boolean }>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { userId, token } = request.body;
+    const { twofa_code } = request.body;
+    const userId = parseInt(request.params.userId, 10);
 
-    // Authorization: Ensure authenticated user matches the userId in request body
+    // Authorization: Ensure authenticated user matches the userId in request params
     ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (same as verify)
@@ -149,7 +151,7 @@ export const twoFAController = {
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token,
+      token: twofa_code,
       window: 1,
     });
 
@@ -167,14 +169,15 @@ export const twoFAController = {
   },
 
   disable2FA: async (
-    request: FastifyRequest<{ Body: Disable2FARequest }>,
+    request: FastifyRequest<{ Body: Disable2FARequest; Params: { userId: string } }>,
     _reply: FastifyReply
   ): Promise<ApiResponse<{ enabled: boolean }>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { userId, token } = request.body;
+    const { twofa_code } = request.body;
+    const userId = parseInt(request.params.userId, 10);
 
-    // Authorization: Ensure authenticated user matches the userId in request body
+    // Authorization: Ensure authenticated user matches the userId in request params
     ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (same as verify/enable)
@@ -200,7 +203,7 @@ export const twoFAController = {
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token,
+      token: twofa_code,
       window: 1,
     });
 

@@ -82,12 +82,12 @@ describe("2FA Routes", () => {
       },
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(201);
     const body = res.json() as any;
     expect(body.success).toBe(true);
     expect(body.data?.secret).toBeDefined();
-    expect(body.data?.qrcode).toBeDefined();
-    expect(body.data?.qrcode).toContain("data:image/png;base64,");
+    expect(body.data?.qrCodeUrl).toBeDefined();
+    expect(body.data?.qrCodeUrl).toContain("data:image/png;base64,");
 
     // Verify secret is stored in database (but 2FA not enabled yet)
     const secret = await get2FASecret(userId);
@@ -128,7 +128,7 @@ describe("2FA Routes", () => {
     expect(res.statusCode).toBe(403);
     const body = res.json() as any;
     expect(body.success).toBe(false);
-    expect(body.message).toContain("not authorized");
+    expect(body.message).toContain("does not match");
   });
 
   it("POST /api/users/:userId/2fa/setup should allow regenerating secret", async () => {
@@ -188,10 +188,10 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token },
+      payload: { twofa_code: token },
     });
 
-    expect(res.statusCode).toBe(200);
+    expect(res.statusCode).toBe(201);
     const body = res.json() as any;
     expect(body.success).toBe(true);
     expect(body.message).toContain("2FA enabled");
@@ -220,10 +220,10 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: "000000" }, // Invalid token
+      payload: { twofa_code: "000000" }, // Invalid token
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(400);
     const body = res.json() as any;
     expect(body.success).toBe(false);
     expect(body.message).toContain("Invalid");
@@ -243,7 +243,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: "123456" },
+      payload: { twofa_code: "123456" },
     });
 
     expect(res.statusCode).toBe(400);
@@ -258,7 +258,7 @@ describe("2FA Routes", () => {
     const res = await app.inject({
       method: "POST",
       url: `${API_PREFIX}/users/${userId}/2fa/enable`,
-      payload: { token: "123456" },
+      payload: { twofa_code: "123456" },
     });
 
     expect(res.statusCode).toBe(401);
@@ -288,7 +288,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
 
     // Now verify a new token
@@ -299,13 +299,14 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: verifyToken },
+      payload: { twofa_code: verifyToken },
     });
 
     expect(res.statusCode).toBe(200);
     const body = res.json() as any;
     expect(body.success).toBe(true);
-    expect(body.message).toContain("valid");
+    expect(body.message).toContain("verified");
+    expect(body.data?.valid).toBe(true);
   });
 
   it("POST /api/users/:userId/2fa/verify should reject invalid token", async () => {
@@ -328,7 +329,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
 
     // Try to verify with invalid token
@@ -338,12 +339,13 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: "000000" },
+      payload: { twofa_code: "000000" },
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(200);
     const body = res.json() as any;
-    expect(body.success).toBe(false);
+    expect(body.success).toBe(true);
+    expect(body.data?.valid).toBe(false);
   });
 
   it("POST /api/users/:userId/2fa/verify should reject if 2FA not enabled", async () => {
@@ -365,7 +367,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: "123456" },
+      payload: { twofa_code: "123456" },
     });
 
     expect(res.statusCode).toBe(400);
@@ -396,7 +398,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
 
     // Verify it's enabled
@@ -411,7 +413,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: disableToken },
+      payload: { twofa_code: disableToken },
     });
 
     expect(res.statusCode).toBe(200);
@@ -444,7 +446,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
 
     // Try to disable with invalid token
@@ -454,10 +456,10 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: "000000" },
+      payload: { twofa_code: "000000" },
     });
 
-    expect(res.statusCode).toBe(401);
+    expect(res.statusCode).toBe(400);
     const body = res.json() as any;
     expect(body.success).toBe(false);
 
@@ -476,7 +478,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: "123456" },
+      payload: { twofa_code: "123456" },
     });
 
     expect(res.statusCode).toBe(400);
@@ -507,8 +509,12 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
+
+    // Verify 2FA is actually enabled
+    const enabled = await is2FAEnabled(userId);
+    expect(enabled).toBe(true);
 
     // Now try to login - should get tempToken instead of accessToken
     const loginRes = await app.inject({
@@ -549,8 +555,12 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
+
+    // Verify 2FA is actually enabled
+    const enabled = await is2FAEnabled(userId);
+    expect(enabled).toBe(true);
 
     // Login to get tempToken
     const loginRes = await app.inject({
@@ -570,7 +580,7 @@ describe("2FA Routes", () => {
       url: `${AUTH_PREFIX}/login/2fa`,
       payload: {
         tempToken,
-        twofa_token: twofaToken,
+        twofa_code: twofaToken,
       },
     });
 
@@ -606,7 +616,7 @@ describe("2FA Routes", () => {
       headers: {
         authorization: `Bearer ${accessToken}`,
       },
-      payload: { token: enableToken },
+      payload: { twofa_code: enableToken },
     });
 
     // Login to get tempToken
@@ -626,7 +636,7 @@ describe("2FA Routes", () => {
       url: `${AUTH_PREFIX}/login/2fa`,
       payload: {
         tempToken,
-        twofa_token: "000000", // Invalid
+        twofa_code: "000000", // Invalid
       },
     });
 
@@ -642,7 +652,7 @@ describe("2FA Routes", () => {
       url: `${AUTH_PREFIX}/login/2fa`,
       payload: {
         tempToken: "invalid-temp-token",
-        twofa_token: "123456",
+        twofa_code: "123456",
       },
     });
 
@@ -657,7 +667,7 @@ describe("2FA Routes", () => {
       method: "POST",
       url: `${AUTH_PREFIX}/login/2fa`,
       payload: {
-        twofa_token: "123456",
+        twofa_code: "123456",
       },
     });
 
@@ -716,7 +726,7 @@ describe("2FA Routes", () => {
       url: `${AUTH_PREFIX}/login/2fa`,
       payload: {
         tempToken: accessToken, // Wrong token type
-        twofa_token: "123456",
+        twofa_code: "123456",
       },
     });
 

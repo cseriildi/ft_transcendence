@@ -371,12 +371,12 @@ export const authController = {
   },
 
   login2FA: async (
-    request: FastifyRequest<{ Body: { tempToken: string; twofa_token: string } }>,
+    request: FastifyRequest<{ Body: { tempToken: string; twofa_code: string } }>,
     reply: FastifyReply
   ): Promise<ApiResponse<AuthUserData>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { tempToken, twofa_token } = request.body;
+    const { tempToken, twofa_code } = request.body;
 
     // Verify temporary token
     const decoded = await verifyTemporaryToken(tempToken);
@@ -403,7 +403,7 @@ export const authController = {
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token: twofa_token,
+      token: twofa_code,
       window: 1,
     });
 

@@ -47,7 +47,31 @@ export const AuthSchemas = {
       required: ["email", "password"],
       additionalProperties: false,
     },
-    response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401]),
+    response: {
+      200: {
+        type: "object" as const,
+        properties: {
+          success: { type: "boolean" as const },
+          message: { type: "string" as const },
+          timestamp: { type: "string" as const },
+          data: {
+            // Allow any object since login can return different shapes
+            type: "object" as const,
+            additionalProperties: true,
+          },
+        },
+        required: ["success", "timestamp"],
+      },
+      401: {
+        type: "object" as const,
+        properties: {
+          success: { type: "boolean" as const },
+          error: { type: "string" as const },
+          message: { type: "string" as const },
+          timestamp: { type: "string" as const },
+        },
+      },
+    },
   },
 
   // POST /auth/login/2fa
@@ -59,7 +83,7 @@ export const AuthSchemas = {
           type: "string",
           description: "Temporary token from /login response (valid for 5 minutes)",
         },
-        twofa_token: {
+        twofa_code: {
           type: "string",
           minLength: 6,
           maxLength: 6,
@@ -67,7 +91,7 @@ export const AuthSchemas = {
           description: "6-digit TOTP code from authenticator app",
         },
       },
-      required: ["tempToken", "twofa_token"],
+      required: ["tempToken", "twofa_code"],
       additionalProperties: false,
     },
     response: createResponseSchema(200, commonDataSchemas.userWithTokens, [401, 404, 429]),
