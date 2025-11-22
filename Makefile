@@ -108,7 +108,6 @@ fclean:
 		[Yy]*) echo "Proceeding with deep clean..." ;; \
 		*) echo "❌ fclean cancelled"; exit 1 ;; \
 	esac
-	@$(MAKE) clean
 	@$(MAKE) db-reset
 	@echo "🧹 Deep cleaning - removing images and volumes..."
 	@docker compose down -v --rmi all
