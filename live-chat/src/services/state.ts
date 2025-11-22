@@ -3,13 +3,15 @@
  */
 
 // Store active connections per chat room
+// chatid -> Map<connection, userId>
 export const chatRooms = new Map<string, Map<any, string>>();
 
-// Store all connected users in the lobby
-export const lobbyConnections = new Map<any, string>(); // connection -> username
-export const userLobbyConnections = new Map<string, Set<any>>(); // username -> lobby connections
+// Store all user connections (for tracking first-time joins)
+// userId -> Set<connections>
+export const userConnections = new Map<string, Set<any>>();
 
 // Ban list per user
+// userId -> Set<blockedUserId>
 export const banList = new Map<string, Set<string>>();
 
 // Chat history

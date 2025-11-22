@@ -1,21 +1,52 @@
 import type { FastifyInstance } from "fastify";
-import { chatRooms, chatHistory, banList, MAX_MESSAGES } from "../services/state.js";
+import {
+  chatRooms,
+  chatHistory,
+  banList,
+  MAX_MESSAGES,
+  userConnections,
+} from "../services/state.js";
 
 /**
  * Handle join_chat action
+ * Loads user's block list on first connection
  */
 export async function handleJoinChat(
   connection: any,
-  username: string,
+  userId: string,
   chatId: string,
-  userChatRooms: Set<string>
+  userChatRooms: Set<string>,
+  fastify: FastifyInstance
 ) {
   if (!chatId) {
     connection.send(JSON.stringify({ type: "error", message: "Missing chatid" }));
     return;
   }
 
-  // If already in chat, just resend history (allow rejoining)
+  // Track user connections
+  if (!userConnections.has(userId)) {
+    userConnections.set(userId, new Set([connection]));
+  } else {
+    // Add this connection to existing user connections
+    userConnections.get(userId)!.add(connection);
+  }
+
+  // Check if there is a ban between users (bidirectional)
+  const secondUserId = chatId.split("-").find((u: string) => u !== userId);
+  if (secondUserId && banList.has(userId)) {
+    const bans = banList.get(userId)!;
+    if (bans.has(secondUserId)) {
+      connection.send(
+        JSON.stringify({
+          type: "error",
+          message: "You cannot chat with this user due to a block.",
+        })
+      );
+      return;
+    }
+  }
+
+  // If already in this specific chat, just resend history
   if (userChatRooms.has(chatId)) {
     const history = chatHistory.get(chatId) || [];
     connection.send(
@@ -28,30 +59,13 @@ export async function handleJoinChat(
     return;
   }
 
-  // Check if user is banned
-  const secondUser = chatId.split("-").find((u: string) => u !== username)!;
-  if (banList.has(secondUser)) {
-    const bans = banList.get(secondUser)!;
-    for (const ban of bans) {
-      if (ban === username) {
-        connection.send(
-          JSON.stringify({
-            type: "error",
-            message: "You are blocked by this user.",
-          })
-        );
-        return;
-      }
-    }
-  }
-
-  // Initialize chat room
+  // Initialize chat room if needed
   if (!chatRooms.has(chatId)) {
     chatRooms.set(chatId, new Map());
   }
 
   const room = chatRooms.get(chatId)!;
-  room.set(connection, username);
+  room.set(connection, userId);
   userChatRooms.add(chatId);
 
   // Get history
@@ -66,13 +80,14 @@ export async function handleJoinChat(
     })
   );
 
-  // Notify others
-  for (const [client, clientUsername] of room) {
+  // Notify others in the chat
+  for (const [client, clientUserId] of room) {
     if (client !== connection) {
       client.send(
         JSON.stringify({
-          type: "system",
-          message: `${username} is online.`,
+          type: "user_joined_chat",
+          chatid: chatId,
+          username: userId,
         })
       );
     }
@@ -84,7 +99,7 @@ export async function handleJoinChat(
  */
 export async function handleLeaveChat(
   connection: any,
-  username: string,
+  userId: string,
   chatId: string,
   userChatRooms: Set<string>
 ) {
@@ -103,11 +118,11 @@ export async function handleLeaveChat(
     room.delete(connection);
 
     // Notify others
-    for (const [client, clientUsername] of room) {
+    for (const [client, clientUserId] of room) {
       client.send(
         JSON.stringify({
           type: "system",
-          message: `${username} has left.`,
+          message: `${userId} has left.`,
         })
       );
     }
@@ -133,7 +148,7 @@ export async function handleLeaveChat(
  */
 export async function handleSendMessage(
   connection: any,
-  username: string,
+  userId: string,
   chatId: string,
   message: string,
   userChatRooms: Set<string>
@@ -164,16 +179,14 @@ export async function handleSendMessage(
     return;
   }
 
-  // Check if sender is blocked
+  // Check if there is a ban (bidirectional check)
   let isBlocked = false;
-  for (const [client, clientUsername] of room) {
-    if (client !== connection) {
-      if (banList.has(clientUsername)) {
-        const bans = banList.get(clientUsername)!;
-        if (Array.from(bans).some((ban) => ban === username)) {
-          isBlocked = true;
-          break;
-        }
+  if (banList.has(userId)) {
+    const bans = banList.get(userId)!;
+    for (const [client, clientUserId] of room) {
+      if (client !== connection && bans.has(clientUserId)) {
+        isBlocked = true;
+        break;
       }
     }
   }
@@ -182,7 +195,7 @@ export async function handleSendMessage(
     connection.send(
       JSON.stringify({
         type: "error",
-        message: "You are blocked by this user and cannot send messages.",
+        message: "You cannot send messages to this user due to a block.",
       })
     );
     return;
@@ -194,7 +207,7 @@ export async function handleSendMessage(
   }
   const msgHistory = chatHistory.get(chatId)!;
   msgHistory.push({
-    username,
+    username: userId,
     message: message,
     timestamp: Date.now(),
   });
@@ -203,13 +216,13 @@ export async function handleSendMessage(
   }
 
   // Broadcast to all in room
-  for (const [client, clientUsername] of room) {
+  for (const [client, clientUserId] of room) {
     if (client !== connection) {
       client.send(
         JSON.stringify({
           type: "message",
           chatid: chatId,
-          username: username,
+          username: userId,
           message: message,
           timestamp: Date.now(),
         })
@@ -223,20 +236,33 @@ export async function handleSendMessage(
  */
 export function cleanupChatConnections(
   connection: any,
-  username: string,
+  userId: string,
   userChatRooms: Set<string>
 ) {
+  // Remove from user connections
+  if (userConnections.has(userId)) {
+    const connections = userConnections.get(userId)!;
+    connections.delete(connection);
+
+    // If user has no more connections, remove from tracking
+    // Note: We keep banList in memory since it's preloaded at startup
+    if (connections.size === 0) {
+      userConnections.delete(userId);
+    }
+  }
+
+  // Clean up chat rooms
   userChatRooms.forEach((chatId) => {
     const room = chatRooms.get(chatId);
     if (room) {
       room.delete(connection);
 
       // Notify others
-      for (const [client, clientUsername] of room) {
+      for (const [client, clientUserId] of room) {
         client.send(
           JSON.stringify({
-            type: "system",
-            message: `${username} has left.`,
+            type: "user_left_chat",
+            username: userId,
           })
         );
       }

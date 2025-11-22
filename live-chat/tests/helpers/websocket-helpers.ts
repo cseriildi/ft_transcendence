@@ -91,11 +91,10 @@ export function waitForAuthenticatedConnection(ws: WebSocket, timeout = 1000): P
  */
 export async function connectAndJoinChat(
   serverAddress: string,
-  username: string,
   userId: string,
   chatId: string
 ): Promise<WebSocket> {
-  const ws = new WebSocket(`${serverAddress}/ws?username=${username}&userId=${userId}`);
+  const ws = new WebSocket(`${serverAddress}/ws?userId=${userId}`);
 
   await new Promise((resolve, reject) => {
     ws.on("open", resolve);

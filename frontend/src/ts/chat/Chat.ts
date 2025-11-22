@@ -123,10 +123,47 @@ export class Chat {
     return userId;
   }
 
+  private async blockUser(partnerId: number): Promise<void> {
+    const currentUserId = getUserId();
+    if (!currentUserId) {
+      console.error("Current user ID not found");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${config.apiUrl}/lobby/block`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          blocker: currentUserId,
+          blocked: partnerId.toString(),
+        }),
+      });
+
+      if (response.ok) {
+        alert("User blocked successfully. You will no longer receive messages from this user.");
+        this.cleanup();
+        this.router.navigate("/profile");
+      } else {
+        const error = await response.json();
+        console.error("Failed to block user:", error);
+        alert(error.error || "Failed to block user. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      alert("An error occurred while blocking the user. Please try again.");
+    }
+  }
+
   private async setupChatPartnerInfo(partnerUsername: string, chatId: string): Promise<void> {
     const partnerUsernameElement = document.getElementById("partner-username");
     const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
     const viewProfileBtn = document.getElementById("view-profile-btn");
+    const blockUserBtn = document.getElementById("block-user-btn");
 
     if (partnerUsernameElement) {
       partnerUsernameElement.textContent = partnerUsername;
@@ -179,6 +216,18 @@ export class Chat {
           viewProfileBtn.addEventListener("click", () => {
             this.cleanup();
             this.router.navigate(`/profile?userId=${partnerId}`);
+          });
+        }
+
+        // Set up block button click handler
+        if (blockUserBtn) {
+          blockUserBtn.addEventListener("click", async () => {
+            const confirmed = confirm(
+              `Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`
+            );
+            if (confirmed) {
+              await this.blockUser(partnerId);
+            }
           });
         }
       } else {

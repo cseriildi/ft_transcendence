@@ -20,8 +20,8 @@ describe("WebSocket - Chat Room Connection", () => {
     await cleanupChatTestServer(context);
   });
 
-  it("should connect to a chat room with valid username", async () => {
-    const ws = await connectAndJoinChat(serverAddress, "alice", "1", "alice-bob");
+  it("should connect to a chat room with valid userId", async () => {
+    const ws = await connectAndJoinChat(serverAddress, "1", "1-2");
 
     // The connectAndJoinChat helper already waited for chat_connected
     expect(ws.readyState).toBe(WebSocket.OPEN);
@@ -29,7 +29,7 @@ describe("WebSocket - Chat Room Connection", () => {
     await closeWebSocket(ws);
   });
 
-  it("should close connection without username", async () => {
+  it("should close connection without userId", async () => {
     const ws = new WebSocket(`${serverAddress}/ws`);
 
     await new Promise((resolve) => {
@@ -41,14 +41,14 @@ describe("WebSocket - Chat Room Connection", () => {
   });
 
   it("should notify other users when someone joins", async () => {
-    const ws1 = await connectAndJoinChat(serverAddress, "alice", "1", "alice-bob");
+    const ws1 = await connectAndJoinChat(serverAddress, "1", "1-2");
 
-    const ws2 = await connectAndJoinChat(serverAddress, "bob", "2", "alice-bob");
+    const ws2 = await connectAndJoinChat(serverAddress, "2", "1-2");
 
-    // Alice should receive notification
+    // User 1 should receive notification
     const notification = await waitForMessage(ws1);
-    expect(notification.type).toBe("system");
-    expect(notification.message).toContain("bob is online");
+    expect(notification.type).toBe("user_joined_chat");
+    expect(notification.username).toBe("2");
 
     await closeWebSocket(ws1);
     await closeWebSocket(ws2);

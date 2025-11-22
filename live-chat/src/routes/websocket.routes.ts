@@ -1,11 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { banList } from "../services/state.js";
 import {
-  handleJoinLobby,
-  handleLeaveLobby,
-  cleanupLobbyConnection,
-} from "../handlers/lobby.handler.js";
-import {
   handleJoinChat,
   handleLeaveChat,
   handleSendMessage,
@@ -17,18 +12,16 @@ import {
  */
 export async function registerWebSocketRoute(fastify: FastifyInstance) {
   fastify.get("/ws", { websocket: true }, async (connection, req) => {
-    const { username } = req.query as { username: string };
+    const { userId } = req.query as { userId: string };
 
     // Basic validation
-    if (!username) {
+    if (!userId) {
       connection.close();
       return;
     }
 
     // Track which chat rooms this connection is in
     const userChatRooms = new Set<string>();
-    // Use object wrapper to allow mutation in handlers
-    const inLobby = { value: false };
 
     // Handle incoming messages with action-based routing
     connection.on("message", async (message) => {
@@ -36,24 +29,16 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
         const data = JSON.parse(message.toString());
 
         switch (data.action) {
-          case "join_lobby":
-            await handleJoinLobby(connection, username, inLobby, data.token, fastify);
-            break;
-
-          case "leave_lobby":
-            await handleLeaveLobby(connection, username, inLobby);
-            break;
-
           case "join_chat":
-            await handleJoinChat(connection, username, data.chatid, userChatRooms);
+            await handleJoinChat(connection, userId, data.chatid, userChatRooms, fastify);
             break;
 
           case "leave_chat":
-            await handleLeaveChat(connection, username, data.chatid, userChatRooms);
+            await handleLeaveChat(connection, userId, data.chatid, userChatRooms);
             break;
 
           case "send_message":
-            await handleSendMessage(connection, username, data.chatid, data.message, userChatRooms);
+            await handleSendMessage(connection, userId, data.chatid, data.message, userChatRooms);
             break;
 
           default:
@@ -71,8 +56,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
 
     // Handle connection close
     connection.on("close", () => {
-      cleanupLobbyConnection(connection, username, inLobby.value);
-      cleanupChatConnections(connection, username, userChatRooms);
+      cleanupChatConnections(connection, userId, userChatRooms);
     });
   });
 }
