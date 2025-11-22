@@ -117,16 +117,25 @@ fclean:
 # Database operations
 db-reset:
 	@echo "🗄️  Resetting database..."
-	@# Stop containers first to prevent .nfs* file creation (NFS issue when deleting open files)
-	@echo "Stopping database containers..."
+	@# Start containers to ensure proper permissions for deletion
+	@docker compose up -d databank live-chat 2>/dev/null || true
+	@sleep 2
+	@# Remove database files via docker exec (container has proper permissions)
+	@if docker compose ps databank | grep -q "Up"; then \
+		echo "Removing backend database..."; \
+		docker compose exec -T databank rm -f /app/data/database.db || echo "❌ Could not remove backend database"; \
+	else \
+		echo "⚠️  Backend container not running"; \
+	fi
+	@if docker compose ps live-chat | grep -q "Up"; then \
+		echo "Removing live-chat database..."; \
+		docker compose exec -T live-chat rm -f /app/data/database.db || echo "❌ Could not remove live-chat database"; \
+	else \
+		echo "⚠️  Live-chat container not running"; \
+	fi
+	@# Stop containers to close file handles, then clean up .nfs* files
 	@docker compose stop databank live-chat 2>/dev/null || true
 	@sleep 1
-	@# Remove database files
-	@echo "Removing backend database..."
-	@rm -f backend_database/database/database.db 2>/dev/null || true
-	@echo "Removing live-chat database..."
-	@rm -f live-chat/data/database.db 2>/dev/null || true
-	@# Clean up any .nfs* files
 	@echo "Cleaning up .nfs* artifacts..."
 	@find backend_database/database -name '.nfs*' -type f -delete 2>/dev/null || true
 	@find live-chat/data -name '.nfs*' -type f -delete 2>/dev/null || true
