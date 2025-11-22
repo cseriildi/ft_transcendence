@@ -121,6 +121,7 @@ export async function build(opts: BuildOptions = {}) {
           tags: [
             { name: "health", description: "Health check endpoints" },
             { name: "auth", description: "Authentication endpoints" },
+            { name: "2fa", description: "Two-Factor Authentication (2FA) endpoints" },
             { name: "oauth", description: "OAuth (GitHub) endpoints" },
             { name: "users", description: "User management endpoints" },
             { name: "matches", description: "Match endpoints" },

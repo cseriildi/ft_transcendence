@@ -27,15 +27,20 @@ export const matchController = {
       });
     }
 
+    const winner_name = await db.get<User>(`SELECT username FROM users WHERE id = ?`, [winner_id]);
+    const loser_name = await db.get<User>(`SELECT username FROM users WHERE id = ?`, [loser_id]);
+
     const result = await db.run(
-      `INSERT INTO matches (winner_id, loser_id, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
-      [winner_id, loser_id, winner_score, loser_score]
+      `INSERT INTO matches (winner_id, loser_id, winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?, ?, ?)`,
+      [winner_id, loser_id, winner_name?.username, loser_name?.username, winner_score, loser_score]
     );
 
     const match: Match = {
       id: result.lastID!,
       winner_id,
       loser_id,
+      winner_name,
+      loser_name,
       winner_score,
       loser_score,
       played_at: new Date().toISOString(),

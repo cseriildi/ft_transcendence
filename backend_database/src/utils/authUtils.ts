@@ -1,7 +1,11 @@
 import { SignJWT, jwtVerify } from "jose";
 import crypto from "node:crypto";
 import { errors } from "./errorUtils.ts";
-import { AccessTokenPayload, RefreshTokenPayload } from "../services/authService/authTypes.ts";
+import {
+  AccessTokenPayload,
+  RefreshTokenPayload,
+  TempTokenPayload,
+} from "../services/authService/authTypes.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
 import { config } from "../config.ts";
 
@@ -15,7 +19,7 @@ const REFRESH_TTL = config.jwt.refreshTtl;
 export const createJti = () => crypto.randomUUID();
 
 export async function signAccessToken(userId: number) {
-  const token = await new SignJWT({})
+  const token = await new SignJWT({ type: "access" })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(String(userId))
     .setIssuer(ISSUER)
@@ -27,7 +31,7 @@ export async function signAccessToken(userId: number) {
 }
 
 export async function signRefreshToken(userId: number, jti: string) {
-  const token = await new SignJWT({})
+  const token = await new SignJWT({ type: "refresh" })
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setSubject(String(userId))
     .setJti(jti)
@@ -39,13 +43,35 @@ export async function signRefreshToken(userId: number, jti: string) {
   return token;
 }
 
+export async function signTemporaryToken(userId: number): Promise<string> {
+  const token = await new SignJWT({ type: "temp_2fa" })
+    .setProtectedHeader({ alg: "HS256", typ: "JWT" })
+    .setSubject(String(userId))
+    .setIssuer(ISSUER)
+    .setAudience(AUDIENCE)
+    .setIssuedAt()
+    .setExpirationTime("5m") // 5 minutes only
+    .sign(ACCESS_SECRET);
+  return token;
+}
+
 export async function verifyAccessToken(token: string): Promise<AccessTokenPayload> {
   try {
     const { payload } = await jwtVerify(token, ACCESS_SECRET, {
       issuer: ISSUER,
       audience: AUDIENCE,
     });
-    return payload as unknown as AccessTokenPayload;
+    const typedPayload = payload as unknown as AccessTokenPayload;
+
+    // Verify this is actually an access token, not a temp token
+    if (typedPayload.type !== "access") {
+      throw errors.unauthorized("Invalid token type", {
+        expected: "access",
+        received: typedPayload.type,
+      });
+    }
+
+    return typedPayload;
   } catch {
     throw errors.unauthorized("Invalid or expired access token", {
       function: "verifyAccessToken",
@@ -59,10 +85,44 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
       issuer: ISSUER,
       audience: AUDIENCE,
     });
-    return payload as unknown as RefreshTokenPayload;
+    const typedPayload = payload as unknown as RefreshTokenPayload;
+
+    // Verify this is actually a refresh token
+    if (typedPayload.type !== "refresh") {
+      throw errors.unauthorized("Invalid token type", {
+        expected: "refresh",
+        received: typedPayload.type,
+      });
+    }
+
+    return typedPayload;
   } catch {
     throw errors.unauthorized("Invalid or expired refresh token", {
       function: "verifyRefreshToken",
+    });
+  }
+}
+
+export async function verifyTemporaryToken(token: string): Promise<TempTokenPayload> {
+  try {
+    const { payload } = await jwtVerify(token, ACCESS_SECRET, {
+      issuer: ISSUER,
+      audience: AUDIENCE,
+    });
+    const typedPayload = payload as unknown as TempTokenPayload;
+
+    // Verify this is actually a temporary 2FA token
+    if (typedPayload.type !== "temp_2fa") {
+      throw errors.unauthorized("Invalid token type", {
+        expected: "temp_2fa",
+        received: typedPayload.type,
+      });
+    }
+
+    return typedPayload;
+  } catch {
+    throw errors.unauthorized("Invalid or expired temporary token", {
+      function: "verifyTemporaryToken",
     });
   }
 }
@@ -84,10 +144,10 @@ export async function requireAuth(request: FastifyRequest, _reply: FastifyReply)
     const payload = await verifyAccessToken(token);
 
     // Attach user info to request for use in handlers
-    // Note: Access tokens don't have JTI (only refresh tokens do)
     request.user = {
       id: parseInt(payload.sub!),
       sub: payload.sub!,
+      type: payload.type,
       iat: payload.iat,
       exp: payload.exp,
       iss: payload.iss,
