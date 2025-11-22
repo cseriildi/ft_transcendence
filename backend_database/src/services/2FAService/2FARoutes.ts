@@ -22,7 +22,8 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
       preHandler: requireAuth,
       schema: {
         tags: ["2fa"],
-        description: "Setup 2FA for a user - generates secret and QR code (requires authentication)",
+        description:
+          "Setup 2FA for a user - generates secret and QR code (requires authentication)",
         security: [{ bearerAuth: [] }],
         ...TwoFASchemas.setup,
       },
