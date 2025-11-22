@@ -118,8 +118,23 @@ fclean:
 # Database operations
 db-reset:
 	@echo "🗄️  Resetting database..."
-	@docker compose exec databank rm -rf /app/data/database.db || true
-	@docker compose restart databank
+	@# Start containers to ensure entrypoint scripts run and set permissions
+	@docker compose up -d databank live-chat 2>/dev/null || true
+	@sleep 2
+	@# Remove backend database via docker exec (container has proper permissions)
+	@if docker compose ps databank | grep -q "Up"; then \
+		echo "Removing backend database..."; \
+		docker compose exec -T databank rm -f /app/data/database.db || echo "❌ Could not remove backend database"; \
+	else \
+		echo "⚠️  Backend container not running"; \
+	fi
+	@# Remove live-chat database via docker exec
+	@if docker compose ps live-chat | grep -q "Up"; then \
+		echo "Removing live-chat database..."; \
+		docker compose exec -T live-chat rm -f /app/data/database.db || echo "❌ Could not remove live-chat database"; \
+	else \
+		echo "⚠️  Live-chat container not running"; \
+	fi
 	@echo "✅ Database reset"
 
 # Check service status
