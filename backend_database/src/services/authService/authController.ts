@@ -1,5 +1,10 @@
 // src/routes/users.ts
-import { CreateUserBody, UserLoginBody, AuthUserData } from "./authTypes.ts";
+import {
+  CreateUserBody,
+  UserLoginBody,
+  AuthUserData,
+  Auth2FARequiredResponse,
+} from "./authTypes.ts";
 import { User, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { requestErrors } from "../../utils/errorUtils.ts";
@@ -8,11 +13,14 @@ import "../../types/fastifyTypes.ts";
 import { DatabaseHelper } from "../../utils/databaseUtils.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
 import bcrypt from "bcrypt";
+import speakeasy from "speakeasy";
 import {
   signAccessToken,
   verifyRefreshToken,
   setRefreshTokenCookie,
   generateAndStoreRefreshToken,
+  signTemporaryToken,
+  verifyTemporaryToken,
 } from "../../utils/authUtils.ts";
 import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
 import { getAvatarUrl } from "../userService/userUtils.ts";
@@ -140,7 +148,7 @@ export const authController = {
         { message: "Logged out successfully" },
         "Logged out successfully"
       );
-    } catch (error) {
+    } catch {
       // Even if token is invalid/expired, clear the cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
 
@@ -268,7 +276,7 @@ export const authController = {
   loginUser: async (
     request: FastifyRequest<{ Body: UserLoginBody }>,
     reply: FastifyReply
-  ): Promise<ApiResponse<AuthUserData>> => {
+  ): Promise<ApiResponse<AuthUserData | Auth2FARequiredResponse>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { email, password } = request.body || {};
@@ -281,8 +289,8 @@ export const authController = {
     checkRateLimit(`login:${clientIp}`, 5, 5 * 60);
 
     try {
-      const result = await db.get<User & { password_hash: string }>(
-        "SELECT id, username, email, created_at, password_hash FROM users WHERE email = ?",
+      const result = await db.get<User & { password_hash: string; twofa_enabled: number }>(
+        "SELECT id, username, email, created_at, password_hash, twofa_enabled FROM users WHERE email = ?",
         [cleanEmail]
       );
       if (!result) {
@@ -293,6 +301,34 @@ export const authController = {
         throw errors.unauthorized("Invalid password", { email: cleanEmail });
       }
 
+      // Check if user has 2FA enabled
+      if (result.twofa_enabled) {
+        // User has 2FA - don't issue tokens yet, return temp token for 2FA verification
+        const tempToken = await signTemporaryToken(result.id);
+
+        // Clear rate limit on successful password verification
+        resetRateLimit(`login:${clientIp}`);
+
+        request.log.info(
+          {
+            userId: result.id,
+            username: result.username,
+            email: result.email,
+          },
+          "User requires 2FA verification"
+        );
+
+        reply.status(200);
+        return ApiResponseHelper.success(
+          {
+            requires2fa: true,
+            tempToken,
+          },
+          "2FA verification required"
+        );
+      }
+
+      // No 2FA - proceed with normal login
       const accessToken = await signAccessToken(result.id);
       const refreshToken = await generateAndStoreRefreshToken(db, result.id);
       setRefreshTokenCookie(reply, refreshToken);
@@ -332,5 +368,85 @@ export const authController = {
     } catch (err: unknown) {
       throw err;
     }
+  },
+
+  login2FA: async (
+    request: FastifyRequest<{ Body: { tempToken: string; twofa_code: string } }>,
+    reply: FastifyReply
+  ): Promise<ApiResponse<AuthUserData>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { tempToken, twofa_code } = request.body;
+
+    // Verify temporary token
+    const decoded = await verifyTemporaryToken(tempToken);
+    const userId = parseInt(decoded.sub!);
+
+    // Rate limit 2FA attempts per user (5 attempts per 15 minutes)
+    checkRateLimit(`2fa-login:${userId}`, 5, 15 * 60, 15);
+
+    // Get user's 2FA configuration
+    const user = await db.get<User & { twofa_secret: string; twofa_enabled: number }>(
+      "SELECT id, username, email, created_at, twofa_secret, twofa_enabled FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!user) {
+      throw errors.notFound("User", { targetUserId: userId });
+    }
+
+    if (!user.twofa_enabled || !user.twofa_secret) {
+      throw errors.unauthorized("2FA is not enabled for this user", { targetUserId: userId });
+    }
+
+    // Verify 2FA token
+    const verified = speakeasy.totp.verify({
+      secret: user.twofa_secret,
+      encoding: "base32",
+      token: twofa_code,
+      window: 1,
+    });
+
+    if (!verified) {
+      throw errors.unauthorized("Invalid 2FA token", { targetUserId: userId });
+    }
+
+    // Clear rate limit on successful 2FA verification
+    resetRateLimit(`2fa-login:${userId}`);
+
+    // Issue real access and refresh tokens
+    const accessToken = await signAccessToken(user.id);
+    const refreshToken = await generateAndStoreRefreshToken(db, user.id);
+    setRefreshTokenCookie(reply, refreshToken);
+
+    // Set user as online
+    const now = new Date().toISOString();
+    await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [now, user.id]);
+
+    // Retrieve avatar URL
+    const avatar_url = await getAvatarUrl(db, user.id);
+
+    // Log successful 2FA login
+    request.log.info(
+      {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+      },
+      "User logged in successfully with 2FA"
+    );
+
+    reply.status(200);
+    return ApiResponseHelper.success(
+      {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        created_at: user.created_at,
+        avatar_url,
+        tokens: { accessToken },
+      },
+      "Logged in successfully"
+    );
   },
 };

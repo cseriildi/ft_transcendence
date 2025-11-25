@@ -32,6 +32,22 @@ async function authRoutes(fastify: FastifyInstance) {
     authController.loginUser
   );
 
+  // POST /auth/login/2fa
+  fastify.post<{
+    Body: { tempToken: string; twofa_token: string };
+    Reply: ApiResponse<AuthUserData>;
+  }>(
+    "/login/2fa",
+    {
+      schema: {
+        tags: ["auth"],
+        description: "Complete login with 2FA verification (second step after /login)",
+        ...AuthSchemas.login2FA,
+      },
+    },
+    authController.login2FA
+  );
+
   // POST /auth/refresh
   fastify.post<{ Reply: ApiResponse<AuthUserData> }>(
     "/refresh",
