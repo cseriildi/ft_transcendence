@@ -82,7 +82,11 @@ export class Login {
     const twofaInput = document.getElementById("twofa-code") as HTMLInputElement;
     if (twofaInput) twofaInput.value = "";
 
-    // Reset temp token
+    // Security: Clear temp token immediately
+    this.clearTempToken();
+  }
+
+  private clearTempToken(): void {
     this.tempToken = null;
   }
 
@@ -118,6 +122,9 @@ export class Login {
 
       const data = await response.json();
       if (response.ok) {
+        // Security: Clear temp token immediately on successful authentication
+        this.clearTempToken();
+
         if (data.data?.tokens?.accessToken && data.data?.id) {
           localStorage.setItem("userId", data.data.id);
           localStorage.setItem("username", data.data.username);
@@ -126,10 +133,14 @@ export class Login {
         }
         return { success: true };
       } else {
+        // Security: Clear temp token on authentication failure
+        this.clearTempToken();
         showErrorPopup(data.message || "2FA verification failed");
         return { success: false, message: data.message || "2FA verification failed" };
       }
     } catch (err) {
+      // Security: Clear temp token on network error
+      this.clearTempToken();
       console.error("Network error", err);
       showErrorPopup("Network error");
       return { success: false, message: "Network error" };
@@ -141,6 +152,9 @@ export class Login {
       this.router.navigate("/");
       return;
     }
+
+    // Security: Clear any existing temp token when initializing login page
+    this.clearTempToken();
 
     const backBtn = document.getElementById("back-btn");
     const loginForm = document.getElementById("login-form");

@@ -178,7 +178,7 @@ export class TwoFactorAuth {
   /**
    * Check if user has 2FA enabled
    */
-  public async getStatus(): Promise<{ enabled: boolean; configured: boolean } | null> {
+  public async getStatus(): Promise<{ enabled: boolean } | null> {
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}`, {
         headers: {
@@ -191,7 +191,6 @@ export class TwoFactorAuth {
         const data = await response.json();
         return {
           enabled: data.data?.twofa_enabled === 1,
-          configured: data.data?.twofa_enabled === 1,
         };
       }
       return null;
