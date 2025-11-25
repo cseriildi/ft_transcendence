@@ -21,9 +21,10 @@ export const userController = {
     const errors = requestErrors(request);
     const { id } = request.params;
 
-    const user = await db.get<User>("SELECT id,username,email,created_at,twofa_enabled FROM users WHERE id = ?", [
-      id,
-    ]);
+    const user = await db.get<User>(
+      "SELECT id,username,email,created_at,twofa_enabled FROM users WHERE id = ?",
+      [id]
+    );
     if (!user) {
       throw errors.notFound("User");
     }

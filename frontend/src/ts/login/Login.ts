@@ -39,7 +39,7 @@ export class Login {
           this.show2FAForm();
           return { success: false, message: "2FA verification required" };
         }
-        
+
         // Normal login success
         if (data.data?.tokens?.accessToken && data.data?.id) {
           localStorage.setItem("userId", data.data.id);
@@ -62,10 +62,10 @@ export class Login {
   private show2FAForm(): void {
     const loginForm = document.getElementById("login-form");
     const twofaForm = document.getElementById("twofa-form");
-    
+
     loginForm?.classList.add("hidden");
     twofaForm?.classList.remove("hidden");
-    
+
     // Focus on the 2FA code input
     const twofaInput = document.getElementById("twofa-code") as HTMLInputElement;
     twofaInput?.focus();
@@ -74,14 +74,14 @@ export class Login {
   private showLoginForm(): void {
     const loginForm = document.getElementById("login-form");
     const twofaForm = document.getElementById("twofa-form");
-    
+
     twofaForm?.classList.add("hidden");
     loginForm?.classList.remove("hidden");
-    
+
     // Clear the 2FA input
     const twofaInput = document.getElementById("twofa-code") as HTMLInputElement;
     if (twofaInput) twofaInput.value = "";
-    
+
     // Reset temp token
     this.tempToken = null;
   }
@@ -106,16 +106,16 @@ export class Login {
     try {
       const response = await fetch(`${config.apiUrl}/auth/login/2fa`, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json"
+        headers: {
+          "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           tempToken: this.tempToken,
-          twofa_code: twofaCode 
+          twofa_code: twofaCode,
         }),
       });
-      
+
       const data = await response.json();
       if (response.ok) {
         if (data.data?.tokens?.accessToken && data.data?.id) {
@@ -150,7 +150,7 @@ export class Login {
 
     // Back button navigation
     backBtn?.addEventListener("click", () => this.router.navigate("/"));
-    
+
     // Regular login form submission
     loginForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -175,7 +175,7 @@ export class Login {
 
     // Back to login button
     backToLoginBtn?.addEventListener("click", () => this.showLoginForm());
-    
+
     // Register button
     registerBtn?.addEventListener("click", () => this.router.navigate("/register"));
 

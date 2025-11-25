@@ -177,7 +177,7 @@ export class Edit {
           emailInput.value = userData.data.email;
           usernameInput.value = userData.data.username;
         }
-        
+
         // Initialize 2FA functionality with user data to avoid extra API call
         await this.init2FA(userData.data);
       } else {

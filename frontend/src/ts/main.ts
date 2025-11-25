@@ -485,7 +485,8 @@ export const showErrorPopup = (message: string) => {
   const popup = document.getElementById("error-popup");
   if (popup) {
     popup.textContent = message;
-    popup.className = "fixed bottom-5 left-1/2 transform -translate-x-1/2 p-3 bg-red-500 text-white rounded shadow-md z-50";
+    popup.className =
+      "fixed bottom-5 left-1/2 transform -translate-x-1/2 p-3 bg-red-500 text-white rounded shadow-md z-50";
     popup.style.display = "block";
     setTimeout(() => {
       popup.style.display = "none";
@@ -497,7 +498,8 @@ export const showSuccessPopup = (message: string) => {
   const popup = document.getElementById("error-popup");
   if (popup) {
     popup.textContent = message;
-    popup.className = "fixed bottom-5 left-1/2 transform -translate-x-1/2 p-3 bg-green-500 text-white rounded shadow-md z-50";
+    popup.className =
+      "fixed bottom-5 left-1/2 transform -translate-x-1/2 p-3 bg-green-500 text-white rounded shadow-md z-50";
     popup.style.display = "block";
     setTimeout(() => {
       popup.style.display = "none";

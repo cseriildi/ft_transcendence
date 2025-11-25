@@ -66,15 +66,18 @@ export class TwoFactorAuth {
     }
 
     try {
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}/2fa/verify`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ twofa_code: token }),
-      });
+      const response = await fetchWithRefresh(
+        `${config.apiUrl}/api/users/${getUserId()}/2fa/verify`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({ twofa_code: token }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -100,15 +103,18 @@ export class TwoFactorAuth {
     }
 
     try {
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}/2fa/enable`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ twofa_code: token }),
-      });
+      const response = await fetchWithRefresh(
+        `${config.apiUrl}/api/users/${getUserId()}/2fa/enable`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({ twofa_code: token }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -137,15 +143,18 @@ export class TwoFactorAuth {
     }
 
     try {
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${getUserId()}/2fa/disable`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ twofa_code: password }),
-      });
+      const response = await fetchWithRefresh(
+        `${config.apiUrl}/api/users/${getUserId()}/2fa/disable`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({ twofa_code: password }),
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
