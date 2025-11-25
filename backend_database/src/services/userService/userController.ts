@@ -21,7 +21,7 @@ export const userController = {
     const errors = requestErrors(request);
     const { id } = request.params;
 
-    const user = await db.get<User>("SELECT id,username,email,created_at FROM users WHERE id = ?", [
+    const user = await db.get<User>("SELECT id,username,email,created_at,twofa_enabled FROM users WHERE id = ?", [
       id,
     ]);
     if (!user) {
@@ -175,7 +175,7 @@ export const userController = {
     await db.run("UPDATE users SET email = ? WHERE id = ?", [cleanEmail, id]);
 
     const updatedUser = await db.get<User>(
-      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      "SELECT id, username, email, created_at, twofa_enabled FROM users WHERE id = ?",
       [id]
     );
     if (!updatedUser) {
@@ -213,7 +213,7 @@ export const userController = {
     await db.run("UPDATE users SET username = ? WHERE id = ?", [cleanUsername, id]);
 
     const updatedUser = await db.get<User>(
-      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      "SELECT id, username, email, created_at, twofa_enabled FROM users WHERE id = ?",
       [id]
     );
     if (!updatedUser) {
