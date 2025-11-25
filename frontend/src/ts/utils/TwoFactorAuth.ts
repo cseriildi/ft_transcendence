@@ -136,9 +136,9 @@ export class TwoFactorAuth {
   /**
    * Disable 2FA for user account
    */
-  public async disable(password: string): Promise<boolean> {
-    if (!password) {
-      showErrorPopup("Please enter your password to disable 2FA");
+  public async disable(token: string): Promise<boolean> {
+    if (!token) {
+      showErrorPopup("Please enter your 2FA code to disable 2FA");
       return false;
     }
 
@@ -152,7 +152,7 @@ export class TwoFactorAuth {
             Authorization: `Bearer ${getAccessToken()}`,
           },
           credentials: "include",
-          body: JSON.stringify({ twofa_code: password }),
+          body: JSON.stringify({ twofa_code: token }),
         }
       );
 

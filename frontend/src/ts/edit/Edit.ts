@@ -261,8 +261,8 @@ export class Edit {
     });
 
     // Allow Enter key to submit disable 2FA
-    const disablePasswordInput = document.getElementById("disable-password") as HTMLInputElement;
-    disablePasswordInput?.addEventListener("keypress", (e) => {
+    const disableTokenInput = document.getElementById("disable-password") as HTMLInputElement;
+    disableTokenInput?.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         this.disable2FA();
       }
@@ -331,19 +331,19 @@ export class Edit {
   }
 
   private async disable2FA(): Promise<void> {
-    const passwordInput = document.getElementById("disable-password") as HTMLInputElement;
-    if (!passwordInput) return;
+    const tokenInput = document.getElementById("disable-password") as HTMLInputElement;
+    if (!tokenInput) return;
 
-    const password = passwordInput.value.trim();
-    if (!password) {
+    const token = tokenInput.value.trim();
+    if (!token) {
       showErrorPopup("Please enter your 2FA code");
       return;
     }
 
-    const success = await this.twoFactorAuth.disable(password);
+    const success = await this.twoFactorAuth.disable(token);
     if (success) {
       showSuccessPopup("Two-Factor Authentication disabled successfully!");
-      passwordInput.value = "";
+      tokenInput.value = "";
       await this.update2FAStatus();
     }
   }
