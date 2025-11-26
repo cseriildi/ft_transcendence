@@ -13,6 +13,7 @@ import type {
 } from "./2FATypes";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
+import { ensureUserOwnership } from "../../utils/authUtils.ts";
 
 export const twoFAController = {
   setup2FA: async (
@@ -28,6 +29,9 @@ export const twoFAController = {
         userIdParam: request.params.userId,
       });
     }
+
+    // Authorization: Ensure authenticated user matches the userId parameter
+    ensureUserOwnership(request.user!.id, userId);
 
     // Check if user exists
     const user = await db.get<{ username: string }>("SELECT username FROM users WHERE id = ?", [
@@ -62,24 +66,32 @@ export const twoFAController = {
   },
 
   verify2FA: async (
-    request: FastifyRequest<{ Body: Verify2FARequest }>,
+    request: FastifyRequest<{ Body: Verify2FARequest; Params: { userId: string } }>,
     _reply: FastifyReply
   ): Promise<ApiResponse<Verify2FAData>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { userId, token } = request.body;
+    const { twofa_code } = request.body;
+    const userId = parseInt(request.params.userId, 10);
+
+    // Authorization: Ensure authenticated user matches the userId in request params
+    ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (brute force protection)
     // 6-digit code = 1,000,000 combinations, lockout prevents enumeration
     checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
 
-    const user = await db.get<{ username: string; twofa_secret: string }>(
-      "SELECT username, twofa_secret FROM users WHERE id = ?",
+    const user = await db.get<{ username: string; twofa_secret: string; twofa_enabled: number }>(
+      "SELECT username, twofa_secret, twofa_enabled FROM users WHERE id = ?",
       [userId]
     );
 
     if (!user) {
       throw errors.notFound("User", { targetUserId: userId });
+    }
+
+    if (!user.twofa_enabled) {
+      throw errors.validation("2FA is not enabled for this user", { targetUserId: userId });
     }
 
     if (!user.twofa_secret) {
@@ -89,7 +101,7 @@ export const twoFAController = {
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token,
+      token: twofa_code,
       window: 1, // Allow a 1-step window (30 seconds before or after)
     });
 
@@ -105,12 +117,16 @@ export const twoFAController = {
   },
 
   enable2FA: async (
-    request: FastifyRequest<{ Body: Enable2FARequest }>,
+    request: FastifyRequest<{ Body: Enable2FARequest; Params: { userId: string } }>,
     reply: FastifyReply
   ): Promise<ApiResponse<{ enabled: boolean }>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { userId, token } = request.body;
+    const { twofa_code } = request.body;
+    const userId = parseInt(request.params.userId, 10);
+
+    // Authorization: Ensure authenticated user matches the userId in request params
+    ensureUserOwnership(request.user!.id, userId);
 
     // Rate limit: 5 attempts per 15 minutes per user (same as verify)
     checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
@@ -135,7 +151,7 @@ export const twoFAController = {
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token,
+      token: twofa_code,
       window: 1,
     });
 
@@ -153,12 +169,20 @@ export const twoFAController = {
   },
 
   disable2FA: async (
-    request: FastifyRequest<{ Body: Disable2FARequest }>,
+    request: FastifyRequest<{ Body: Disable2FARequest; Params: { userId: string } }>,
     _reply: FastifyReply
   ): Promise<ApiResponse<{ enabled: boolean }>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { userId, token } = request.body;
+    const { twofa_code } = request.body;
+    const userId = parseInt(request.params.userId, 10);
+
+    // Authorization: Ensure authenticated user matches the userId in request params
+    ensureUserOwnership(request.user!.id, userId);
+
+    // Rate limit: 5 attempts per 15 minutes per user (same as verify/enable)
+    checkRateLimit(`2fa:${userId}`, 5, 15 * 60, 15);
+
     const user = await db.get<{ twofa_secret: string; twofa_enabled: number }>(
       "SELECT twofa_secret, twofa_enabled FROM users WHERE id = ?",
       [userId]
@@ -168,23 +192,27 @@ export const twoFAController = {
       throw errors.notFound("User", { targetUserId: userId });
     }
 
+    if (!user.twofa_enabled) {
+      throw errors.validation("2FA is not enabled for this user", { targetUserId: userId });
+    }
+
     if (!user.twofa_secret) {
       throw errors.validation("2FA is not set up for this user", { targetUserId: userId });
     }
 
-    if (!user.twofa_enabled) {
-      throw errors.validation("2FA is not enabled", { targetUserId: userId });
-    }
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
-      token,
+      token: twofa_code,
       window: 1,
     });
 
     if (!verified) {
       throw errors.validation("Invalid 2FA token", { targetUserId: userId });
     }
+
+    // Clear rate limit on successful disable
+    resetRateLimit(`2fa:${userId}`);
 
     await db.run("UPDATE users SET twofa_enabled = 0, twofa_secret = NULL WHERE id = ?", [userId]);
 

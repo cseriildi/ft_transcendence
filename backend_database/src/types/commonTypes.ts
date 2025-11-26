@@ -29,6 +29,7 @@ export interface User {
   email: string;
   created_at: string;
   avatar_url: string;
+  twofa_enabled: number;
 }
 
 export interface TokenPair {

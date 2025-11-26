@@ -81,19 +81,35 @@ restart: down up
 	@echo "🔄 Services restarted"
 
 # Full rebuild
-re: fclean env certs setup-dirs build up
+re: clean env certs setup-dirs build up
+	@echo "🔄 Full rebuild complete"
+
+# Deep clean and full rebuild
+fre: fclean env certs setup-dirs build up
 	@echo "🔄 Full rebuild complete"
 
 # Clean up containers and networks
 clean:
-	@echo "🧹 Cleaning up containers and networks..."
-	@docker compose down -v
+	@echo "🧹 Cleaning up containers and networks"
+	@docker compose down --rmi local
 	@docker system prune -f
 	@echo "✅ Cleanup complete"
 
 # Deep clean - remove everything including images
-fclean: clean
-	@echo "🧹 Deep cleaning - removing images..."
+fclean:
+	@echo "⚠️  WARNING: This will DELETE EVERYTHING including:"
+	@echo "   - All containers and images"
+	@echo "   - All volumes (database data)"
+	@echo "   - All unused Docker resources"
+	@echo ""
+	@printf "Are you sure you want to continue? [y/N] "; \
+	read REPLY; \
+	case "$$REPLY" in \
+		[Yy]*) echo "Proceeding with deep clean..." ;; \
+		*) echo "❌ fclean cancelled"; exit 1 ;; \
+	esac
+	@$(MAKE) db-reset
+	@echo "🧹 Deep cleaning - removing images and volumes..."
 	@docker compose down -v --rmi all
 	@docker system prune -af
 	@echo "✅ Deep cleanup complete"
@@ -101,9 +117,29 @@ fclean: clean
 # Database operations
 db-reset:
 	@echo "🗄️  Resetting database..."
-	@docker compose exec databank rm -rf /app/data/database.db || true
-	@docker compose restart databank
-	@echo "✅ Database reset"
+	@# Start containers to ensure proper permissions for deletion
+	@docker compose up -d databank live-chat 2>/dev/null || true
+	@sleep 2
+	@# Remove database files via docker exec (container has proper permissions)
+	@if docker compose ps databank | grep -q "Up"; then \
+		echo "Removing backend database..."; \
+		docker compose exec -T databank rm -f /app/data/database.db || echo "❌ Could not remove backend database"; \
+	else \
+		echo "⚠️  Backend container not running"; \
+	fi
+	@if docker compose ps live-chat | grep -q "Up"; then \
+		echo "Removing live-chat database..."; \
+		docker compose exec -T live-chat rm -f /app/data/database.db || echo "❌ Could not remove live-chat database"; \
+	else \
+		echo "⚠️  Live-chat container not running"; \
+	fi
+	@# Stop containers to close file handles, then clean up .nfs* files
+	@docker compose stop databank live-chat 2>/dev/null || true
+	@sleep 1
+	@echo "Cleaning up .nfs* artifacts..."
+	@find backend_database/database -name '.nfs*' -type f -delete 2>/dev/null || true
+	@find live-chat/data -name '.nfs*' -type f -delete 2>/dev/null || true
+	@echo "✅ Database reset complete"
 
 # Check service status
 status:
@@ -173,6 +209,10 @@ help:
 	@echo "  make clean            - Remove containers, networks, and volumes"
 	@echo "  make fclean           - Deep clean: remove everything including images"
 	@echo "  make re               - Full rebuild (clean + all)"
+	@echo "  make db-reset         - Reset the database"
+	@echo "  make status           - Show status of all services"
+	@echo "  make stats            - Show resource usage of all containers"
+	@echo "  make fre			   - Deep clean and full rebuild (fclean + all)"
 
 ${SERVICES}:
 	@:
@@ -180,4 +220,4 @@ ${SERVICES}:
 .DEFAULT:
 	@make help
 
-.PHONY: all env certs build up dev down stop restart logs shell clean fclean re db-reset status stats help ${SERVICES}
+.PHONY: all env certs build up dev down stop restart logs shell clean fclean fre re db-reset status stats help ${SERVICES}
