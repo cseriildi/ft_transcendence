@@ -137,10 +137,13 @@ export class FriendsList {
 
     // Chat button
     const chatButton = this.createChatButton(friend);
+    // Invite button (shown only for established friends)
+    const inviteButton = this.createInviteButton(friend);
 
     userItem.appendChild(avatarContainer);
     userItem.appendChild(usernameContainer);
     userItem.appendChild(chatButton);
+    if (inviteButton) userItem.appendChild(inviteButton);
 
     // Make the entire user item clickable to view profile
     userItem.addEventListener("click", () => {
@@ -263,5 +266,30 @@ export class FriendsList {
     });
 
     return chatButton;
+  }
+
+  private createInviteButton(friend: {
+    user_id: number;
+    username: string;
+    status: string;
+    is_inviter: boolean;
+    is_online: boolean;
+  }): HTMLButtonElement | null {
+    // Only show Invite for established/accepted friends
+    if (friend.status !== "accepted") return null;
+
+    const inviteButton = document.createElement("button");
+    inviteButton.textContent = "Invite";
+    inviteButton.title = "Invite to play";
+    inviteButton.classList.add("btn-green", "ml-2");
+
+    inviteButton.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent triggering the profile navigation
+      // TODO: implement invite functionality (send invitation to server)
+    });
+
+    inviteButton.setAttribute("data-user-id", String(friend.user_id));
+
+    return inviteButton;
   }
 }
