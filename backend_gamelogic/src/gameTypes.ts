@@ -112,6 +112,7 @@ export class GameServer {
   renderInterval: number;
   gameMode: string;
   tournament: Tournament | null = null;
+  gameId: string | null = null;
 
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;

@@ -65,7 +65,8 @@ export class Pong {
   public startGame(
     gameMode: string,
     playerInfo?: PlayerInfo,
-    difficulty?: "easy" | "medium" | "hard"
+    difficulty?: "easy" | "medium" | "hard",
+    gameId?: string
   ) {
     this.currentGameMode = gameMode;
 
@@ -75,26 +76,24 @@ export class Pong {
       return;
     }
 
+    if (gameMode === "friend" && !gameId) {
+      console.error("❌ Game ID is required for friend mode");
+      return;
+    }
+
     this.currentPlayerInfo = playerInfo || null;
 
     const sendStart = () => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        const message: any = {
-          type: "newGame",
-          mode: this.currentGameMode,
-        };
-
-        // Only include player field if playerInfo is provided
-        if (this.currentPlayerInfo) {
-          message.player = this.currentPlayerInfo;
-        }
-
-        // Include difficulty for AI mode
-        if (difficulty) {
-          message.difficulty = difficulty;
-        }
-
-        this.ws.send(JSON.stringify(message));
+        this.ws.send(
+          JSON.stringify({
+            type: "newGame",
+            mode: this.currentGameMode,
+            player: playerInfo!,
+            difficulty: difficulty!,
+            gameId: gameId!,
+          })
+        );
       }
     };
 
