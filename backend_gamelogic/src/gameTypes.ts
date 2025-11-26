@@ -1,4 +1,6 @@
 import { config, PHYSICS_INTERVAL, RENDER_INTERVAL, VALID_MODES } from "./config.js";
+import { resetBall } from "./gameUtils.js";
+import { broadcastGameSetup, broadcastGameState, sendErrorToClient } from "./networkUtils.js";
 import { Tournament } from "./Tournament.js";
 
 // Player information
@@ -105,14 +107,15 @@ export class GameServer {
   Paddle2: Paddle;
   score1: number = 0;
   score2: number = 0;
-  countdown: number = 3;
+  countdown: number = 0;
   maxScore: number;
   clients = new Map<1 | 2, { playerInfo: PlayerInfo; connection: any }>();
+  isWaiting: boolean = false;
   physicsInterval: number;
   renderInterval: number;
   gameMode: string;
   tournament: Tournament | null = null;
-  gameId: string | null = null;
+  gameId: string | undefined;
 
   private physicsLoopId?: NodeJS.Timeout;
   private renderLoopId?: NodeJS.Timeout;
@@ -135,6 +138,7 @@ export class GameServer {
     this.physicsInterval = PHYSICS_INTERVAL;
     this.renderInterval = RENDER_INTERVAL;
     this.gameMode = gameMode;
+    this.isWaiting = ["remote", "friend", "tournament"].includes(gameMode);
   }
 
   // Set callback functions
@@ -200,6 +204,26 @@ export class GameServer {
     console.log("✅ Game loops stopped");
   }
 
+  updateConnection(userId: number, newConnection: any): boolean {
+    const currentClient = Array.from(this.clients.values()).find(
+      (client) => client.playerInfo.userId === userId
+    );
+    if (currentClient && currentClient.connection !== newConnection) {
+      try {
+        sendErrorToClient(
+          currentClient.connection,
+          "You have been disconnected due to a new connection."
+        );
+      } catch (err) {
+        console.error("Error sending disconnect message to old connection:", err);
+      }
+      currentClient.connection = newConnection;
+      broadcastGameSetup(this);
+      return true;
+    }
+    return false;
+  }
+
   // Get game result
   getResult() {
     const player1 = this.clients.get(1)?.playerInfo;
@@ -227,5 +251,49 @@ export class GameServer {
   // Check if game is running
   running() {
     return this.isRunning;
+  }
+
+  freezeBall(): void {
+    this.Ball.speedX = 0;
+    this.Ball.speedY = 0;
+    broadcastGameSetup(this);
+    this.start();
+  }
+
+  // Helper function to run game countdown and start play
+  async runGameCountdown(): Promise<void> {
+    broadcastGameSetup(this);
+    // Run 3-second countdown
+    for (let i = 3; i > 0; i--) {
+      if (!this.running()) break;
+      this.countdown = i;
+      broadcastGameState(this);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    // Countdown complete, release ball
+    if (this.running()) {
+      this.countdown = 0;
+      resetBall(this);
+      broadcastGameSetup(this);
+    }
+  }
+
+  // Handle player input
+  handlePlayerInput(input: { player: number; action: string }) {
+    const { player, action } = input;
+    const targetPaddle = player === 1 ? this.Paddle1 : this.Paddle2;
+
+    switch (action) {
+      case "up":
+        targetPaddle.ySpeed = -targetPaddle.speed;
+        break;
+      case "down":
+        targetPaddle.ySpeed = targetPaddle.speed;
+        break;
+      case "stop":
+        targetPaddle.ySpeed = 0;
+        break;
+    }
   }
 }
