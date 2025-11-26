@@ -8,6 +8,7 @@ export class Chat {
   private userCache: Map<string, string> = new Map(); // userId -> username cache
   private cacheTimestamp: number = 0; // Track when cache was last loaded
   private readonly CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes cache expiry
+  private pendingAutoMessage: string | null = null;
 
   constructor(router: Router) {
     this.router = router;
@@ -49,10 +50,9 @@ export class Chat {
   ): HTMLElement {
     const messageElement = document.createElement("div");
 
-    // Escape all user-provided content
-    const escapedUsername = this.escapeHtml(username);
-    const escapedMessage = this.escapeHtml(message);
-
+    // Use raw username/message and rely on textContent to safely escape
+    const escapedUsername = username;
+    const escapedMessage = message;
     const colorClass = isOwnMessage ? "text-neon-pink" : "text-neon-green";
     const alignmentClasses = isOwnMessage
       ? "mb-2 text-right ml-auto max-w-s"
@@ -305,6 +305,17 @@ export class Chat {
       if (chatId) {
         this.ws?.send(JSON.stringify({ action: "join_chat", chatid: chatId }));
         console.log(`Sent join_chat action for chat ID: ${chatId}`);
+        // If caller provided an autoMessage via URL param, queue it and send after history is processed
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoMessage = urlParams.get("autoMessage");
+        if (autoMessage) {
+          try {
+            const decoded = decodeURIComponent(autoMessage);
+            this.pendingAutoMessage = decoded;
+          } catch (err) {
+            console.error("Failed to decode autoMessage:", err);
+          }
+        }
       } else {
         console.error("Chat ID is missing in the URL");
       }
@@ -317,6 +328,13 @@ export class Chat {
         if (data.history && Array.isArray(data.history)) {
           const processMessages = async () => {
             try {
+              // Ensure history is ordered oldest -> newest so appending places newest at the bottom
+              data.history.sort((a: any, b: any) => {
+                const ta = typeof a.timestamp === "number" ? a.timestamp : Date.parse(a.timestamp);
+                const tb = typeof b.timestamp === "number" ? b.timestamp : Date.parse(b.timestamp);
+                return ta - tb;
+              });
+
               for (const message of data.history) {
                 const timestamp = new Date(message.timestamp).toLocaleTimeString();
                 const currentUserId = getUserId();
@@ -334,6 +352,31 @@ export class Chat {
                 chatBox.appendChild(messageElement);
               }
               chatBox.scrollTop = chatBox.scrollHeight;
+              // After appending history, if an autoMessage was queued, send it now so it appears last
+              if (this.pendingAutoMessage && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                try {
+                  this.ws.send(
+                    JSON.stringify({
+                      action: "send_message",
+                      chatid: chatId,
+                      message: this.pendingAutoMessage,
+                    })
+                  );
+                  const timestamp = new Date().toLocaleTimeString();
+                  const currentUsername = getUsername() || "Unknown";
+                  const messageElement = this.createMessageElement(
+                    timestamp,
+                    currentUsername,
+                    this.pendingAutoMessage,
+                    true
+                  );
+                  chatBox.appendChild(messageElement);
+                  chatBox.scrollTop = chatBox.scrollHeight;
+                } catch (err) {
+                  console.error("Failed to send pending autoMessage:", err);
+                }
+                this.pendingAutoMessage = null;
+              }
             } catch (error) {
               console.error("Error processing chat history messages:", error);
             }

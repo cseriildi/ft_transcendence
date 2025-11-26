@@ -75,6 +75,21 @@ async function friendRoutes(fastify: FastifyInstance) {
     },
     friendController.getFriendsStatus
   );
+
+  // Create a friend-game invitation (generates a new gameId)
+  fastify.post<{ Params: UserParams }>(
+    "/friends/:id/invite",
+    {
+      preHandler: requireAuth,
+      schema: {
+        tags: ["friend"],
+        description: "Create a friend-game invitation and return gameId",
+        security: [{ bearerAuth: [] }],
+        params: UserSchemas.manageFriends.params,
+      },
+    },
+    friendController.inviteFriend
+  );
 }
 
 export default friendRoutes;

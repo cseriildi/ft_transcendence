@@ -285,7 +285,67 @@ export class FriendsList {
 
     inviteButton.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the profile navigation
-      // TODO: implement invite functionality (send invitation to server)
+      (async () => {
+        try {
+          const currentUserId = getUserId();
+          if (!currentUserId) {
+            console.error("No current user ID; cannot send invite");
+            return;
+          }
+
+          inviteButton.disabled = true;
+          inviteButton.textContent = "Sending...";
+
+          const response = await fetchWithRefresh(
+            `${config.apiUrl}/api/friends/${friend.user_id}/invite`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getAccessToken()}`,
+              },
+              credentials: "include",
+              body: JSON.stringify({}),
+            }
+          );
+
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            console.error("Failed to create friend game invite", err);
+            inviteButton.disabled = false;
+            inviteButton.textContent = "Invite";
+            alert(err.message || "Failed to create invitation");
+            return;
+          }
+
+          const body = await response.json();
+          const gameId = body.data?.game_id || body.data?.gameId || body.game_id || body.gameId;
+          if (!gameId) {
+            console.error("API did not return gameId", body);
+            inviteButton.disabled = false;
+            inviteButton.textContent = "Invite";
+            alert("Server did not return a game id");
+            return;
+          }
+
+          // Prepare chat navigation: open or create 1:1 chat and send the game link automatically
+          const chatId = [Number(currentUserId), Number(friend.user_id)]
+            .sort((a, b) => a - b)
+            .join("-");
+          const message = `Join my game: ${location.origin}/pong?mode=friend&gameId=${gameId}`;
+
+          // Navigate to chat page with an autoMessage parameter
+          const encoded = encodeURIComponent(message);
+          this.router.navigate(
+            `/chat?chatId=${chatId}&username=${friend.username}&autoMessage=${encoded}`
+          );
+        } catch (err) {
+          console.error("Error sending invite:", err);
+          inviteButton.disabled = false;
+          inviteButton.textContent = "Invite";
+          alert("Failed to send invitation. Please try again.");
+        }
+      })();
     });
 
     inviteButton.setAttribute("data-user-id", String(friend.user_id));

@@ -224,14 +224,14 @@ export const friendController = {
 
     // Get all friend requests for the current user (accepted, pending, declined)
     const friends = await db.all<FriendStatus>(
-      `SELECT 
-          CASE 
-            WHEN f.user1_id = ? THEN f.user2_id 
-            ELSE f.user1_id 
+      `SELECT
+          CASE
+            WHEN f.user1_id = ? THEN f.user2_id
+            ELSE f.user1_id
           END as user_id,
           u.username,
           u.last_seen,
-          CASE 
+          CASE
             WHEN u.last_seen IS NULL THEN 0
             WHEN (julianday('now') - julianday(u.last_seen)) * 24 * 60 <= ? THEN 1
             ELSE 0
@@ -239,7 +239,7 @@ export const friendController = {
           f.status,
           f.inviter_id,
           inviter.username as inviter_username,
-          CASE 
+          CASE
             WHEN f.inviter_id = ? THEN 1
             ELSE 0
           END as is_inviter,
@@ -247,20 +247,20 @@ export const friendController = {
           f.updated_at
         FROM friends f
         JOIN users u ON (
-          CASE 
-            WHEN f.user1_id = ? THEN u.id = f.user2_id 
-            ELSE u.id = f.user1_id 
+          CASE
+            WHEN f.user1_id = ? THEN u.id = f.user2_id
+            ELSE u.id = f.user1_id
           END
         )
         JOIN users inviter ON inviter.id = f.inviter_id
         WHERE (f.user1_id = ? OR f.user2_id = ?)
-        ORDER BY 
+        ORDER BY
           CASE f.status
             WHEN 'pending' THEN 1
             WHEN 'accepted' THEN 2
             WHEN 'declined' THEN 3
           END,
-          is_online DESC, 
+          is_online DESC,
           u.username ASC`,
       [userId, ONLINE_THRESHOLD_MINUTES, userId, userId, userId, userId]
     );
@@ -278,5 +278,78 @@ export const friendController = {
     };
 
     return ApiResponseHelper.success(response, "Friends status retrieved");
+  },
+
+  // Create a friend game invitation and return generated gameId
+  inviteFriend: async (
+    request: FastifyRequest<{ Params: UserParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<{ inviter_id: string; invitee_id: string; game_id: number }>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { id } = request.params;
+    const inviterId = request.user!.id;
+    const inviteeId = parseInt(id);
+
+    ensureDifferentUsers(inviterId, inviteeId);
+    await ensureUsersExist(db, inviterId, inviteeId);
+
+    const friendship = await getFriendshipRecord(db, inviterId, inviteeId);
+    if (!friendship || friendship.status !== "accepted") {
+      throw errors.conflict("Users are not friends. Cannot invite to friend game.", {
+        targetUserId: inviteeId,
+        status: friendship?.status || null,
+      });
+    }
+
+    const created_at = new Date().toISOString();
+
+    // Invocation - keep minimal logging
+    // Check for an existing invitation in either direction (A->B or B->A)
+    try {
+      const existingInvite = await db.get<{ id: number; status: string }>(
+        "SELECT id, status FROM friend_game_invitations WHERE (inviter_id = ? AND invitee_id = ?) OR (inviter_id = ? AND invitee_id = ?) ORDER BY created_at DESC LIMIT 1",
+        [inviterId, inviteeId, inviteeId, inviterId]
+      );
+
+      if (existingInvite) {
+        // Found existing invitation; returning existing game id
+        const responseBody = {
+          inviter_id: String(inviterId),
+          invitee_id: String(inviteeId),
+          game_id: existingInvite.id,
+        };
+        return ApiResponseHelper.success(responseBody, "Friend game invitation already exists");
+      }
+    } catch (err) {
+      request.log.error(
+        { err, inviterId, inviteeId },
+        "Failed to query existing friend_game_invitations"
+      );
+      throw errors.internal("Failed to check existing friend game invitations");
+    }
+
+    // Insert invitation row; the autoincrement id will serve as gameId
+    let result;
+    try {
+      result = await db.run(
+        "INSERT INTO friend_game_invitations (inviter_id, invitee_id, created_at, status) VALUES (?, ?, ?, 'pending')",
+        [inviterId, inviteeId, created_at]
+      );
+    } catch (err) {
+      // Log full error to server logs for diagnosis and rethrow a controlled error
+      request.log.error({ err, inviterId, inviteeId }, "Failed to insert friend_game_invitations");
+      throw errors.internal("Failed to create friend game invitation");
+    }
+
+    const gameId = result.lastID;
+
+    const responseBody = {
+      inviter_id: String(inviterId),
+      invitee_id: String(inviteeId),
+      game_id: gameId,
+    };
+
+    return ApiResponseHelper.success(responseBody, "Friend game invitation created");
   },
 };
