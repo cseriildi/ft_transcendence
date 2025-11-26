@@ -90,6 +90,31 @@ async function friendRoutes(fastify: FastifyInstance) {
     },
     friendController.inviteFriend
   );
+
+  // Internal endpoints for friend-game invitations (fetch/delete by id)
+  fastify.get<{ Params: { id: number } }>(
+    "/friend-invitations/:id",
+    {
+      schema: {
+        tags: ["friend"],
+        description: "Retrieve friend game invitation by id (internal)",
+        params: { type: "object", properties: { id: { type: "number" } }, required: ["id"] },
+      },
+    },
+    friendController.getInvitationById
+  );
+
+  fastify.delete<{ Params: { id: number } }>(
+    "/friend-invitations/:id",
+    {
+      schema: {
+        tags: ["friend"],
+        description: "Delete friend game invitation by id (internal)",
+        params: { type: "object", properties: { id: { type: "number" } }, required: ["id"] },
+      },
+    },
+    friendController.deleteInvitationById
+  );
 }
 
 export default friendRoutes;

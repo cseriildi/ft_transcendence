@@ -33,10 +33,6 @@ const activePlayers = new Map<
   { online: GameServer | null; friend: Map<string, GameServer> | null }
 >();
 const activeTournaments = new Set<Tournament>();
-const friendGameInvitations = new Map<
-  string,
-  { invitedPlayers: PlayerInfo[]; game: GameServer | null }
->();
 
 // Track the single player waiting for an opponent in ONLINE mode
 // Only one player can wait at a time
@@ -177,7 +173,7 @@ fastify.register(async function (server: FastifyInstance) {
     let player: PlayerInfo | null = null;
     let gameId: string | null = null;
 
-    connection.on("message", (message: any) => {
+    connection.on("message", async (message: any) => {
       try {
         const data = JSON.parse(message.toString());
 
@@ -207,12 +203,12 @@ fastify.register(async function (server: FastifyInstance) {
                 game.clients.set(1, { playerInfo: player!, connection });
                 activeGames.add(game);
                 game.gameId = gameId;
-                addGame(player!.userId, game, gameId || undefined);
+                addGame(player!.userId, game, gameId);
                 game.freezeBall();
               } else {
                 game.isWaiting = false;
                 game.clients.set(2, { playerInfo: player!, connection });
-                addGame(player!.userId, game, gameId || undefined);
+                addGame(player!.userId, game, gameId);
                 game
                   .runGameCountdown()
                   .catch((err) => console.error("Error during online game countdown:", err));
@@ -269,27 +265,51 @@ fastify.register(async function (server: FastifyInstance) {
                 sendErrorToClient(connection, errorMsg);
                 return;
               }
-              let invitation = friendGameInvitations.get(gameId);
-              if (!invitation) {
-                const errorMsg = "This invitation is no longer valid.";
-                console.warn("Invalid newGame message:", errorMsg);
-                sendErrorToClient(connection, errorMsg);
-                return;
-              }
-              if (!invitation.invitedPlayers.find((p) => p.userId === player!.userId)) {
-                const errorMsg = "You are not authorized to join this game.";
-                console.warn("Invalid newGame message:", errorMsg);
-                sendErrorToClient(connection, errorMsg);
-                return;
-              }
+              // Fetch invitation from backend database service
+              try {
+                const backendUrl = config.backendDatabase.url || process.env.BACKEND_DATABASE_URL;
+                const resp = await fetch(`${backendUrl}/api/friend-invitations/${gameId}`);
+                if (!resp.ok) {
+                  const msg = await resp.text().catch(() => "");
+                  const errorMsg = "This invitation is no longer valid.";
+                  console.warn("Invalid newGame message:", errorMsg, resp.status, msg);
+                  sendErrorToClient(connection, errorMsg);
+                  return;
+                }
 
-              if (!invitation.game) {
+                const json = await resp.json();
+                const invite = json.data;
+                if (!invite) {
+                  const errorMsg = "This invitation is no longer valid.";
+                  console.warn("Invalid newGame message:", errorMsg);
+                  sendErrorToClient(connection, errorMsg);
+                  return;
+                }
+
+                // Validate that the joining player is either inviter or invitee
+                const userId = player!.userId;
+                const invitedIds = [Number(invite.inviter_id), Number(invite.invitee_id)];
+                if (!invitedIds.includes(Number(userId))) {
+                  const errorMsg = "You are not authorized to join this game.";
+                  console.warn("Invalid newGame message:", errorMsg);
+                  sendErrorToClient(connection, errorMsg);
+                  return;
+                }
+
+                for (const id of invitedIds) {
+                  game = fetchGame(id, gameId);
+                  if (game) break;
+                }
+
                 joinGame();
-                invitation.game = game;
-              } else {
-                game = invitation.game;
-                joinGame();
-                friendGameInvitations.delete(gameId);
+                if (!game) {
+                  console.error("Failed to create or join friend game");
+                  return;
+                }
+              } catch (err) {
+                console.error("Error fetching invitation from backend:", err);
+                sendErrorToClient(connection, "This invitation is no longer valid.");
+                return;
               }
             }
             break;

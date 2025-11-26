@@ -212,10 +212,6 @@ const initPongPage = async () => {
         showElement(mediumBtn);
         showElement(hardBtn);
         break;
-      case "friend":
-        clearPong();
-        router.navigate("/pong?mode=friend");
-        break;
       case "tournament":
         currentPong?.startGame(mode);
         break;
@@ -344,7 +340,6 @@ const initPongPage = async () => {
     }
     case "friend": {
       if (gameId) {
-        showElement(newGameBtn);
         showElement(canvasContainer);
         currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
         currentPong.startGame(
@@ -361,6 +356,7 @@ const initPongPage = async () => {
         const FriendsListModule = await import("./profile/FriendsList.js");
         const friendsList = new FriendsListModule.FriendsList(router);
         friendsList.loadFriendsList(friendList);
+        showElement(findFriendsBtn);
       }
       break;
     }

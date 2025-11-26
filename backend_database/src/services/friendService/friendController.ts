@@ -352,4 +352,56 @@ export const friendController = {
 
     return ApiResponseHelper.success(responseBody, "Friend game invitation created");
   },
+
+  // Retrieve a friend game invitation by its id (no auth - intended for internal use)
+  getInvitationById: async (
+    request: any,
+    _reply: any
+  ): Promise<
+    ApiResponse<{ id: number; inviter_id: string; invitee_id: string; status: string }>
+  > => {
+    const db = new DatabaseHelper(request.server.db);
+    const { id } = request.params;
+    const inviteId = parseInt(id);
+    try {
+      const row = await db.get<{
+        id: number;
+        inviter_id: number;
+        invitee_id: number;
+        status: string;
+      }>("SELECT id, inviter_id, invitee_id, status FROM friend_game_invitations WHERE id = ?", [
+        inviteId,
+      ]);
+
+      if (!row) {
+        return ApiResponseHelper.error("NOT_FOUND", "Invitation not found");
+      }
+
+      const responseBody = {
+        id: row.id,
+        inviter_id: String(row.inviter_id),
+        invitee_id: String(row.invitee_id),
+        status: row.status,
+      };
+      return ApiResponseHelper.success(responseBody, "Invitation retrieved");
+    } catch (err) {
+      request.log.error({ err, inviteId }, "Failed to fetch friend_game_invitations by id");
+      throw requestErrors(request).internal("Failed to fetch invitation");
+    }
+  },
+
+  // Delete a friend game invitation by id (intended for internal use)
+  deleteInvitationById: async (request: any, _reply: any): Promise<ApiResponse<null>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { id } = request.params;
+    const inviteId = parseInt(id);
+    try {
+      await db.run("DELETE FROM friend_game_invitations WHERE id = ?", [inviteId]);
+      return ApiResponseHelper.success(null, "Invitation deleted");
+    } catch (err) {
+      request.log.error({ err, inviteId }, "Failed to delete friend_game_invitations by id");
+      throw errors.internal("Failed to delete invitation");
+    }
+  },
 };

@@ -42,6 +42,25 @@ async function sendMatchResult(game: GameServer): Promise<void> {
       console.log(
         `✅ Match result saved: ${winner.username} (${winnerScore}) vs ${loser.username} (${loserScore})`
       );
+      // If this was a friend game, attempt to delete the corresponding invitation
+      try {
+        if (game.gameMode === "friend" && game.gameId) {
+          const inviteId = game.gameId;
+          const deleteResp = await fetch(`${backendUrl}/api/friend-invitations/${inviteId}`, {
+            method: "DELETE",
+          });
+          if (!deleteResp.ok) {
+            const dt = await deleteResp.text().catch(() => "");
+            console.warn(
+              `Failed to delete friend invitation ${inviteId}: ${deleteResp.status} ${dt}`
+            );
+          } else {
+            console.log(`Deleted friend invitation ${inviteId}`);
+          }
+        }
+      } catch (err) {
+        console.error("Error deleting friend invitation:", err);
+      }
     }
   } catch (error) {
     console.error("Error sending match result to backend:", error);
