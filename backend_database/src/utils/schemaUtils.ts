@@ -67,6 +67,7 @@ export const commonDataSchemas = {
       email: { type: "string" as const },
       avatar_url: { type: "string" as const },
       created_at: { type: "string" as const },
+      twofa_enabled: { type: "number" as const },
     },
   },
 
@@ -79,6 +80,7 @@ export const commonDataSchemas = {
       email: { type: "string" as const },
       avatar_url: { type: "string" as const },
       created_at: { type: "string" as const },
+      twofa_enabled: { type: "number" as const },
       tokens: {
         type: "object" as const,
         properties: {

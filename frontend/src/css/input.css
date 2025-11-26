@@ -23,6 +23,15 @@
     box-shadow: 0 0 10px rgb(0, 255, 127);
   }
 
+  .btn-blue {
+    @apply bg-blue-500 text-white font-bold py-2 px-4 rounded transition;
+    box-shadow: 0 0 10px rgb(59, 130, 246);
+  }
+
+  .btn-blue:hover {
+    @apply bg-blue-600;
+  }
+
   .page-bg {
     @apply min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black font-orbitron;
   }
