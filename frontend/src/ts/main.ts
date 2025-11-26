@@ -19,7 +19,7 @@ import {
 } from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
-const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
+const VALID_MODES = ["local", "remote", "friend", "ai", "tournament", "remote-tournament"];
 
 let currentPong: Pong | null = null;
 
@@ -101,8 +101,8 @@ const initPongPage = async () => {
     return;
   }
 
-  // Redirect to login if user is not authorized for remote or friend modes
-  if ((mode === "remote" || mode === "friend") && !isUserAuthorized()) {
+  // Redirect to login if user is not authorized for remote, friend, or remote-tournament modes
+  if (["remote", "friend", "remote-tournament"].includes(mode) && !isUserAuthorized()) {
     console.warn(`You need to be logged in to play in ${mode} mode.`);
     router.navigate("/login");
     return;

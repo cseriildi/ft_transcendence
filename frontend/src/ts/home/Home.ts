@@ -15,6 +15,7 @@ export class Home {
     const localBtn = document.getElementById("local-btn");
     const aiBtn = document.getElementById("ai-btn");
     const remoteBtn = document.getElementById("remote-btn");
+    const onlineTournamentBtn = document.getElementById("remote-tournament-btn");
     const friendBtn = document.getElementById("friend-btn");
     const tournamentBtn = document.getElementById("tournament-btn");
     const loginBtn = document.getElementById("login-btn");
@@ -32,6 +33,13 @@ export class Home {
         return;
       }
       this.router.navigate("/pong", { mode: "remote" });
+    });
+    onlineTournamentBtn?.addEventListener("click", () => {
+      if (!isUserAuthorized()) {
+        this.router.navigate("/login");
+        return;
+      }
+      this.router.navigate("/pong", { mode: "remote-tournament" });
     });
     friendBtn?.addEventListener("click", () => {
       if (!isUserAuthorized()) {
