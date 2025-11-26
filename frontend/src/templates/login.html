@@ -2,6 +2,7 @@
   <div class="max-w-md mx-auto px-4">
     <h1 class="page-title text-neon-green break-words">Authentication</h1>
     <div class="form-card">
+      <!-- Regular Login Form -->
       <form id="login-form" class="space-y-4">
         <div>
           <label class="form-label" for="email">Email</label>
@@ -24,6 +25,29 @@
           />
         </div>
         <button type="submit" class="w-full btn-green">Log In</button>
+      </form>
+
+      <!-- 2FA Verification Form (initially hidden) -->
+      <form id="twofa-form" class="space-y-4 hidden">
+        <div class="text-center mb-4">
+          <h3 class="text-lg font-semibold text-neon-green">Two-Factor Authentication</h3>
+          <p class="text-sm text-gray-400 mt-2">
+            Enter the 6-digit code from your authenticator app
+          </p>
+        </div>
+        <div>
+          <label class="form-label" for="twofa-code">Authentication Code</label>
+          <input
+            type="text"
+            id="twofa-code"
+            name="twofa-code"
+            class="form-input text-center"
+            placeholder="000000"
+            maxlength="6"
+          />
+        </div>
+        <button type="submit" class="w-full btn-green">Verify & Log In</button>
+        <button type="button" id="back-to-login" class="w-full btn-pink mt-2">Back to Login</button>
       </form>
     </div>
     <div class="text-center space-x-4">

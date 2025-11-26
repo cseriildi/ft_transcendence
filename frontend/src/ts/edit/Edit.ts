@@ -1,14 +1,17 @@
 import { Router } from "../router/Router.js";
-import { showErrorPopup } from "../main.js";
+import { showErrorPopup, showSuccessPopup } from "../main.js";
 import { config } from "../config.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
+import { TwoFactorAuth } from "../utils/TwoFactorAuth.js";
 
 export class Edit {
   private router: Router;
+  private twoFactorAuth: TwoFactorAuth;
 
   constructor(router: Router) {
     this.router = router;
+    this.twoFactorAuth = new TwoFactorAuth();
   }
 
   async handleFormSubmit(e: Event): Promise<{ success: boolean; message?: string }> {
@@ -168,18 +171,202 @@ export class Edit {
       });
       if (response.ok) {
         const userData = await response.json();
-        console.log(userData);
         const emailInput = document.getElementById("email") as HTMLInputElement;
         const usernameInput = document.getElementById("username") as HTMLInputElement;
         if (emailInput && usernameInput) {
           emailInput.value = userData.data.email;
           usernameInput.value = userData.data.username;
         }
+
+        // Initialize 2FA functionality with user data to avoid extra API call
+        await this.init2FA(userData.data);
       } else {
         console.error("Failed to fetch user data");
+        // Initialize 2FA functionality without user data (will make its own API call)
+        await this.init2FA();
       }
     } catch (err) {
       console.error("Error fetching user data", err);
+      // Initialize 2FA functionality without user data (will make its own API call)
+      await this.init2FA();
+    }
+  }
+
+  private async init2FA(userData?: any): Promise<void> {
+    await this.update2FAStatus(userData);
+    this.setup2FAEventListeners();
+  }
+
+  private async update2FAStatus(userData?: any): Promise<void> {
+    const statusText = document.getElementById("twofa-status-text");
+    const enableBtn = document.getElementById("enable-2fa-btn");
+    const disableSection = document.getElementById("disable-2fa-section");
+
+    if (!statusText || !enableBtn || !disableSection) return;
+
+    let status;
+    if (userData && userData.twofa_enabled !== undefined) {
+      // Use already fetched user data to avoid extra API call
+      status = {
+        enabled: userData.twofa_enabled === 1,
+        configured: userData.twofa_enabled === 1,
+      };
+    } else {
+      // Fallback to API call if user data not available
+      status = await this.twoFactorAuth.getStatus();
+    }
+
+    if (status === null) {
+      statusText.textContent = "Error loading status";
+      statusText.className = "font-semibold text-red-400";
+      return;
+    }
+
+    if (status.enabled) {
+      statusText.textContent = "Enabled";
+      statusText.className = "font-semibold text-neon-green";
+      enableBtn.classList.add("hidden");
+      disableSection.classList.remove("hidden");
+    } else {
+      statusText.textContent = "Disabled";
+      statusText.className = "font-semibold text-neon-pink";
+      enableBtn.classList.remove("hidden");
+      disableSection.classList.add("hidden");
+    }
+  }
+
+  private setup2FAEventListeners(): void {
+    const enableBtn = document.getElementById("enable-2fa-btn");
+    const disableBtn = document.getElementById("disable-2fa-btn");
+    const cancelBtn = document.getElementById("cancel-setup-btn");
+    const enableModalBtn = document.getElementById("enable-2fa-modal-btn");
+
+    enableBtn?.addEventListener("click", () => this.startSetup2FA());
+    disableBtn?.addEventListener("click", () => this.disable2FA());
+    cancelBtn?.addEventListener("click", () => this.cancelSetup2FA());
+    enableModalBtn?.addEventListener("click", () => this.enableWith2FACode());
+
+    // Allow Enter key to submit verification code and enable 2FA
+    const codeInput = document.getElementById("verification-code") as HTMLInputElement;
+    codeInput?.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        this.enableWith2FACode();
+      }
+    });
+
+    // Auto-format verification code input
+    codeInput?.addEventListener("input", (e) => {
+      const target = e.target as HTMLInputElement;
+      target.value = target.value.replace(/\D/g, "").slice(0, 6);
+    });
+
+    // Allow Enter key to submit disable 2FA
+    const disableTokenInput = document.getElementById("disable-password") as HTMLInputElement;
+    disableTokenInput?.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        this.disable2FA();
+      }
+    });
+
+    // Copy secret button functionality
+    const copySecretBtn = document.getElementById("copy-secret-btn");
+    copySecretBtn?.addEventListener("click", () => this.copySecretToClipboard());
+  }
+
+  private async startSetup2FA(): Promise<void> {
+    const setupData = await this.twoFactorAuth.setup();
+    if (!setupData) return;
+
+    const modal = document.getElementById("twofa-setup-modal");
+    const qrImg = document.getElementById("qr-code-img") as HTMLImageElement;
+    const secretSpan = document.getElementById("manual-secret");
+    const codeInput = document.getElementById("verification-code") as HTMLInputElement;
+
+    if (!modal || !qrImg || !secretSpan) return;
+
+    // Show the setup modal
+    modal.classList.remove("hidden");
+
+    // Debug: log QR URL so we can inspect it in the browser console
+    console.debug("2FA QR code URL:", setupData.qr_code);
+
+    // Set QR code and secret, handle load/error to help debugging invisible images
+    // Hide the image until it loads to avoid flashing a broken icon
+    qrImg.classList.add("opacity-0");
+    qrImg.onload = () => {
+      qrImg.classList.remove("opacity-0");
+      console.debug("QR image loaded, natural size:", qrImg.naturalWidth, qrImg.naturalHeight);
+    };
+    qrImg.onerror = (e) => {
+      console.error("QR image failed to load", e, setupData.qr_code);
+      qrImg.alt = "Failed to load QR code";
+    };
+
+    qrImg.src = setupData.qr_code;
+    secretSpan.textContent = setupData.secret;
+
+    // Reset form state
+    if (codeInput) codeInput.value = "";
+
+    // Scroll to modal
+    modal.scrollIntoView({ behavior: "smooth" });
+  }
+
+  private async enableWith2FACode(): Promise<void> {
+    const codeInput = document.getElementById("verification-code") as HTMLInputElement;
+    if (!codeInput) return;
+
+    const code = codeInput.value.trim();
+    if (code.length !== 6) {
+      showErrorPopup("Please enter a 6-digit code");
+      return;
+    }
+
+    const success = await this.twoFactorAuth.enable(code);
+    if (success) {
+      showSuccessPopup("Two-Factor Authentication enabled successfully!");
+      this.cancelSetup2FA();
+      await this.update2FAStatus();
+    }
+  }
+
+  private async disable2FA(): Promise<void> {
+    const tokenInput = document.getElementById("disable-password") as HTMLInputElement;
+    if (!tokenInput) return;
+
+    const token = tokenInput.value.trim();
+    if (!token) {
+      showErrorPopup("Please enter your 2FA code");
+      return;
+    }
+
+    const success = await this.twoFactorAuth.disable(token);
+    if (success) {
+      showSuccessPopup("Two-Factor Authentication disabled successfully!");
+      tokenInput.value = "";
+      await this.update2FAStatus();
+    }
+  }
+
+  private cancelSetup2FA(): void {
+    const modal = document.getElementById("twofa-setup-modal");
+    const codeInput = document.getElementById("verification-code") as HTMLInputElement;
+
+    modal?.classList.add("hidden");
+    if (codeInput) codeInput.value = "";
+
+    this.twoFactorAuth.clearSetup();
+  }
+
+  private async copySecretToClipboard(): Promise<void> {
+    const secretElement = document.getElementById("manual-secret");
+    if (!secretElement || !secretElement.textContent) return;
+
+    try {
+      await navigator.clipboard.writeText(secretElement.textContent);
+      showSuccessPopup("Secret copied to clipboard!");
+    } catch (error) {
+      showErrorPopup("Failed to copy secret to clipboard");
     }
   }
 }
