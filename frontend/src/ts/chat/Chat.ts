@@ -76,22 +76,36 @@ export class Chat {
     const parts = text.split(urlRegex);
 
     parts.forEach((part) => {
-      if (urlRegex.test(part)) {
-        // This is a URL, create a clickable link
-        const link = document.createElement("a");
-        link.href = part;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
-
-        // Check if this is a game invitation link (contains /pong?mode=friend&gameId=)
-        if (part.includes("/pong?mode=friend&gameId=")) {
-          link.textContent = "Join Game";
-        } else {
-          link.textContent = part;
+      if (/https?:\/\/[^\s]+/.test(part)) {
+        // Validate URL before creating a clickable link
+        let url: URL | null = null;
+        try {
+          url = new URL(part);
+        } catch (e) {
+          url = null;
         }
-        link.className = "text-blue-400 hover:underline cursor-pointer";
 
-        messageSpan.appendChild(link);
+        if (url && (url.protocol === "http:" || url.protocol === "https:")) {
+          // This is a valid URL, create a clickable link
+          const link = document.createElement("a");
+          link.href = part;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+
+          // Check if this is a game invitation link (contains /pong?mode=friend&gameId=)
+          if (part.includes("/pong?mode=friend&gameId=")) {
+            link.textContent = "Join Game";
+          } else {
+            link.textContent = part;
+          }
+          link.className = "text-blue-400 hover:underline cursor-pointer";
+
+          messageSpan.appendChild(link);
+        } else {
+          // Invalid or unsafe URL, treat as plain text
+          const textNode = document.createTextNode(part);
+          messageSpan.appendChild(textNode);
+        }
       } else {
         // Regular text
         const textNode = document.createTextNode(part);
@@ -193,7 +207,7 @@ export class Chat {
         return;
       }
 
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/${partnerId}/invite`, {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/game-invites/${partnerId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

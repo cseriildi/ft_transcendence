@@ -46,7 +46,7 @@ async function sendMatchResult(game: GameServer): Promise<void> {
       try {
         if (game.gameMode === "friend" && game.gameId) {
           const inviteId = game.gameId;
-          const deleteResp = await fetch(`${backendUrl}/api/friend-invitations/${inviteId}`, {
+          const deleteResp = await fetch(`${backendUrl}/api/game-invites/${inviteId}`, {
             method: "DELETE",
           });
           if (!deleteResp.ok) {

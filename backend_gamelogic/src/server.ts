@@ -268,7 +268,7 @@ fastify.register(async function (server: FastifyInstance) {
               // Fetch invitation from backend database service
               try {
                 const backendUrl = config.backendDatabase.url || process.env.BACKEND_DATABASE_URL;
-                const resp = await fetch(`${backendUrl}/api/friend-invitations/${gameId}`);
+                const resp = await fetch(`${backendUrl}/api/game-invites/${gameId}`);
                 if (!resp.ok) {
                   const msg = await resp.text().catch(() => "");
                   const errorMsg = "This invitation is no longer valid.";

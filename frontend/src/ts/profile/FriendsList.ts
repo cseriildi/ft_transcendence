@@ -297,7 +297,7 @@ export class FriendsList {
           inviteButton.textContent = "Sending...";
 
           const response = await fetchWithRefresh(
-            `${config.apiUrl}/api/friends/${friend.user_id}/invite`,
+            `${config.apiUrl}/api/game-invites/${friend.user_id}`,
             {
               method: "POST",
               headers: {
