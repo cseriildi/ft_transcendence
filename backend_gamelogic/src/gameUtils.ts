@@ -190,7 +190,7 @@ export function collideBallWithWalls(game: GameServer) {
 }
 
 export function updateGameState(game: GameServer) {
-  if (game.gameMode == "ai" && game.aiPlayer.aiPlayerNo) {
+  if (game.gameMode === "ai" && game.aiPlayer.aiPlayerNo) {
     updateDummyPaddle(game, game.aiPlayer.aiPlayerNo);
   }
   // Update ball position

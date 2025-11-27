@@ -255,7 +255,7 @@ const initPongPage = async () => {
       "#player-inputs-container input"
     ) as NodeListOf<HTMLInputElement>;
     const playerNames = Array.from(inputs).map((input) => input.value.trim());
-    if (inputs.length == 0 || playerNames.filter((name) => name.length === 0).length > 0) {
+    if (playerNames.filter((name) => name.length === 0).length > 0) {
       alert("All player names must be non-empty");
       return;
     }

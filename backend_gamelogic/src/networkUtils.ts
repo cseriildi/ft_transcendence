@@ -130,7 +130,7 @@ export function broadcastGameResult(game: GameServer) {
 
   const { winner, loser, winnerScore, loserScore } = result;
 
-  if (game.gameMode == "tournament" && game.tournament) {
+  if (game.gameMode === "tournament" && game.tournament) {
     game.tournament?.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
   }
 
