@@ -365,6 +365,8 @@ export const authController = {
           email: cleanEmail,
           created_at: result.created_at,
           avatar_url,
+          // Security note: Exposing 2FA status after password verification is acceptable
+          // (user already authenticated, many production apps do this for UX purposes)
           twofa_enabled: result.twofa_enabled,
           tokens: { accessToken },
         },
