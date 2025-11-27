@@ -79,10 +79,17 @@ export class Chat {
         // This is a URL, create a clickable link
         const link = document.createElement("a");
         link.href = part;
-        link.textContent = part;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.className = "text-blue-500 hover:underline cursor-pointer";
+
+        // Check if this is a game invitation link (contains /pong?mode=friend&gameId=)
+        if (part.includes("/pong?mode=friend&gameId=")) {
+          link.textContent = "Join Game";
+        } else {
+          link.textContent = part;
+        }
+        link.className = "text-blue-400 hover:underline cursor-pointer";
+
         messageSpan.appendChild(link);
       } else {
         // Regular text
