@@ -6,8 +6,33 @@ export class I18n {
   private supportedLangs: string[] = ["en", "de"];
 
   async init(): Promise<void> {
-    const savedLang = localStorage.getItem("language") || "en";
-    await this.loadLanguage(savedLang);
+    // Check if user has a saved language preferenc
+    const savedLang = localStorage.getItem("language");
+    
+    // If no saved preference, detect browser language
+    if (!savedLang) {
+      const browserLang = this.detectBrowserLanguage();
+      await this.loadLanguage(browserLang);
+    } else {
+      await this.loadLanguage(savedLang);
+    }
+  }
+
+  private detectBrowserLanguage(): string {
+    // Get browser language (e.g., "en-US", "de-DE", "de")
+    const browserLang = navigator.language || (navigator as any).userLanguage;
+    
+    // Extract the main language code (e.g., "en" from "en-US")
+    const langCode = browserLang.split("-")[0].toLowerCase();
+    
+    // Check if we support this language, otherwise default to English
+    if (this.supportedLangs.includes(langCode)) {
+      console.log(`🌍 Detected browser language: ${langCode}`);
+      return langCode;
+    }
+    
+    console.log(`🌍 Browser language ${browserLang} not supported, using English`);
+    return "en";
   }
 
   async loadLanguage(lang: string): Promise<void> {
@@ -81,7 +106,6 @@ export class I18n {
         }
       });
 
-    // Update language selector
     const langSelect = document.querySelector<HTMLSelectElement>("#lang-select");
     if (langSelect) {
       langSelect.value = this.currentLang;
