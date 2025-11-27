@@ -1,10 +1,5 @@
 import { Router } from "../router/Router.js";
-import {
-  getUserId,
-  isUserAuthorized,
-  getUsername,
-  getAccessToken,
-} from "../utils/utils.js";
+import { getUserId, isUserAuthorized, getUsername, getAccessToken } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { config } from "../config.js";
 
@@ -46,7 +41,7 @@ export class Chat {
     timestamp: string,
     username: string,
     message: string,
-    isOwnMessage: boolean,
+    isOwnMessage: boolean
   ): HTMLElement {
     const messageElement = document.createElement("div");
 
@@ -176,9 +171,7 @@ export class Chat {
       });
 
       if (response.ok) {
-        alert(
-          "User blocked successfully. You will no longer receive messages from this user.",
-        );
+        alert("User blocked successfully. You will no longer receive messages from this user.");
         this.cleanup();
         this.router.navigate("/profile");
       } else {
@@ -192,10 +185,7 @@ export class Chat {
     }
   }
 
-  private async sendGameInvite(
-    partnerId: number,
-    partnerUsername: string,
-  ): Promise<void> {
+  private async sendGameInvite(partnerId: number, partnerUsername: string): Promise<void> {
     try {
       const currentUserId = getUserId();
       if (!currentUserId) {
@@ -203,18 +193,15 @@ export class Chat {
         return;
       }
 
-      const response = await fetchWithRefresh(
-        `${config.apiUrl}/api/friends/${partnerId}/invite`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${getAccessToken()}`,
-          },
-          credentials: "include",
-          body: JSON.stringify({}),
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/${partnerId}/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
         },
-      );
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
@@ -252,16 +239,14 @@ export class Chat {
               timestamp,
               currentUsername,
               message,
-              true, // isOwnMessage
+              true // isOwnMessage
             );
             chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;
           }
 
           // Send via WebSocket
-          this.ws.send(
-            JSON.stringify({ action: "send_message", chatid: chatId, message }),
-          );
+          this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
         }
       }
     } catch (error) {
@@ -270,14 +255,9 @@ export class Chat {
     }
   }
 
-  private async setupChatPartnerInfo(
-    partnerUsername: string,
-    chatId: string,
-  ): Promise<void> {
+  private async setupChatPartnerInfo(partnerUsername: string, chatId: string): Promise<void> {
     const partnerUsernameElement = document.getElementById("partner-username");
-    const partnerAvatarElement = document.getElementById(
-      "partner-avatar",
-    ) as HTMLImageElement;
+    const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
     const viewProfileBtn = document.getElementById("view-profile-btn");
     const blockUserBtn = document.getElementById("block-user-btn");
 
@@ -339,7 +319,7 @@ export class Chat {
         if (blockUserBtn) {
           blockUserBtn.addEventListener("click", async () => {
             const confirmed = confirm(
-              `Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`,
+              `Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`
             );
             if (confirmed) {
               await this.blockUser(partnerId);
@@ -401,18 +381,11 @@ export class Chat {
       e.preventDefault();
       const message = chatInput.value.trim();
       if (message && this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(
-          JSON.stringify({ action: "send_message", chatid: chatId, message }),
-        );
+        this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
 
         const timestamp = new Date().toLocaleTimeString();
         const currentUsername = getUsername() || "Unknown";
-        const messageElement = this.createMessageElement(
-          timestamp,
-          currentUsername,
-          message,
-          true,
-        );
+        const messageElement = this.createMessageElement(timestamp, currentUsername, message, true);
         chatBox.appendChild(messageElement);
         chatBox.scrollTop = chatBox.scrollHeight;
         chatInput.value = "";
@@ -428,9 +401,7 @@ export class Chat {
   private connectWebSocket(chatBox: HTMLDivElement): void {
     const urlParams = new URLSearchParams(window.location.search);
     const chatId = urlParams.get("chatId");
-    this.ws = new WebSocket(
-      `${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`,
-    );
+    this.ws = new WebSocket(`${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`);
 
     this.ws.onopen = () => {
       console.log("Connected to WebSocket server");
@@ -463,51 +434,37 @@ export class Chat {
             try {
               // Ensure history is ordered oldest -> newest so appending places newest at the bottom
               data.history.sort((a: any, b: any) => {
-                const ta =
-                  typeof a.timestamp === "number"
-                    ? a.timestamp
-                    : Date.parse(a.timestamp);
-                const tb =
-                  typeof b.timestamp === "number"
-                    ? b.timestamp
-                    : Date.parse(b.timestamp);
+                const ta = typeof a.timestamp === "number" ? a.timestamp : Date.parse(a.timestamp);
+                const tb = typeof b.timestamp === "number" ? b.timestamp : Date.parse(b.timestamp);
                 return ta - tb;
               });
 
               for (const message of data.history) {
-                const timestamp = new Date(
-                  message.timestamp,
-                ).toLocaleTimeString();
+                const timestamp = new Date(message.timestamp).toLocaleTimeString();
                 const currentUserId = getUserId();
 
-                const displayUsername = await this.getUsernameById(
-                  message.username,
-                );
+                const displayUsername = await this.getUsernameById(message.username);
 
                 const isOwnMessage = message.username === currentUserId;
                 const messageElement = this.createMessageElement(
                   timestamp,
                   displayUsername,
                   message.message,
-                  isOwnMessage,
+                  isOwnMessage
                 );
 
                 chatBox.appendChild(messageElement);
               }
               chatBox.scrollTop = chatBox.scrollHeight;
               // After appending history, if an autoMessage was queued, send it now so it appears last
-              if (
-                this.pendingAutoMessage &&
-                this.ws &&
-                this.ws.readyState === WebSocket.OPEN
-              ) {
+              if (this.pendingAutoMessage && this.ws && this.ws.readyState === WebSocket.OPEN) {
                 try {
                   this.ws.send(
                     JSON.stringify({
                       action: "send_message",
                       chatid: chatId,
                       message: this.pendingAutoMessage,
-                    }),
+                    })
                   );
                   const timestamp = new Date().toLocaleTimeString();
                   const currentUsername = getUsername() || "Unknown";
@@ -515,7 +472,7 @@ export class Chat {
                     timestamp,
                     currentUsername,
                     this.pendingAutoMessage,
-                    true,
+                    true
                   );
                   chatBox.appendChild(messageElement);
                   chatBox.scrollTop = chatBox.scrollHeight;
@@ -552,7 +509,7 @@ export class Chat {
               timestamp,
               displayUsername,
               data.message,
-              isOwnMessage,
+              isOwnMessage
             );
 
             chatBox.appendChild(messageElement);
