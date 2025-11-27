@@ -36,12 +36,6 @@ export class Chat {
     this.cleanup();
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
   private createMessageElement(
     timestamp: string,
     username: string,
@@ -50,9 +44,6 @@ export class Chat {
   ): HTMLElement {
     const messageElement = document.createElement("div");
 
-    // Use raw username/message and rely on textContent to safely escape
-    const escapedUsername = username;
-    const escapedMessage = message;
     const colorClass = isOwnMessage ? "text-neon-pink" : "text-neon-green";
     const alignmentClasses = isOwnMessage
       ? "mb-2 text-right ml-auto max-w-s"
@@ -60,20 +51,47 @@ export class Chat {
 
     const timestampSpan = document.createElement("span");
     timestampSpan.className = colorClass;
-    timestampSpan.textContent = `[${timestamp}] ${escapedUsername}:`;
-
-    const messageSpan = document.createElement("span");
-    messageSpan.className = "text-white";
-    messageSpan.textContent = escapedMessage;
+    timestampSpan.textContent = `[${timestamp}] ${username}:`;
 
     // Append elements safely
     messageElement.appendChild(timestampSpan);
     messageElement.appendChild(document.createElement("br"));
+
+    // Parse message for URLs and create clickable links
+    const messageSpan = this.createMessageContent(message);
     messageElement.appendChild(messageSpan);
 
     messageElement.className = alignmentClasses;
 
     return messageElement;
+  }
+
+  private createMessageContent(text: string): HTMLSpanElement {
+    const messageSpan = document.createElement("span");
+    messageSpan.className = "text-white break-words";
+
+    // URL regex pattern
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+
+    parts.forEach((part) => {
+      if (urlRegex.test(part)) {
+        // This is a URL, create a clickable link
+        const link = document.createElement("a");
+        link.href = part;
+        link.textContent = part;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.className = "text-blue-500 hover:underline cursor-pointer";
+        messageSpan.appendChild(link);
+      } else {
+        // Regular text
+        const textNode = document.createTextNode(part);
+        messageSpan.appendChild(textNode);
+      }
+    });
+
+    return messageSpan;
   }
 
   private async loadAllUsers(): Promise<void> {
@@ -372,6 +390,11 @@ export class Chat {
                   );
                   chatBox.appendChild(messageElement);
                   chatBox.scrollTop = chatBox.scrollHeight;
+
+                  // Clear the autoMessage from URL to prevent re-sending on page reload
+                  const currentUrl = new URL(window.location.href);
+                  currentUrl.searchParams.delete("autoMessage");
+                  window.history.replaceState({}, "", currentUrl.toString());
                 } catch (err) {
                   console.error("Failed to send pending autoMessage:", err);
                 }

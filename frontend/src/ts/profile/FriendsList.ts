@@ -332,7 +332,8 @@ export class FriendsList {
           const chatId = [Number(currentUserId), Number(friend.user_id)]
             .sort((a, b) => a - b)
             .join("-");
-          const message = `Join my game: ${location.origin}/pong?mode=friend&gameId=${gameId}`;
+          const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
+          const message = `🎮 Game Invitation! I've created a game for us to play:\n${gameLink}`;
 
           // Navigate to chat page with an autoMessage parameter
           const encoded = encodeURIComponent(message);
