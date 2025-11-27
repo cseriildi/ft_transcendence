@@ -36,9 +36,7 @@ export class LanguageSwitcher {
       newSelect.addEventListener("change", async (e) => {
         const target = e.target as HTMLSelectElement;
         const newLang = target.value;
-        console.log("🔄 Changing language to:", newLang);
         await i18n.loadLanguage(newLang);
-        console.log("✅ Language changed to:", newLang);
       });
     }
   }

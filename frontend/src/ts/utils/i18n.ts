@@ -22,11 +22,9 @@ export class I18n {
     const langCode = browserLang.split("-")[0].toLowerCase();
     
     if (this.supportedLangs.includes(langCode)) {
-      console.log(`🌍 Detected browser language: ${langCode}`);
       return langCode;
     }
     
-    console.log(`🌍 Browser language ${browserLang} not supported, using English`);
     return "en";
   }
 
@@ -42,7 +40,6 @@ export class I18n {
         if (!response.ok) throw new Error(`Failed to load ${lang}.json`);
 
         this.translations[lang] = await response.json();
-        console.log(`✅ Loaded ${lang} translations`);
       } catch (error) {
         console.error(`❌ Error loading ${lang}:`, error);
         if (lang !== "en") {
@@ -82,13 +79,10 @@ export class I18n {
   }
 
   updatePage(): void {
-    console.log("🔄 updatePage called, current language:", this.currentLang);
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       if (key) {
-        const translation = this.t(key);
-        console.log(`  Translating ${key} to: ${translation}`);
-        el.textContent = translation;
+        el.textContent = this.t(key);
       }
     });
 
