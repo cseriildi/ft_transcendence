@@ -1,6 +1,6 @@
 // src/routes/users.ts
 import { UserParams, UploadAvatarData } from "./userTypes.ts";
-import { User, ApiResponse } from "../../types/commonTypes.ts";
+import { User, PublicUser, ApiResponse } from "../../types/commonTypes.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { requestErrors } from "../../utils/errorUtils.ts";
 import { sanitize } from "../../utils/sanitizationUtils.ts";
@@ -13,16 +13,40 @@ import { ensureUserOwnership } from "../../utils/authUtils.ts";
 import { getAvatarUrl } from "./userUtils.ts";
 
 export const userController = {
-  getUserById: async (
-    request: FastifyRequest<{ Params: UserParams }>,
+  getCurrentUser: async (
+    request: FastifyRequest,
     _reply: FastifyReply
   ): Promise<ApiResponse<User>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
-    const { id } = request.params;
+    const userId = request.user!.id; // From JWT - already authenticated
 
     const user = await db.get<User>(
-      "SELECT id,username,email,created_at,twofa_enabled FROM users WHERE id = ?",
+      "SELECT id, username, email, created_at, twofa_enabled FROM users WHERE id = ?",
+      [userId]
+    );
+
+    if (!user) {
+      // Should never happen (JWT references non-existent user)
+      throw errors.notFound("User");
+    }
+
+    // Retrieve avatar URL using helper
+    user.avatar_url = await getAvatarUrl(db, user.id);
+
+    return ApiResponseHelper.success(user, "Current user profile retrieved");
+  },
+
+  getUserById: async (
+    request: FastifyRequest<{ Params: UserParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<PublicUser>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { id } = request.params;
+
+    const user = await db.get<PublicUser>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
       [id]
     );
     if (!user) {
@@ -34,9 +58,9 @@ export const userController = {
     return ApiResponseHelper.success(user, "User found");
   },
 
-  getUsers: async (request: FastifyRequest, _reply: FastifyReply): Promise<ApiResponse<User[]>> => {
+  getUsers: async (request: FastifyRequest, _reply: FastifyReply): Promise<ApiResponse<PublicUser[]>> => {
     const db = new DatabaseHelper(request.server.db);
-    const users = await db.all<User>(
+    const users = await db.all<PublicUser>(
       `SELECT 
           u.id, 
           u.username, 
@@ -150,7 +174,7 @@ export const userController = {
   changeEmail: async (
     request: FastifyRequest<{ Params: UserParams }>,
     _reply: FastifyReply
-  ): Promise<ApiResponse<User>> => {
+  ): Promise<ApiResponse<PublicUser>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { id } = request.params;
@@ -162,7 +186,7 @@ export const userController = {
 
     // Schema already validates email format and required field
     // Check if email is already in use by another user
-    const existingEmail = await db.get<User>("SELECT id FROM users WHERE email = ? AND id != ?", [
+    const existingEmail = await db.get<PublicUser>("SELECT id FROM users WHERE email = ? AND id != ?", [
       cleanEmail,
       id,
     ]);
@@ -175,13 +199,16 @@ export const userController = {
     // Update email
     await db.run("UPDATE users SET email = ? WHERE id = ?", [cleanEmail, id]);
 
-    const updatedUser = await db.get<User>(
-      "SELECT id, username, email, created_at, twofa_enabled FROM users WHERE id = ?",
+    const updatedUser = await db.get<PublicUser>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
       [id]
     );
     if (!updatedUser) {
       throw errors.notFound("User");
     }
+
+    // Get avatar URL
+    updatedUser.avatar_url = await getAvatarUrl(db, updatedUser.id);
 
     return ApiResponseHelper.success(updatedUser, "Email updated successfully");
   },
@@ -189,7 +216,7 @@ export const userController = {
   changeUsername: async (
     request: FastifyRequest<{ Params: UserParams }>,
     _reply: FastifyReply
-  ): Promise<ApiResponse<User>> => {
+  ): Promise<ApiResponse<PublicUser>> => {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { id } = request.params;
@@ -200,7 +227,7 @@ export const userController = {
     const cleanUsername = sanitize.username(username);
 
     // Check if username is already in use by another user
-    const existingUsername = await db.get<User>(
+    const existingUsername = await db.get<PublicUser>(
       "SELECT id FROM users WHERE username = ? AND id != ?",
       [cleanUsername, id]
     );
@@ -213,13 +240,16 @@ export const userController = {
     // Update username
     await db.run("UPDATE users SET username = ? WHERE id = ?", [cleanUsername, id]);
 
-    const updatedUser = await db.get<User>(
-      "SELECT id, username, email, created_at, twofa_enabled FROM users WHERE id = ?",
+    const updatedUser = await db.get<PublicUser>(
+      "SELECT id, username, email, created_at FROM users WHERE id = ?",
       [id]
     );
     if (!updatedUser) {
       throw errors.notFound("User");
     }
+
+    // Get avatar URL
+    updatedUser.avatar_url = await getAvatarUrl(db, updatedUser.id);
 
     return ApiResponseHelper.success(updatedUser, "Username updated successfully");
   },

@@ -58,7 +58,7 @@ export function createResponseSchema(
  * Common reusable data schemas
  */
 export const commonDataSchemas = {
-  // User object
+  // Full user object (private - includes 2FA status)
   user: {
     type: "object" as const,
     properties: {
@@ -68,6 +68,18 @@ export const commonDataSchemas = {
       avatar_url: { type: "string" as const },
       created_at: { type: "string" as const },
       twofa_enabled: { type: "number" as const },
+    },
+  },
+
+  // Public user object (excludes 2FA status)
+  publicUser: {
+    type: "object" as const,
+    properties: {
+      id: { type: "number" as const },
+      username: { type: "string" as const },
+      email: { type: "string" as const },
+      avatar_url: { type: "string" as const },
+      created_at: { type: "string" as const },
     },
   },
 
@@ -90,7 +102,7 @@ export const commonDataSchemas = {
     },
   },
 
-  // Array of users
+  // Array of public users
   userArray: {
     type: "array" as const,
     items: {

@@ -81,6 +81,8 @@ describe("User Routes", () => {
     expect(body.data).toHaveProperty("created_at");
     expect(body.data).toHaveProperty("avatar_url");
     expect(body.data).not.toHaveProperty("password_hash");
+    // Public profile should NOT include twofa_enabled
+    expect(body.data).not.toHaveProperty("twofa_enabled");
     // User automatically gets a default avatar on registration
     expect(body.data.avatar_url).toBeTruthy();
     expect(body.data.avatar_url).toContain("/uploads/avatars/");
@@ -142,6 +144,109 @@ describe("User Routes", () => {
     body.data.forEach((user: any) => {
       expect(user).toHaveProperty("avatar_url");
     });
+  });
+
+  // =========== GET CURRENT USER (/me) TESTS ===========
+
+  it("GET /users/me should return current authenticated user", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `${API_PREFIX}/users/me`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as any;
+    expect(body.success).toBe(true);
+    expect(body.data?.id).toBe(userId);
+    expect(body.data?.username).toBe("testuser");
+    expect(body.data?.email).toBe("test@example.com");
+    expect(body.data).toHaveProperty("created_at");
+    expect(body.data).toHaveProperty("avatar_url");
+    expect(body.data).toHaveProperty("twofa_enabled");
+    expect(body.data.twofa_enabled).toBe(0); // New users don't have 2FA enabled
+    expect(body.data).not.toHaveProperty("password_hash");
+    expect(body.data.avatar_url).toBeTruthy();
+    expect(body.data.avatar_url).toContain("/uploads/avatars/");
+  });
+
+  it("GET /users/me should return 401 without access token", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `${API_PREFIX}/users/me`,
+    });
+    expect(res.statusCode).toBe(401);
+    const body = res.json() as any;
+    expect(body.success).toBe(false);
+    expect(body.message).toContain("Access token required");
+  });
+
+  it("GET /users/me should return 401 with invalid token", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: `${API_PREFIX}/users/me`,
+      headers: {
+        authorization: "Bearer invalid.token.here",
+      },
+    });
+    expect(res.statusCode).toBe(401);
+    const body = res.json() as any;
+    expect(body.success).toBe(false);
+  });
+
+  it("GET /users/me should return updated data after email change", async () => {
+    // First change the email
+    await app.inject({
+      method: "PATCH",
+      url: `${API_PREFIX}/users/${userId}/email`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        email: "newemail@example.com",
+      },
+    });
+
+    // Then fetch /me
+    const res = await app.inject({
+      method: "GET",
+      url: `${API_PREFIX}/users/me`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as any;
+    expect(body.success).toBe(true);
+    expect(body.data?.email).toBe("newemail@example.com");
+  });
+
+  it("GET /users/me should return updated data after username change", async () => {
+    // First change the username
+    await app.inject({
+      method: "PATCH",
+      url: `${API_PREFIX}/users/${userId}/username`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+      payload: {
+        username: "newusername",
+      },
+    });
+
+    // Then fetch /me
+    const res = await app.inject({
+      method: "GET",
+      url: `${API_PREFIX}/users/me`,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json() as any;
+    expect(body.success).toBe(true);
+    expect(body.data?.username).toBe("newusername");
   });
 
   // =========== EMAIL UPDATE TESTS ===========

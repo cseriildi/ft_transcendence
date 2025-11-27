@@ -1,7 +1,12 @@
 import { createResponseSchema, commonDataSchemas } from "../../utils/schemaUtils.ts";
 
 export const UserSchemas = {
-  // Get user by ID
+  // Get current authenticated user (via /me)
+  getCurrentUser: {
+    response: createResponseSchema(200, commonDataSchemas.user, [401, 404]),
+  },
+
+  // Get user by ID (public - no 2FA status)
   getUser: {
     params: {
       type: "object" as const,
@@ -10,10 +15,10 @@ export const UserSchemas = {
       },
       required: ["id"],
     },
-    response: createResponseSchema(200, commonDataSchemas.user, [401, 403, 404]),
+    response: createResponseSchema(200, commonDataSchemas.publicUser, [401, 403, 404]),
   },
 
-  // Get all users
+  // Get all users (public - no 2FA status)
   getUsers: {
     response: createResponseSchema(200, commonDataSchemas.userArray, []),
   },
@@ -57,7 +62,7 @@ export const UserSchemas = {
       },
       required: ["id"],
     },
-    response: createResponseSchema(200, commonDataSchemas.user, [400, 401, 403, 409]),
+    response: createResponseSchema(200, commonDataSchemas.publicUser, [400, 401, 403, 409]),
   },
 
   changeUsername: {
@@ -82,7 +87,7 @@ export const UserSchemas = {
       },
       required: ["id"],
     },
-    response: createResponseSchema(200, commonDataSchemas.user, [400, 401, 403, 409]),
+    response: createResponseSchema(200, commonDataSchemas.publicUser, [400, 401, 403, 409]),
   },
 
   heartbeat: {

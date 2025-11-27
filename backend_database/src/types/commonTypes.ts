@@ -32,6 +32,15 @@ export interface User {
   twofa_enabled: number;
 }
 
+// Public user profile (excludes sensitive 2FA status)
+export interface PublicUser {
+  id: number;
+  username: string;
+  email: string;
+  created_at: string;
+  avatar_url: string;
+}
+
 export interface TokenPair {
   accessToken: string;
 }
