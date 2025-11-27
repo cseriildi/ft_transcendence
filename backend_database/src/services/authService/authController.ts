@@ -22,7 +22,7 @@ import {
   signTemporaryToken,
   verifyTemporaryToken,
 } from "../../utils/authUtils.ts";
-import { copyDefaultAvatar } from "../../utils/uploadUtils.ts";
+import { copyDefaultAvatar, deleteUploadedFile } from "../../utils/uploadUtils.ts";
 import { getAvatarUrl } from "../userService/userUtils.ts";
 import { assertPasswordValid } from "../../utils/passwordUtils.ts";
 import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
@@ -75,7 +75,7 @@ export const authController = {
     }
 
     const user = await db.get<User>(
-      "SELECT id, username, email, created_at FROM users WHERE id = ?",
+      "SELECT id, username, email, created_at, twofa_enabled FROM users WHERE id = ?",
       [userId]
     );
 
@@ -104,6 +104,7 @@ export const authController = {
         email: user.email,
         created_at: user.created_at,
         avatar_url,
+        twofa_enabled: user.twofa_enabled,
         tokens: { accessToken },
       },
       "Token refreshed successfully"
@@ -237,7 +238,9 @@ export const authController = {
         { userId, error: err },
         "Avatar DB insert failed, cleaning up file and user"
       );
-      // TODO: Add deleteAvatar(userId) utility for proper cleanup
+      // Delete the orphaned avatar file from filesystem
+      await deleteUploadedFile(avatar.fileUrl);
+      // Delete user record from database
       await db.run("DELETE FROM users WHERE id = ?", [userId]);
       throw errors.internal("Failed to store avatar metadata", { userId });
     }
@@ -267,6 +270,7 @@ export const authController = {
         email: cleanEmail,
         created_at: new Date().toISOString(),
         avatar_url,
+        twofa_enabled: 0, // New users don't have 2FA enabled by default
         tokens: { accessToken },
       },
       "User created"
@@ -361,6 +365,9 @@ export const authController = {
           email: cleanEmail,
           created_at: result.created_at,
           avatar_url,
+          // Security note: Exposing 2FA status after password verification is acceptable
+          // (user already authenticated, many production apps do this for UX purposes)
+          twofa_enabled: result.twofa_enabled,
           tokens: { accessToken },
         },
         "User logged in successfully"
@@ -444,6 +451,7 @@ export const authController = {
         email: user.email,
         created_at: user.created_at,
         avatar_url,
+        twofa_enabled: user.twofa_enabled,
         tokens: { accessToken },
       },
       "Logged in successfully"

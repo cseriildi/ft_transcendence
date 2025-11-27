@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import crypto from "node:crypto";
-import { errors } from "./errorUtils.ts";
+import { errors, AppError } from "./errorUtils.ts";
 import {
   AccessTokenPayload,
   RefreshTokenPayload,
@@ -72,7 +72,12 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenPaylo
     }
 
     return typedPayload;
-  } catch {
+  } catch (error) {
+    // If it's our own AppError (like token type mismatch), rethrow with original context
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // Otherwise, it's a jose verification error - wrap with function context
     throw errors.unauthorized("Invalid or expired access token", {
       function: "verifyAccessToken",
     });
@@ -96,7 +101,12 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
     }
 
     return typedPayload;
-  } catch {
+  } catch (error) {
+    // If it's our own AppError (like token type mismatch), rethrow with original context
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // Otherwise, it's a jose verification error - wrap with function context
     throw errors.unauthorized("Invalid or expired refresh token", {
       function: "verifyRefreshToken",
     });
@@ -120,7 +130,12 @@ export async function verifyTemporaryToken(token: string): Promise<TempTokenPayl
     }
 
     return typedPayload;
-  } catch {
+  } catch (error) {
+    // If it's our own AppError (like token type mismatch), rethrow with original context
+    if (error instanceof AppError) {
+      throw error;
+    }
+    // Otherwise, it's a jose verification error - wrap with function context
     throw errors.unauthorized("Invalid or expired temporary token", {
       function: "verifyTemporaryToken",
     });
