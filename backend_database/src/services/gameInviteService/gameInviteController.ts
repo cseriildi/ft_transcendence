@@ -9,13 +9,15 @@ import {
   GameInviteResponse,
   GameInviteListResponse,
   GameInviteListItem,
-  GameInvite,
 } from "./gameInviteTypes.ts";
+import { ensureDifferentUsers, ensureUsersExist } from "../friendService/friendUtils.ts";
 import {
-  ensureDifferentUsers,
-  ensureUsersExist,
-  getFriendshipRecord,
-} from "../friendService/friendUtils.ts";
+  validatePositiveId,
+  getGameInviteById,
+  ensureGameInviteAccess,
+  ensureUsersFriends,
+  findPendingGameInvite,
+} from "./gameInviteUtils.ts";
 import "../../types/fastifyTypes.ts";
 
 export const gameInviteController = {
@@ -28,40 +30,19 @@ export const gameInviteController = {
     _reply: FastifyReply
   ): Promise<ApiResponse<CreateGameInviteResponse>> => {
     const db = new DatabaseHelper(request.server.db);
-    const errors = requestErrors(request);
     const { id } = request.params;
     const inviterId = request.user!.id;
-    const inviteeId = parseInt(id);
+    const inviteeId = validatePositiveId(id, "user ID");
 
-    // Validate users
+    // Validate users exist and are different
     ensureDifferentUsers(inviterId, inviteeId);
     await ensureUsersExist(db, inviterId, inviteeId);
 
     // Verify friendship exists and is accepted
-    const friendship = await getFriendshipRecord(db, inviterId, inviteeId);
-    if (!friendship || friendship.status !== "accepted") {
-      throw errors.conflict("Users are not friends. Cannot create game invitation.", {
-        targetUserId: inviteeId,
-        friendshipStatus: friendship?.status || null,
-      });
-    }
+    await ensureUsersFriends(db, inviterId, inviteeId);
 
     // Check for existing pending invitation in either direction
-    const existingInvite = await db.get<{
-      id: number;
-      inviter_id: number;
-      invitee_id: number;
-      status: string;
-      created_at: string;
-    }>(
-      `SELECT id, inviter_id, invitee_id, status, created_at
-       FROM friend_game_invitations
-       WHERE ((inviter_id = ? AND invitee_id = ?) OR (inviter_id = ? AND invitee_id = ?))
-       AND status = 'pending'
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [inviterId, inviteeId, inviteeId, inviterId]
-    );
+    const existingInvite = await findPendingGameInvite(db, inviterId, inviteeId);
 
     if (existingInvite) {
       // Return existing pending invite (use the actual inviter/invitee from DB)
@@ -105,7 +86,7 @@ export const gameInviteController = {
     const errors = requestErrors(request);
     const { id } = request.params;
     const currentUserId = request.user!.id;
-    const gameId = parseInt(id);
+    const gameId = validatePositiveId(id, "game ID");
 
     // Fetch invitation with usernames
     const invite = await db.get<{
@@ -169,22 +150,17 @@ export const gameInviteController = {
     const errors = requestErrors(request);
     const { id } = request.params;
     const currentUserId = request.user!.id;
-    const gameId = parseInt(id);
+    const gameId = validatePositiveId(id, "game ID");
 
     // Fetch invitation
-    const invite = await db.get<GameInvite>(
-      "SELECT id, inviter_id, invitee_id, status FROM friend_game_invitations WHERE id = ?",
-      [gameId]
-    );
+    const invite = await getGameInviteById(db, gameId);
 
     if (!invite) {
       throw errors.notFound("Game invitation not found");
     }
 
     // Authorization: Only inviter or invitee can cancel
-    if (invite.inviter_id !== currentUserId && invite.invitee_id !== currentUserId) {
-      throw errors.forbidden("You are not authorized to cancel this game invitation");
-    }
+    ensureGameInviteAccess(invite, currentUserId, "cancel");
 
     // Delete the invitation
     await db.run("DELETE FROM friend_game_invitations WHERE id = ?", [gameId]);

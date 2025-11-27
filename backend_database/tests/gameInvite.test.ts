@@ -252,6 +252,19 @@ describe("Game Invite Routes", () => {
       const body = res.json() as any;
       expect(body.success).toBe(false);
     });
+
+    it("should fail with invalid user ID format", async () => {
+      const res = await app.inject({
+        method: "POST",
+        url: `${GAME_INVITES_PREFIX}/-5`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+      expect(body.message).toContain("params/id must be >= 1");
+    });
   });
 
   describe("GET /api/game-invites/:id (Get Game Invite)", () => {
@@ -342,6 +355,19 @@ describe("Game Invite Routes", () => {
       });
 
       expect(res.statusCode).toBe(401);
+    });
+
+    it("should fail with invalid game ID format", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}/-1`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+      expect(body.message).toContain("params/id must be >= 1");
     });
   });
 
@@ -435,6 +461,19 @@ describe("Game Invite Routes", () => {
       });
 
       expect(res.statusCode).toBe(401);
+    });
+
+    it("should fail with invalid game ID format", async () => {
+      const res = await app.inject({
+        method: "DELETE",
+        url: `${GAME_INVITES_PREFIX}/0`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+
+      expect(res.statusCode).toBe(400);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+      expect(body.message).toContain("params/id must be >= 1");
     });
   });
 
