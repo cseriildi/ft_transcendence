@@ -75,46 +75,6 @@ async function friendRoutes(fastify: FastifyInstance) {
     },
     friendController.getFriendsStatus
   );
-
-  // Create a friend-game invitation (generates a new gameId)
-  fastify.post<{ Params: UserParams }>(
-    "/friends/:id/invite",
-    {
-      preHandler: requireAuth,
-      schema: {
-        tags: ["friend"],
-        description: "Create a friend-game invitation and return gameId",
-        security: [{ bearerAuth: [] }],
-        params: UserSchemas.manageFriends.params,
-      },
-    },
-    friendController.inviteFriend
-  );
-
-  // Internal endpoints for friend-game invitations (fetch/delete by id)
-  fastify.get<{ Params: { id: number } }>(
-    "/friend-invitations/:id",
-    {
-      schema: {
-        tags: ["friend"],
-        description: "Retrieve friend game invitation by id (internal)",
-        params: { type: "object", properties: { id: { type: "number" } }, required: ["id"] },
-      },
-    },
-    friendController.getInvitationById
-  );
-
-  fastify.delete<{ Params: { id: number } }>(
-    "/friend-invitations/:id",
-    {
-      schema: {
-        tags: ["friend"],
-        description: "Delete friend game invitation by id (internal)",
-        params: { type: "object", properties: { id: { type: "number" } }, required: ["id"] },
-      },
-    },
-    friendController.deleteInvitationById
-  );
 }
 
 export default friendRoutes;
