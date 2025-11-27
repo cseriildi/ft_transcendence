@@ -93,7 +93,6 @@ class Router {
         if (appElement) {
           appElement.innerHTML = template;
           i18n.updatePage();
-          // Re-attach language switcher event listener after template load
           const languageSwitcherModule = await import("../components/LanguageSwitcher.js");
           languageSwitcherModule.languageSwitcher.init();
           if (route.init) {
