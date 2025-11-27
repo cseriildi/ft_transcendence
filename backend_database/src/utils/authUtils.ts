@@ -1,6 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import crypto from "node:crypto";
-import { errors } from "./errorUtils.ts";
+import { errors, AppError } from "./errorUtils.ts";
 import {
   AccessTokenPayload,
   RefreshTokenPayload,
@@ -73,8 +73,8 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenPaylo
 
     return typedPayload;
   } catch (error) {
-    // If it's our own validation error, rethrow it with original context
-    if (error instanceof Error && error.message.includes("Invalid token type")) {
+    // If it's our own AppError (like token type mismatch), rethrow with original context
+    if (error instanceof AppError) {
       throw error;
     }
     // Otherwise, it's a jose verification error - wrap with function context
@@ -102,8 +102,8 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
 
     return typedPayload;
   } catch (error) {
-    // If it's our own validation error, rethrow it with original context
-    if (error instanceof Error && error.message.includes("Invalid token type")) {
+    // If it's our own AppError (like token type mismatch), rethrow with original context
+    if (error instanceof AppError) {
       throw error;
     }
     // Otherwise, it's a jose verification error - wrap with function context
@@ -131,8 +131,8 @@ export async function verifyTemporaryToken(token: string): Promise<TempTokenPayl
 
     return typedPayload;
   } catch (error) {
-    // If it's our own validation error, rethrow it with original context
-    if (error instanceof Error && error.message.includes("Invalid token type")) {
+    // If it's our own AppError (like token type mismatch), rethrow with original context
+    if (error instanceof AppError) {
       throw error;
     }
     // Otherwise, it's a jose verification error - wrap with function context
