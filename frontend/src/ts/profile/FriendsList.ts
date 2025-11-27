@@ -319,7 +319,7 @@ export class FriendsList {
           }
 
           const body = await response.json();
-          const gameId = body.data?.game_id || body.data?.gameId || body.game_id || body.gameId;
+          const gameId = body.data?.game_id;
           if (!gameId) {
             console.error("API did not return gameId", body);
             inviteButton.disabled = false;

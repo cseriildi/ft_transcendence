@@ -1,12 +1,11 @@
 import Fastify from "fastify";
 import { FastifyInstance } from "fastify";
 import { config, VALID_MODES, validateConfig } from "./config.js";
-import { createGame, resetBall } from "./gameUtils.js";
+import { createGame } from "./gameUtils.js";
 import { GameServer, GameStartPayload, PlayerInfo } from "./gameTypes.js";
-import { broadcastGameState, broadcastGameSetup, sendErrorToClient } from "./networkUtils.js";
+import { sendErrorToClient } from "./networkUtils.js";
 import errorHandlerPlugin from "./plugins/errorHandlerPlugin.js";
-import { Tournament, TournamentPlayer } from "./Tournament.js";
-import { join } from "path";
+import { Tournament } from "./Tournament.js";
 
 // Validate configuration on startup
 validateConfig();
@@ -27,7 +26,7 @@ await fastify.register(import("@fastify/websocket"));
 const activeGames = new Set<GameServer>();
 
 // Track active players (userId -> game) to prevent multiple simultaneous games
-// Also enables future functionality to terminate games on user logou
+// Also enables future functionality to terminate games on user logout
 const activePlayers = new Map<
   number,
   { online: GameServer | null; friend: Map<string, GameServer> | null }
@@ -190,13 +189,14 @@ fastify.register(async function (server: FastifyInstance) {
             const gameStartData = data as GameStartPayload;
             const { error, gameMode, player, difficulty, gameId } =
               validateNewGameMessage(gameStartData);
-            mode = gameMode!;
 
             if (error) {
               console.warn("Invalid newGame message:", error);
               sendErrorToClient(connection, error);
               return;
             }
+            mode = gameMode!;
+
             const joinGame = () => {
               if (!game) {
                 game = createGame(mode!);
@@ -349,11 +349,11 @@ fastify.register(async function (server: FastifyInstance) {
           case "nextGame": {
             if (!data.mode) return;
             if (
-              (data.mode == "tournament" && tournament) ||
+              (data.mode === "tournament" && tournament) ||
               ["friend", "remote"].includes(data.mode)
             ) {
               game = stopGame(game, null);
-              if (data.mode == "tournament") {
+              if (data.mode === "tournament") {
                 game = startNextTournamentGame(connection, tournament);
                 if (!game) {
                   // send tournament complete message with results
@@ -462,7 +462,7 @@ function validateNewGameMessage(data: any): {
   }
 
   // Validate difficulty if provided
-  if (data.mode == "ai" && !["easy", "medium", "hard"].includes(data.difficulty)) {
+  if (data.mode === "ai" && !["easy", "medium", "hard"].includes(data.difficulty)) {
     return {
       error: `Invalid difficulty: ${data.difficulty}. Must be one of: easy, medium, hard`,
     };
