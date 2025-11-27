@@ -82,32 +82,15 @@ export class Pong {
 
     this.currentPlayerInfo = playerInfo || null;
 
-    const sendStart = () => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(
-          JSON.stringify({
-            type: "newGame",
-            mode: this.currentGameMode,
-            player: playerInfo!,
-            difficulty: difficulty!,
-            gameId: gameId!,
-          })
-        );
-      }
+    const message: Record<string, unknown> = {
+      type: "newGame",
+      mode: this.currentGameMode,
     };
+    if (this.currentPlayerInfo) message.player = this.currentPlayerInfo;
+    if (difficulty) message.difficulty = difficulty;
+    if (gameId) message.gameId = gameId;
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      sendStart();
-    } else if (this.ws) {
-      // wait for open then send once
-      this.ws.addEventListener(
-        "open",
-        () => {
-          sendStart();
-        },
-        { once: true }
-      );
-    }
+    this.sendWhenConnected(message);
   }
 
   /**
@@ -118,25 +101,38 @@ export class Pong {
   }
 
   newTournament(playerNames: string[]) {
-    const sendStart = () => {
+    const message: Record<string, unknown> = {
+      type: "newTournament",
+      mode: this.currentGameMode,
+      players: playerNames,
+    };
+
+    this.sendWhenConnected(message);
+  }
+
+  /**
+   * Send a JSON message immediately if the WebSocket is open,
+   * otherwise send it once when the socket opens. Warn if `ws` is null.
+   */
+  private sendWhenConnected(message: Record<string, unknown>) {
+    if (!this.ws) {
+      console.warn("WebSocket not initialized, cannot send message", message);
+      return;
+    }
+
+    const send = () => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(
-          JSON.stringify({
-            type: "newTournament",
-            mode: this.currentGameMode,
-            players: playerNames,
-          })
-        );
+        this.ws.send(JSON.stringify(message));
       }
     };
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      sendStart();
-    } else if (this.ws) {
+    if (this.ws.readyState === WebSocket.OPEN) {
+      send();
+    } else {
       this.ws.addEventListener(
         "open",
         () => {
-          sendStart();
+          send();
         },
         { once: true }
       );
@@ -166,14 +162,7 @@ export class Pong {
             console.warn("⚠️ Player left:", message.message);
             alert(`⚠️ ${message.message}`);
           }
-          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(
-              JSON.stringify({
-                type: "nextGame",
-                mode: this.currentGameMode,
-              })
-            );
-          }
+          this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
         }
         if (["gameSetup"].includes(message.type)) {
           this.gameState = message.data;
