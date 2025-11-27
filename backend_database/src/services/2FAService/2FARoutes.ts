@@ -1,12 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { twoFAController } from "./2FAController.ts";
-import type {
-  Setup2FAData,
-  Verify2FARequest,
-  Enable2FARequest,
-  Disable2FARequest,
-  Verify2FAData,
-} from "./2FATypes";
+import type { Setup2FAData, TwoFACodeRequest, Verify2FAData } from "./2FATypes";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { requireAuth } from "../../middleware/authMiddleware.ts";
 import { TwoFASchemas } from "./2FASchemas.ts";
@@ -33,7 +27,8 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
 
   // Verify token (without enabling)
   fastify.post<{
-    Body: Verify2FARequest;
+    Params: { userId: string };
+    Body: TwoFACodeRequest;
     Reply: ApiResponse<Verify2FAData>;
   }>(
     "/users/:userId/2fa/verify",
@@ -51,7 +46,8 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
 
   // Enable 2FA (requires valid token)
   fastify.post<{
-    Body: Enable2FARequest;
+    Params: { userId: string };
+    Body: TwoFACodeRequest;
     Reply: ApiResponse<{ enabled: boolean }>;
   }>(
     "/users/:userId/2fa/enable",
@@ -69,7 +65,8 @@ export default async function twoFARoutes(fastify: FastifyInstance) {
 
   // Disable 2FA (requires valid token)
   fastify.post<{
-    Body: Disable2FARequest;
+    Params: { userId: string };
+    Body: TwoFACodeRequest;
     Reply: ApiResponse<{ enabled: boolean }>;
   }>(
     "/users/:userId/2fa/disable",
