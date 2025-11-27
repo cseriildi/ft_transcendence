@@ -1,7 +1,7 @@
 import { createResponseSchema } from "../../utils/schemaUtils.ts";
 
 export const TwoFASchemas = {
-  // GET /auth/2fa/setup/:userId
+  // POST /api/users/:userId/2fa/setup
   setup: {
     params: {
       type: "object" as const,
@@ -24,7 +24,7 @@ export const TwoFASchemas = {
           manualEntryKey: { type: "string" as const, description: "Secret key for manual entry" },
         },
       },
-      [400, 401, 404]
+      [400, 401, 403, 404]
     ),
   },
 
@@ -63,7 +63,7 @@ export const TwoFASchemas = {
           valid: { type: "boolean" as const, description: "Whether the token is valid" },
         },
       },
-      [400, 401, 404, 429]
+      [400, 401, 403, 404, 429]
     ),
   },
 
@@ -102,7 +102,7 @@ export const TwoFASchemas = {
           enabled: { type: "boolean" as const, description: "2FA enabled status" },
         },
       },
-      [400, 401, 404, 429]
+      [400, 401, 403, 404, 429]
     ),
   },
 
@@ -141,7 +141,7 @@ export const TwoFASchemas = {
           enabled: { type: "boolean" as const, description: "2FA enabled status" },
         },
       },
-      [400, 401, 404]
+      [400, 401, 403, 404, 429]
     ),
   },
 };

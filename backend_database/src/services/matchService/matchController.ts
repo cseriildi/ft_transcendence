@@ -15,6 +15,7 @@ export const matchController = {
     const errors = requestErrors(request);
     const { winner_id, loser_id, winner_score, loser_score } = request.body;
 
+    // Validate both players exist
     const playersExist = await db.get<{ count: number }>(
       `SELECT COUNT(*) as count FROM users WHERE id IN (?, ?)`,
       [winner_id, loser_id]
@@ -27,24 +28,33 @@ export const matchController = {
       });
     }
 
-    const winner_name = await db.get<User>(`SELECT username FROM users WHERE id = ?`, [winner_id]);
-    const loser_name = await db.get<User>(`SELECT username FROM users WHERE id = ?`, [loser_id]);
-
+    // Insert match with just IDs
     const result = await db.run(
-      `INSERT INTO matches (winner_id, loser_id, winner_name, loser_name, winner_score, loser_score) VALUES (?, ?, ?, ?, ?, ?)`,
-      [winner_id, loser_id, winner_name?.username, loser_name?.username, winner_score, loser_score]
+      `INSERT INTO matches (winner_id, loser_id, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
+      [winner_id, loser_id, winner_score, loser_score]
     );
 
-    const match: Match = {
-      id: result.lastID!,
-      winner_id,
-      loser_id,
-      winner_name,
-      loser_name,
-      winner_score,
-      loser_score,
-      played_at: new Date().toISOString(),
-    };
+    // Fetch the created match with usernames via JOIN
+    const match = await db.get<Match>(
+      `SELECT 
+        m.id, 
+        m.winner_id, 
+        m.loser_id, 
+        m.winner_score, 
+        m.loser_score, 
+        m.played_at,
+        u1.username as winner_name,
+        u2.username as loser_name
+      FROM matches m
+      JOIN users u1 ON m.winner_id = u1.id
+      JOIN users u2 ON m.loser_id = u2.id
+      WHERE m.id = ?`,
+      [result.lastID!]
+    );
+
+    if (!match) {
+      throw errors.internal("Failed to retrieve created match");
+    }
 
     reply.status(201);
     return ApiResponseHelper.success(match, "Match created successfully");
@@ -68,10 +78,22 @@ export const matchController = {
       throw errors.notFound("User", { userId });
     }
 
-    // Then get their matches
+    // Get matches with usernames via JOINs
     const matches = await db.all<Match>(
-      `SELECT id, winner_id, loser_id, winner_score, loser_score, played_at 
-				 FROM matches WHERE winner_id = ? OR loser_id = ? ORDER BY played_at DESC`,
+      `SELECT 
+        m.id, 
+        m.winner_id, 
+        m.loser_id, 
+        m.winner_score, 
+        m.loser_score, 
+        m.played_at,
+        u1.username as winner_name,
+        u2.username as loser_name
+      FROM matches m
+      JOIN users u1 ON m.winner_id = u1.id
+      JOIN users u2 ON m.loser_id = u2.id
+      WHERE m.winner_id = ? OR m.loser_id = ? 
+      ORDER BY m.played_at DESC`,
       [userId, userId]
     );
     return ApiResponseHelper.success(matches, "Matches retrieved successfully");

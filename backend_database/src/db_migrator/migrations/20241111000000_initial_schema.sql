@@ -36,15 +36,11 @@ CREATE TABLE IF NOT EXISTS matches (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   winner_id INTEGER NOT NULL,
   loser_id INTEGER NOT NULL,
-  winner_name TEXT NOT NULL,
-  loser_name TEXT NOT NULL,
   winner_score INTEGER NOT NULL,
   loser_score INTEGER NOT NULL,
   played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (winner_id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (loser_id) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (winner_name) REFERENCES users(username) ON DELETE SET NULL,
-  FOREIGN KEY (loser_name) REFERENCES users(username) ON DELETE SET NULL
+  FOREIGN KEY (loser_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Avatars: User profile pictures with file metadata

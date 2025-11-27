@@ -4,13 +4,7 @@ import { requestErrors } from "../../utils/errorUtils.ts";
 import { ApiResponseHelper } from "../../utils/responseUtils.ts";
 import { DatabaseHelper } from "../../utils/databaseUtils.ts";
 import { FastifyRequest, FastifyReply } from "fastify";
-import type {
-  Setup2FAData,
-  Verify2FARequest,
-  Enable2FARequest,
-  Disable2FARequest,
-  Verify2FAData,
-} from "./2FATypes";
+import type { Setup2FAData, TwoFACodeRequest, Verify2FAData } from "./2FATypes";
 import { ApiResponse } from "../../types/commonTypes.ts";
 import { checkRateLimit, resetRateLimit } from "../../utils/rateLimitUtils.ts";
 import { ensureUserOwnership } from "../../utils/authUtils.ts";
@@ -66,7 +60,7 @@ export const twoFAController = {
   },
 
   verify2FA: async (
-    request: FastifyRequest<{ Body: Verify2FARequest; Params: { userId: string } }>,
+    request: FastifyRequest<{ Body: TwoFACodeRequest; Params: { userId: string } }>,
     _reply: FastifyReply
   ): Promise<ApiResponse<Verify2FAData>> => {
     const db = new DatabaseHelper(request.server.db);
@@ -117,7 +111,7 @@ export const twoFAController = {
   },
 
   enable2FA: async (
-    request: FastifyRequest<{ Body: Enable2FARequest; Params: { userId: string } }>,
+    request: FastifyRequest<{ Body: TwoFACodeRequest; Params: { userId: string } }>,
     reply: FastifyReply
   ): Promise<ApiResponse<{ enabled: boolean }>> => {
     const db = new DatabaseHelper(request.server.db);
@@ -169,7 +163,7 @@ export const twoFAController = {
   },
 
   disable2FA: async (
-    request: FastifyRequest<{ Body: Disable2FARequest; Params: { userId: string } }>,
+    request: FastifyRequest<{ Body: TwoFACodeRequest; Params: { userId: string } }>,
     _reply: FastifyReply
   ): Promise<ApiResponse<{ enabled: boolean }>> => {
     const db = new DatabaseHelper(request.server.db);

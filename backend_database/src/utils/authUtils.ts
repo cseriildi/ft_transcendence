@@ -72,7 +72,12 @@ export async function verifyAccessToken(token: string): Promise<AccessTokenPaylo
     }
 
     return typedPayload;
-  } catch {
+  } catch (error) {
+    // If it's our own validation error, rethrow it with original context
+    if (error instanceof Error && error.message.includes("Invalid token type")) {
+      throw error;
+    }
+    // Otherwise, it's a jose verification error - wrap with function context
     throw errors.unauthorized("Invalid or expired access token", {
       function: "verifyAccessToken",
     });
@@ -96,7 +101,12 @@ export async function verifyRefreshToken(token: string): Promise<RefreshTokenPay
     }
 
     return typedPayload;
-  } catch {
+  } catch (error) {
+    // If it's our own validation error, rethrow it with original context
+    if (error instanceof Error && error.message.includes("Invalid token type")) {
+      throw error;
+    }
+    // Otherwise, it's a jose verification error - wrap with function context
     throw errors.unauthorized("Invalid or expired refresh token", {
       function: "verifyRefreshToken",
     });
@@ -120,7 +130,12 @@ export async function verifyTemporaryToken(token: string): Promise<TempTokenPayl
     }
 
     return typedPayload;
-  } catch {
+  } catch (error) {
+    // If it's our own validation error, rethrow it with original context
+    if (error instanceof Error && error.message.includes("Invalid token type")) {
+      throw error;
+    }
+    // Otherwise, it's a jose verification error - wrap with function context
     throw errors.unauthorized("Invalid or expired temporary token", {
       function: "verifyTemporaryToken",
     });
