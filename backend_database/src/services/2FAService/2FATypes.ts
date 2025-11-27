@@ -9,15 +9,7 @@ export interface Verify2FAData {
   valid: boolean;
 }
 
-// Request bodies (userId comes from params now)
-export interface Verify2FARequest {
-  twofa_code: string;
-}
-
-export interface Enable2FARequest {
-  twofa_code: string;
-}
-
-export interface Disable2FARequest {
+// Request body (userId comes from params now)
+export interface TwoFACodeRequest {
   twofa_code: string;
 }
