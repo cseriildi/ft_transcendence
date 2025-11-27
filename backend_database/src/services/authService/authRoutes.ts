@@ -34,7 +34,7 @@ async function authRoutes(fastify: FastifyInstance) {
 
   // POST /auth/login/2fa
   fastify.post<{
-    Body: { tempToken: string; twofa_token: string };
+    Body: { tempToken: string; twofa_code: string };
     Reply: ApiResponse<AuthUserData>;
   }>(
     "/login/2fa",
