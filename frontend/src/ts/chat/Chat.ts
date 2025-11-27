@@ -1,5 +1,6 @@
 import { Router } from "../router/Router.js";
 import { getUserId, isUserAuthorized, getUsername, getAccessToken } from "../utils/utils.js";
+import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { config } from "../config.js";
 
 export class Chat {
@@ -184,6 +185,79 @@ export class Chat {
     }
   }
 
+  private async sendGameInvite(partnerId: number, partnerUsername: string): Promise<void> {
+    try {
+      const currentUserId = getUserId();
+      if (!currentUserId) {
+        console.error("No current user ID; cannot send invite");
+        return;
+      }
+
+      const response = await fetchWithRefresh(
+        `${config.apiUrl}/api/friends/${partnerId}/invite`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getAccessToken()}`,
+          },
+          credentials: "include",
+          body: JSON.stringify({}),
+        }
+      );
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.error("Failed to create friend game invite", err);
+        alert(err.message || "Failed to create invitation");
+        return;
+      }
+
+      const body = await response.json();
+      const gameId = body.data?.game_id;
+      if (!gameId) {
+        console.error("API did not return gameId", body);
+        alert("Server did not return a game id");
+        return;
+      }
+
+      // Prepare game invitation message
+      const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
+      const message = `Game Invitation! 🎮 ${gameLink} 🎮`;
+
+      // Send message via autoMessage parameter - the chat page will handle sending it
+      const urlParams = new URLSearchParams(window.location.search);
+      const chatId = urlParams.get("chatId");
+
+      if (chatId) {
+        // We're already in a chat, set pendingAutoMessage and send via WebSocket
+        this.pendingAutoMessage = message;
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          // Display the message immediately (optimistic update)
+          const chatBox = document.getElementById("chat-box") as HTMLElement;
+          const timestamp = new Date().toLocaleTimeString();
+          const currentUsername = getUsername();
+          if (currentUsername && chatBox) {
+            const messageElement = this.createMessageElement(
+              timestamp,
+              currentUsername,
+              message,
+              true // isOwnMessage
+            );
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
+
+          // Send via WebSocket
+          this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
+        }
+      }
+    } catch (error) {
+      console.error("Error sending game invite:", error);
+      alert("Failed to send invitation. Please try again.");
+    }
+  }
+
   private async setupChatPartnerInfo(partnerUsername: string, chatId: string): Promise<void> {
     const partnerUsernameElement = document.getElementById("partner-username");
     const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
@@ -253,6 +327,14 @@ export class Chat {
             if (confirmed) {
               await this.blockUser(partnerId);
             }
+          });
+        }
+
+        // Set up invite button click handler
+        const inviteBtn = document.getElementById("invite-btn");
+        if (inviteBtn) {
+          inviteBtn.addEventListener("click", async () => {
+            await this.sendGameInvite(partnerId, partnerUsername);
           });
         }
       } else {
