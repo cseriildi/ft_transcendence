@@ -1,54 +1,39 @@
 import { i18n } from "../utils/i18n.js";
 
 export class LanguageSwitcher {
-  private container: HTMLElement | null = null;
+  private isListenerAttached = false;
 
   init(): void {
-    this.createContainer();
-    this.render();
     this.attachEvents();
+    this.updateSelect();
 
-    window.addEventListener("languageChanged", () => {
-      this.render();
-      this.attachEvents();
-    });
+    if (!this.isListenerAttached) {
+      window.addEventListener("languageChanged", () => {
+        this.updateSelect();
+      });
+      this.isListenerAttached = true;
+    }
   }
 
-  private createContainer(): void {
-    this.container = document.createElement("div");
-    this.container.id = "language-switcher";
-    // Move the language picker later without interfering with other elements.
-    this.container.className = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50";
-    document.body.appendChild(this.container);
-  }
-
-  private render(): void {
-    if (!this.container) return;
-
-    const currentLang = i18n.getCurrentLanguage();
-
-    this.container.innerHTML = `
-      <select 
-        id="lang-select" 
-        class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
-      >
-        <option value="en" ${
-          currentLang === "en" ? "selected" : ""
-        }>🇬🇧 English</option>
-        <option value="de" ${
-          currentLang === "de" ? "selected" : ""
-        }>🇩🇪 Deutsch</option>
-      </select>
-    `;
+  private updateSelect(): void {
+    const select = document.querySelector<HTMLSelectElement>("#lang-select");
+    if (select) {
+      const currentLang = i18n.getCurrentLanguage();
+      select.value = currentLang;
+    }
   }
 
   private attachEvents(): void {
-    if (!this.container) return;
-
-    const select =
-      this.container.querySelector<HTMLSelectElement>("#lang-select");
+    const select = document.querySelector<HTMLSelectElement>("#lang-select");
     if (select) {
-      select.addEventListener("change", async (e) => {
+      const currentValue = select.value || i18n.getCurrentLanguage();
+      
+      // Remove old listener if exists by cloning the element
+      const newSelect = select.cloneNode(true) as HTMLSelectElement;
+      select.parentNode?.replaceChild(newSelect, select);
+      newSelect.value = currentValue;
+      
+      newSelect.addEventListener("change", async (e) => {
         const target = e.target as HTMLSelectElement;
         const newLang = target.value;
         console.log("🔄 Changing language to:", newLang);

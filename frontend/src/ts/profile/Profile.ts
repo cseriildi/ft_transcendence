@@ -5,6 +5,7 @@ import { ProfileStats } from "./ProfileStats.js";
 import { GameHistory } from "./GameHistory.js";
 import { FriendsList } from "./FriendsList.js";
 import { ProfileData } from "./ProfileData.js";
+import { i18n } from "../utils/i18n.js";
 
 /**
  * Main Profile class that orchestrates all profile-related functionality
@@ -86,7 +87,7 @@ export class Profile {
 
     // Update page title based on whose profile we're viewing
     if (pageTitle) {
-      pageTitle.textContent = isOwnProfile ? "My Profile" : "User Profile";
+      pageTitle.textContent = isOwnProfile ? i18n.t("profile.title") : i18n.t("profile.userProfile");
     }
 
     // Hide edit button and friends section when viewing another user's profile

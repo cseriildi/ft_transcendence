@@ -41,6 +41,7 @@ export class Pong {
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
   private keyupListener: ((event: KeyboardEvent) => void) | null = null;
+  private languageChangeListener: (() => void) | null = null;
 
   constructor(canvasId: string, wsUrl: string, gameMode: string) {
     const canvasEl = document.getElementById(canvasId);
@@ -54,6 +55,7 @@ export class Pong {
     this.wsUrl = wsUrl;
     this.currentGameMode = gameMode;
     this.setupInputHandlers();
+    this.setupLanguageListener();
     this.connect();
     this.renderLoop();
   }
@@ -326,6 +328,13 @@ export class Pong {
     }
   }
 
+  private setupLanguageListener() {
+    this.languageChangeListener = () => {
+      this.updatePlayerNamesDisplay();
+    };
+    window.addEventListener("languageChanged", this.languageChangeListener);
+  }
+
   /**
    * Handle keydown events based on game mode
    */
@@ -542,6 +551,9 @@ export class Pong {
     }
     if (this.keyupListener) {
       document.removeEventListener("keyup", this.keyupListener);
+    }
+    if (this.languageChangeListener) {
+      window.removeEventListener("languageChanged", this.languageChangeListener);
     }
 
     this.ws?.close();

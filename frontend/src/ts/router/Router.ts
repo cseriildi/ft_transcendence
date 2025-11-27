@@ -81,7 +81,7 @@ class Router {
     return params;
   }
 
-  private handleRoute() {
+  private async handleRoute() {
     const currentPath = window.location.pathname;
     const route =
       this.routes.find((r) => r.path === currentPath) || this.routes.find((r) => r.path === "/404");
@@ -93,6 +93,9 @@ class Router {
         if (appElement) {
           appElement.innerHTML = template;
           i18n.updatePage();
+          // Re-attach language switcher event listener after template load
+          const languageSwitcherModule = await import("../components/LanguageSwitcher.js");
+          languageSwitcherModule.languageSwitcher.init();
           if (route.init) {
             route.init();
           }

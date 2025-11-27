@@ -10,7 +10,9 @@
     "tournament": "Turnier",
     "loginButton": "Anmelden",
     "logoutButton": "Abmelden",
-    "profileButton": "Profil"
+    "profileButton": "Profil",
+    "loggedInAs": "Angemeldet als",
+    "createdBy": "Erstellt von"
   },
 
   "common": {
@@ -29,7 +31,12 @@
     "passwordLabel": "Passwort",
     "passwordPlaceholder": "Gib dein Passwort ein",
     "loginButton": "Anmelden",
-    "registerButton": "Registrieren"
+    "registerButton": "Registrieren",
+    "twoFactorTitle": "Zwei-Faktor-Authentifizierung",
+    "twoFactorInstructions": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",
+    "authCodeLabel": "Authentifizierungscode",
+    "verifyButton": "Verifizieren & Anmelden",
+    "backToLogin": "Zurück zur Anmeldung"
   },
 
   "register": {
@@ -84,6 +91,7 @@
 
   "profile": {
     "title": "Mein Profil",
+    "userProfile": "Benutzerprofil",
     "editButton": "Profil bearbeiten",
     "friendsHeading": "Freunde",
     "friendManagementButton": "Freunde verwalten",
@@ -102,7 +110,15 @@
     "seeMore": "Mehr anzeigen",
     "remaining": "verbleibend",
     "winsLabel": "Siege",
-    "lossesLabel": "Niederlagen"
+    "lossesLabel": "Niederlagen",
+    "statsHeading": "Spielstatistiken",
+    "totalGames": "Spiele insgesamt",
+    "wins": "Siege",
+    "losses": "Niederlagen",
+    "winsPercentage": "Siege %",
+    "lossesPercentage": "Niederlagen %",
+    "winRate": "Siegrate",
+    "matchHistory": "Spielhistorie"
   },
   "profile_extra": {
     "noFriends": "Du hast noch keine Freunde",
@@ -140,10 +156,26 @@
 
   "edit": {
     "title": "Profil bearbeiten",
+    "avatarLabel": "Avatar",
     "chooseFile": "Datei auswählen",
     "noFileChosen": "Keine Datei ausgewählt",
-    "invalidAvatar": "Nur JPEG- und PNG-Dateien sind für Avatar erlaubt.",
-    "saveButton": "Speichern"
+    "emailLabel": "E-Mail",
+    "usernameLabel": "Nickname",
+    "saveButton": "Speichern",
+    "twoFactorHeading": "Zwei-Faktor-Authentifizierung",
+    "statusLabel": "Status:",
+    "statusLoading": "Laden...",
+    "enableButton": "Zwei-Faktor-Authentifizierung aktivieren",
+    "disableInstructions": "Gib deinen 2FA-Code ein, um 2FA zu deaktivieren:",
+    "disableButton": "Zwei-Faktor-Authentifizierung deaktivieren",
+    "setupHeading": "Zwei-Faktor-Authentifizierung einrichten",
+    "setupStep1": "1. Scanne diesen QR-Code mit deiner Authenticator-App (Google Authenticator, Authy, etc.):",
+    "setupStep1Alt": "Oder gib dieses Geheimnis manuell ein:",
+    "copySecret": "Geheimnis kopieren",
+    "setupStep2": "2. Gib den 6-stelligen Code aus deiner Authenticator-App ein, um 2FA zu aktivieren:",
+    "enableModalButton": "2FA aktivieren",
+    "cancelButton": "Abbrechen",
+    "backToProfile": "Zurück zum Profil"
   },
 
   "error": {

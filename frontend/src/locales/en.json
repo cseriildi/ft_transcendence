@@ -10,14 +10,17 @@
     "tournament": "Tournament",
     "loginButton": "Log in",
     "logoutButton": "Log out",
-    "profileButton": "Profile"
+    "profileButton": "Profile",
+    "loggedInAs": "Logged in as",
+    "createdBy": "Created by"
   },
 
   "common": {
     "backToHome": "Back to Home",
     "backToProfile": "Back to Profile",
     "goHome": "Go Home",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "vs": "vs"
   },
 
   "auth": {
@@ -27,7 +30,12 @@
     "passwordLabel": "Password",
     "passwordPlaceholder": "Enter your password",
     "loginButton": "Log In",
-    "registerButton": "Register"
+    "registerButton": "Register",
+    "twoFactorTitle": "Two-Factor Authentication",
+    "twoFactorInstructions": "Enter the 6-digit code from your authenticator app",
+    "authCodeLabel": "Authentication Code",
+    "verifyButton": "Verify & Log In",
+    "backToLogin": "Back to Login"
   },
 
   "register": {
@@ -81,6 +89,7 @@
 
   "profile": {
     "title": "My Profile",
+    "userProfile": "User Profile",
     "editButton": "Edit Profile",
     "friendsHeading": "Friends",
     "friendManagementButton": "Friend Management",
@@ -99,7 +108,15 @@
     "seeMore": "See More",
     "remaining": "remaining",
     "winsLabel": "Wins",
-    "lossesLabel": "Losses"
+    "lossesLabel": "Losses",
+    "statsHeading": "Game Statistics",
+    "totalGames": "Total Games",
+    "wins": "Wins",
+    "losses": "Losses",
+    "winsPercentage": "Wins %",
+    "lossesPercentage": "Losses %",
+    "winRate": "Win Rate",
+    "matchHistory": "Match History"
   },
   "profile_extra": {
     "noFriends": "You don't have friends yet",
@@ -125,23 +142,38 @@
     "sendButton": "Send",
     "chattingWith": "Chatting with",
     "viewProfile": "View Profile",
-    "viewProfileButton": "View Profile"
-  },
-
-  "edit": {
-    "title": "Edit Profile",
-    "chooseFile": "Choose File",
-    "noFileChosen": "No file chosen",
-    "chattingWith": "Chatting with",
-    "viewProfile": "View Profile",
     "viewProfileButton": "View Profile",
-    "startTitle": "Start Chat",
     "blockUser": "Block User",
     "blockSuccess": "User blocked successfully. You will no longer receive messages from this user.",
     "blockFailed": "Failed to block user. Please try again.",
     "blockError": "An error occurred while blocking the user. Please try again.",
     "blockConfirmPrefix": "Are you sure you want to block",
     "blockConfirmSuffix": "You will no longer be able to send or receive messages from this user."
+  },
+
+  "edit": {
+    "title": "Edit Profile",
+    "avatarLabel": "Avatar",
+    "chooseFile": "Choose File",
+    "noFileChosen": "No file chosen",
+    "emailLabel": "Email",
+    "usernameLabel": "Nickname",
+    "saveButton": "Save",
+    "twoFactorHeading": "Two-Factor Authentication",
+    "statusLabel": "Status:",
+    "statusLoading": "Loading...",
+    "enableButton": "Enable Two-Factor Authentication",
+    "disableInstructions": "Enter your 2FA code to disable 2FA:",
+    "disableButton": "Disable Two-Factor Authentication",
+    "setupHeading": "Setup Two-Factor Authentication",
+    "setupStep1": "1. Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):",
+    "setupStep1Alt": "Or manually enter this secret:",
+    "copySecret": "Copy Secret",
+    "setupStep2": "2. Enter the 6-digit code from your authenticator app to enable 2FA:",
+    "enableModalButton": "Enable 2FA",
+    "cancelButton": "Cancel",
+    "backToProfile": "Back to Profile"
+  },
   "error": {
     "404": {
       "title": "404 - Page Not Found",

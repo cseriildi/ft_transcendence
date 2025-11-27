@@ -9,7 +9,7 @@
           class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-neon-green shadow-lg hidden"
         />
         <div class="flex flex-col">
-          <span class="text-xs text-neon-green opacity-75">Logged in as</span>
+          <span class="text-xs text-neon-green opacity-75" data-i18n="home.loggedInAs">Logged in as</span>
           <div
             id="user-name"
             class="text-neon-pink font-bold text-sm sm:text-base drop-shadow-neon"
@@ -21,7 +21,14 @@
 
       <div class="flex-1 sm:block hidden"></div>
 
-      <div class="flex items-center sm:ml-auto">
+      <div class="flex items-center gap-4 sm:ml-auto">
+        <select 
+          id="lang-select" 
+          class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+        >
+          <option value="en">🇬🇧 English</option>
+          <option value="de">🇩🇪 Deutsch</option>
+        </select>
         <button id="login-btn" class="btn-green" data-i18n="home.loginButton">Log in</button>
         <button id="profile-btn" class="btn-green hidden" data-i18n="home.profileButton">
           Profile
@@ -117,12 +124,12 @@
 
     <div class="flex justify-center gap-16 mb-6">
       <div class="text-center">
-        <p id="name-player1" class="text-neon-green text-sm mb-1">Player 1</p>
+        <p id="name-player1" class="text-neon-green text-sm mb-1" data-i18n="pong_dynamic.player1">Player 1</p>
         <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
       </div>
       <div class="text-neon-pink text-4xl font-bold self-center">:</div>
       <div class="text-center">
-        <p id="name-player2" class="text-neon-green text-sm mb-1">Player 2</p>
+        <p id="name-player2" class="text-neon-green text-sm mb-1" data-i18n="pong_dynamic.player2">Player 2</p>
         <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
       </div>
     </div>

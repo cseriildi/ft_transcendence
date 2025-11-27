@@ -62,10 +62,13 @@ export class I18n {
   }
 
   updatePage(): void {
+    console.log("🔄 updatePage called, current language:", this.currentLang);
     document.querySelectorAll<HTMLElement>("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       if (key) {
-        el.textContent = this.t(key);
+        const translation = this.t(key);
+        console.log(`  Translating ${key} to: ${translation}`);
+        el.textContent = translation;
       }
     });
 
@@ -77,6 +80,12 @@ export class I18n {
           el.placeholder = this.t(key);
         }
       });
+
+    // Update language selector
+    const langSelect = document.querySelector<HTMLSelectElement>("#lang-select");
+    if (langSelect) {
+      langSelect.value = this.currentLang;
+    }
 
     window.dispatchEvent(new CustomEvent("languageChanged"));
   }
