@@ -224,14 +224,14 @@ export const friendController = {
 
     // Get all friend requests for the current user (accepted, pending, declined)
     const friends = await db.all<FriendStatus>(
-      `SELECT 
-          CASE 
-            WHEN f.user1_id = ? THEN f.user2_id 
-            ELSE f.user1_id 
+      `SELECT
+          CASE
+            WHEN f.user1_id = ? THEN f.user2_id
+            ELSE f.user1_id
           END as user_id,
           u.username,
           u.last_seen,
-          CASE 
+          CASE
             WHEN u.last_seen IS NULL THEN 0
             WHEN (julianday('now') - julianday(u.last_seen)) * 24 * 60 <= ? THEN 1
             ELSE 0
@@ -239,7 +239,7 @@ export const friendController = {
           f.status,
           f.inviter_id,
           inviter.username as inviter_username,
-          CASE 
+          CASE
             WHEN f.inviter_id = ? THEN 1
             ELSE 0
           END as is_inviter,
@@ -247,20 +247,20 @@ export const friendController = {
           f.updated_at
         FROM friends f
         JOIN users u ON (
-          CASE 
-            WHEN f.user1_id = ? THEN u.id = f.user2_id 
-            ELSE u.id = f.user1_id 
+          CASE
+            WHEN f.user1_id = ? THEN u.id = f.user2_id
+            ELSE u.id = f.user1_id
           END
         )
         JOIN users inviter ON inviter.id = f.inviter_id
         WHERE (f.user1_id = ? OR f.user2_id = ?)
-        ORDER BY 
+        ORDER BY
           CASE f.status
             WHEN 'pending' THEN 1
             WHEN 'accepted' THEN 2
             WHEN 'declined' THEN 3
           END,
-          is_online DESC, 
+          is_online DESC,
           u.username ASC`,
       [userId, ONLINE_THRESHOLD_MINUTES, userId, userId, userId, userId]
     );

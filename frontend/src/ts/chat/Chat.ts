@@ -1,5 +1,6 @@
 import { Router } from "../router/Router.js";
 import { getUserId, isUserAuthorized, getUsername, getAccessToken } from "../utils/utils.js";
+import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { config } from "../config.js";
 
 export class Chat {
@@ -8,6 +9,7 @@ export class Chat {
   private userCache: Map<string, string> = new Map(); // userId -> username cache
   private cacheTimestamp: number = 0; // Track when cache was last loaded
   private readonly CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes cache expiry
+  private pendingAutoMessage: string | null = null;
 
   constructor(router: Router) {
     this.router = router;
@@ -35,12 +37,6 @@ export class Chat {
     this.cleanup();
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement("div");
-    div.textContent = text;
-    return div.innerHTML;
-  }
-
   private createMessageElement(
     timestamp: string,
     username: string,
@@ -49,10 +45,6 @@ export class Chat {
   ): HTMLElement {
     const messageElement = document.createElement("div");
 
-    // Escape all user-provided content
-    const escapedUsername = this.escapeHtml(username);
-    const escapedMessage = this.escapeHtml(message);
-
     const colorClass = isOwnMessage ? "text-neon-pink" : "text-neon-green";
     const alignmentClasses = isOwnMessage
       ? "mb-2 text-right ml-auto max-w-s"
@@ -60,20 +52,68 @@ export class Chat {
 
     const timestampSpan = document.createElement("span");
     timestampSpan.className = colorClass;
-    timestampSpan.textContent = `[${timestamp}] ${escapedUsername}:`;
-
-    const messageSpan = document.createElement("span");
-    messageSpan.className = "text-white";
-    messageSpan.textContent = escapedMessage;
+    timestampSpan.textContent = `[${timestamp}] ${username}:`;
 
     // Append elements safely
     messageElement.appendChild(timestampSpan);
     messageElement.appendChild(document.createElement("br"));
+
+    // Parse message for URLs and create clickable links
+    const messageSpan = this.createMessageContent(message);
     messageElement.appendChild(messageSpan);
 
     messageElement.className = alignmentClasses;
 
     return messageElement;
+  }
+
+  private createMessageContent(text: string): HTMLSpanElement {
+    const messageSpan = document.createElement("span");
+    messageSpan.className = "text-white break-words";
+
+    // URL regex pattern
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+
+    parts.forEach((part) => {
+      if (/https?:\/\/[^\s]+/.test(part)) {
+        // Validate URL before creating a clickable link
+        let url: URL | null = null;
+        try {
+          url = new URL(part);
+        } catch (e) {
+          url = null;
+        }
+
+        if (url && (url.protocol === "http:" || url.protocol === "https:")) {
+          // This is a valid URL, create a clickable link
+          const link = document.createElement("a");
+          link.href = part;
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+
+          // Check if this is a game invitation link (contains /pong?mode=friend&gameId=)
+          if (part.includes("/pong?mode=friend&gameId=")) {
+            link.textContent = "Join Game";
+          } else {
+            link.textContent = part;
+          }
+          link.className = "text-blue-400 hover:underline cursor-pointer";
+
+          messageSpan.appendChild(link);
+        } else {
+          // Invalid or unsafe URL, treat as plain text
+          const textNode = document.createTextNode(part);
+          messageSpan.appendChild(textNode);
+        }
+      } else {
+        // Regular text
+        const textNode = document.createTextNode(part);
+        messageSpan.appendChild(textNode);
+      }
+    });
+
+    return messageSpan;
   }
 
   private async loadAllUsers(): Promise<void> {
@@ -159,6 +199,76 @@ export class Chat {
     }
   }
 
+  private async sendGameInvite(partnerId: number, partnerUsername: string): Promise<void> {
+    try {
+      const currentUserId = getUserId();
+      if (!currentUserId) {
+        console.error("No current user ID; cannot send invite");
+        return;
+      }
+
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/game-invites/${partnerId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        console.error("Failed to create friend game invite", err);
+        alert(err.message || "Failed to create invitation");
+        return;
+      }
+
+      const body = await response.json();
+      const gameId = body.data?.game_id;
+      if (!gameId) {
+        console.error("API did not return gameId", body);
+        alert("Server did not return a game id");
+        return;
+      }
+
+      // Prepare game invitation message
+      const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
+      const message = `Game Invitation! 🎮 ${gameLink} 🎮`;
+
+      // Send message via autoMessage parameter - the chat page will handle sending it
+      const urlParams = new URLSearchParams(window.location.search);
+      const chatId = urlParams.get("chatId");
+
+      if (chatId) {
+        // We're already in a chat, set pendingAutoMessage and send via WebSocket
+        this.pendingAutoMessage = message;
+        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+          // Display the message immediately (optimistic update)
+          const chatBox = document.getElementById("chat-box") as HTMLElement;
+          const timestamp = new Date().toLocaleTimeString();
+          const currentUsername = getUsername();
+          if (currentUsername && chatBox) {
+            const messageElement = this.createMessageElement(
+              timestamp,
+              currentUsername,
+              message,
+              true // isOwnMessage
+            );
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+          }
+
+          // Send via WebSocket
+          this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
+        }
+      }
+    } catch (error) {
+      console.error("Error sending game invite:", error);
+      alert("Failed to send invitation. Please try again.");
+    }
+  }
+
   private async setupChatPartnerInfo(partnerUsername: string, chatId: string): Promise<void> {
     const partnerUsernameElement = document.getElementById("partner-username");
     const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
@@ -228,6 +338,14 @@ export class Chat {
             if (confirmed) {
               await this.blockUser(partnerId);
             }
+          });
+        }
+
+        // Set up invite button click handler
+        const inviteBtn = document.getElementById("invite-btn");
+        if (inviteBtn) {
+          inviteBtn.addEventListener("click", async () => {
+            await this.sendGameInvite(partnerId, partnerUsername);
           });
         }
       } else {
@@ -305,6 +423,17 @@ export class Chat {
       if (chatId) {
         this.ws?.send(JSON.stringify({ action: "join_chat", chatid: chatId }));
         console.log(`Sent join_chat action for chat ID: ${chatId}`);
+        // If caller provided an autoMessage via URL param, queue it and send after history is processed
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoMessage = urlParams.get("autoMessage");
+        if (autoMessage) {
+          try {
+            const decoded = decodeURIComponent(autoMessage);
+            this.pendingAutoMessage = decoded;
+          } catch (err) {
+            console.error("Failed to decode autoMessage:", err);
+          }
+        }
       } else {
         console.error("Chat ID is missing in the URL");
       }
@@ -317,6 +446,13 @@ export class Chat {
         if (data.history && Array.isArray(data.history)) {
           const processMessages = async () => {
             try {
+              // Ensure history is ordered oldest -> newest so appending places newest at the bottom
+              data.history.sort((a: any, b: any) => {
+                const ta = typeof a.timestamp === "number" ? a.timestamp : Date.parse(a.timestamp);
+                const tb = typeof b.timestamp === "number" ? b.timestamp : Date.parse(b.timestamp);
+                return ta - tb;
+              });
+
               for (const message of data.history) {
                 const timestamp = new Date(message.timestamp).toLocaleTimeString();
                 const currentUserId = getUserId();
@@ -334,6 +470,36 @@ export class Chat {
                 chatBox.appendChild(messageElement);
               }
               chatBox.scrollTop = chatBox.scrollHeight;
+              // After appending history, if an autoMessage was queued, send it now so it appears last
+              if (this.pendingAutoMessage && this.ws && this.ws.readyState === WebSocket.OPEN) {
+                try {
+                  this.ws.send(
+                    JSON.stringify({
+                      action: "send_message",
+                      chatid: chatId,
+                      message: this.pendingAutoMessage,
+                    })
+                  );
+                  const timestamp = new Date().toLocaleTimeString();
+                  const currentUsername = getUsername() || "Unknown";
+                  const messageElement = this.createMessageElement(
+                    timestamp,
+                    currentUsername,
+                    this.pendingAutoMessage,
+                    true
+                  );
+                  chatBox.appendChild(messageElement);
+                  chatBox.scrollTop = chatBox.scrollHeight;
+
+                  // Clear the autoMessage from URL to prevent re-sending on page reload
+                  const currentUrl = new URL(window.location.href);
+                  currentUrl.searchParams.delete("autoMessage");
+                  window.history.replaceState({}, "", currentUrl.toString());
+                } catch (err) {
+                  console.error("Failed to send pending autoMessage:", err);
+                }
+                this.pendingAutoMessage = null;
+              }
             } catch (error) {
               console.error("Error processing chat history messages:", error);
             }

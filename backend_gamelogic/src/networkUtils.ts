@@ -36,6 +36,7 @@ export function broadcastGameState(game: GameServer) {
       player2: game.score2,
     },
     countdown: game.countdown,
+    isWaiting: game.isWaiting,
   };
 
   const message = JSON.stringify({
@@ -91,6 +92,7 @@ export function broadcastGameSetup(game: GameServer) {
       player2: game.score2,
     },
     countdown: game.countdown,
+    isWaiting: game.isWaiting,
   };
 
   // Get player usernames from game clients
@@ -128,7 +130,7 @@ export function broadcastGameResult(game: GameServer) {
 
   const { winner, loser, winnerScore, loserScore } = result;
 
-  if (game.gameMode == "tournament" && game.tournament) {
+  if (game.gameMode === "tournament" && game.tournament) {
     game.tournament?.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
   }
 
@@ -150,5 +152,20 @@ export function broadcastGameResult(game: GameServer) {
     } catch (err) {
       console.error("Failed to send game result to client:", err);
     }
+  }
+}
+
+// Helper function to send error message to client
+export function sendErrorToClient(connection: any, error: string) {
+  try {
+    connection.send(
+      JSON.stringify({
+        type: "error",
+        message: error,
+        timestamp: new Date().toISOString(),
+      })
+    );
+  } catch (err) {
+    console.error("Failed to send error to client:", err);
   }
 }

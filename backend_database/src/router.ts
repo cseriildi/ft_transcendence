@@ -5,8 +5,9 @@ import monitoringRoutes from "./services/monitoringService/monitoringRoutes.ts";
 import matchRoutes from "./services/matchService/matchRoutes.ts";
 import oauthRoutes from "./services/oAuthService/oAuthRoutes.ts";
 import twoFARoutes from "./services/2FAService/2FARoutes.ts";
-import { config } from "./config.ts";
 import friendRoutes from "./services/friendService/friendRoutes.ts";
+import gameInviteRoutes from "./services/gameInviteService/gameInviteRoutes.ts";
+import { config } from "./config.ts";
 import { authenticatedRateLimit } from "./middleware/rateLimitMiddleware.ts";
 
 async function routes(fastify: FastifyInstance) {
@@ -30,6 +31,7 @@ async function routes(fastify: FastifyInstance) {
         await apiInstance.register(userRoutes, { prefix: config.routes.api });
         await apiInstance.register(matchRoutes, { prefix: config.routes.api });
         await apiInstance.register(friendRoutes, { prefix: config.routes.api });
+        await apiInstance.register(gameInviteRoutes, { prefix: config.routes.api });
         await apiInstance.register(twoFARoutes, { prefix: config.routes.api });
       },
       { prefix: "" }
