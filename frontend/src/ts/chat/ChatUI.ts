@@ -22,7 +22,6 @@ export class ChatUI {
   ): void {
     const chatForm = document.getElementById("chat-form") as HTMLFormElement;
     const chatInput = document.getElementById("chat-input") as HTMLInputElement;
-    const chatBox = document.getElementById("chat-box") as HTMLDivElement;
     const backBtn = document.getElementById("back-btn");
 
     chatForm?.addEventListener("submit", (e) => {

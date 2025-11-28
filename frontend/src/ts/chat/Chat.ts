@@ -1,5 +1,5 @@
 import { Router } from "../router/Router.js";
-import { getUserId, isUserAuthorized } from "../utils/utils.js";
+import { isUserAuthorized } from "../utils/utils.js";
 import { UserCache } from "./UserCache.js";
 import { MessageRenderer } from "./MessageRenderer.js";
 import { WebSocketHandler } from "./WebSocketHandler.js";

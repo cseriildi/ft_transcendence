@@ -1,4 +1,4 @@
-import { getAccessToken, getUserId, getUsername } from "../utils/utils.js";
+import { getAccessToken, getUserId } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { config } from "../config.js";
 import { MessageRenderer } from "./MessageRenderer.js";
