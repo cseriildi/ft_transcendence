@@ -20,11 +20,7 @@ export class WebSocketHandler {
   /**
    * Connect to WebSocket and set up event handlers
    */
-  public connect(
-    chatId: string,
-    chatBox: HTMLDivElement,
-    onHistoryLoaded: () => void
-  ): void {
+  public connect(chatId: string, chatBox: HTMLDivElement, onHistoryLoaded: () => void): void {
     this.ws = new WebSocket(`${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`);
 
     this.ws.onopen = () => {
