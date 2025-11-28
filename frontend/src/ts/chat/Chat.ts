@@ -1,35 +1,32 @@
 import { Router } from "../router/Router.js";
-import { getUserId, isUserAuthorized, getUsername, getAccessToken } from "../utils/utils.js";
-import { fetchWithRefresh } from "../utils/fetchUtils.js";
-import { config } from "../config.js";
+import { isUserAuthorized } from "../utils/utils.js";
+import { UserCache } from "./UserCache.js";
+import { MessageRenderer } from "./MessageRenderer.js";
+import { WebSocketHandler } from "./WebSocketHandler.js";
+import { ChatActions } from "./ChatActions.js";
+import { ChatUI } from "./ChatUI.js";
 
+/**
+ * Main Chat class that orchestrates all chat-related functionality
+ */
 export class Chat {
   private router: Router;
-  private ws: WebSocket | null = null;
-  private userCache: Map<string, string> = new Map(); // userId -> username cache
-  private cacheTimestamp: number = 0; // Track when cache was last loaded
-  private readonly CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes cache expiry
-  private pendingAutoMessage: string | null = null;
+  private userCache: UserCache;
+  private messageRenderer: MessageRenderer;
+  private webSocketHandler: WebSocketHandler;
+  private chatActions: ChatActions;
+  private chatUI: ChatUI;
+  private chatBox: HTMLDivElement | null = null;
+  private chatId: string | null = null;
+  private partnerUsername: string | null = null;
 
   constructor(router: Router) {
     this.router = router;
-  }
-
-  private clearUserCache(): void {
-    console.log(`Clearing user cache (${this.userCache.size} entries)`);
-    this.userCache.clear();
-    this.cacheTimestamp = 0;
-  }
-
-  private isCacheExpired(): boolean {
-    if (this.cacheTimestamp === 0) return true;
-    return Date.now() - this.cacheTimestamp > this.CACHE_EXPIRY_MS;
-  }
-
-  private cleanup(): void {
-    console.log("Cleaning up chat resources...");
-    this.ws?.close();
-    this.clearUserCache();
+    this.userCache = new UserCache();
+    this.messageRenderer = new MessageRenderer();
+    this.webSocketHandler = new WebSocketHandler(this.userCache, this.messageRenderer);
+    this.chatActions = new ChatActions(this.messageRenderer);
+    this.chatUI = new ChatUI(router);
   }
 
   public destroy(): void {
@@ -37,518 +34,110 @@ export class Chat {
     this.cleanup();
   }
 
-  private createMessageElement(
-    timestamp: string,
-    username: string,
-    message: string,
-    isOwnMessage: boolean
-  ): HTMLElement {
-    const messageElement = document.createElement("div");
-
-    const colorClass = isOwnMessage ? "text-neon-pink" : "text-neon-green";
-    const alignmentClasses = isOwnMessage
-      ? "mb-2 text-right ml-auto max-w-s"
-      : "mb-2 text-left mr-auto max-w-s";
-
-    const timestampSpan = document.createElement("span");
-    timestampSpan.className = colorClass;
-    timestampSpan.textContent = `[${timestamp}] ${username}:`;
-
-    // Append elements safely
-    messageElement.appendChild(timestampSpan);
-    messageElement.appendChild(document.createElement("br"));
-
-    // Parse message for URLs and create clickable links
-    const messageSpan = this.createMessageContent(message);
-    messageElement.appendChild(messageSpan);
-
-    messageElement.className = alignmentClasses;
-
-    return messageElement;
+  private cleanup(): void {
+    console.log("Cleaning up chat resources...");
+    this.webSocketHandler.disconnect();
+    this.userCache.clear();
   }
 
-  private createMessageContent(text: string): HTMLSpanElement {
-    const messageSpan = document.createElement("span");
-    messageSpan.className = "text-white break-words";
-
-    // URL regex pattern
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = text.split(urlRegex);
-
-    parts.forEach((part) => {
-      if (/https?:\/\/[^\s]+/.test(part)) {
-        // Validate URL before creating a clickable link
-        let url: URL | null = null;
-        try {
-          url = new URL(part);
-        } catch (e) {
-          url = null;
-        }
-
-        if (url && (url.protocol === "http:" || url.protocol === "https:")) {
-          // This is a valid URL, create a clickable link
-          const link = document.createElement("a");
-          link.href = part;
-          link.target = "_blank";
-          link.rel = "noopener noreferrer";
-
-          // Check if this is a game invitation link (contains /pong?mode=friend&gameId=)
-          if (part.includes("/pong?mode=friend&gameId=")) {
-            link.textContent = "Join Game";
-          } else {
-            link.textContent = part;
-          }
-          link.className = "text-blue-400 hover:underline cursor-pointer";
-
-          messageSpan.appendChild(link);
-        } else {
-          // Invalid or unsafe URL, treat as plain text
-          const textNode = document.createTextNode(part);
-          messageSpan.appendChild(textNode);
-        }
-      } else {
-        // Regular text
-        const textNode = document.createTextNode(part);
-        messageSpan.appendChild(textNode);
-      }
-    });
-
-    return messageSpan;
-  }
-
-  private async loadAllUsers(): Promise<void> {
-    // Check if cache is still valid
-    if (this.userCache.size > 0 && !this.isCacheExpired()) {
-      return;
-    }
-
-    // Clear expired cache
-    if (this.isCacheExpired()) {
-      this.clearUserCache();
-    }
-
-    try {
-      console.log("Loading users cache...");
-      const response = await fetch(`${config.apiUrl}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-      });
-
-      if (response.ok) {
-        const userData = await response.json();
-        const users = userData.data;
-
-        users.forEach((user: { id: number; username: string }) => {
-          this.userCache.set(user.id.toString(), user.username);
-        });
-
-        this.cacheTimestamp = Date.now();
-        console.log(`Loaded ${users.length} users into cache`);
-      } else {
-        console.error("Failed to fetch users list");
-      }
-    } catch (error) {
-      console.error("Error fetching users list:", error);
-    }
-  }
-
-  private async getUsernameById(userId: string): Promise<string> {
-    await this.loadAllUsers();
-
-    if (this.userCache.has(userId)) {
-      return this.userCache.get(userId)!;
-    }
-
-    return userId;
-  }
-
-  private async blockUser(partnerId: number): Promise<void> {
-    const currentUserId = getUserId();
-    if (!currentUserId) {
-      console.error("Current user ID not found");
-      return;
-    }
-
-    try {
-      const response = await fetch(`${config.apiUrl}/lobby/block`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          blocker: currentUserId,
-          blocked: partnerId.toString(),
-        }),
-      });
-
-      if (response.ok) {
-        alert("User blocked successfully. You will no longer receive messages from this user.");
-        this.cleanup();
-        this.router.navigate("/profile");
-      } else {
-        const error = await response.json();
-        console.error("Failed to block user:", error);
-        alert(error.error || "Failed to block user. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error blocking user:", error);
-      alert("An error occurred while blocking the user. Please try again.");
-    }
-  }
-
-  private async sendGameInvite(partnerId: number, partnerUsername: string): Promise<void> {
-    try {
-      const currentUserId = getUserId();
-      if (!currentUserId) {
-        console.error("No current user ID; cannot send invite");
-        return;
-      }
-
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/game-invites/${partnerId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        console.error("Failed to create friend game invite", err);
-        alert(err.message || "Failed to create invitation");
-        return;
-      }
-
-      const body = await response.json();
-      const gameId = body.data?.game_id;
-      if (!gameId) {
-        console.error("API did not return gameId", body);
-        alert("Server did not return a game id");
-        return;
-      }
-
-      // Prepare game invitation message
-      const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
-      const message = `Game Invitation! 🎮 ${gameLink} 🎮`;
-
-      // Send message via autoMessage parameter - the chat page will handle sending it
-      const urlParams = new URLSearchParams(window.location.search);
-      const chatId = urlParams.get("chatId");
-
-      if (chatId) {
-        // We're already in a chat, set pendingAutoMessage and send via WebSocket
-        this.pendingAutoMessage = message;
-        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-          // Display the message immediately (optimistic update)
-          const chatBox = document.getElementById("chat-box") as HTMLElement;
-          const timestamp = new Date().toLocaleTimeString();
-          const currentUsername = getUsername();
-          if (currentUsername && chatBox) {
-            const messageElement = this.createMessageElement(
-              timestamp,
-              currentUsername,
-              message,
-              true // isOwnMessage
-            );
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-          }
-
-          // Send via WebSocket
-          this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
-        }
-      }
-    } catch (error) {
-      console.error("Error sending game invite:", error);
-      alert("Failed to send invitation. Please try again.");
-    }
-  }
-
-  private async setupChatPartnerInfo(partnerUsername: string, chatId: string): Promise<void> {
-    const partnerUsernameElement = document.getElementById("partner-username");
-    const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
-    const viewProfileBtn = document.getElementById("view-profile-btn");
-    const blockUserBtn = document.getElementById("block-user-btn");
-
-    if (partnerUsernameElement) {
-      partnerUsernameElement.textContent = partnerUsername;
-    }
-
-    // Extract partner ID from chat ID
-    const currentUserId = getUserId();
-    if (!currentUserId) {
-      console.error("Current user ID not found");
-      return;
-    }
-
-    // Chat ID format is "userId1-userId2" where IDs are sorted
-    const userIds = chatId.split("-").map((id) => parseInt(id));
-    const partnerId = userIds.find((id) => id !== Number(currentUserId));
-
-    if (!partnerId) {
-      console.error("Partner ID could not be extracted from chat ID:", chatId);
-      // Still set meaningful alt text
-      if (partnerAvatarElement) {
-        partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
-      }
-      return;
-    }
-
-    // Fetch specific partner's user data - much more efficient than fetching all users
-    try {
-      const response = await fetch(`${config.apiUrl}/api/users/${partnerId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const partner = data.data;
-
-        // Set avatar and alt text
-        if (partnerAvatarElement) {
-          partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
-          if (partner.avatar_url) {
-            partnerAvatarElement.src = `${config.apiUrl}${partner.avatar_url}`;
-          }
-        }
-
-        // Set up profile button click handler
-        if (viewProfileBtn) {
-          viewProfileBtn.addEventListener("click", () => {
-            this.cleanup();
-            this.router.navigate(`/profile?userId=${partnerId}`);
-          });
-        }
-
-        // Set up block button click handler
-        if (blockUserBtn) {
-          blockUserBtn.addEventListener("click", async () => {
-            const confirmed = confirm(
-              `Are you sure you want to block ${partnerUsername}? You will no longer be able to send or receive messages from this user.`
-            );
-            if (confirmed) {
-              await this.blockUser(partnerId);
-            }
-          });
-        }
-
-        // Set up invite button click handler
-        const inviteBtn = document.getElementById("invite-btn");
-        if (inviteBtn) {
-          inviteBtn.addEventListener("click", async () => {
-            await this.sendGameInvite(partnerId, partnerUsername);
-          });
-        }
-      } else {
-        console.error("Failed to fetch partner info:", await response.json());
-        // Still set meaningful alt text
-        if (partnerAvatarElement) {
-          partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching partner info:", error);
-      // Still set meaningful alt text
-      if (partnerAvatarElement) {
-        partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
-      }
-    }
-  }
-
-  async initPage(): Promise<void> {
+  public async initPage(): Promise<void> {
     if (!isUserAuthorized()) {
       this.router.navigate("/");
       return;
     }
 
-    const chatForm = document.getElementById("chat-form") as HTMLFormElement;
-    const chatInput = document.getElementById("chat-input") as HTMLInputElement;
     const chatBox = document.getElementById("chat-box") as HTMLDivElement;
-    const backBtn = document.getElementById("back-btn");
+    if (!chatBox) {
+      console.error("Chat box element not found");
+      return;
+    }
+    this.chatBox = chatBox;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const chatId = urlParams.get("chatId");
-    const partnerUsername = urlParams.get("username");
+    this.chatId = urlParams.get("chatId");
+    this.partnerUsername = urlParams.get("username");
 
-    if (!chatId) {
+    if (!this.chatId) {
       console.error("Chat ID is missing in the URL");
       return;
     }
 
+    // Set up UI
+    this.chatUI.setupUI(
+      this.chatId,
+      (message) => this.onSendMessage(message),
+      () => this.onBack()
+    );
+
     // Initialize chat partner info
-    if (partnerUsername && chatId) {
-      await this.setupChatPartnerInfo(partnerUsername, chatId);
+    if (this.partnerUsername && this.chatId) {
+      await this.chatUI.setupChatPartnerInfo(
+        this.partnerUsername,
+        this.chatId,
+        (userId) => this.onViewProfile(userId),
+        (userId, username) => this.onBlockUser(userId, username),
+        (userId, username) => this.onSendInvite(userId, username)
+      );
     }
 
-    this.connectWebSocket(chatBox);
-
-    chatForm?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const message = chatInput.value.trim();
-      if (message && this.ws && this.ws.readyState === WebSocket.OPEN) {
-        this.ws.send(JSON.stringify({ action: "send_message", chatid: chatId, message }));
-
-        const timestamp = new Date().toLocaleTimeString();
-        const currentUsername = getUsername() || "Unknown";
-        const messageElement = this.createMessageElement(timestamp, currentUsername, message, true);
-        chatBox.appendChild(messageElement);
-        chatBox.scrollTop = chatBox.scrollHeight;
-        chatInput.value = "";
-      }
+    // Connect WebSocket
+    this.webSocketHandler.connect(this.chatId, this.chatBox, () => {
+      console.log("Chat history loaded");
     });
+  }
 
-    backBtn?.addEventListener("click", () => {
+  /**
+   * Handle sending a message
+   */
+  private async onSendMessage(message: string): Promise<void> {
+    if (!this.chatId || !this.chatBox) {
+      console.error("Chat ID or chat box not available");
+      return;
+    }
+
+    await this.webSocketHandler.sendMessage(this.chatId, message, this.chatBox);
+  }
+
+  /**
+   * Handle viewing profile
+   */
+  private onViewProfile(userId: number): void {
+    this.cleanup();
+    this.router.navigate(`/profile?userId=${userId}`);
+  }
+
+  /**
+   * Handle blocking user
+   */
+  private async onBlockUser(userId: number, username: string): Promise<void> {
+    await this.chatActions.blockUser(userId, username, () => {
       this.cleanup();
       this.router.navigate("/profile");
     });
   }
 
-  private connectWebSocket(chatBox: HTMLDivElement): void {
-    const urlParams = new URLSearchParams(window.location.search);
-    const chatId = urlParams.get("chatId");
-    this.ws = new WebSocket(`${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`);
+  /**
+   * Handle sending game invite
+   */
+  private async onSendInvite(userId: number, username: string): Promise<void> {
+    if (!this.chatId || !this.chatBox) {
+      console.error("Chat ID or chat box not available");
+      return;
+    }
 
-    this.ws.onopen = () => {
-      console.log("Connected to WebSocket server");
+    await this.chatActions.sendGameInvite(userId, username, this.chatId, (message) => {
+      this.webSocketHandler.sendMessage(this.chatId!, message, this.chatBox!).catch((err) => {
+        console.error("Failed to send invite message:", err);
+      });
+    });
+  }
 
-      if (chatId) {
-        this.ws?.send(JSON.stringify({ action: "join_chat", chatid: chatId }));
-        console.log(`Sent join_chat action for chat ID: ${chatId}`);
-        // If caller provided an autoMessage via URL param, queue it and send after history is processed
-        const urlParams = new URLSearchParams(window.location.search);
-        const autoMessage = urlParams.get("autoMessage");
-        if (autoMessage) {
-          try {
-            const decoded = decodeURIComponent(autoMessage);
-            this.pendingAutoMessage = decoded;
-          } catch (err) {
-            console.error("Failed to decode autoMessage:", err);
-          }
-        }
-      } else {
-        console.error("Chat ID is missing in the URL");
-      }
-    };
-
-    this.ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === "chat_connected") {
-        if (data.history && Array.isArray(data.history)) {
-          const processMessages = async () => {
-            try {
-              // Ensure history is ordered oldest -> newest so appending places newest at the bottom
-              data.history.sort((a: any, b: any) => {
-                const ta = typeof a.timestamp === "number" ? a.timestamp : Date.parse(a.timestamp);
-                const tb = typeof b.timestamp === "number" ? b.timestamp : Date.parse(b.timestamp);
-                return ta - tb;
-              });
-
-              for (const message of data.history) {
-                const timestamp = new Date(message.timestamp).toLocaleTimeString();
-                const currentUserId = getUserId();
-
-                const displayUsername = await this.getUsernameById(message.username);
-
-                const isOwnMessage = message.username === currentUserId;
-                const messageElement = this.createMessageElement(
-                  timestamp,
-                  displayUsername,
-                  message.message,
-                  isOwnMessage
-                );
-
-                chatBox.appendChild(messageElement);
-              }
-              chatBox.scrollTop = chatBox.scrollHeight;
-              // After appending history, if an autoMessage was queued, send it now so it appears last
-              if (this.pendingAutoMessage && this.ws && this.ws.readyState === WebSocket.OPEN) {
-                try {
-                  this.ws.send(
-                    JSON.stringify({
-                      action: "send_message",
-                      chatid: chatId,
-                      message: this.pendingAutoMessage,
-                    })
-                  );
-                  const timestamp = new Date().toLocaleTimeString();
-                  const currentUsername = getUsername() || "Unknown";
-                  const messageElement = this.createMessageElement(
-                    timestamp,
-                    currentUsername,
-                    this.pendingAutoMessage,
-                    true
-                  );
-                  chatBox.appendChild(messageElement);
-                  chatBox.scrollTop = chatBox.scrollHeight;
-
-                  // Clear the autoMessage from URL to prevent re-sending on page reload
-                  const currentUrl = new URL(window.location.href);
-                  currentUrl.searchParams.delete("autoMessage");
-                  window.history.replaceState({}, "", currentUrl.toString());
-                } catch (err) {
-                  console.error("Failed to send pending autoMessage:", err);
-                }
-                this.pendingAutoMessage = null;
-              }
-            } catch (error) {
-              console.error("Error processing chat history messages:", error);
-            }
-          };
-
-          // Properly await the async function to handle errors and ensure completion
-          processMessages().catch((error) => {
-            console.error("Failed to process chat history:", error);
-          });
-        }
-      } else if (data.type === "message") {
-        const handleIncomingMessage = async () => {
-          try {
-            const timestamp = new Date(data.timestamp).toLocaleTimeString();
-            const currentUserId = getUserId();
-
-            const displayUsername = await this.getUsernameById(data.username);
-
-            const isOwnMessage = data.username === currentUserId;
-            const messageElement = this.createMessageElement(
-              timestamp,
-              displayUsername,
-              data.message,
-              isOwnMessage
-            );
-
-            chatBox.appendChild(messageElement);
-            chatBox.scrollTop = chatBox.scrollHeight;
-          } catch (error) {
-            console.error("Error handling incoming message:", error);
-          }
-        };
-
-        // Properly handle the async function to catch any errors
-        handleIncomingMessage().catch((error) => {
-          console.error("Failed to handle incoming message:", error);
-        });
-      }
-    };
-
-    this.ws.onclose = () => {
-      console.log("Disconnected from WebSocket server");
-      // Clear cache when WebSocket connection is lost
-      this.clearUserCache();
-    };
-
-    this.ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+  /**
+   * Handle back button
+   */
+  private onBack(): void {
+    this.cleanup();
+    this.router.navigate("/profile");
   }
 }
 
