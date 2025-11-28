@@ -240,4 +240,63 @@ export const gameInviteController = {
 
     return ApiResponseHelper.success(responseBody, "Game invitations retrieved");
   },
+
+  /**
+   * Get invitation for internal services (game server) - no auth required
+   * Used by game server to verify invitations exist before starting games
+   * GET /internal/game-invites/:id
+   */
+  getInviteInternal: async (
+    request: FastifyRequest<{ Params: GameInviteParams }>,
+    _reply: FastifyReply
+  ): Promise<ApiResponse<GameInviteResponse>> => {
+    const db = new DatabaseHelper(request.server.db);
+    const errors = requestErrors(request);
+    const { id } = request.params;
+    const gameId = validatePositiveId(id, "game ID");
+
+    // Fetch invitation with usernames (no auth required for internal endpoint)
+    const invite = await db.get<{
+      id: number;
+      inviter_id: number;
+      invitee_id: number;
+      inviter_username: string;
+      invitee_username: string;
+      status: string;
+      created_at: string;
+      updated_at: string;
+    }>(
+      `SELECT
+         fgi.id,
+         fgi.inviter_id,
+         fgi.invitee_id,
+         fgi.status,
+         fgi.created_at,
+         fgi.updated_at,
+         u1.username as inviter_username,
+         u2.username as invitee_username
+       FROM friend_game_invitations fgi
+       JOIN users u1 ON u1.id = fgi.inviter_id
+       JOIN users u2 ON u2.id = fgi.invitee_id
+       WHERE fgi.id = ? AND fgi.status = 'pending'`,
+      [gameId]
+    );
+
+    if (!invite) {
+      throw errors.notFound("Game invitation not found");
+    }
+
+    const responseBody: GameInviteResponse = {
+      game_id: invite.id,
+      inviter_id: String(invite.inviter_id),
+      invitee_id: String(invite.invitee_id),
+      inviter_username: invite.inviter_username,
+      invitee_username: invite.invitee_username,
+      status: invite.status,
+      created_at: invite.created_at,
+      updated_at: invite.updated_at,
+    };
+
+    return ApiResponseHelper.success(responseBody, "Game invitation verified");
+  },
 };

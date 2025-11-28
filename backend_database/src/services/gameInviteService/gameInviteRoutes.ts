@@ -83,6 +83,21 @@ async function gameInviteRoutes(fastify: FastifyInstance) {
     },
     gameInviteController.listInvites
   );
+
+  // Internal endpoint for game server to verify invitations (no auth required)
+  // This endpoint is only accessible from internal services and returns minimal info
+  fastify.get<{ Params: GameInviteParams; Reply: ApiResponse<GameInviteResponse> }>(
+    "/internal/game-invites/:id",
+    {
+      schema: {
+        tags: ["game-invites"],
+        description: "Internal endpoint for game server to verify invitations",
+        summary: "Verify a game invitation exists and is pending",
+        hide: true,
+      },
+    },
+    gameInviteController.getInviteInternal
+  );
 }
 
 export default gameInviteRoutes;
