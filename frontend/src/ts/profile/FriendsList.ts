@@ -281,10 +281,10 @@ export class FriendsList {
     // Only show Invite for established/accepted friends
     if (friend.status !== "accepted") return null;
 
-    const inviteButton = document.createElement("button");
-    inviteButton.textContent = "Invite";
-    inviteButton.title = "Invite to play";
-    inviteButton.classList.add("btn-green", "ml-2");
+  const inviteButton = document.createElement("button");
+  inviteButton.textContent = i18n.t("chat.inviteButton");
+  inviteButton.title = i18n.t("chat.inviteButton");
+  inviteButton.classList.add("btn-green", "ml-2");
 
     inviteButton.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the profile navigation
@@ -297,7 +297,8 @@ export class FriendsList {
           }
 
           inviteButton.disabled = true;
-          inviteButton.textContent = "Sending...";
+          // use a generic loading string from translations if available
+          inviteButton.textContent = i18n.t("common.loading") || "Sending...";
 
           const response = await fetchWithRefresh(
             `${config.apiUrl}/api/game-invites/${friend.user_id}`,
@@ -316,7 +317,7 @@ export class FriendsList {
             const err = await response.json().catch(() => ({}));
             console.error("Failed to create friend game invite", err);
             inviteButton.disabled = false;
-            inviteButton.textContent = "Invite";
+            inviteButton.textContent = i18n.t("chat.inviteButton");
             alert(err.message || "Failed to create invitation");
             return;
           }
@@ -326,7 +327,7 @@ export class FriendsList {
           if (!gameId) {
             console.error("API did not return gameId", body);
             inviteButton.disabled = false;
-            inviteButton.textContent = "Invite";
+            inviteButton.textContent = i18n.t("chat.inviteButton");
             alert("Server did not return a game id");
             return;
           }

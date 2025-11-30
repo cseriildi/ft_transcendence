@@ -3,6 +3,7 @@ import { isUserAuthorized, showError } from "../utils/utils.js";
 import { config } from "../config.js";
 import { showErrorPopup } from "../main.js";
 import { SecureTokenManager } from "../utils/secureTokenManager.js";
+import { i18n } from "../utils/i18n.js";
 
 export class Login {
   private router: Router;
@@ -97,8 +98,8 @@ export class Login {
     const twofaCode = formData.get("twofa-code") as string | null;
 
     if (!twofaCode || twofaCode.length !== 6) {
-      showErrorPopup("Please enter a 6-digit code");
-      return { success: false, message: "Please enter a 6-digit code" };
+      showErrorPopup(i18n.t("edit.enter6Digit"));
+      return { success: false, message: i18n.t("edit.enter6Digit") };
     }
 
     if (!this.tempToken) {

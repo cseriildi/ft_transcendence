@@ -2,6 +2,7 @@ import { config } from "../config.js";
 import { getAccessToken, getUserId } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { showErrorPopup } from "../main.js";
+import { i18n } from "./i18n.js";
 
 export interface TwoFASetupData {
   secret: string;
@@ -21,7 +22,7 @@ export class TwoFactorAuth {
   public async setup(): Promise<TwoFASetupData | null> {
     const userId = getUserId();
     if (!userId) {
-      showErrorPopup("User ID not found. Please log in again.");
+      showErrorPopup(i18n.t("error.sessionExpired") || "User ID not found. Please log in again.");
       return null;
     }
 
@@ -61,7 +62,7 @@ export class TwoFactorAuth {
    */
   public async verify(token: string): Promise<boolean> {
     if (!token || token.length !== 6) {
-      showErrorPopup("Please enter a 6-digit verification code");
+      showErrorPopup(i18n.t("edit.enter6Digit"));
       return false;
     }
 
@@ -84,11 +85,11 @@ export class TwoFactorAuth {
         return data.success === true;
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Invalid verification code");
+  throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
       }
     } catch (error) {
       console.error("2FA verify error:", error);
-      showErrorPopup(error instanceof Error ? error.message : "Failed to verify 2FA code");
+      showErrorPopup(error instanceof Error ? error.message : i18n.t("edit.enter6Digit"));
       return false;
     }
   }
@@ -98,7 +99,7 @@ export class TwoFactorAuth {
    */
   public async enable(token: string): Promise<boolean> {
     if (!token || token.length !== 6) {
-      showErrorPopup("Please enter a 6-digit verification code");
+      showErrorPopup(i18n.t("edit.enter6Digit"));
       return false;
     }
 
@@ -124,11 +125,11 @@ export class TwoFactorAuth {
         throw new Error(data.message || "Failed to enable 2FA");
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to enable 2FA");
+  throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
       }
     } catch (error) {
       console.error("2FA enable error:", error);
-      showErrorPopup(error instanceof Error ? error.message : "Failed to enable 2FA");
+      showErrorPopup(error instanceof Error ? error.message : i18n.t("edit.enter6Digit"));
       return false;
     }
   }
@@ -138,7 +139,7 @@ export class TwoFactorAuth {
    */
   public async disable(token: string): Promise<boolean> {
     if (!token) {
-      showErrorPopup("Please enter your 2FA code to disable 2FA");
+      showErrorPopup(i18n.t("edit.enter2faCode"));
       return false;
     }
 
@@ -166,11 +167,11 @@ export class TwoFactorAuth {
         throw new Error(data.message || "Failed to disable 2FA");
       } else {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to disable 2FA");
+  throw new Error(errorData.message || i18n.t("edit.enter2faCode"));
       }
     } catch (error) {
       console.error("2FA disable error:", error);
-      showErrorPopup(error instanceof Error ? error.message : "Failed to disable 2FA");
+      showErrorPopup(error instanceof Error ? error.message : i18n.t("edit.enter2faCode"));
       return false;
     }
   }

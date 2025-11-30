@@ -218,18 +218,18 @@ export class Edit {
     }
 
     if (status === null) {
-      statusText.textContent = "Error loading status";
+      statusText.textContent = i18n.t("edit.statusError");
       statusText.className = "font-semibold text-red-400";
       return;
     }
 
     if (status.enabled) {
-      statusText.textContent = "Enabled";
+      statusText.textContent = i18n.t("edit.enabled");
       statusText.className = "font-semibold text-neon-green";
       enableBtn.classList.add("hidden");
       disableSection.classList.remove("hidden");
     } else {
-      statusText.textContent = "Disabled";
+      statusText.textContent = i18n.t("edit.disabled");
       statusText.className = "font-semibold text-neon-pink";
       enableBtn.classList.remove("hidden");
       disableSection.classList.add("hidden");
@@ -319,13 +319,13 @@ export class Edit {
 
     const code = codeInput.value.trim();
     if (code.length !== 6) {
-      showErrorPopup("Please enter a 6-digit code");
+      showErrorPopup(i18n.t("edit.enter6Digit"));
       return;
     }
 
     const success = await this.twoFactorAuth.enable(code);
     if (success) {
-      showSuccessPopup("Two-Factor Authentication enabled successfully!");
+      showSuccessPopup(i18n.t("edit_success.2fa_enabled"));
       this.cancelSetup2FA();
       await this.update2FAStatus();
     }
@@ -337,13 +337,13 @@ export class Edit {
 
     const token = tokenInput.value.trim();
     if (!token) {
-      showErrorPopup("Please enter your 2FA code");
+      showErrorPopup(i18n.t("edit.enter2faCode"));
       return;
     }
 
     const success = await this.twoFactorAuth.disable(token);
     if (success) {
-      showSuccessPopup("Two-Factor Authentication disabled successfully!");
+      showSuccessPopup(i18n.t("edit_success.2fa_disabled"));
       tokenInput.value = "";
       await this.update2FAStatus();
     }
@@ -365,7 +365,7 @@ export class Edit {
 
     try {
       await navigator.clipboard.writeText(secretElement.textContent);
-      showSuccessPopup("Secret copied to clipboard!");
+  showSuccessPopup(i18n.t("edit.secretCopied"));
     } catch (error) {
       showErrorPopup("Failed to copy secret to clipboard");
     }

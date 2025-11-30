@@ -43,8 +43,8 @@
     "title": "Registrieren",
     "emailLabel": "E-Mail",
     "emailPlaceholder": "Gib deine E-Mail ein",
-    "usernameLabel": "Nickname",
-    "usernamePlaceholder": "Gib deinen Nickname ein",
+    "usernameLabel": "Benutzername",
+    "usernamePlaceholder": "Gib deinen Benutzernamen ein",
     "passwordLabel": "Passwort",
     "passwordPlaceholder": "Gib dein Passwort ein",
     "repeatPasswordLabel": "Passwort wiederholen",
@@ -84,6 +84,7 @@
     "players8": "8 Spieler",
     "enterNames": "Spielernamen eingeben",
     "startTournament": "Turnier starten",
+    "playerPlaceholder": "Spielername {{i}}",
     "emptyNames": "Alle Spielernamen dürfen nicht leer sein",
     "duplicateNames": "Alle Spielernamen müssen einzigartig sein",
     "setupFailed": "Turnieraufbau fehlgeschlagen"
@@ -161,11 +162,14 @@
     "chooseFile": "Datei auswählen",
     "noFileChosen": "Keine Datei ausgewählt",
     "emailLabel": "E-Mail",
-    "usernameLabel": "Nickname",
+    "usernameLabel": "Benutzername",
     "saveButton": "Speichern",
     "twoFactorHeading": "Zwei-Faktor-Authentifizierung",
     "statusLabel": "Status:",
     "statusLoading": "Laden...",
+    "statusError": "Fehler beim Laden des Status",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
     "enableButton": "Zwei-Faktor-Authentifizierung aktivieren",
     "disableInstructions": "Gib deinen 2FA-Code ein, um 2FA zu deaktivieren:",
     "disableButton": "Zwei-Faktor-Authentifizierung deaktivieren",
@@ -176,7 +180,14 @@
     "setupStep2": "2. Gib den 6-stelligen Code aus deiner Authenticator-App ein, um 2FA zu aktivieren:",
     "enableModalButton": "2FA aktivieren",
     "cancelButton": "Abbrechen",
-    "backToProfile": "Zurück zum Profil"
+    "backToProfile": "Zurück zum Profil",
+    "enter6Digit": "Bitte gib einen 6-stelligen Code ein",
+    "enter2faCode": "Bitte gib deinen 2FA-Code ein",
+    "secretCopied": "Geheimnis in die Zwischenablage kopiert!"
+  },
+  "edit_success": {
+    "2fa_enabled": "Zwei-Faktor-Authentifizierung erfolgreich aktiviert!",
+    "2fa_disabled": "Zwei-Faktor-Authentifizierung erfolgreich deaktiviert!"
   },
 
   "error": {

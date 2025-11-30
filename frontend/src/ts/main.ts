@@ -235,17 +235,33 @@ const initPongPage = async () => {
     for (let i = 1; i <= playerCount; i++) {
       const inputWrapper = document.createElement("div");
       inputWrapper.className = "";
-      inputWrapper.innerHTML = `
-      <input
-        type="text"
-        id="player-${i}"
-        class="form-input"
-        placeholder="Player ${i} name"
-        maxlength="20"
-      />
-    `;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.id = `player-${i}`;
+      input.className = "form-input";
+      input.maxLength = 20;
+      // set translated placeholder now
+      try {
+        input.placeholder = i18n.t("tournament.playerPlaceholder", { i });
+      } catch (e) {
+        input.placeholder = `Player ${i} name`;
+      }
+      // store index to update on language change
+      input.setAttribute("data-player-index", String(i));
+      inputWrapper.appendChild(input);
       tournamentNames.appendChild(inputWrapper);
     }
+
+    // update placeholders when language changes
+    window.addEventListener("languageChanged", () => {
+      const inputs = tournamentNames.querySelectorAll<HTMLInputElement>("input[data-player-index]");
+      inputs.forEach((inp) => {
+        const idx = Number(inp.getAttribute("data-player-index") || "0");
+        if (idx > 0) {
+          inp.placeholder = i18n.t("tournament.playerPlaceholder", { i: idx });
+        }
+      });
+    });
     showElement(tournamentForm);
     showElement(startTournamentBtn);
   };

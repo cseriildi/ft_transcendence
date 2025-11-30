@@ -54,7 +54,7 @@ export class I18n {
     this.updatePage();
   }
 
-  t(key: string): string {
+  t(key: string, vars?: Record<string, string | number>): string {
     const parts = key.split(".");
     let value: any = this.translations[this.currentLang];
 
@@ -75,7 +75,19 @@ export class I18n {
       value = fallback;
     }
 
-    return typeof value === "string" ? value : key;
+    if (typeof value === "string") {
+      let result = value;
+      if (vars) {
+        for (const k of Object.keys(vars)) {
+          const re = new RegExp(`{{\\s*${k}\\s*}}`, "g");
+          result = result.replace(re, String(vars[k]));
+        }
+      }
+      return result;
+    }
+
+    console.warn(`i18n: missing translation for key=\"${key}\" in lang=\"${this.currentLang}\". Falling back to key.`);
+    return key;
   }
 
   updatePage(): void {
