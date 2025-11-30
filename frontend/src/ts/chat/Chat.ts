@@ -5,13 +5,12 @@ import { MessageRenderer } from "./MessageRenderer.js";
 import { WebSocketHandler } from "./WebSocketHandler.js";
 import { ChatActions } from "./ChatActions.js";
 import { ChatUI } from "./ChatUI.js";
+import { config } from "../config.js";
+import { i18n } from "../utils/i18n.js";
 
 /**
  * Main Chat class that orchestrates all chat-related functionality
  */
-import { getUserId, isUserAuthorized, getUsername, getAccessToken } from "../utils/utils.js";
-import { config } from "../config.js";
-import { i18n } from "../utils/i18n.js";
 
 export class Chat {
   private router: Router;

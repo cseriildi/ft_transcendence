@@ -148,7 +148,8 @@
     "blockFailed": "Failed to block user. Please try again.",
     "blockError": "An error occurred while blocking the user. Please try again.",
     "blockConfirmPrefix": "Are you sure you want to block",
-    "blockConfirmSuffix": "You will no longer be able to send or receive messages from this user."
+    "blockConfirmSuffix": "You will no longer be able to send or receive messages from this user.",
+    "inviteButton": "🎮 Invite"
   },
 
   "edit": {

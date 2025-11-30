@@ -151,7 +151,8 @@
     "blockFailed": "Fehler beim Sperren des Benutzers. Bitte versuche es erneut.",
     "blockError": "Beim Sperren des Benutzers ist ein Fehler aufgetreten. Bitte versuche es erneut.",
     "blockConfirmPrefix": "Bist du sicher, dass du",
-    "blockConfirmSuffix": "sperren möchtest? Du kannst keine Nachrichten mehr mit diesem Benutzer senden oder empfangen."
+    "blockConfirmSuffix": "sperren möchtest? Du kannst keine Nachrichten mehr mit diesem Benutzer senden oder empfangen.",
+    "inviteButton": "🎮 Einladen"
   },
 
   "edit": {
