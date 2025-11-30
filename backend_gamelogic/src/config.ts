@@ -48,7 +48,7 @@ export const config = {
 
   // Backend database service URL
   backendDatabase: {
-    url: getOptionalEnvVar("BACKEND_DATABASE_URL", "http://backend_database:3000"),
+    url: getOptionalEnvVar("BACKEND_DATABASE_URL", "http://databank:3000"),
   },
 
   // Logging

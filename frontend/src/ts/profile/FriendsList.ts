@@ -138,10 +138,13 @@ export class FriendsList {
 
     // Chat button
     const chatButton = this.createChatButton(friend);
+    // Invite button (shown only for established friends)
+    const inviteButton = this.createInviteButton(friend);
 
     userItem.appendChild(avatarContainer);
     userItem.appendChild(usernameContainer);
     userItem.appendChild(chatButton);
+    if (inviteButton) userItem.appendChild(inviteButton);
 
     // Make the entire user item clickable to view profile
     userItem.addEventListener("click", () => {
@@ -266,5 +269,91 @@ export class FriendsList {
     });
 
     return chatButton;
+  }
+
+  private createInviteButton(friend: {
+    user_id: number;
+    username: string;
+    status: string;
+    is_inviter: boolean;
+    is_online: boolean;
+  }): HTMLButtonElement | null {
+    // Only show Invite for established/accepted friends
+    if (friend.status !== "accepted") return null;
+
+    const inviteButton = document.createElement("button");
+    inviteButton.textContent = "Invite";
+    inviteButton.title = "Invite to play";
+    inviteButton.classList.add("btn-green", "ml-2");
+
+    inviteButton.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent triggering the profile navigation
+      (async () => {
+        try {
+          const currentUserId = getUserId();
+          if (!currentUserId) {
+            console.error("No current user ID; cannot send invite");
+            return;
+          }
+
+          inviteButton.disabled = true;
+          inviteButton.textContent = "Sending...";
+
+          const response = await fetchWithRefresh(
+            `${config.apiUrl}/api/game-invites/${friend.user_id}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${getAccessToken()}`,
+              },
+              credentials: "include",
+              body: JSON.stringify({}),
+            }
+          );
+
+          if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            console.error("Failed to create friend game invite", err);
+            inviteButton.disabled = false;
+            inviteButton.textContent = "Invite";
+            alert(err.message || "Failed to create invitation");
+            return;
+          }
+
+          const body = await response.json();
+          const gameId = body.data?.game_id;
+          if (!gameId) {
+            console.error("API did not return gameId", body);
+            inviteButton.disabled = false;
+            inviteButton.textContent = "Invite";
+            alert("Server did not return a game id");
+            return;
+          }
+
+          // Prepare chat navigation: open or create 1:1 chat and send the game link automatically
+          const chatId = [Number(currentUserId), Number(friend.user_id)]
+            .sort((a, b) => a - b)
+            .join("-");
+          const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
+          const message = `Game Invitation! 🎮 ${gameLink} 🎮`;
+
+          // Navigate to chat page with an autoMessage parameter
+          const encoded = encodeURIComponent(message);
+          this.router.navigate(
+            `/chat?chatId=${chatId}&username=${friend.username}&autoMessage=${encoded}`
+          );
+        } catch (err) {
+          console.error("Error sending invite:", err);
+          inviteButton.disabled = false;
+          inviteButton.textContent = "Invite";
+          alert("Failed to send invitation. Please try again.");
+        }
+      })();
+    });
+
+    inviteButton.setAttribute("data-user-id", String(friend.user_id));
+
+    return inviteButton;
   }
 }

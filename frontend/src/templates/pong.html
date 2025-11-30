@@ -54,10 +54,10 @@
           >How many players?</label
         >
         <div class="flex gap-4 justify-center mb-6">
-          <button id="tournament-4-btn" class="btn-pink" data-i18n="tournament.players4">
+          <button id="tournament-4-btn" class="hidden btn-pink" data-i18n="tournament.players4">
             4 Players
           </button>
-          <button id="tournament-8-btn" class="btn-pink" data-i18n="tournament.players8">
+          <button id="tournament-8-btn" class="hidden btn-pink" data-i18n="tournament.players8">
             8 Players
           </button>
         </div>
@@ -70,71 +70,61 @@
         <div id="player-inputs-container" class="space-y-4 mb-4">
           <!-- Player input fields will be generated here -->
         </div>
-        <button
-          id="start-tournament-btn"
-          class="w-full btn-pink"
-          data-i18n="tournament.startTournament"
-        >
-          Start Tournament
-        </button>
+        <button id="start-tournament-btn" class="w-full btn-pink">Start Tournament</button>
       </div>
     </div>
 
-    <div class="text-center mb-8">
-      <button id="new-game-btn" class="btn-pink" data-i18n="pong.newGame">New Game</button>
-    </div>
+    <!-- Tournament Setup (shown only in tournament mode) -->
+    <div id="tournament-setup" class="hidden text-center mb-8">
+      <h2 class="text-2xl font-bold text-white mb-6">Tournament Setup</h2>
 
-    <!-- AI Difficulty Selection Modal -->
-    <div
-      id="difficulty-modal"
-      class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50"
-    >
-      <div
-        class="bg-gradient-to-br from-gray-900 to-black border-2 border-neon-pink rounded-lg p-8 max-w-md shadow-neon relative"
-      >
-        <button
-          id="difficulty-close"
-          class="absolute top-2 right-2 text-neon-pink hover:text-white text-2xl font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-neon-pink hover:bg-opacity-20 transition-colors"
-        >
-          ×
-        </button>
-        <h2
-          class="text-2xl font-bold text-neon-green text-center mb-6 drop-shadow-neon"
-          data-i18n="pong.selectDifficulty"
-        >
-          Select Difficulty
-        </h2>
-        <div class="flex flex-col space-y-4">
-          <button id="difficulty-easy" class="btn-pink" data-i18n="pong.difficulty.easy">
-            Easy
-          </button>
-          <button id="difficulty-medium" class="btn-pink" data-i18n="pong.difficulty.medium">
-            Medium
-          </button>
-          <button id="difficulty-hard" class="btn-pink" data-i18n="pong.difficulty.hard">
-            Hard
-          </button>
+      <div class="mb-6">
+        <label class="text-lg text-neon-green mb-4 block">How many players?</label>
+        <div class="flex gap-4 justify-center mb-6">
+          <button id="tournament-4-btn" class="btn-pink">4 Players</button>
+          <button id="tournament-8-btn" class="btn-pink">8 Players</button>
         </div>
       </div>
+
+      <div id="player-names-form" class="hidden form-card max-w-md mx-auto">
+        <h3 class="text-xl text-neon-green mb-4">Enter Player Names</h3>
+        <div id="player-inputs-container" class="space-y-4 mb-4">
+          <!-- Player input fields will be generated here -->
+        </div>
+        <button id="start-tournament-btn" class="w-full btn-pink">Start Tournament</button>
+      </div>
     </div>
 
     <div class="text-center mb-8">
-      <button id="start-game-btn" class="btn-pink" data-i18n="pong.startGame">Start Game</button>
+      <button id="new-game-btn" class="hidden btn-pink" data-i18n="pong.newGame">New Game</button>
     </div>
 
-    <div class="flex justify-center gap-16 mb-6">
-      <div class="text-center">
-        <p id="name-player1" class="text-neon-green text-sm mb-1" data-i18n="pong_dynamic.player1">Player 1</p>
-        <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
+    <!-- AI Difficulty Selection -->
+    <div id="difficulty-menu" class="hidden text-center mb-8">
+      <label class="text-lg text-neon-green mb-4 block">Select Difficulty</label>
+      <div class="text-center mb-4">
+        <button id="difficulty-easy" class="hidden btn-pink w-48">Easy</button>
       </div>
-      <div class="text-neon-pink text-4xl font-bold self-center">:</div>
-      <div class="text-center">
-        <p id="name-player2" class="text-neon-green text-sm mb-1" data-i18n="pong_dynamic.player2">Player 2</p>
-        <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
+      <div class="text-center mb-4">
+        <button id="difficulty-medium" class="hidden btn-pink w-48">Medium</button>
+      </div>
+      <div class="text-center mb-4">
+        <button id="difficulty-hard" class="hidden btn-pink w-48">Hard</button>
       </div>
     </div>
 
-    <div class="flex flex-col text-center justify-center mb-8">
+    <div id="canvas-container" class="hidden flex flex-col text-center justify-center mb-8">
+      <div id="score-board" class="flex justify-center gap-16 mb-6">
+        <div class="text-center">
+          <p id="name-player1" class="text-neon-green text-sm mb-1">Player 1</p>
+          <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
+        </div>
+        <div class="text-neon-pink text-4xl font-bold self-center">:</div>
+        <div class="text-center">
+          <p id="name-player2" class="text-neon-green text-sm mb-1">Player 2</p>
+          <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
+        </div>
+      </div>
       <canvas
         id="pong-canvas"
         class="w-full max-w-2xl bg-black border-2 border-neon-pink mx-auto shadow-neon"
@@ -145,6 +135,36 @@
       <p class="mt-4 text-neon-green drop-shadow-neon" data-i18n="pong.streamInfo">
         Pong game streamed via WebSocket
       </p>
+    </div>
+    <!-- Friends Section -->
+    <div
+      id="friends-card"
+      class="hidden glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center"
+    >
+      <h3 class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center" data-i18n="profile.friendsHeading">Friends</h3>
+      <div id="friends-list" class="w-full max-w-md mx-auto">
+        <!-- Users list will be dynamically loaded here -->
+      </div>
+      <div class="w-full flex justify-center mt-4 sm:mt-6">
+        <button id="find-friends-btn" class="hidden btn-green text-sm sm:text-base">
+          Friends Management
+        </button>
+      </div>
+    </div>
+    <!-- Friends Section -->
+    <div
+      id="friends-card"
+      class="hidden glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center"
+    >
+      <h3 class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center">Friends</h3>
+      <div id="friends-list" class="w-full max-w-md mx-auto">
+        <!-- Users list will be dynamically loaded here -->
+      </div>
+      <div class="w-full flex justify-center mt-4 sm:mt-6">
+        <button id="find-friends-btn" class="hidden btn-green text-sm sm:text-base">
+          Friends Management
+        </button>
+      </div>
     </div>
     <div class="text-center">
       <button id="back-btn" class="btn-green" data-i18n="common.backToHome">Back to Home</button>

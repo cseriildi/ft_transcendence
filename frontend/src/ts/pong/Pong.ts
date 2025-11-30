@@ -11,6 +11,7 @@ export interface GameState {
   paddle2: { cx?: number; cy?: number; capsule: Capsule };
   score?: { player1: number; player2: number };
   countdown?: number;
+  isWaiting?: boolean;
 }
 
 interface Capsule {
@@ -33,10 +34,8 @@ export class Pong {
   private currentGameMode: string = "local";
   private currentPlayerInfo: PlayerInfo | null = null;
   private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
-  private isWaitingForOpponent: boolean = false; // Track if waiting for opponent
   private player1Username: string = "Player 1";
   private player2Username: string = "Player 2";
-  private isWaitingForStart: boolean = false; // Tournament
 
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
@@ -69,7 +68,8 @@ export class Pong {
   public startGame(
     gameMode: string,
     playerInfo?: PlayerInfo,
-    difficulty?: "easy" | "medium" | "hard"
+    difficulty?: "easy" | "medium" | "hard",
+    gameId?: string
   ) {
     this.currentGameMode = gameMode;
 
@@ -79,41 +79,22 @@ export class Pong {
       return;
     }
 
+    if (gameMode === "friend" && !gameId) {
+      console.error("❌ Game ID is required for friend mode");
+      return;
+    }
+
     this.currentPlayerInfo = playerInfo || null;
 
-    const sendStart = () => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        const message: any = {
-          type: "newGame",
-          mode: this.currentGameMode,
-        };
-
-        // Only include player field if playerInfo is provided
-        if (this.currentPlayerInfo) {
-          message.player = this.currentPlayerInfo;
-        }
-
-        // Include difficulty for AI mode
-        if (difficulty) {
-          message.difficulty = difficulty;
-        }
-
-        this.ws.send(JSON.stringify(message));
-      }
+    const message: Record<string, unknown> = {
+      type: "newGame",
+      mode: this.currentGameMode,
     };
+    if (this.currentPlayerInfo) message.player = this.currentPlayerInfo;
+    if (difficulty) message.difficulty = difficulty;
+    if (gameId) message.gameId = gameId;
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      sendStart();
-    } else if (this.ws) {
-      // wait for open then send once
-      this.ws.addEventListener(
-        "open",
-        () => {
-          sendStart();
-        },
-        { once: true }
-      );
-    }
+    this.sendWhenConnected(message);
   }
 
   /**
@@ -124,50 +105,38 @@ export class Pong {
   }
 
   newTournament(playerNames: string[]) {
-    const sendStart = () => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        const message: any = {
-          type: "newTournament",
-          mode: this.currentGameMode,
-          players: playerNames,
-        };
-
-        this.ws.send(JSON.stringify(message));
-      }
+    const message: Record<string, unknown> = {
+      type: "newTournament",
+      mode: this.currentGameMode,
+      players: playerNames,
     };
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      sendStart();
-    } else if (this.ws) {
-      this.ws.addEventListener(
-        "open",
-        () => {
-          sendStart();
-        },
-        { once: true }
-      );
-    }
+    this.sendWhenConnected(message);
   }
 
-  startTournamentGame() {
-    const sendStart = () => {
-      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-        const message: any = {
-          type: "startGame",
-          mode: this.currentGameMode,
-        };
+  /**
+   * Send a JSON message immediately if the WebSocket is open,
+   * otherwise send it once when the socket opens. Warn if `ws` is null.
+   */
+  private sendWhenConnected(message: Record<string, unknown>) {
+    if (!this.ws) {
+      console.warn("WebSocket not initialized, cannot send message", message);
+      return;
+    }
 
+    const send = () => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify(message));
       }
     };
 
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      sendStart();
-    } else if (this.ws) {
+    if (this.ws.readyState === WebSocket.OPEN) {
+      send();
+    } else {
       this.ws.addEventListener(
         "open",
         () => {
-          sendStart();
+          send();
         },
         { once: true }
       );
@@ -190,15 +159,6 @@ export class Pong {
           // Handle error messages from server
           console.error("❌ Game server error:", message.message);
           alert(`${i18n.t("pong.gameError")}: ${message.message}`);
-        } else if (message.type === "waiting") {
-          if (this.currentGameMode === "tournament") {
-            this.isWaitingForStart = true;
-          } else if (this.currentGameMode === "remote") {
-            this.isWaitingForOpponent = true;
-          }
-        } else if (message.type === "ready") {
-          this.isWaitingForOpponent = false;
-          this.isWaitingForStart = false;
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
             console.log("🏆 Game Over! Result:", message.data);
@@ -206,16 +166,9 @@ export class Pong {
             console.warn("⚠️ Player left:", message.message);
             alert(`⚠️ ${message.message}`);
           }
-          if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            this.ws.send(
-              JSON.stringify({
-                type: "nextGame",
-                mode: this.currentGameMode,
-              })
-            );
-          }
+          this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
         }
-        if (["gameSetup", "ready", "waiting"].includes(message.type)) {
+        if (["gameSetup"].includes(message.type)) {
           this.gameState = message.data;
 
           if (["friend", "remote"].includes(this.currentGameMode)) {
@@ -252,6 +205,9 @@ export class Pong {
             this.updateCapsule(this.gameState.paddle2);
             if (message.data.countdown) {
               this.gameState.countdown = message.data.countdown;
+            }
+            if (message.data.isWaiting) {
+              this.gameState.isWaiting = message.data.isWaiting;
             }
             // Update scores
             if (message.data.score) {
@@ -476,34 +432,41 @@ export class Pong {
     this.drawCapsule(paddle1.capsule, scale);
     this.drawCapsule(paddle2.capsule, scale);
 
-    // Draw waiting for opponent message
-    if (this.isWaitingForOpponent) {
-      this.ctx.fillStyle = "#fff";
-      this.ctx.font = "bold 200px Arial";
-      this.ctx.textAlign = "center";
-      this.ctx.textBaseline = "middle";
-      this.ctx.fillText(i18n.t("pong.waitingForOpponent"), width / 2, height / 2);
-      return;
-    }
-
-    // Draw waiting for start message
-    if (this.isWaitingForStart) {
-      this.ctx.fillStyle = "#fff";
-      this.ctx.font = "bold 150px Arial";
-      this.ctx.textAlign = "center";
-      this.ctx.textBaseline = "middle";
-      this.ctx.fillText(i18n.t("pong.waitingForStart"), width / 2, height / 2);
-      return;
-    }
-
-    // Draw count down - after waiting messages so it takes priority when countdown is active
-    if (!this.isWaitingForStart && !this.isWaitingForOpponent && countdown && countdown > 0) {
+    if (this.gameState.isWaiting) {
+      switch (this.currentGameMode) {
+        case "remote": {
+          this.ctx.fillStyle = "#fff";
+          this.ctx.font = "bold 200px Arial";
+          this.ctx.textAlign = "center";
+          this.ctx.textBaseline = "middle";
+          this.ctx.fillText(i18n.t("pong.waitingForOpponent"), width / 2, height / 2);
+          break;
+        }
+        case "friend": {
+          this.ctx.fillStyle = "#fff";
+          this.ctx.font = "bold 150px Arial";
+          this.ctx.textAlign = "center";
+          this.ctx.textBaseline = "middle";
+          this.ctx.fillText("Waiting for friend to join...", width / 2, height / 2);
+          break;
+        }
+        case "tournament": {
+          this.ctx.fillStyle = "#fff";
+          this.ctx.font = "bold 150px Arial";
+          this.ctx.textAlign = "center";
+          this.ctx.textBaseline = "middle";
+          this.ctx.fillText(i18n.t("pong.waitingForStart"), width / 2, height / 2);
+          break;
+        }
+        default:
+          break;
+      }
+    } else if (countdown && countdown > 0) {
       this.ctx.fillStyle = "#fff";
       this.ctx.font = "bold 500px Arial";
       this.ctx.textAlign = "center";
       this.ctx.textBaseline = "middle";
       this.ctx.fillText(countdown.toString(), width / 2, height / 2);
-      return;
     }
   }
 

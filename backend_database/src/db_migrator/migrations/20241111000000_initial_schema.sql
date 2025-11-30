@@ -72,6 +72,21 @@ CREATE TABLE IF NOT EXISTS friends (
   UNIQUE(user1_id, user2_id)
 );
 
+-- Friend game invitations: persistence for friend-to-friend game invites
+CREATE TABLE IF NOT EXISTS friend_game_invitations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inviter_id INTEGER NOT NULL,
+  invitee_id INTEGER NOT NULL,
+  status TEXT CHECK(status IN ('pending','accepted','cancelled')) DEFAULT 'pending',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (invitee_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_friend_game_inviter ON friend_game_invitations(inviter_id);
+CREATE INDEX IF NOT EXISTS idx_friend_game_invitee ON friend_game_invitations(invitee_id);
+
 -- Indexes for performance optimization
 CREATE INDEX IF NOT EXISTS idx_avatars_user_id ON avatars(user_id);
 CREATE INDEX IF NOT EXISTS idx_avatars_file_name ON avatars(file_name);
