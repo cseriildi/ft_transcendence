@@ -1,15 +1,15 @@
 <div class="page-bg py-8">
   <div class="max-w-md mx-auto px-4">
-  <div class="flex justify-end mb-4">
-    <select 
-      id="lang-select" 
-      class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
-    >
-      <option value="en">🇬🇧 English</option>
-      <option value="de">🇩🇪 Deutsch</option>
-    </select>
-  </div>
-  <h1 class="page-title text-neon-green break-words" data-i18n="edit.title">Edit Profile</h1>
+    <div class="flex justify-end mb-4">
+      <select
+        id="lang-select"
+        class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+      >
+        <option value="en">🇬🇧 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+      </select>
+    </div>
+    <h1 class="page-title text-neon-green break-words" data-i18n="edit.title">Edit Profile</h1>
     <div class="form-card">
       <form id="edit-form" class="space-y-4">
         <div>
@@ -21,8 +21,13 @@
             class="hidden"
             accept="image/jpeg,image/jpg,image/png"
           />
-          <label for="avatar" class="flex btn-pink" data-i18n="edit.chooseFile"> Choose File </label>
-          <span id="file-name" class="block mt-2 text-sm text-gray-400 text-center" data-i18n="edit.noFileChosen"
+          <label for="avatar" class="flex btn-pink" data-i18n="edit.chooseFile">
+            Choose File
+          </label>
+          <span
+            id="file-name"
+            class="block mt-2 text-sm text-gray-400 text-center"
+            data-i18n="edit.noFileChosen"
             >No file chosen</span
           >
         </div>
@@ -40,20 +45,28 @@
 
     <!-- 2FA Security Section -->
     <div class="form-card mt-6">
-      <h2 class="text-lg font-semibold text-white mb-4" data-i18n="edit.twoFactorHeading">Two-Factor Authentication</h2>
+      <h2 class="text-lg font-semibold text-white mb-4" data-i18n="edit.twoFactorHeading">
+        Two-Factor Authentication
+      </h2>
 
       <!-- 2FA Status Display -->
       <div id="twofa-status" class="mb-4">
         <div class="flex items-center justify-between">
           <span class="text-gray-300" data-i18n="edit.statusLabel">Status:</span>
-          <span id="twofa-status-text" class="font-semibold" data-i18n="edit.statusLoading">Loading...</span>
+          <span id="twofa-status-text" class="font-semibold" data-i18n="edit.statusLoading"
+            >Loading...</span
+          >
         </div>
       </div>
 
       <!-- 2FA Controls -->
       <div id="twofa-controls">
         <!-- Enable 2FA Button (shown when disabled) -->
-        <button id="enable-2fa-btn" class="w-full btn-green mb-4 hidden" data-i18n="edit.enableButton">
+        <button
+          id="enable-2fa-btn"
+          class="w-full btn-green mb-4 hidden"
+          data-i18n="edit.enableButton"
+        >
           Enable Two-Factor Authentication
         </button>
 
@@ -80,7 +93,9 @@
       <!-- 2FA Setup Modal Content (hidden by default) -->
       <div id="twofa-setup-modal" class="hidden">
         <div class="glass-card p-6">
-          <h3 class="text-lg font-semibold text-white mb-4" data-i18n="edit.setupHeading">Setup Two-Factor Authentication</h3>
+          <h3 class="text-lg font-semibold text-white mb-4" data-i18n="edit.setupHeading">
+            Setup Two-Factor Authentication
+          </h3>
 
           <!-- Step 1: QR Code -->
           <div id="setup-step1" class="mb-6">
@@ -136,13 +151,21 @@
               />
             </div>
             <div class="flex gap-2">
-              <button id="enable-2fa-modal-btn" class="flex-1 btn-green" data-i18n="edit.enableModalButton">Enable 2FA</button>
+              <button
+                id="enable-2fa-modal-btn"
+                class="flex-1 btn-green"
+                data-i18n="edit.enableModalButton"
+              >
+                Enable 2FA
+              </button>
             </div>
           </div>
 
           <!-- Cancel Button -->
           <div class="mt-4 text-center">
-            <button id="cancel-setup-btn" class="btn-pink" data-i18n="edit.cancelButton">Cancel</button>
+            <button id="cancel-setup-btn" class="btn-pink" data-i18n="edit.cancelButton">
+              Cancel
+            </button>
           </div>
         </div>
       </div>

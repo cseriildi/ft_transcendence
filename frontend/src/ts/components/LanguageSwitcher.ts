@@ -27,12 +27,12 @@ export class LanguageSwitcher {
     const select = document.querySelector<HTMLSelectElement>("#lang-select");
     if (select) {
       const currentValue = select.value || i18n.getCurrentLanguage();
-      
+
       // Remove old listener if exists by cloning the element
       const newSelect = select.cloneNode(true) as HTMLSelectElement;
       select.parentNode?.replaceChild(newSelect, select);
       newSelect.value = currentValue;
-      
+
       newSelect.addEventListener("change", async (e) => {
         const target = e.target as HTMLSelectElement;
         const newLang = target.value;

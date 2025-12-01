@@ -1,15 +1,15 @@
 <div class="page-bg py-8">
   <div class="max-w-md mx-auto px-4">
-  <div class="flex justify-end mb-4">
-    <select 
-      id="lang-select" 
-      class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
-    >
-      <option value="en">🇬🇧 English</option>
-      <option value="de">🇩🇪 Deutsch</option>
-    </select>
-  </div>
-  <h1 class="page-title text-neon-green break-words" data-i18n="auth.title">Authentication</h1>
+    <div class="flex justify-end mb-4">
+      <select
+        id="lang-select"
+        class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+      >
+        <option value="en">🇬🇧 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+      </select>
+    </div>
+    <h1 class="page-title text-neon-green break-words" data-i18n="auth.title">Authentication</h1>
     <div class="form-card">
       <!-- Regular Login Form -->
       <form id="login-form" class="space-y-4">
@@ -35,19 +35,23 @@
             placeholder="Enter your password"
           />
         </div>
-  <button type="submit" class="w-full btn-green" data-i18n="auth.loginButton">Log In</button>
+        <button type="submit" class="w-full btn-green" data-i18n="auth.loginButton">Log In</button>
       </form>
 
       <!-- 2FA Verification Form (initially hidden) -->
       <form id="twofa-form" class="space-y-4 hidden">
         <div class="text-center mb-4">
-          <h3 class="text-lg font-semibold text-neon-green" data-i18n="auth.twoFactorTitle">Two-Factor Authentication</h3>
+          <h3 class="text-lg font-semibold text-neon-green" data-i18n="auth.twoFactorTitle">
+            Two-Factor Authentication
+          </h3>
           <p class="text-sm text-gray-400 mt-2" data-i18n="auth.twoFactorInstructions">
             Enter the 6-digit code from your authenticator app
           </p>
         </div>
         <div>
-          <label class="form-label" for="twofa-code" data-i18n="auth.authCodeLabel">Authentication Code</label>
+          <label class="form-label" for="twofa-code" data-i18n="auth.authCodeLabel"
+            >Authentication Code</label
+          >
           <input
             type="text"
             id="twofa-code"
@@ -57,13 +61,22 @@
             maxlength="6"
           />
         </div>
-        <button type="submit" class="w-full btn-green" data-i18n="auth.verifyButton">Verify & Log In</button>
-        <button type="button" id="back-to-login" class="w-full btn-pink mt-2" data-i18n="auth.backToLogin">Back to Login</button>
+        <button type="submit" class="w-full btn-green" data-i18n="auth.verifyButton">
+          Verify & Log In
+        </button>
+        <button
+          type="button"
+          id="back-to-login"
+          class="w-full btn-pink mt-2"
+          data-i18n="auth.backToLogin"
+        >
+          Back to Login
+        </button>
       </form>
     </div>
     <div class="text-center space-x-4">
-  <button id="back-btn" class="btn-pink" data-i18n="common.backToHome">Back to Home</button>
-  <button id="register-btn" class="btn-green" data-i18n="auth.registerButton">Register</button>
+      <button id="back-btn" class="btn-pink" data-i18n="common.backToHome">Back to Home</button>
+      <button id="register-btn" class="btn-green" data-i18n="auth.registerButton">Register</button>
     </div>
   </div>
 </div>

@@ -281,10 +281,10 @@ export class FriendsList {
     // Only show Invite for established/accepted friends
     if (friend.status !== "accepted") return null;
 
-  const inviteButton = document.createElement("button");
-  inviteButton.textContent = i18n.t("chat.inviteButton");
-  inviteButton.title = i18n.t("chat.inviteButton");
-  inviteButton.classList.add("btn-green", "ml-2");
+    const inviteButton = document.createElement("button");
+    inviteButton.textContent = i18n.t("chat.inviteButton");
+    inviteButton.title = i18n.t("chat.inviteButton");
+    inviteButton.classList.add("btn-green", "ml-2");
 
     inviteButton.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the profile navigation

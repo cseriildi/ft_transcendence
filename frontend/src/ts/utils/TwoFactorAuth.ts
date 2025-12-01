@@ -85,7 +85,7 @@ export class TwoFactorAuth {
         return data.success === true;
       } else {
         const errorData = await response.json();
-  throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
+        throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
       }
     } catch (error) {
       console.error("2FA verify error:", error);
@@ -125,7 +125,7 @@ export class TwoFactorAuth {
         throw new Error(data.message || "Failed to enable 2FA");
       } else {
         const errorData = await response.json();
-  throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
+        throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
       }
     } catch (error) {
       console.error("2FA enable error:", error);
@@ -167,7 +167,7 @@ export class TwoFactorAuth {
         throw new Error(data.message || "Failed to disable 2FA");
       } else {
         const errorData = await response.json();
-  throw new Error(errorData.message || i18n.t("edit.enter2faCode"));
+        throw new Error(errorData.message || i18n.t("edit.enter2faCode"));
       }
     } catch (error) {
       console.error("2FA disable error:", error);

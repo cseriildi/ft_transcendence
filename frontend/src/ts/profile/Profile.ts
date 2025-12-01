@@ -97,7 +97,9 @@ export class Profile {
 
     // Update page title based on whose profile we're viewing
     if (pageTitle) {
-      pageTitle.textContent = isOwnProfile ? i18n.t("profile.title") : i18n.t("profile.userProfile");
+      pageTitle.textContent = isOwnProfile
+        ? i18n.t("profile.title")
+        : i18n.t("profile.userProfile");
     }
 
     // Hide edit button and friends section when viewing another user's profile
@@ -138,7 +140,9 @@ export class Profile {
       console.log("Language changed, re-rendering profile page...");
       const pageTitle = document.querySelector(".page-title");
       if (pageTitle) {
-        pageTitle.textContent = this.isOwnProfile ? i18n.t("profile.title") : i18n.t("profile.userProfile");
+        pageTitle.textContent = this.isOwnProfile
+          ? i18n.t("profile.title")
+          : i18n.t("profile.userProfile");
       }
 
       const gameHistoryContainer = document.getElementById("game-history");

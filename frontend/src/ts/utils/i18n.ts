@@ -7,7 +7,7 @@ export class I18n {
 
   async init(): Promise<void> {
     const savedLang = localStorage.getItem("language");
-    
+
     if (!savedLang) {
       const browserLang = this.detectBrowserLanguage();
       await this.loadLanguage(browserLang);
@@ -18,13 +18,13 @@ export class I18n {
 
   private detectBrowserLanguage(): string {
     const browserLang = navigator.language || (navigator as any).userLanguage;
-    
+
     const langCode = browserLang.split("-")[0].toLowerCase();
-    
+
     if (this.supportedLangs.includes(langCode)) {
       return langCode;
     }
-    
+
     return "en";
   }
 
@@ -86,7 +86,9 @@ export class I18n {
       return result;
     }
 
-    console.warn(`i18n: missing translation for key=\"${key}\" in lang=\"${this.currentLang}\". Falling back to key.`);
+    console.warn(
+      `i18n: missing translation for key=\"${key}\" in lang=\"${this.currentLang}\". Falling back to key.`
+    );
     return key;
   }
 
@@ -98,14 +100,12 @@ export class I18n {
       }
     });
 
-    document
-      .querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]")
-      .forEach((el) => {
-        const key = el.getAttribute("data-i18n-placeholder");
-        if (key) {
-          el.placeholder = this.t(key);
-        }
-      });
+    document.querySelectorAll<HTMLInputElement>("[data-i18n-placeholder]").forEach((el) => {
+      const key = el.getAttribute("data-i18n-placeholder");
+      if (key) {
+        el.placeholder = this.t(key);
+      }
+    });
 
     const langSelect = document.querySelector<HTMLSelectElement>("#lang-select");
     if (langSelect) {

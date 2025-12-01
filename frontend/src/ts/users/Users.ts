@@ -5,16 +5,16 @@ import { i18n } from "../utils/i18n.js";
 
 export class Users {
   private languageChangeListener: (() => void) | null = null;
-  
+
   constructor(private router: any) {}
-  
+
   public destroy(): void {
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
       this.languageChangeListener = null;
     }
   }
-  
+
   async initPage(): Promise<void> {
     if (!isUserAuthorized()) {
       this.router.navigate("/");
@@ -347,7 +347,7 @@ export class Users {
       console.error("Error fetching users", error);
     }
   }
-  
+
   private setupLanguageListener(): void {
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
