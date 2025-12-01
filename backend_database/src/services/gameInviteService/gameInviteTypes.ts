@@ -10,6 +10,7 @@ export interface GameInvite {
   id: number;
   inviter_id: number;
   invitee_id: number;
+  friendship_id: number;
   status: "pending" | "accepted" | "cancelled";
   created_at: string;
   updated_at: string;

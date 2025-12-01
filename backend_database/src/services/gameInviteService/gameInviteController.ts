@@ -15,7 +15,7 @@ import {
   validatePositiveId,
   getGameInviteById,
   ensureGameInviteAccess,
-  ensureUsersFriends,
+  getFriendshipId,
   findPendingGameInvite,
 } from "./gameInviteUtils.ts";
 import "../../types/fastifyTypes.ts";
@@ -38,8 +38,8 @@ export const gameInviteController = {
     ensureDifferentUsers(inviterId, inviteeId);
     await ensureUsersExist(db, inviterId, inviteeId);
 
-    // Verify friendship exists and is accepted
-    await ensureUsersFriends(db, inviterId, inviteeId);
+    // Verify friendship exists and get friendship ID
+    const friendshipId = await getFriendshipId(db, inviterId, inviteeId);
 
     // Check for existing pending invitation in either direction
     const existingInvite = await findPendingGameInvite(db, inviterId, inviteeId);
@@ -59,8 +59,8 @@ export const gameInviteController = {
     // Create new invitation
     const created_at = new Date().toISOString();
     const result = await db.run(
-      "INSERT INTO friend_game_invitations (inviter_id, invitee_id, status, created_at, updated_at) VALUES (?, ?, 'pending', ?, ?)",
-      [inviterId, inviteeId, created_at, created_at]
+      "INSERT INTO friend_game_invitations (inviter_id, invitee_id, friendship_id, status, created_at, updated_at) VALUES (?, ?, ?, 'pending', ?, ?)",
+      [inviterId, inviteeId, friendshipId, created_at, created_at]
     );
 
     const responseBody: CreateGameInviteResponse = {

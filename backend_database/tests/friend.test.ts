@@ -625,6 +625,74 @@ describe("Friend Routes", () => {
       expect(body.success).toBe(true);
       expect(body.message).toBe("Friend removed successfully");
     });
+
+    it("should cascade delete game invitations when friendship is removed", async () => {
+      const GAME_INVITES_PREFIX = `${config.routes.api}/game-invites`;
+
+      // Step 1: User1 sends friend request to User2
+      await app.inject({
+        method: "POST",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: {
+          authorization: `Bearer ${user1Token}`,
+        },
+      });
+
+      // Step 2: User2 accepts friendship
+      await app.inject({
+        method: "PATCH",
+        url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+        headers: {
+          authorization: `Bearer ${user2Token}`,
+        },
+      });
+
+      // Step 3: User1 creates a game invitation to User2
+      const inviteRes = await app.inject({
+        method: "POST",
+        url: `${GAME_INVITES_PREFIX}/${user2Id}`,
+        headers: {
+          authorization: `Bearer ${user1Token}`,
+        },
+      });
+      expect(inviteRes.statusCode).toBe(200);
+      const inviteBody = inviteRes.json() as any;
+      expect(inviteBody.success).toBe(true);
+      const gameInviteId = inviteBody.data.game_id;
+
+      // Step 4: Verify game invitation exists
+      const getInviteRes = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}/${gameInviteId}`,
+        headers: {
+          authorization: `Bearer ${user1Token}`,
+        },
+      });
+      expect(getInviteRes.statusCode).toBe(200);
+
+      // Step 5: Remove friendship
+      const removeRes = await app.inject({
+        method: "DELETE",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: {
+          authorization: `Bearer ${user1Token}`,
+        },
+      });
+      expect(removeRes.statusCode).toBe(200);
+
+      // Step 6: Verify game invitation was CASCADE deleted
+      const checkInviteRes = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}/${gameInviteId}`,
+        headers: {
+          authorization: `Bearer ${user1Token}`,
+        },
+      });
+      expect(checkInviteRes.statusCode).toBe(404);
+      const checkBody = checkInviteRes.json() as any;
+      expect(checkBody.success).toBe(false);
+      expect(checkBody.message).toContain("Game invitation not found");
+    });
   });
 
   describe("Complex Friend Scenarios", () => {

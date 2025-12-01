@@ -27,7 +27,7 @@ export async function getGameInviteById(
   gameId: number
 ): Promise<GameInvite | null> {
   return db.get<GameInvite>(
-    "SELECT id, inviter_id, invitee_id, status, created_at, updated_at FROM friend_game_invitations WHERE id = ?",
+    "SELECT id, inviter_id, invitee_id, friendship_id, status, created_at, updated_at FROM friend_game_invitations WHERE id = ?",
     [gameId]
   );
 }
@@ -73,6 +73,34 @@ export async function ensureUsersFriends(
       friendshipStatus: friendship?.status || null,
     });
   }
+}
+
+/**
+ * Get the friendship ID between two users
+ * Returns the friendship ID if they are friends (accepted status)
+ * Throws 409 if not friends
+ */
+export async function getFriendshipId(
+  db: DatabaseHelper,
+  user1Id: number,
+  user2Id: number
+): Promise<number> {
+  const friendship = await db.get<{ id: number; status: string }>(
+    `SELECT id, status FROM friends
+     WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
+     LIMIT 1`,
+    [user1Id, user2Id, user2Id, user1Id]
+  );
+
+  if (!friendship || friendship.status !== "accepted") {
+    throw new AppError(409, "CONFLICT", "Users are not friends. Cannot create game invitation.", {
+      user1Id,
+      user2Id,
+      friendshipStatus: friendship?.status || null,
+    });
+  }
+
+  return friendship.id;
 }
 
 /**
