@@ -191,6 +191,10 @@
       "title": "404 - Page Not Found",
       "message": "The page you're looking for doesn't exist."
     },
-    "sessionExpired": "Session expired. Please log in again."
+    "sessionExpired": "Session expired. Please log in again.",
+    "invalidVerificationCode": "Invalid verification code",
+    "failed2FAEnable": "Failed to enable 2FA",
+    "failed2FADisable": "Failed to disable 2FA",
+    "failedCopySecret": "Failed to copy secret to clipboard"
   }
 }

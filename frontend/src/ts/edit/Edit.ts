@@ -367,7 +367,7 @@ export class Edit {
       await navigator.clipboard.writeText(secretElement.textContent);
       showSuccessPopup(i18n.t("edit.secretCopied"));
     } catch (error) {
-      showErrorPopup("Failed to copy secret to clipboard");
+      showErrorPopup(i18n.t("error.failedCopySecret"));
     }
   }
 }

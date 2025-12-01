@@ -19,8 +19,7 @@
     "backToHome": "Zurück zur Startseite",
     "backToProfile": "Zurück zum Profil",
     "goHome": "Zur Startseite",
-    "loading": "Laden..."
-    ,
+    "loading": "Laden...",
     "vs": "vs"
   },
 
@@ -62,8 +61,7 @@
       "hard": "Schwer"
     },
     "startGame": "Spiel starten",
-    "streamInfo": "Pong-Spiel wird via WebSocket gestreamt"
-    ,
+    "streamInfo": "Pong-Spiel wird via WebSocket gestreamt",
     "instanceNotCreated": "Pong-Instanz nicht erstellt.",
     "gameError": "Spiel-Fehler",
     "waitingForOpponent": "Warten auf Gegner...",
@@ -194,8 +192,11 @@
     "404": {
       "title": "404 - Seite nicht gefunden",
       "message": "Die gesuchte Seite existiert nicht."
-    }
-    ,
-    "sessionExpired": "Sitzung abgelaufen. Bitte erneut anmelden."
+    },
+    "sessionExpired": "Sitzung abgelaufen. Bitte erneut anmelden.",
+    "invalidVerificationCode": "Ungültiger Bestätigungscode",
+    "failed2FAEnable": "Aktivierung der 2FA fehlgeschlagen",
+    "failed2FADisable": "Deaktivierung der 2FA fehlgeschlagen",
+    "failedCopySecret": "Fehler beim Kopieren des Secrets"
   }
 }

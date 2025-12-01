@@ -45,14 +45,13 @@ export class TwoFactorAuth {
             qr_code: data.data.qrCodeUrl,
           };
         }
-        throw new Error(data.message || "Failed to setup 2FA");
+        throw new Error(i18n.t("error.failed2FAEnable"));
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to setup 2FA");
+        throw new Error(i18n.t("error.failed2FAEnable"));
       }
     } catch (error) {
       console.error("2FA setup error:", error);
-      showErrorPopup(error instanceof Error ? error.message : "Failed to setup 2FA");
+      showErrorPopup(i18n.t("error.failed2FAEnable"));
       return null;
     }
   }
@@ -84,12 +83,11 @@ export class TwoFactorAuth {
         const data = await response.json();
         return data.success === true;
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
+        throw new Error(i18n.t("error.invalidVerificationCode"));
       }
     } catch (error) {
       console.error("2FA verify error:", error);
-      showErrorPopup(error instanceof Error ? error.message : i18n.t("edit.enter6Digit"));
+      showErrorPopup(i18n.t("error.invalidVerificationCode"));
       return false;
     }
   }
@@ -122,14 +120,13 @@ export class TwoFactorAuth {
         if (data.success) {
           return true;
         }
-        throw new Error(data.message || "Failed to enable 2FA");
+        throw new Error(i18n.t("error.failed2FAEnable"));
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || i18n.t("edit.enter6Digit"));
+        throw new Error(i18n.t("error.failed2FAEnable"));
       }
     } catch (error) {
       console.error("2FA enable error:", error);
-      showErrorPopup(error instanceof Error ? error.message : i18n.t("edit.enter6Digit"));
+      showErrorPopup(i18n.t("error.failed2FAEnable"));
       return false;
     }
   }
@@ -164,14 +161,13 @@ export class TwoFactorAuth {
           this.currentQRCode = null;
           return true;
         }
-        throw new Error(data.message || "Failed to disable 2FA");
+        throw new Error(i18n.t("error.failed2FADisable"));
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || i18n.t("edit.enter2faCode"));
+        throw new Error(i18n.t("error.failed2FADisable"));
       }
     } catch (error) {
       console.error("2FA disable error:", error);
-      showErrorPopup(error instanceof Error ? error.message : i18n.t("edit.enter2faCode"));
+      showErrorPopup(i18n.t("error.failed2FADisable"));
       return false;
     }
   }
