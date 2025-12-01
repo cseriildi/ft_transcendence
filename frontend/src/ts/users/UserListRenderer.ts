@@ -213,9 +213,7 @@ export class UserListRenderer {
     button.addEventListener("click", () => {
       const currentUserId = getUserId();
       const friendId = user.id;
-      const chatId = [currentUserId, friendId]
-        .sort((a, b) => Number(a) - Number(b))
-        .join("-");
+      const chatId = [currentUserId, friendId].sort((a, b) => Number(a) - Number(b)).join("-");
       this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
     });
     return button;
