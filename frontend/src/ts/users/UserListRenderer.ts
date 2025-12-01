@@ -7,13 +7,11 @@ export interface FriendStatus {
   isFriend: boolean;
   isPending: boolean;
   isInviter: boolean;
+  isDeclined: boolean;
 }
 
 export class UserListRenderer {
-  constructor(
-    private router: any,
-    private onRefreshNeeded: () => void
-  ) {}
+  constructor(private router: any) {}
 
   render(users: User[], friends: Friend[] | undefined, container: HTMLElement): void {
     container.innerHTML = "";
@@ -43,6 +41,7 @@ export class UserListRenderer {
       isFriend: friendStatus?.status === "accepted",
       isPending: friendStatus?.status === "pending",
       isInviter: friendStatus?.is_inviter === true,
+      isDeclined: friendStatus?.status === "declined",
     };
   }
 
@@ -115,6 +114,12 @@ export class UserListRenderer {
     } else if (status.isPending && !status.isInviter) {
       buttonContainer.appendChild(this.createAcceptButton(user.id));
       buttonContainer.appendChild(this.createDeclineButton(user.id));
+    } else if (status.isDeclined && status.isInviter) {
+      // If I sent the invite and it was declined, disable the button
+      buttonContainer.appendChild(this.createDisabledAddButton(user.id));
+    } else if (status.isDeclined && !status.isInviter) {
+      // If they sent the invite and I declined, allow re-adding (delete first, then add)
+      buttonContainer.appendChild(this.createReAddButton(user.id));
     } else {
       buttonContainer.appendChild(this.createAddButton(user.id));
     }
@@ -202,6 +207,33 @@ export class UserListRenderer {
     button.textContent = "Add Friend";
     button.classList.add("btn-green");
     button.dataset.action = "add";
+    button.dataset.userId = userId.toString();
+    return button;
+  }
+
+  private createDisabledAddButton(userId: number): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.textContent = "Request Declined";
+    button.classList.add(
+      "bg-gray-500",
+      "text-white",
+      "font-bold",
+      "py-1",
+      "px-3",
+      "rounded",
+      "cursor-not-allowed",
+      "opacity-50"
+    );
+    button.disabled = true;
+    button.dataset.userId = userId.toString();
+    return button;
+  }
+
+  private createReAddButton(userId: number): HTMLButtonElement {
+    const button = document.createElement("button");
+    button.textContent = "Add Friend";
+    button.classList.add("btn-green");
+    button.dataset.action = "readd";
     button.dataset.userId = userId.toString();
     return button;
   }

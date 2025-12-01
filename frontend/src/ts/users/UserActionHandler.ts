@@ -34,6 +34,13 @@ export class UserActionHandler {
         case "decline":
           success = await this.friendService.declineFriend(userIdNum);
           break;
+        case "readd":
+          // First delete the declined request, then send a new invite
+          const deleteSuccess = await this.friendService.deleteFriend(userIdNum);
+          if (deleteSuccess) {
+            success = await this.friendService.addFriend(userIdNum);
+          }
+          break;
       }
 
       if (success) {

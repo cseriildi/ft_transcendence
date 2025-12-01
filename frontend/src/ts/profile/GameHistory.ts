@@ -126,12 +126,12 @@ export class GameHistory {
     }
   }
 
-  private createMatchElement(match: Match, userId: number): HTMLDivElement {
+  private createMatchElement(match: any, userId: number): HTMLDivElement {
     const matchElement = document.createElement("div");
     const isWinner = match.winner_id === userId;
     const playerScore = isWinner ? match.winner_score : match.loser_score;
     const opponentScore = isWinner ? match.loser_score : match.winner_score;
-    const opponentName = isWinner ? match.loser_name : match.winner_name;
+    const opponentId = isWinner ? match.loser_id : match.winner_id;
 
     // Apply different styling based on win/loss
     if (isWinner) {
@@ -143,6 +143,8 @@ export class GameHistory {
     const resultColor = isWinner ? "text-neon-green" : "text-neon-pink";
     const resultText = isWinner ? "WIN" : "LOSS";
     const matchDate = new Date(match.played_at).toLocaleDateString();
+    const cachedUser = this.userCache.get(opponentId);
+    const opponentName = cachedUser?.username || `User ${opponentId}`;
 
     // Create match structure
     const matchContainer = document.createElement("div");

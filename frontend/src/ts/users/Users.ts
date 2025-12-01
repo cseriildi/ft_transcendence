@@ -9,12 +9,15 @@ export class Users {
   private userService: UserService;
   private userListRenderer: UserListRenderer;
   private userActionHandler: UserActionHandler;
+  private eventListenersInitialized: boolean = false;
 
   constructor(private router: any) {
     this.friendService = new FriendService();
     this.userService = new UserService();
-    this.userListRenderer = new UserListRenderer(router, () => this.initPage());
-    this.userActionHandler = new UserActionHandler(this.friendService, () => this.initPage());
+    this.userListRenderer = new UserListRenderer(router);
+    this.userActionHandler = new UserActionHandler(this.friendService, () =>
+      this.loadAndRenderUsers()
+    );
   }
 
   async initPage(): Promise<void> {
@@ -24,12 +27,23 @@ export class Users {
     }
 
     this.setupBackButton();
+    this.setupUserActionListeners();
     await this.loadAndRenderUsers();
   }
 
   private setupBackButton(): void {
     const backBtn = document.getElementById("back-btn");
     backBtn?.addEventListener("click", () => this.router.navigate("/profile"));
+  }
+
+  private setupUserActionListeners(): void {
+    if (this.eventListenersInitialized) return;
+
+    const usersListContainer = document.getElementById("user-list");
+    if (usersListContainer) {
+      this.userActionHandler.setupEventListeners(usersListContainer);
+      this.eventListenersInitialized = true;
+    }
   }
 
   private async loadAndRenderUsers(): Promise<void> {
@@ -48,9 +62,6 @@ export class Users {
     // Render the user list
     const friends = friendsResponse?.data?.friends;
     this.userListRenderer.render(users, friends, usersListContainer);
-
-    // Setup event handlers for user actions
-    this.userActionHandler.setupEventListeners(usersListContainer);
   }
 }
 
