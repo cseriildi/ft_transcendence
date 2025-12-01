@@ -100,23 +100,7 @@ export class GameHistory {
       existingSeeMoreBtn.remove();
     }
 
-    // Collect all unique opponent IDs for this batch of matches
-    const matchesToDisplay = this.allMatches.slice(startIndex, endIndex);
-    const uniqueOpponentIds = new Set<number>();
-
-    matchesToDisplay.forEach((match) => {
-      const isWinner = match.winner_id === numericUserId;
-      const opponentId = isWinner ? match.loser_id : match.winner_id;
-      uniqueOpponentIds.add(opponentId);
-    });
-
-    // Fetch all opponent names in parallel for IDs not in cache
-    const uncachedIds = Array.from(uniqueOpponentIds).filter((id) => !this.userCache.has(id));
-    if (uncachedIds.length > 0) {
-      await Promise.all(uncachedIds.map((id) => this.userCache.getUserName(id)));
-    }
-
-    // Add new matches (now all opponent names are cached)
+    // Add new matches (opponent names already included in match data)
     for (let i = startIndex; i < endIndex; i++) {
       const match = this.allMatches[i];
       const matchElement = this.createMatchElement(match, numericUserId);
@@ -137,7 +121,7 @@ export class GameHistory {
     const isWinner = match.winner_id === userId;
     const playerScore = isWinner ? match.winner_score : match.loser_score;
     const opponentScore = isWinner ? match.loser_score : match.winner_score;
-    const opponentId = isWinner ? match.loser_id : match.winner_id;
+    const opponentName = isWinner ? match.loser_name : match.winner_name;
 
     // Apply different styling based on win/loss
     if (isWinner) {
@@ -149,8 +133,6 @@ export class GameHistory {
     const resultColor = isWinner ? "text-neon-green" : "text-neon-pink";
     const resultText = isWinner ? "WIN" : "LOSS";
     const matchDate = new Date(match.played_at).toLocaleDateString();
-    const cachedUser = this.userCache.get(opponentId);
-    const opponentName = cachedUser?.username || `User ${opponentId}`;
 
     // Create match structure
     const matchContainer = document.createElement("div");

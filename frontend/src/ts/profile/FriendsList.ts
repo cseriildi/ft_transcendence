@@ -56,7 +56,7 @@ export class FriendsList {
         friendsListContainer.innerHTML = "";
 
         if (data.data.friends.length === 0) {
-          friendsListContainer.innerHTML = "<p>You don't have friends yet</p>";
+          friendsListContainer.innerHTML = '<p class="text-center">You don\'t have friends yet</p>';
           friendsListContainer.classList.add("text-white");
         } else {
           data.data.friends.forEach(
