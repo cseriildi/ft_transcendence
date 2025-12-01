@@ -18,7 +18,7 @@ export class UserListRenderer {
   render(users: User[], friends: Friend[] | undefined, container: HTMLElement): void {
     container.innerHTML = "";
 
-    const currentUserId = Number(localStorage.getItem("userId"));
+    const currentUserId = Number(getUserId());
 
     // Filter out current user
     const otherUsers = users.filter((user) => user.id !== currentUserId);

@@ -21,6 +21,7 @@ export class FriendService {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
         },
         credentials: "include",
       });
@@ -41,6 +42,9 @@ export class FriendService {
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/${userId}`, {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
         credentials: "include",
       });
 
@@ -60,6 +64,9 @@ export class FriendService {
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/${userId}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
         credentials: "include",
       });
 
@@ -79,6 +86,9 @@ export class FriendService {
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/${userId}/accept`, {
         method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
         credentials: "include",
       });
 
@@ -98,6 +108,9 @@ export class FriendService {
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/${userId}/decline`, {
         method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
         credentials: "include",
       });
 

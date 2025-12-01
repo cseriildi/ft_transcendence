@@ -13,6 +13,7 @@ export class ProfileUpdater {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${getAccessToken()}`,
       },
       body: JSON.stringify({ email }),
       credentials: "include",
@@ -29,6 +30,7 @@ export class ProfileUpdater {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${getAccessToken()}`,
       },
       body: JSON.stringify({ username }),
       credentials: "include",
@@ -41,6 +43,9 @@ export class ProfileUpdater {
 
     return fetchWithRefresh(`${config.apiUrl}/api/users/avatar`, {
       method: "POST",
+      headers: {
+        Authorization: `Bearer ${getAccessToken()}`,
+      },
       body: formData,
       credentials: "include",
     });
@@ -54,6 +59,9 @@ export class ProfileUpdater {
 
     const response = await fetchWithRefresh(`${config.apiUrl}/api/users/${userId}`, {
       method: "GET",
+      headers: {
+        Authorization: `Bearer ${getAccessToken()}`,
+      },
       credentials: "include",
     });
 

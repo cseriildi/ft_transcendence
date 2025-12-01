@@ -4,11 +4,21 @@ import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { UserCache } from "./UserCache.js";
 import { ProfileStats } from "./ProfileStats.js";
 
+export interface Match {
+  winner_id: number;
+  loser_id: number;
+  winner_score: number;
+  loser_score: number;
+  winner_name: string;
+  loser_name: string;
+  played_at: string;
+}
+
 /**
  * Handles game history display
  */
 export class GameHistory {
-  private allMatches: any[] = [];
+  private allMatches: Match[] = [];
   private displayedMatchesCount: number = 0;
   private readonly MATCHES_PER_PAGE = 5;
   private userCache: UserCache;
@@ -116,7 +126,7 @@ export class GameHistory {
     }
   }
 
-  private createMatchElement(match: any, userId: number): HTMLDivElement {
+  private createMatchElement(match: Match, userId: number): HTMLDivElement {
     const matchElement = document.createElement("div");
     const isWinner = match.winner_id === userId;
     const playerScore = isWinner ? match.winner_score : match.loser_score;
