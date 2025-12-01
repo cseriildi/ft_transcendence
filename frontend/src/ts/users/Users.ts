@@ -9,7 +9,7 @@ export class Users {
   private userService: UserService;
   private userListRenderer: UserListRenderer;
   private userActionHandler: UserActionHandler;
-  private eventListenersInitialized: boolean = false;
+  private lastAttachedContainer: HTMLElement | null = null;
 
   constructor(private router: any) {
     this.friendService = new FriendService();
@@ -37,13 +37,15 @@ export class Users {
   }
 
   private setupUserActionListeners(): void {
-    if (this.eventListenersInitialized) return;
-
     const usersListContainer = document.getElementById("user-list");
-    if (usersListContainer) {
-      this.userActionHandler.setupEventListeners(usersListContainer);
-      this.eventListenersInitialized = true;
-    }
+    if (!usersListContainer) return;
+
+    // If we already attached to this exact DOM element, skip
+    if (this.lastAttachedContainer === usersListContainer) return;
+
+    // Attach to the current container (handles DOM replacement after navigation)
+    this.userActionHandler.setupEventListeners(usersListContainer);
+    this.lastAttachedContainer = usersListContainer;
   }
 
   private async loadAndRenderUsers(): Promise<void> {
