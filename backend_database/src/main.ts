@@ -92,43 +92,46 @@ export async function build(opts: BuildOptions = {}) {
 
   try {
     //-------------------------------- Swagger Setup --------------------------------
-    if (appConfig.server.env === "development") {
-      const publicPort = appConfig.server.publicPort || appConfig.server.port;
-      const swaggerUrl = `${appConfig.server.publicHost}:${publicPort}`;
+    // OpenAPI spec is always registered (needed for type generation in all environments)
+    const publicPort = appConfig.server.publicPort || appConfig.server.port;
+    const swaggerUrl = `${appConfig.server.publicHost}:${publicPort}`;
+    const isDevelopment = appConfig.server.env === "development";
 
-      await app.register(import("@fastify/swagger"), {
-        openapi: {
-          info: {
-            title: "Fastify API",
-            description: "API documentation for Fastify backend",
-            version: "1.0.0",
-          },
-          servers: [
-            {
-              url: `http://${swaggerUrl}`,
-              description: "Development server",
-            },
-          ],
-          components: {
-            securitySchemes: {
-              bearerAuth: {
-                type: "http",
-                scheme: "bearer",
-                bearerFormat: "JWT",
-              },
-            },
-          },
-          tags: [
-            { name: "health", description: "Health check endpoints" },
-            { name: "auth", description: "Authentication endpoints" },
-            { name: "2fa", description: "Two-Factor Authentication (2FA) endpoints" },
-            { name: "oauth", description: "OAuth (GitHub) endpoints" },
-            { name: "users", description: "User management endpoints" },
-            { name: "matches", description: "Match endpoints" },
-          ],
+    await app.register(import("@fastify/swagger"), {
+      openapi: {
+        info: {
+          title: "Fastify API",
+          description: "API documentation for Fastify backend",
+          version: "1.0.0",
         },
-      });
+        servers: [
+          {
+            url: isDevelopment ? `http://${swaggerUrl}` : `https://${swaggerUrl}`,
+            description: isDevelopment ? "Development server" : "Production server",
+          },
+        ],
+        components: {
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+            },
+          },
+        },
+        tags: [
+          { name: "health", description: "Health check endpoints" },
+          { name: "auth", description: "Authentication endpoints" },
+          { name: "2fa", description: "Two-Factor Authentication (2FA) endpoints" },
+          { name: "oauth", description: "OAuth (GitHub) endpoints" },
+          { name: "users", description: "User management endpoints" },
+          { name: "matches", description: "Match endpoints" },
+        ],
+      },
+    });
 
+    // Swagger UI only in development
+    if (isDevelopment) {
       await app.register(import("@fastify/swagger-ui"), {
         routePrefix: "/docs",
         uiConfig: {
@@ -138,6 +141,11 @@ export async function build(opts: BuildOptions = {}) {
         staticCSP: true,
       });
     }
+
+    // OpenAPI JSON endpoint - available in all environments for type generation
+    app.get("/openapi.json", { schema: { hide: true } }, async () => {
+      return app.swagger();
+    });
     //------------------------------------
 
     if (!disableRateLimit) {

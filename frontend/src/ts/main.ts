@@ -1,6 +1,6 @@
 import { Router } from "./router/Router.js";
 import { Pong } from "./pong/Pong.js";
-import { Login } from "./login/Login.js";
+import { LoginTypeSafe as Login } from "./login/LoginTypeSafe.js";
 import { Register } from "./register/Register.js";
 import { Home } from "./home/Home.js";
 import { Profile } from "./profile/Profile.js";

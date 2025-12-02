@@ -8,7 +8,8 @@
     "predev": "chmod +x ./scripts/inject-config.sh && ./scripts/inject-config.sh && mkdir -p dist/templates dist/assets && cp -r src/assets dist && cp src/templates/*.html dist/templates",
     "prestart": "npm run build",
     "dev": "concurrently \"tsc --watch\" \"tailwindcss -i ./src/css/input.css -o ./dist/css/output.css --watch\" \"chokidar 'src/index.html' -c './scripts/inject-config.sh'\" \"chokidar 'src/templates/*.html' -c 'cp src/templates/*.html dist/templates/'\" \"browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single\"",
-    "start": "browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single"
+    "start": "browser-sync start --server 'dist' --files 'dist/**/*' --no-ui --port 4200 --reload-delay 10 --single",
+    "generate:api": "curl -sk ${API_URL:-https://localhost:8443}/openapi.json -o openapi.json && openapi-typescript openapi.json -o src/ts/api/schema.d.ts && rm openapi.json"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",
@@ -16,12 +17,14 @@
     "chokidar-cli": "^3.0.0",
     "concurrently": "^9.2.1",
     "copyfiles": "^2.4.1",
+    "openapi-typescript": "^7.4.4",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.9.2"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "openapi-fetch": "^0.13.5",
     "prettier": "^3.6.2"
   }
 }
