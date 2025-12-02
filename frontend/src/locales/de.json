@@ -24,13 +24,20 @@
   },
 
   "auth": {
-    "title": "Authentifizierung",
+    "title": "Anmeldung",
     "emailLabel": "E-Mail",
     "emailPlaceholder": "Gib deine E-Mail ein",
     "passwordLabel": "Passwort",
     "passwordPlaceholder": "Gib dein Passwort ein",
     "loginButton": "Anmelden",
     "registerButton": "Registrieren",
+    "emailPasswordRequired": "E-Mail und Passwort sind erforderlich.",
+    "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Anmeldedaten.",
+    "invalidEmail": "Ungültige E-Mail-Adresse. Bitte überprüfe sie und versuche es erneut.",
+    "invalidPassword": "Ungültiges Passwort. Bitte überprüfe es und versuche es erneut.",
+    "invalid2FACode": "Ungültiger 2FA-Code. Bitte versuche es erneut.",
+    "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung.",
+    "2faVerificationFailed": "2FA-Verifizierung fehlgeschlagen. Bitte versuche es erneut.",
     "twoFactorTitle": "Zwei-Faktor-Authentifizierung",
     "twoFactorInstructions": "Gib den 6-stelligen Code aus deiner Authenticator-App ein",
     "authCodeLabel": "Authentifizierungscode",
@@ -48,7 +55,16 @@
     "passwordPlaceholder": "Gib dein Passwort ein",
     "repeatPasswordLabel": "Passwort wiederholen",
     "repeatPasswordPlaceholder": "Bestätige dein Passwort",
-    "registerButton": "Registrieren"
+    "registerButton": "Registrieren",
+    "allFieldsRequired": "Alle Felder sind erforderlich.",
+    "registrationFailed": "Registrierung fehlgeschlagen. Bitte versuche es erneut.",
+    "emailExists": "Diese E-Mail ist bereits registriert. Bitte verwende eine andere E-Mail oder melde dich an.",
+    "usernameExists": "Dieser Benutzername ist bereits vergeben. Bitte wähle einen anderen.",
+    "passwordsMismatch": "Die Passwörter stimmen nicht überein. Bitte versuche es erneut.",
+    "weakPassword": "Das Passwort ist zu schwach. Bitte verwende ein stärkeres Passwort.",
+    "invalidEmailFormat": "Ungültiges E-Mail-Format. Bitte gib eine gültige E-Mail-Adresse ein.",
+    "invalidUsername": "Ungültiger Benutzername. Verwende 3-15 Zeichen (nur Buchstaben, Zahlen, - und _).",
+    "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung."
   },
 
   "pong": {
@@ -159,9 +175,14 @@
     "avatarLabel": "Avatar",
     "chooseFile": "Datei auswählen",
     "noFileChosen": "Keine Datei ausgewählt",
+    "invalidAvatar": "Nur JPEG- und PNG-Dateien sind für Avatare zulässig.",
     "emailLabel": "E-Mail",
     "usernameLabel": "Benutzername",
     "saveButton": "Speichern",
+    "emailUsernameRequired": "E-Mail und Benutzername sind erforderlich.",
+    "userIdNotFound": "Benutzer-ID nicht gefunden. Bitte melde dich erneut an.",
+    "updateFailed": "Profil konnte nicht aktualisiert werden. Bitte versuche es erneut.",
+    "networkError": "Netzwerkfehler",
     "twoFactorHeading": "Zwei-Faktor-Authentifizierung",
     "statusLabel": "Status:",
     "statusLoading": "Laden...",
@@ -193,10 +214,16 @@
       "title": "404 - Seite nicht gefunden",
       "message": "Die gesuchte Seite existiert nicht."
     },
-    "sessionExpired": "Sitzung abgelaufen. Bitte erneut anmelden.",
-    "invalidVerificationCode": "Ungültiger Bestätigungscode",
-    "failed2FAEnable": "Aktivierung der 2FA fehlgeschlagen",
-    "failed2FADisable": "Deaktivierung der 2FA fehlgeschlagen",
-    "failedCopySecret": "Fehler beim Kopieren des Secrets"
+    "sessionExpired": "Sitzung abgelaufen. Bitte melde dich erneut an.",
+    "invalidVerificationCode": "Ungültiger Verifizierungscode. Bitte versuche es erneut.",
+    "failed2FAEnable": "Fehler beim Aktivieren der 2FA. Bitte versuche es erneut.",
+    "failed2FADisable": "Fehler beim Deaktivieren der 2FA. Bitte versuche es erneut.",
+    "failedCopySecret": "Fehler beim Kopieren des Geheimnisses in die Zwischenablage.",
+    "validationError": "Validierungsfehler. Bitte überprüfe deine Eingabe.",
+    "notFound": "Ressource nicht gefunden.",
+    "conflict": "Ein Konflikt ist aufgetreten. Bitte versuche es erneut.",
+    "forbidden": "Zugriff verweigert.",
+    "serverError": "Serverfehler. Bitte versuche es später erneut.",
+    "rateLimitExceeded": "Zu viele Versuche. Bitte versuche es später erneut."
   }
 }

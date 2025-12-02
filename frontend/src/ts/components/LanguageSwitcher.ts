@@ -2,6 +2,7 @@ import { i18n } from "../utils/i18n.js";
 
 export class LanguageSwitcher {
   private isListenerAttached = false;
+  private selectChangeHandler: ((e: Event) => Promise<void>) | null = null;
 
   init(): void {
     this.attachEvents();
@@ -26,18 +27,20 @@ export class LanguageSwitcher {
   private attachEvents(): void {
     const select = document.querySelector<HTMLSelectElement>("#lang-select");
     if (select) {
-      const currentValue = select.value || i18n.getCurrentLanguage();
+      // Remove old listener if exists
+      if (this.selectChangeHandler) {
+        select.removeEventListener("change", this.selectChangeHandler);
+      }
 
-      // Remove old listener if exists by cloning the element
-      const newSelect = select.cloneNode(true) as HTMLSelectElement;
-      select.parentNode?.replaceChild(newSelect, select);
-      newSelect.value = currentValue;
-
-      newSelect.addEventListener("change", async (e) => {
+      // Create and store the handler
+      this.selectChangeHandler = async (e: Event) => {
         const target = e.target as HTMLSelectElement;
         const newLang = target.value;
         await i18n.loadLanguage(newLang);
-      });
+      };
+
+      select.addEventListener("change", this.selectChangeHandler);
+      select.value = i18n.getCurrentLanguage();
     }
   }
 }

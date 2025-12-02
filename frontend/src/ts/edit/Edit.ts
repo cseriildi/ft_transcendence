@@ -23,15 +23,15 @@ export class Edit {
     const username = formData.get("username") as string | null;
 
     if (!email || !username) {
-      showErrorPopup("Email and username are required.");
-      return { success: false, message: "Email and username are required." };
+      showErrorPopup(i18n.t("edit.emailUsernameRequired"));
+      return { success: false, message: i18n.t("edit.emailUsernameRequired") };
     }
 
     const userId = getUserId();
 
     if (!userId) {
-      showErrorPopup("User ID not found. Please log in again.");
-      return { success: false, message: "User ID not found." };
+      showErrorPopup(i18n.t("edit.userIdNotFound"));
+      return { success: false, message: i18n.t("edit.userIdNotFound") };
     }
 
     const emailInput = document.getElementById("email") as HTMLInputElement;
@@ -91,11 +91,12 @@ export class Edit {
 
     try {
       const responses = await Promise.all(requests);
-      const errors = await Promise.all(
+      const hasErrors = await Promise.all(
         responses.map(async (response, index) => {
           if (!response.ok) {
             const data = await response.json();
-            return data.message || "Unknown error";
+            console.error("Update error:", data.message || "Unknown error");
+            return true;
           } else {
             // If username update was successful, update localStorage
             if (requestTypes[index] === "username" && newUsername) {
@@ -103,21 +104,20 @@ export class Edit {
               console.log("Username updated in localStorage:", newUsername);
             }
           }
-          return null;
+          return false;
         })
       );
 
-      const errorMessages = errors.filter((error) => error !== null);
-      if (errorMessages.length > 0) {
-        showErrorPopup(errorMessages.join("; "));
-        return { success: false, message: errorMessages.join("; ") };
+      if (hasErrors.some((error) => error === true)) {
+        showErrorPopup(i18n.t("edit.updateFailed"));
+        return { success: false, message: i18n.t("edit.updateFailed") };
       }
 
       return { success: true };
     } catch (err) {
       console.error("Network error", err);
-      showErrorPopup("Network error");
-      return { success: false, message: "Network error" };
+      showErrorPopup(i18n.t("edit.networkError"));
+      return { success: false, message: i18n.t("edit.networkError") };
     }
   }
 

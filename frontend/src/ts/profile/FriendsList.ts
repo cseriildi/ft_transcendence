@@ -297,8 +297,7 @@ export class FriendsList {
           }
 
           inviteButton.disabled = true;
-          // use a generic loading string from translations if available
-          inviteButton.textContent = i18n.t("common.loading") || "Sending...";
+          inviteButton.textContent = i18n.t("common.loading");
 
           const response = await fetchWithRefresh(
             `${config.apiUrl}/api/game-invites/${friend.user_id}`,

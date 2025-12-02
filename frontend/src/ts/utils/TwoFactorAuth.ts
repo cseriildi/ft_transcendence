@@ -22,7 +22,7 @@ export class TwoFactorAuth {
   public async setup(): Promise<TwoFASetupData | null> {
     const userId = getUserId();
     if (!userId) {
-      showErrorPopup(i18n.t("error.sessionExpired") || "User ID not found. Please log in again.");
+      showErrorPopup(i18n.t("error.sessionExpired"));
       return null;
     }
 

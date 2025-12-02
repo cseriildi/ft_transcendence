@@ -24,6 +24,7 @@ import { fetchWithRefresh } from "./utils/fetchUtils.js";
 const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
 
 let currentPong: Pong | null = null;
+let tournamentLanguageListener: (() => void) | null = null;
 
 const listenersRegistry = new WeakMap<EventTarget, Map<string, EventListener>>();
 const attachedSet = new Set<EventTarget>();
@@ -231,6 +232,13 @@ const initPongPage = async () => {
 
   const showPlayerNamesForm = (playerCount: number) => {
     if (!tournamentForm || !tournamentNames) return;
+
+    // Remove old language listener if it exists
+    if (tournamentLanguageListener) {
+      window.removeEventListener("languageChanged", tournamentLanguageListener);
+      tournamentLanguageListener = null;
+    }
+
     tournamentNames.innerHTML = "";
     for (let i = 1; i <= playerCount; i++) {
       const inputWrapper = document.createElement("div");
@@ -253,7 +261,7 @@ const initPongPage = async () => {
     }
 
     // update placeholders when language changes
-    window.addEventListener("languageChanged", () => {
+    tournamentLanguageListener = () => {
       const inputs = tournamentNames.querySelectorAll<HTMLInputElement>("input[data-player-index]");
       inputs.forEach((inp) => {
         const idx = Number(inp.getAttribute("data-player-index") || "0");
@@ -261,7 +269,8 @@ const initPongPage = async () => {
           inp.placeholder = i18n.t("tournament.playerPlaceholder", { i: idx });
         }
       });
-    });
+    };
+    window.addEventListener("languageChanged", tournamentLanguageListener);
     showElement(tournamentForm);
     showElement(startTournamentBtn);
   };
@@ -459,7 +468,7 @@ createPopup();
   const tokenManager = SecureTokenManager.getInstance(router);
 
   tokenManager.setTokenExpiryCallback(() => {
-    showErrorPopup(i18n.t("error.sessionExpired") || "Session expired. Please log in again.");
+    showErrorPopup(i18n.t("error.sessionExpired"));
   });
 
   await tokenManager.initialize();
