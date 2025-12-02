@@ -95,3 +95,4 @@ CREATE INDEX IF NOT EXISTS idx_avatars_file_name ON avatars(file_name);
 CREATE INDEX IF NOT EXISTS idx_friends_user1 ON friends(user1_id);
 CREATE INDEX IF NOT EXISTS idx_friends_user2 ON friends(user2_id);
 CREATE INDEX IF NOT EXISTS idx_friends_status ON friends(status);
+CREATE INDEX IF NOT EXISTS idx_friend_game_invitations_friends_id ON friend_game_invitations(friends_id);
