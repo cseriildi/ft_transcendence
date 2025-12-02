@@ -75,11 +75,13 @@ CREATE TABLE IF NOT EXISTS friends (
 -- Friend game invitations: persistence for friend-to-friend game invites
 CREATE TABLE IF NOT EXISTS friend_game_invitations (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  friends_id INTEGER NOT NULL,
   inviter_id INTEGER NOT NULL,
   invitee_id INTEGER NOT NULL,
   status TEXT CHECK(status IN ('pending','accepted','cancelled')) DEFAULT 'pending',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (friends_id) REFERENCES friends(id) ON DELETE CASCADE,
   FOREIGN KEY (inviter_id) REFERENCES users(id) ON DELETE CASCADE,
   FOREIGN KEY (invitee_id) REFERENCES users(id) ON DELETE CASCADE
 );
