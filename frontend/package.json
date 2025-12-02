@@ -24,7 +24,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "openapi-fetch": "^0.13.5",
     "prettier": "^3.6.2"
   }
 }
