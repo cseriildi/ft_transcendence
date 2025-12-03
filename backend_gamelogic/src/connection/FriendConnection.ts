@@ -129,7 +129,6 @@ export default class FriendConnection extends ConnectionSession {
       },
     });
     if (!resp.ok) {
-      const msg = await resp.text().catch(() => "");
       const errorMsg = "This invitation is no longer valid.";
       throw Error(errorMsg);
     }
