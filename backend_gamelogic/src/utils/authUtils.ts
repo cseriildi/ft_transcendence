@@ -40,6 +40,9 @@ export async function verifyAccessToken(token: string): Promise<number> {
     }
 
     const payload = JSON.parse(Buffer.from(parts[1], "base64").toString("utf-8"));
+    if (!payload.sub) {
+      throw new Error("Token missing user ID claim");
+    }
     const userId = parseInt(payload.sub);
 
     if (isNaN(userId)) {
