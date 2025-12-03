@@ -36,7 +36,7 @@ export default class AIConnection extends ConnectionSession {
     }
   }
 
-  protected onClose() {
+  public onClose() {
     this.stopGame();
   }
 }

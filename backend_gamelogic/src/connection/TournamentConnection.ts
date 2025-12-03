@@ -44,7 +44,7 @@ export default class TournamentConnection extends ConnectionSession {
     }
   }
 
-  protected onClose() {
+  public onClose() {
     this.stopGame();
     if (this.tournament) {
       this.gameManager.removeTournament(this.tournament);

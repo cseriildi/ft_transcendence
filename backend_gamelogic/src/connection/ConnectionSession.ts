@@ -18,7 +18,7 @@ export default abstract class ConnectionSession {
     // Note: message and close listeners are set up by the server handler
   }
 
-  protected async onMessage(raw: any) {
+  public async onMessage(raw: any) {
     let data: any = null;
     try {
       data = JSON.parse(raw.toString());
@@ -46,28 +46,7 @@ export default abstract class ConnectionSession {
   }
 
   protected abstract handleMessage(data: any): Promise<void>;
-  protected abstract onClose(): void;
-
-  // Public wrapper methods for the server handler
-  public async onMessagePublic(raw: any) {
-    console.log(`🔵 onMessagePublic called for ${this.mode} mode`);
-    try {
-      await this.onMessage(raw);
-    } catch (err) {
-      console.error(`🔴 onMessagePublic error for ${this.mode}:`, err);
-      throw err;
-    }
-  }
-
-  public onClosePublic() {
-    console.log(`🔵 onClosePublic called for ${this.mode} mode`);
-    try {
-      this.onClose();
-    } catch (err) {
-      console.error(`🔴 onClosePublic error for ${this.mode}:`, err);
-    }
-    this.game = null;
-  }
+  public abstract onClose(): void;
 
   protected stopGame() {
     try {
