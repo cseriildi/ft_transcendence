@@ -48,7 +48,7 @@ export default class FriendConnection extends ConnectionSession {
     }
   }
 
-  protected onClose() {
+  public onClose() {
     if (this.game) {
       this.game.disconnect(this.connection);
       if (this.game.connectionCount() === 0 && this.game.isWaiting) {

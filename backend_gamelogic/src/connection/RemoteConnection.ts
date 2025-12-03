@@ -41,7 +41,7 @@ export default class RemoteConnection extends ConnectionSession {
     }
   }
 
-  protected onClose() {
+  public onClose() {
     if (this.game) {
       this.game.disconnect(this.connection);
     }

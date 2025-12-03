@@ -30,7 +30,7 @@ export default class LocalConnection extends ConnectionSession {
     }
   }
 
-  protected onClose() {
+  public onClose() {
     this.stopGame();
   }
 }

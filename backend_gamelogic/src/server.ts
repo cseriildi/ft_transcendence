@@ -10,6 +10,7 @@ import RemoteConnection from "./connection/RemoteConnection.js";
 import FriendConnection from "./connection/FriendConnection.js";
 import TournamentConnection from "./connection/TournamentConnection.js";
 import { verifyAccessToken, fetchUsername } from "./utils/authUtils.js";
+import ConnectionSession from "./connection/ConnectionSession.js";
 
 // Validate configuration on startup
 validateConfig();
@@ -45,29 +46,27 @@ fastify.register(async function (server: FastifyInstance) {
   server.get("/game", { websocket: true }, async (connection: any, req: any) => {
     console.log("Client connected");
 
-    let session: any = null;
+    let session: ConnectionSession | null = null;
     const messageQueue: any[] = [];
 
     // Set up message listener IMMEDIATELY before async operations
     connection.on("message", (raw: any) => {
-      try {
-        if (session) {
-          session.onMessagePublic(raw);
-        } else {
-          messageQueue.push(raw);
-        }
-      } catch (err) {
-        console.error("❌ Exception in message handler:", err);
+      if (session) {
+        session.onMessage(raw);
+      } else {
+        messageQueue.push(raw);
       }
     });
 
     connection.on("close", () => {
       if (session) {
         try {
-          session.onClosePublic();
+          console.log(`🔵 Connection closed for ${session.mode} mode`);
+          session.onClose();
         } catch (err) {
-          console.error("❌ Exception in close handler:", err);
+          console.error(`🔴 Error handling close for ${session.mode}:`, err);
         }
+        session.game = null;
       }
     });
 
@@ -104,7 +103,6 @@ fastify.register(async function (server: FastifyInstance) {
         token = url.searchParams.get("token") || undefined;
 
         if (!token) {
-          sendErrorToClient(connection, "Missing authentication token for authenticated mode");
           connection.close();
           return;
         }
@@ -157,10 +155,8 @@ fastify.register(async function (server: FastifyInstance) {
       // Process any queued messages
       if (messageQueue.length > 0) {
         for (const queuedMessage of messageQueue) {
-          try {
-            await session.onMessagePublic(queuedMessage);
-          } catch (err) {
-            console.error("❌ Error processing queued message:", err);
+          if (session) {
+            await session.onMessage(queuedMessage);
           }
         }
         messageQueue.length = 0;

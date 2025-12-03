@@ -318,7 +318,6 @@ export class Pong {
       if (["remote", "friend"].includes(this.currentGameMode)) {
         const hasUserId = localStorage.getItem("userId") !== null;
         if (!hasUserId) {
-          console.log("🚫 Not reconnecting - user is not authenticated");
           return;
         }
       }
