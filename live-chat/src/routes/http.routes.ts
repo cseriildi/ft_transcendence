@@ -49,6 +49,11 @@ export async function registerHttpRoutes(fastify: FastifyInstance) {
       return reply.status(401).send({ error: "Blocker must be connected to block users" });
     }
 
+    // Check if already blocked
+    if (banList.has(blocker) && banList.get(blocker)!.has(blocked)) {
+      return reply.status(400).send({ error: "User is already blocked" });
+    }
+
     // Add to in-memory ban list
     if (!banList.has(blocker)) {
       banList.set(blocker, new Set());
