@@ -210,7 +210,7 @@ export class Pong {
         // ignore
       }
 
-      // Start periodic auth check for authenticated modes (every 30 seconds)
+      // Start periodic auth check for authenticated modes (every 5 seconds)
       if (["remote", "friend"].includes(this.currentGameMode)) {
         this.startAuthCheck();
       }
