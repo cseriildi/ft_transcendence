@@ -9,5 +9,7 @@ declare module "fastify" {
   interface FastifyRequest {
     // User is populated from access token (which has no JTI)
     user?: AccessTokenPayload & { id: number };
+    // Set to true when request is authenticated via service token (internal service-to-service)
+    isServiceRequest?: boolean;
   }
 }

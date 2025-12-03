@@ -44,6 +44,11 @@ server {
 
     # API routes
     location /api/ {
+        # Block internal endpoints from external access
+        location /api/internal/ {
+            return 403;
+        }
+
         # Handle preflight requests
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Origin' $http_origin always;
