@@ -31,10 +31,7 @@ export async function requireServiceAuth(request: FastifyRequest, _reply: Fastif
   }
 
   // Constant-time comparison to prevent timing attacks
-  const isValid = crypto.timingSafeEqual(
-    Buffer.from(serviceToken),
-    Buffer.from(SERVICE_SECRET)
-  );
+  const isValid = crypto.timingSafeEqual(Buffer.from(serviceToken), Buffer.from(SERVICE_SECRET));
 
   if (!isValid) {
     throw errors.unauthorized("Invalid service token", {
