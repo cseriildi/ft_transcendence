@@ -28,32 +28,38 @@ export function mapBackendError(
     if (messageLower.includes("username already") || messageLower.includes("duplicate username")) {
       return i18n.t("register.usernameExists");
     }
-    if (messageLower.includes("passwords do not match") || messageLower.includes("password mismatch")) {
+    if (
+      messageLower.includes("passwords do not match") ||
+      messageLower.includes("password mismatch")
+    ) {
       return i18n.t("register.passwordsMismatch");
     }
 
-    if (messageLower.includes("password") && (
-      messageLower.includes("weak") || 
-      messageLower.includes("must contain") ||
-      messageLower.includes("at least") ||
-      messageLower.includes("too short")
-    )) {
+    if (
+      messageLower.includes("password") &&
+      (messageLower.includes("weak") ||
+        messageLower.includes("must contain") ||
+        messageLower.includes("at least") ||
+        messageLower.includes("too short"))
+    ) {
       return i18n.t("register.weakPassword");
     }
 
-    if (messageLower.includes("email") && (
-      messageLower.includes("invalid") || 
-      messageLower.includes("format") ||
-      messageLower.includes("not valid")
-    )) {
+    if (
+      messageLower.includes("email") &&
+      (messageLower.includes("invalid") ||
+        messageLower.includes("format") ||
+        messageLower.includes("not valid"))
+    ) {
       return i18n.t("register.invalidEmailFormat");
     }
 
-    if (messageLower.includes("username") && (
-      messageLower.includes("invalid") || 
-      messageLower.includes("format") ||
-      messageLower.includes("characters")
-    )) {
+    if (
+      messageLower.includes("username") &&
+      (messageLower.includes("invalid") ||
+        messageLower.includes("format") ||
+        messageLower.includes("characters"))
+    ) {
       return i18n.t("register.invalidUsername");
     }
 
