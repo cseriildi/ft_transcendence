@@ -3,6 +3,10 @@ import { FastifyInstance } from "fastify";
 import { createTestApp, cleanupTestApp, resetDatabase } from "./setup";
 import { config } from "../src/config";
 
+// Service secret for internal service-to-service authentication
+const SERVICE_SECRET = process.env.SERVICE_SECRET || "test-service-secret";
+const SERVICE_AUTH_HEADER = { "x-service-token": SERVICE_SECRET };
+
 describe("Game Invite Routes", () => {
   let app: FastifyInstance;
   const AUTH_PREFIX = config.routes.auth;
@@ -394,11 +398,11 @@ describe("Game Invite Routes", () => {
       gameId = inviteRes.json<any>().data.game_id;
     });
 
-    it("should cancel game invitation as inviter", async () => {
+    it("should cancel game invitation with service token", async () => {
       const res = await app.inject({
         method: "DELETE",
         url: `${GAME_INVITES_PREFIX}/${gameId}`,
-        headers: { authorization: `Bearer ${user1Token}` },
+        headers: SERVICE_AUTH_HEADER,
       });
 
       expect(res.statusCode).toBe(200);
@@ -417,36 +421,35 @@ describe("Game Invite Routes", () => {
       expect(getRes.statusCode).toBe(404);
     });
 
-    it("should cancel game invitation as invitee", async () => {
+    it("should fail when using user token instead of service token", async () => {
       const res = await app.inject({
         method: "DELETE",
         url: `${GAME_INVITES_PREFIX}/${gameId}`,
         headers: { authorization: `Bearer ${user2Token}` },
       });
 
-      expect(res.statusCode).toBe(200);
+      expect(res.statusCode).toBe(401);
       const body = res.json() as any;
-      expect(body.success).toBe(true);
+      expect(body.success).toBe(false);
     });
 
-    it("should fail when unauthorized user tries to cancel", async () => {
+    it("should fail with invalid service token", async () => {
       const res = await app.inject({
         method: "DELETE",
         url: `${GAME_INVITES_PREFIX}/${gameId}`,
-        headers: { authorization: `Bearer ${user3Token}` },
+        headers: { "x-service-token": "invalid-token-wrong-length" },
       });
 
-      expect(res.statusCode).toBe(403);
+      expect(res.statusCode).toBe(401);
       const body = res.json() as any;
       expect(body.success).toBe(false);
-      expect(body.message).toContain("not authorized");
     });
 
     it("should fail when game invitation does not exist", async () => {
       const res = await app.inject({
         method: "DELETE",
         url: `${GAME_INVITES_PREFIX}/99999`,
-        headers: { authorization: `Bearer ${user1Token}` },
+        headers: SERVICE_AUTH_HEADER,
       });
 
       expect(res.statusCode).toBe(404);
@@ -454,7 +457,7 @@ describe("Game Invite Routes", () => {
       expect(body.success).toBe(false);
     });
 
-    it("should fail when not authenticated", async () => {
+    it("should fail when service token is missing", async () => {
       const res = await app.inject({
         method: "DELETE",
         url: `${GAME_INVITES_PREFIX}/${gameId}`,
@@ -467,7 +470,7 @@ describe("Game Invite Routes", () => {
       const res = await app.inject({
         method: "DELETE",
         url: `${GAME_INVITES_PREFIX}/0`,
-        headers: { authorization: `Bearer ${user1Token}` },
+        headers: SERVICE_AUTH_HEADER,
       });
 
       expect(res.statusCode).toBe(400);

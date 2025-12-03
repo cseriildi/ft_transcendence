@@ -3,6 +3,10 @@ import { FastifyInstance } from "fastify";
 import { createTestApp, cleanupTestApp, resetDatabase } from "./setup";
 import { config } from "../src/config";
 
+// Service secret for internal service-to-service authentication
+const SERVICE_SECRET = process.env.SERVICE_SECRET || "test-service-secret";
+const SERVICE_AUTH_HEADER = { "x-service-token": SERVICE_SECRET };
+
 describe("Match Routes", () => {
   let app: FastifyInstance;
   let user1: { id: number; username: string };
@@ -67,6 +71,7 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload,
+      headers: SERVICE_AUTH_HEADER,
     });
 
     expect(res.statusCode).toBe(201);
@@ -92,6 +97,7 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload,
+      headers: SERVICE_AUTH_HEADER,
     });
 
     expect(res.statusCode).toBe(400);
@@ -111,6 +117,7 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload,
+      headers: SERVICE_AUTH_HEADER,
     });
 
     expect(res.statusCode).toBe(404);
@@ -130,6 +137,7 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload,
+      headers: SERVICE_AUTH_HEADER,
     });
 
     expect(res.statusCode).toBe(404);
@@ -149,6 +157,7 @@ describe("Match Routes", () => {
       method: "POST",
       url: `${API_PREFIX}/matches`,
       payload,
+      headers: SERVICE_AUTH_HEADER,
     });
 
     expect(res.statusCode).toBe(400);
@@ -167,6 +176,7 @@ describe("Match Routes", () => {
         winner_score: 21,
         loser_score: 15,
       },
+      headers: SERVICE_AUTH_HEADER,
     });
 
     await app.inject({
@@ -178,6 +188,7 @@ describe("Match Routes", () => {
         winner_score: 21,
         loser_score: 18,
       },
+      headers: SERVICE_AUTH_HEADER,
     });
 
     const res = await app.inject({
@@ -241,6 +252,7 @@ describe("Match Routes", () => {
         winner_score: 21,
         loser_score: 15,
       },
+      headers: SERVICE_AUTH_HEADER,
     });
 
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -254,6 +266,7 @@ describe("Match Routes", () => {
         winner_score: 21,
         loser_score: 18,
       },
+      headers: SERVICE_AUTH_HEADER,
     });
 
     const res = await app.inject({
@@ -282,6 +295,7 @@ describe("Match Routes", () => {
         winner_score: 21,
         loser_score: 15,
       },
+      headers: SERVICE_AUTH_HEADER,
     });
 
     await app.inject({
@@ -293,6 +307,7 @@ describe("Match Routes", () => {
         winner_score: 21,
         loser_score: 10,
       },
+      headers: SERVICE_AUTH_HEADER,
     });
 
     const res = await app.inject({
