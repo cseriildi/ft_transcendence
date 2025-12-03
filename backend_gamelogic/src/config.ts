@@ -49,6 +49,9 @@ export const config = {
   // Backend database service URL
   backendDatabase: {
     url: getOptionalEnvVar("BACKEND_DATABASE_URL", "http://databank:3000"),
+    //TODO: Silas. belongs to authUtils.ts
+    authPrefix: getOptionalEnvVar("AUTH_PREFIX", "/api/auth"),
+    apiPrefix: getOptionalEnvVar("API_PREFIX", "/api"),
   },
 
   // Service authentication

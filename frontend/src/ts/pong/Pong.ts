@@ -1,3 +1,5 @@
+import { SecureTokenManager } from "../utils/secureTokenManager.js";
+
 interface PlayerInfo {
   userId: number;
   username: string;
@@ -33,16 +35,20 @@ export class Pong {
   private isConnected: boolean = false;
   private currentGameMode: string = "local";
   private currentPlayerInfo: PlayerInfo | null = null;
+  private gameId: string | undefined;
   private assignedPlayerNumber: 1 | 2 | null = null; // Track which player this client is
   private player1Username: string = "Player 1";
   private player2Username: string = "Player 2";
+  private authCheckInterval: number | null = null;
+  private storageListener: ((event: StorageEvent) => void) | null = null;
+  // Note: autoreconnect behavior is handled in onclose (keeps main branch behavior)
 
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
   private keyupListener: ((event: KeyboardEvent) => void) | null = null;
   private languageChangeListener: (() => void) | null = null;
 
-  constructor(canvasId: string, wsUrl: string, gameMode: string) {
+  constructor(canvasId: string, wsUrl: string, gameMode: string, gameId?: string) {
     const canvasEl = document.getElementById(canvasId);
     if (!canvasEl) throw new Error(`Canvas element with id "${canvasId}" not found.`);
     const canvas = canvasEl as HTMLCanvasElement;
@@ -53,6 +59,7 @@ export class Pong {
     this.ctx = ctx;
     this.wsUrl = wsUrl;
     this.currentGameMode = gameMode;
+    this.gameId = gameId;
     this.setupInputHandlers();
     this.setupLanguageListener();
     this.connect();
@@ -90,11 +97,26 @@ export class Pong {
       type: "newGame",
       mode: this.currentGameMode,
     };
-    if (this.currentPlayerInfo) message.player = this.currentPlayerInfo;
     if (difficulty) message.difficulty = difficulty;
-    if (gameId) message.gameId = gameId;
 
-    this.sendWhenConnected(message);
+    console.log("📨 Sending message:", message);
+
+    // For authenticated modes, ensure WebSocket is open before sending
+    if (["remote", "friend"].includes(gameMode)) {
+      if (!this.isConnected) {
+        this.ws?.addEventListener(
+          "open",
+          () => {
+            this.sendWhenConnected(message);
+          },
+          { once: true }
+        );
+      } else {
+        this.sendWhenConnected(message);
+      }
+    } else {
+      this.sendWhenConnected(message);
+    }
   }
 
   /**
@@ -144,11 +166,62 @@ export class Pong {
   }
 
   private connect() {
-    this.ws = new WebSocket(this.wsUrl);
+    let urlWithMode = `${this.wsUrl}?mode=${encodeURIComponent(this.currentGameMode)}`;
+
+    // Add gameId for friend mode
+    if (this.currentGameMode === "friend" && this.gameId) {
+      urlWithMode += `&gameId=${encodeURIComponent(this.gameId)}`;
+    }
+
+    // Add access token for authenticated modes
+    if (["remote", "friend"].includes(this.currentGameMode)) {
+      const accessToken = SecureTokenManager.getInstance().getAccessToken();
+      if (accessToken) {
+        urlWithMode += `&token=${encodeURIComponent(accessToken)}`;
+      } else {
+        console.warn(`⚠️ No access token available for ${this.currentGameMode} mode`);
+      }
+    }
+
+    try {
+      if (this.ws && this.ws.readyState !== WebSocket.CLOSED) {
+        try {
+          this.ws.close(1000, "client_reconnect");
+        } catch (e) {}
+      }
+    } catch (e) {}
+
+    try {
+      this.ws = new WebSocket(urlWithMode);
+    } catch (err) {
+      return;
+    }
 
     this.ws.onopen = () => {
       this.isConnected = true;
       console.log("✅ Connected to game server");
+      // send a backup auth message in case token wasn't included in the URL
+      try {
+        const accessToken = SecureTokenManager.getInstance().getAccessToken();
+        if (accessToken && this.ws && this.ws.readyState === WebSocket.OPEN) {
+          this.ws.send(JSON.stringify({ type: "auth", token: accessToken }));
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      // Start periodic auth check for authenticated modes (every 30 seconds)
+      if (["remote", "friend"].includes(this.currentGameMode)) {
+        this.startAuthCheck();
+      }
+    };
+
+    this.ws.onerror = (event: Event) => {
+      console.error("❌ WebSocket encountered an error", {
+        url: urlWithMode,
+        readyState: this.ws?.readyState,
+        event,
+      });
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
@@ -158,15 +231,23 @@ export class Pong {
         if (message.type === "error") {
           // Handle error messages from server
           console.error("❌ Game server error:", message.message);
+          if (message.message === "You have been disconnected") {
+            this.destroy();
+            window.location.href = "/";
+            return;
+          }
           alert(`${i18n.t("pong.gameError")}: ${message.message}`);
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
             console.log("🏆 Game Over! Result:", message.data);
+            this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
+            if (["remote", "tournament"].includes(this.currentGameMode)) {
+              window.dispatchEvent(new CustomEvent("pong:showNewGameButton"));
+            }
           } else {
             console.warn("⚠️ Player left:", message.message);
             alert(`⚠️ ${message.message}`);
           }
-          this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
         }
         if (["gameSetup"].includes(message.type)) {
           this.gameState = message.data;
@@ -227,13 +308,26 @@ export class Pong {
       }
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (ev: CloseEvent) => {
       this.isConnected = false;
-      setTimeout(() => this.connect(), 3000);
-    };
+      this.stopAuthCheck();
+      console.warn("WebSocket closed", {
+        url: urlWithMode,
+        code: ev.code,
+        reason: ev.reason,
+        wasClean: ev.wasClean,
+      });
 
-    this.ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
+      // Don't reconnect if user logged out (for authenticated modes)
+      if (["remote", "friend"].includes(this.currentGameMode)) {
+        const hasUserId = localStorage.getItem("userId") !== null;
+        if (!hasUserId) {
+          console.log("🚫 Not reconnecting - user is not authenticated");
+          return;
+        }
+      }
+
+      setTimeout(() => this.connect(), 3000);
     };
   }
 
@@ -507,7 +601,60 @@ export class Pong {
     this.ctx.fill();
   }
 
+  // (auto-reconnect follows main branch behavior; no explicit disable method)
+
+  private startAuthCheck(): void {
+    // Clear any existing interval
+    this.stopAuthCheck();
+
+    // Listen for storage changes (logout in another tab)
+    this.storageListener = (event: StorageEvent) => {
+      // Check if userId or username was removed (logout)
+      if ((event.key === "userId" || event.key === "username") && event.newValue === null) {
+        console.log("🚪 User logged out in another tab, closing game connection");
+        this.stopAuthCheck();
+        if (this.ws) {
+          this.ws.close(1000, "user_logged_out");
+        }
+        this.destroy();
+        window.location.href = "/";
+      }
+    };
+    window.addEventListener("storage", this.storageListener);
+
+    // Check auth status every 5 seconds (fallback if storage event missed)
+    this.authCheckInterval = window.setInterval(() => {
+      // Check both in-memory token AND localStorage (for cross-tab logout detection)
+      const isAuth = SecureTokenManager.getInstance().isAuthenticated();
+      const hasUserId = localStorage.getItem("userId") !== null;
+
+      if (!isAuth || !hasUserId) {
+        console.log("🚪 User logged out, closing game connection");
+        this.stopAuthCheck();
+        if (this.ws) {
+          this.ws.close(1000, "user_logged_out");
+        }
+        this.destroy();
+        window.location.href = "/";
+      }
+    }, 5000); // Check every 5 seconds
+  }
+
+  private stopAuthCheck(): void {
+    if (this.authCheckInterval !== null) {
+      clearInterval(this.authCheckInterval);
+      this.authCheckInterval = null;
+    }
+    if (this.storageListener !== null) {
+      window.removeEventListener("storage", this.storageListener);
+      this.storageListener = null;
+    }
+  }
+
   public destroy(): void {
+    // Stop auth check
+    this.stopAuthCheck();
+
     // Remove event listeners
     if (this.keydownListener) {
       document.removeEventListener("keydown", this.keydownListener);

@@ -128,6 +128,7 @@ export class GameServer {
   // Callbacks for game loops (injected from outside)
   private onPhysicsUpdate?: (game: GameServer) => void;
   private onRender?: (game: GameServer) => void;
+  private onGameEnd?: (game: GameServer) => void;
 
   constructor(gameMode: string) {
     this.Field = new Field(config.game.width, config.game.height);
@@ -148,6 +149,16 @@ export class GameServer {
 
   setRenderCallback(callback: (game: GameServer) => void) {
     this.onRender = callback;
+  }
+
+  setCleanupCallback(callback: (game: GameServer) => void) {
+    this.onGameEnd = callback;
+  }
+
+  invokeCleanup() {
+    if (this.onGameEnd) {
+      this.onGameEnd(this);
+    }
   }
 
   // Start the game loops
@@ -204,24 +215,67 @@ export class GameServer {
     console.log("✅ Game loops stopped");
   }
 
+  connect(playerNum: 1 | 2, playerInfo: PlayerInfo, connection: any): void {
+    this.clients.set(playerNum, { playerInfo, connection });
+  }
+
+  isConnected(connection: any): boolean {
+    for (const client of this.clients.values()) {
+      if (client.connection === connection) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  disconnect(connection: any): void {
+    for (const client of this.clients.values()) {
+      if (client.connection === connection) {
+        sendErrorToClient(client.connection, "You have been disconnected");
+        try {
+          client.connection.close();
+        } catch (err) {
+          console.error("Error closing connection:", err);
+        }
+        client.connection = null;
+        break;
+      }
+    }
+  }
+
+  disconnectByUserId(userId: number): void {
+    for (const client of this.clients.values()) {
+      if (client.playerInfo.userId === userId) {
+        sendErrorToClient(client.connection, "You have been disconnected");
+        try {
+          client.connection.close();
+        } catch (err) {
+          console.error("Error closing connection:", err);
+        }
+        client.connection = null;
+        break;
+      }
+    }
+  }
+
   updateConnection(userId: number, newConnection: any): boolean {
     const currentClient = Array.from(this.clients.values()).find(
       (client) => client.playerInfo.userId === userId
     );
-    if (currentClient && currentClient.connection !== newConnection) {
-      try {
-        sendErrorToClient(
-          currentClient.connection,
-          "You have been disconnected due to a new connection."
-        );
-      } catch (err) {
-        console.error("Error sending disconnect message to old connection:", err);
-      }
+    if (currentClient) {
+      this.disconnect(currentClient.connection);
       currentClient.connection = newConnection;
       broadcastGameSetup(this);
       return true;
     }
     return false;
+  }
+
+  connectionCount(): number {
+    const connections = Array.from(this.clients.values()).filter(
+      (client) => client.connection !== null
+    );
+    return connections.length;
   }
 
   // Get game result
@@ -262,6 +316,7 @@ export class GameServer {
 
   // Helper function to run game countdown and start play
   async runGameCountdown(): Promise<void> {
+    this.isWaiting = false;
     broadcastGameSetup(this);
     // Run 3-second countdown
     for (let i = 3; i > 0; i--) {
