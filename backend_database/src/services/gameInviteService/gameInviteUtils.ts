@@ -53,14 +53,15 @@ export function ensureGameInviteAccess(
 /**
  * Check if users are friends (accepted friendship)
  * Throws 409 if not friends
+ * Returns the friendship ID
  */
 export async function ensureUsersFriends(
   db: DatabaseHelper,
   user1Id: number,
   user2Id: number
-): Promise<void> {
-  const friendship = await db.get<{ status: string }>(
-    `SELECT status FROM friends
+): Promise<number> {
+  const friendship = await db.get<{ id: number; status: string }>(
+    `SELECT id, status FROM friends
      WHERE (user1_id = ? AND user2_id = ?) OR (user1_id = ? AND user2_id = ?)
      LIMIT 1`,
     [user1Id, user2Id, user2Id, user1Id]
@@ -73,6 +74,8 @@ export async function ensureUsersFriends(
       friendshipStatus: friendship?.status || null,
     });
   }
+
+  return friendship.id;
 }
 
 /**

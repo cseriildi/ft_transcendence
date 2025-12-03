@@ -8,6 +8,7 @@
 // Database row representation
 export interface GameInvite {
   id: number;
+  friends_id: number;
   inviter_id: number;
   invitee_id: number;
   status: "pending" | "accepted" | "cancelled";
