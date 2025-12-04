@@ -600,4 +600,108 @@ describe("Game Invite Routes", () => {
       expect(res.statusCode).toBe(401);
     });
   });
+
+  describe("CASCADE Delete Behavior", () => {
+    it("should automatically delete game invites when friendship is removed", async () => {
+      // 1. Establish friendship between user1 and user2
+      await app.inject({
+        method: "POST",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      await app.inject({
+        method: "PATCH",
+        url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+        headers: { authorization: `Bearer ${user2Token}` },
+      });
+
+      // 2. Create a game invite
+      const createRes = await app.inject({
+        method: "POST",
+        url: `${GAME_INVITES_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(createRes.statusCode).toBe(200);
+      const createBody = createRes.json() as any;
+      const gameId = createBody.data.game_id;
+
+      // 3. Verify game invite exists
+      const getRes = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}/${gameId}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(getRes.statusCode).toBe(200);
+
+      // 4. Remove the friendship
+      const removeRes = await app.inject({
+        method: "DELETE",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(removeRes.statusCode).toBe(200);
+
+      // 5. Verify game invite was automatically deleted (CASCADE)
+      const getAfterRes = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}/${gameId}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(getAfterRes.statusCode).toBe(404);
+      const errorBody = getAfterRes.json() as any;
+      expect(errorBody.success).toBe(false);
+      expect(errorBody.message).toContain("not found");
+    });
+
+    it("should cascade delete all game invites when friendship is removed", async () => {
+      // 1. Establish friendship
+      await app.inject({
+        method: "POST",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      await app.inject({
+        method: "PATCH",
+        url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+        headers: { authorization: `Bearer ${user2Token}` },
+      });
+
+      // 2. Create a game invite
+      const invite1Res = await app.inject({
+        method: "POST",
+        url: `${GAME_INVITES_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(invite1Res.statusCode).toBe(200);
+
+      // List invites before deletion - should have 1 pending
+      const listBeforeRes = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(listBeforeRes.statusCode).toBe(200);
+      const listBeforeBody = listBeforeRes.json() as any;
+      expect(listBeforeBody.data.invites).toHaveLength(1);
+      expect(listBeforeBody.data.pending_count).toBe(1);
+
+      // Remove the friendship
+      await app.inject({
+        method: "DELETE",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+
+      // List invites - should be empty (deleted by CASCADE)
+      const listAfterRes = await app.inject({
+        method: "GET",
+        url: `${GAME_INVITES_PREFIX}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      expect(listAfterRes.statusCode).toBe(200);
+      const listAfterBody = listAfterRes.json() as any;
+      expect(listAfterBody.data.invites).toHaveLength(0);
+      expect(listAfterBody.data.pending_count).toBe(0);
+    });
+  });
 });
