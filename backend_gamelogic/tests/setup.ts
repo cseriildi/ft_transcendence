@@ -24,7 +24,8 @@ process.env.PHYSICS_FPS = process.env.PHYSICS_FPS || "60";
 process.env.RENDER_FPS = process.env.RENDER_FPS || "30";
 
 // Service secret for inter-service authentication
-process.env.SERVICE_SECRET = process.env.SERVICE_SECRET || "your-64-char-hex-secret-here-generate-with-openssl-rand-hex-32";
+process.env.SERVICE_SECRET =
+  process.env.SERVICE_SECRET || "your-64-char-hex-secret-here-generate-with-openssl-rand-hex-32";
 
 beforeAll(() => {
   // Global setup if needed
