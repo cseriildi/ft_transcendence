@@ -21,6 +21,8 @@ services:
       PUBLIC_PROTOCOL: ${PUBLIC_PROTOCOL:-http}
       # CORS configuration
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
+      # Service-to-service authentication
+      SERVICE_SECRET: ${SERVICE_SECRET}
     volumes:
       - ./backend_database/database:/app/data
       - ./backend_database/uploads:/app/uploads
@@ -42,6 +44,8 @@ services:
       # Public-facing URL configuration
       PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
       PUBLIC_PORT: ${PUBLIC_PORT:-}
+      # Service-to-service authentication
+      SERVICE_SECRET: ${SERVICE_SECRET}
     restart: unless-stopped
     networks:
       - transcendence

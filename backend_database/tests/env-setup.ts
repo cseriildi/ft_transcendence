@@ -30,6 +30,9 @@ process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "test-refresh
 process.env.JWT_ACCESS_TTL = process.env.JWT_ACCESS_TTL || "15m";
 process.env.JWT_REFRESH_TTL = process.env.JWT_REFRESH_TTL || "7d";
 
+// Service-to-service authentication
+process.env.SERVICE_SECRET = process.env.SERVICE_SECRET || "test-service-secret";
+
 // OAuth configuration (optional - using getOptionalEnvVar in config)
 process.env.OAUTH_STATE_SECRET = process.env.OAUTH_STATE_SECRET || "test-state-secret";
 process.env.GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || "test_github_client_id";

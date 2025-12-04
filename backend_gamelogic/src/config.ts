@@ -51,6 +51,11 @@ export const config = {
     url: getOptionalEnvVar("BACKEND_DATABASE_URL", "http://databank:3000"),
   },
 
+  // Service authentication
+  serviceAuth: {
+    secret: getEnvVar("SERVICE_SECRET"),
+  },
+
   // Logging
   logging: {
     level: getEnvVar("LOG_LEVEL"),

@@ -19,13 +19,14 @@ async function sendMatchResult(game: GameServer): Promise<void> {
   }
 
   const { winner, loser, winnerScore, loserScore } = result;
-  const backendUrl = process.env.BACKEND_DATABASE_URL || "http://databank:3000";
+  const backendUrl = config.backendDatabase.url;
 
   try {
     const response = await fetch(`${backendUrl}/api/matches`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "X-Service-Token": config.serviceAuth.secret,
       },
       body: JSON.stringify({
         winner_id: winner.userId,
@@ -48,6 +49,9 @@ async function sendMatchResult(game: GameServer): Promise<void> {
           const inviteId = game.gameId;
           const deleteResp = await fetch(`${backendUrl}/api/game-invites/${inviteId}`, {
             method: "DELETE",
+            headers: {
+              "X-Service-Token": config.serviceAuth.secret,
+            },
           });
           if (!deleteResp.ok) {
             const dt = await deleteResp.text().catch(() => "");

@@ -139,8 +139,11 @@ export const gameInviteController = {
   },
 
   /**
-   * Cancel a game invitation
+   * Cancel/delete a game invitation (service-to-service only)
    * DELETE /api/game-invites/:id
+   *
+   * This endpoint is used by internal services (e.g., gamelogic) to clean up
+   * game invitations after a game completes. Protected by requireServiceAuth.
    */
   cancelInvite: async (
     request: FastifyRequest<{ Params: GameInviteParams }>,
@@ -149,19 +152,16 @@ export const gameInviteController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { id } = request.params;
-    const currentUserId = request.user!.id;
     const gameId = validatePositiveId(id, "game ID");
 
-    // Fetch invitation
+    // Fetch invitation to verify it exists
     const invite = await getGameInviteById(db, gameId);
 
     if (!invite) {
       throw errors.notFound("Game invitation not found");
     }
 
-    // Authorization: Only inviter or invitee can cancel
-    ensureGameInviteAccess(invite, currentUserId, "cancel");
-
+    // No user authorization needed - service requests are trusted
     // Delete the invitation
     await db.run("DELETE FROM friend_game_invitations WHERE id = ?", [gameId]);
 
