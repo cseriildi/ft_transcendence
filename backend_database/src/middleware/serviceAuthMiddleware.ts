@@ -1,17 +1,14 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { errors } from "../utils/errorUtils.ts";
+import { config } from "../config.ts";
 import crypto from "node:crypto";
-
-const SERVICE_SECRET = process.env.SERVICE_SECRET;
 
 /**
  * Middleware to verify requests from internal services (e.g., gamelogic)
  * Validates the X-Service-Token header using constant-time comparison
  */
 export async function requireServiceAuth(request: FastifyRequest, _reply: FastifyReply) {
-  if (!SERVICE_SECRET) {
-    throw errors.internal("Service authentication not configured");
-  }
+  const serviceSecret = config.serviceAuth.secret;
 
   const serviceToken = request.headers["x-service-token"];
 
@@ -23,7 +20,7 @@ export async function requireServiceAuth(request: FastifyRequest, _reply: Fastif
   }
 
   // Ensure both buffers are the same length for timing-safe comparison
-  if (serviceToken.length !== SERVICE_SECRET.length) {
+  if (serviceToken.length !== serviceSecret.length) {
     throw errors.unauthorized("Invalid service token", {
       middleware: "requireServiceAuth",
       url: request.url,
@@ -31,7 +28,7 @@ export async function requireServiceAuth(request: FastifyRequest, _reply: Fastif
   }
 
   // Constant-time comparison to prevent timing attacks
-  const isValid = crypto.timingSafeEqual(Buffer.from(serviceToken), Buffer.from(SERVICE_SECRET));
+  const isValid = crypto.timingSafeEqual(Buffer.from(serviceToken), Buffer.from(serviceSecret));
 
   if (!isValid) {
     throw errors.unauthorized("Invalid service token", {

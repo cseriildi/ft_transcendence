@@ -42,13 +42,13 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 
+    # Block internal endpoints from external access (must be before /api/)
+    location ~ ^/api/internal/ {
+        return 403;
+    }
+
     # API routes
     location /api/ {
-        # Block internal endpoints from external access
-        location /api/internal/ {
-            return 403;
-        }
-
         # Handle preflight requests
         if ($request_method = 'OPTIONS') {
             add_header 'Access-Control-Allow-Origin' $http_origin always;

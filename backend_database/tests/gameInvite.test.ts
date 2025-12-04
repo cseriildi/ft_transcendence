@@ -480,6 +480,134 @@ describe("Game Invite Routes", () => {
     });
   });
 
+  describe("GET /api/internal/game-invites/:id (Internal Game Invite Verification)", () => {
+    const INTERNAL_PREFIX = `${config.routes.api}/internal/game-invites`;
+    let gameId: number;
+
+    beforeEach(async () => {
+      // Setup friendship and create invite
+      await app.inject({
+        method: "POST",
+        url: `${FRIENDS_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      await app.inject({
+        method: "PATCH",
+        url: `${FRIENDS_PREFIX}/${user1Id}/accept`,
+        headers: { authorization: `Bearer ${user2Token}` },
+      });
+      const inviteRes = await app.inject({
+        method: "POST",
+        url: `${GAME_INVITES_PREFIX}/${user2Id}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+      gameId = inviteRes.json<any>().data.game_id;
+    });
+
+    it("should retrieve game invitation with valid service token", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/${gameId}`,
+        headers: SERVICE_AUTH_HEADER,
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json() as any;
+      expect(body.success).toBe(true);
+      expect(body.message).toBe("Game invitation verified");
+      expect(body.data.game_id).toBe(gameId);
+      expect(body.data.inviter_id).toBe(String(user1Id));
+      expect(body.data.invitee_id).toBe(String(user2Id));
+      expect(body.data.inviter_username).toBe("alice");
+      expect(body.data.invitee_username).toBe("bob");
+      expect(body.data.status).toBe("pending");
+      expect(body.data.created_at).toBeDefined();
+      expect(body.data.updated_at).toBeDefined();
+    });
+
+    it("should fail without service token (401)", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/${gameId}`,
+      });
+
+      expect(res.statusCode).toBe(401);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+    });
+
+    it("should fail with user JWT instead of service token (401)", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/${gameId}`,
+        headers: { authorization: `Bearer ${user1Token}` },
+      });
+
+      expect(res.statusCode).toBe(401);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+    });
+
+    it("should fail with invalid service token (401)", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/${gameId}`,
+        headers: { "x-service-token": "invalid-token-wrong-length" },
+      });
+
+      expect(res.statusCode).toBe(401);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+    });
+
+    it("should fail when game invitation does not exist (404)", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/99999`,
+        headers: SERVICE_AUTH_HEADER,
+      });
+
+      expect(res.statusCode).toBe(404);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+      expect(body.message).toContain("not found");
+    });
+
+    it("should only return pending invitations (not cancelled)", async () => {
+      // First, cancel the invitation using service token
+      await app.inject({
+        method: "DELETE",
+        url: `${GAME_INVITES_PREFIX}/${gameId}`,
+        headers: SERVICE_AUTH_HEADER,
+      });
+
+      // Try to retrieve cancelled invitation via internal endpoint
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/${gameId}`,
+        headers: SERVICE_AUTH_HEADER,
+      });
+
+      // Should return 404 since the SQL query filters by status = 'pending'
+      expect(res.statusCode).toBe(404);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+      expect(body.message).toContain("not found");
+    });
+
+    it("should fail with invalid game ID format", async () => {
+      const res = await app.inject({
+        method: "GET",
+        url: `${INTERNAL_PREFIX}/-1`,
+        headers: SERVICE_AUTH_HEADER,
+      });
+
+      expect(res.statusCode).toBe(400);
+      const body = res.json() as any;
+      expect(body.success).toBe(false);
+    });
+  });
+
   describe("GET /api/game-invites (List Game Invites)", () => {
     it("should list all game invitations for current user", async () => {
       // Setup friendships
