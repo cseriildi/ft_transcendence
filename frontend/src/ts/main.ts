@@ -201,6 +201,11 @@ const initPongPage = async () => {
     router.navigate("/");
   });
 
+  // Listen for Pong to request showing the new game button
+  window.addEventListener("pong:showNewGameButton", () => {
+    showElement(newGameBtn);
+  });
+
   registerHandler(newGameBtn, "click", () => {
     switch (mode) {
       case "ai":
@@ -214,13 +219,16 @@ const initPongPage = async () => {
         break;
       case "tournament":
         currentPong?.startGame(mode);
+        hideElement(newGameBtn);
+        break;
+      case "remote":
+        clearPong();
+        router.navigate("/pong?mode=remote");
         break;
       default:
         clearPong();
-        username = getUsername();
-        userId = getUserId();
         currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
-        currentPong.startGame(mode, { userId: parseInt(userId!), username: username! });
+        currentPong.startGame(mode);
         break;
     }
   });
@@ -338,10 +346,19 @@ const initPongPage = async () => {
       showElement(hardBtn);
       break;
     }
+    case "remote": {
+      hideElement(newGameBtn);
+      username = getUsername();
+      userId = getUserId();
+      showElement(canvasContainer);
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
+      currentPong.startGame(mode, { userId: parseInt(userId!), username: username! });
+      break;
+    }
     case "friend": {
       if (gameId) {
         showElement(canvasContainer);
-        currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
+        currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode, gameId);
         currentPong.startGame(
           mode,
           {

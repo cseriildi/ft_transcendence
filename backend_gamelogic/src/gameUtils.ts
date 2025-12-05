@@ -68,12 +68,15 @@ async function sendMatchResult(game: GameServer): Promise<void> {
 }
 
 // Factory function to create game with specified mode
-export function createGame(gameMode: string): GameServer {
+export function createGame(gameMode: string, onGameEnd?: (game: GameServer) => void): GameServer {
   const game = new GameServer(gameMode);
 
   // Set up callbacks
   game.setUpdateCallback(updateGameState);
   game.setRenderCallback(broadcastGameState);
+  if (onGameEnd) {
+    game.setCleanupCallback(onGameEnd);
+  }
 
   return game;
 }
@@ -214,7 +217,7 @@ export function updateGameState(game: GameServer) {
 
     // Broadcast game result to clients (they will send nextGame acknowledgement)
     broadcastGameResult(game);
-
+    game.invokeCleanup();
     return;
   }
 
