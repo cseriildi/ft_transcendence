@@ -46,6 +46,7 @@ export class Pong {
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
   private keyupListener: ((event: KeyboardEvent) => void) | null = null;
+  private keysPressed: Set<string> = new Set();
   private languageChangeListener: (() => void) | null = null;
 
   constructor(canvasId: string, wsUrl: string, gameMode: string, gameId?: string) {
@@ -388,6 +389,9 @@ export class Pong {
    * Handle keydown events based on game mode
    */
   private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
+    if (this.keysPressed.has(key)) return;
+    this.keysPressed.add(key);
+
     // Skip if waiting for opponent
     if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
       return;
@@ -434,6 +438,8 @@ export class Pong {
    * Handle keyup events based on game mode
    */
   private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
+    this.keysPressed.delete(key);
+
     // Skip if waiting for opponent
     if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
       return;
@@ -441,23 +447,38 @@ export class Pong {
 
     if (["friend", "remote"].includes(this.currentGameMode)) {
       // ONLINE mode: only stop assigned player
-      if ((key === "arrowup" || key === "arrowdown") && this.assignedPlayerNumber) {
-        sendInput("playerInput", {
-          player: this.assignedPlayerNumber,
-          action: "stop",
-        });
+      if (this.assignedPlayerNumber) {
+        if (key === "arrowup" || key === "arrowdown") {
+          if (this.keysPressed.has("arrowup")) {
+            sendInput("playerInput", { player: this.assignedPlayerNumber, action: "up" });
+          } else if (this.keysPressed.has("arrowdown")) {
+            sendInput("playerInput", { player: this.assignedPlayerNumber, action: "down" });
+          } else {
+            sendInput("playerInput", { player: this.assignedPlayerNumber, action: "stop" });
+          }
+        }
       }
     } else {
       // LOCAL mode: stop both players
-      switch (key) {
-        case "s":
-        case "x":
+      // Player 1
+      if (key === "s" || key === "x") {
+        if (this.keysPressed.has("s")) {
+          sendInput("playerInput", { player: 1, action: "up" });
+        } else if (this.keysPressed.has("x")) {
+          sendInput("playerInput", { player: 1, action: "down" });
+        } else {
           sendInput("playerInput", { player: 1, action: "stop" });
-          break;
-        case "arrowup":
-        case "arrowdown":
+        }
+      }
+      // Player 2
+      if (key === "arrowup" || key === "arrowdown") {
+        if (this.keysPressed.has("arrowup")) {
+          sendInput("playerInput", { player: 2, action: "up" });
+        } else if (this.keysPressed.has("arrowdown")) {
+          sendInput("playerInput", { player: 2, action: "down" });
+        } else {
           sendInput("playerInput", { player: 2, action: "stop" });
-          break;
+        }
       }
     }
   }
