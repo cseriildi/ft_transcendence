@@ -1,9 +1,20 @@
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { getAccessToken, isUserAuthorized, getUserId } from "../utils/utils.js";
 import { config } from "../config.js";
+import { i18n } from "../utils/i18n.js";
 
 export class Users {
+  private languageChangeListener: (() => void) | null = null;
+
   constructor(private router: any) {}
+
+  public destroy(): void {
+    if (this.languageChangeListener) {
+      window.removeEventListener("languageChanged", this.languageChangeListener);
+      this.languageChangeListener = null;
+    }
+  }
+
   async initPage(): Promise<void> {
     if (!isUserAuthorized()) {
       this.router.navigate("/");
@@ -24,6 +35,8 @@ export class Users {
       | undefined;
 
     backBtn?.addEventListener("click", () => this.router.navigate("/profile"));
+
+    this.setupLanguageListener();
 
     try {
       const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/status`, {
@@ -62,7 +75,7 @@ export class Users {
           usersListContainer.innerHTML = "";
 
           if (users.length === 1) {
-            usersListContainer.innerHTML = "<p>No other users found.</p>";
+            usersListContainer.innerHTML = `<p>${i18n.t("users.noOtherUsers")}</p>`;
             usersListContainer.classList.add("text-white");
             return;
           }
@@ -132,7 +145,7 @@ export class Users {
             if (isFriend) {
               // Show Delete Friend button
               const deleteButton = document.createElement("button");
-              deleteButton.textContent = "Delete Friend";
+              deleteButton.textContent = i18n.t("users.deleteFriend");
               deleteButton.classList.add(
                 "bg-red-600",
                 "hover:bg-red-700",
@@ -169,7 +182,7 @@ export class Users {
             } else if (isPending && isInviter) {
               // User sent the request - show Cancel button
               const cancelButton = document.createElement("button");
-              cancelButton.textContent = "Cancel Request";
+              cancelButton.textContent = i18n.t("users.cancelRequest");
               cancelButton.classList.add(
                 "bg-gray-600",
                 "hover:bg-gray-700",
@@ -206,7 +219,7 @@ export class Users {
             } else if (isPending && !isInviter) {
               // User received the request - show Accept/Decline buttons
               const acceptButton = document.createElement("button");
-              acceptButton.textContent = "Accept";
+              acceptButton.textContent = i18n.t("users.accept");
               acceptButton.classList.add(
                 "bg-neon-green",
                 "hover:bg-green-600",
@@ -241,7 +254,7 @@ export class Users {
               });
 
               const declineButton = document.createElement("button");
-              declineButton.textContent = "Decline";
+              declineButton.textContent = i18n.t("users.decline");
               declineButton.classList.add(
                 "bg-red-600",
                 "hover:bg-red-700",
@@ -280,7 +293,7 @@ export class Users {
             } else {
               // No relationship - show Add Friend button
               const addButton = document.createElement("button");
-              addButton.textContent = "Add Friend";
+              addButton.textContent = i18n.t("users.addFriend");
               addButton.classList.add("btn-green");
               addButton.addEventListener("click", async () => {
                 try {
@@ -309,7 +322,7 @@ export class Users {
 
             // Add Chat button for all users
             const chatButton = document.createElement("button");
-            chatButton.textContent = "Chat";
+            chatButton.textContent = i18n.t("chat.title");
             chatButton.classList.add("btn-pink");
             chatButton.addEventListener("click", () => {
               const currentUserId = getUserId();
@@ -333,5 +346,18 @@ export class Users {
     } catch (error) {
       console.error("Error fetching users", error);
     }
+  }
+
+  private setupLanguageListener(): void {
+    if (this.languageChangeListener) {
+      window.removeEventListener("languageChanged", this.languageChangeListener);
+    }
+
+    this.languageChangeListener = async () => {
+      console.log("Language changed, re-rendering users page...");
+      await this.initPage();
+    };
+
+    window.addEventListener("languageChanged", this.languageChangeListener);
   }
 }

@@ -9,7 +9,9 @@
           class="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-neon-green shadow-lg hidden"
         />
         <div class="flex flex-col">
-          <span class="text-xs text-neon-green opacity-75">Logged in as</span>
+          <span class="text-xs text-neon-green opacity-75" data-i18n="home.loggedInAs"
+            >Logged in as</span
+          >
           <div
             id="user-name"
             class="text-neon-pink font-bold text-sm sm:text-base drop-shadow-neon"
@@ -21,65 +23,116 @@
 
       <div class="flex-1 sm:block hidden"></div>
 
-      <div class="flex items-center sm:ml-auto">
-        <button id="login-btn" class="btn-green">Log in</button>
-        <button id="profile-btn" class="btn-green hidden">Profile</button>
-        <button id="logout-btn" class="btn-pink hidden ml-4">Log out</button>
+      <div class="flex items-center gap-4 sm:ml-auto">
+        <select
+          id="lang-select"
+          class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+        >
+          <option value="en">🇬🇧 English</option>
+          <option value="de">🇩🇪 Deutsch</option>
+        </select>
+        <button id="login-btn" class="btn-green" data-i18n="home.loginButton">Log in</button>
+        <button id="profile-btn" class="btn-green hidden" data-i18n="home.profileButton">
+          Profile
+        </button>
+        <button id="logout-btn" class="btn-pink hidden ml-4" data-i18n="home.logoutButton">
+          Log out
+        </button>
       </div>
     </div>
   </div>
 
   <div class="max-w-4xl mx-auto px-4 flex-1">
-    <h1 class="page-title text-neon-pink">Pong Game</h1>
+    <h1 class="page-title text-neon-pink" data-i18n="pong.title">Pong Game</h1>
 
     <!-- Tournament Setup (shown only in tournament mode) -->
     <div id="tournament-setup" class="hidden text-center mb-8">
-      <h2 class="text-2xl font-bold text-white mb-6">Tournament Setup</h2>
+      <h2 class="text-2xl font-bold text-white mb-6" data-i18n="tournament.heading">
+        Tournament Setup
+      </h2>
 
       <div class="mb-6">
-        <label class="text-lg text-neon-green mb-4 block">How many players?</label>
+        <label class="text-lg text-neon-green mb-4 block" data-i18n="tournament.howMany"
+          >How many players?</label
+        >
         <div class="flex gap-4 justify-center mb-6">
-          <button id="tournament-4-btn" class="hidden btn-pink">4 Players</button>
-          <button id="tournament-8-btn" class="hidden btn-pink">8 Players</button>
+          <button id="tournament-4-btn" class="btn-pink" data-i18n="tournament.players4">
+            4 Players
+          </button>
+          <button id="tournament-8-btn" class="btn-pink" data-i18n="tournament.players8">
+            8 Players
+          </button>
         </div>
       </div>
 
       <div id="player-names-form" class="hidden form-card max-w-md mx-auto">
-        <h3 class="text-xl text-neon-green mb-4">Enter Player Names</h3>
+        <h3 class="text-xl text-neon-green mb-4" data-i18n="tournament.enterNames">
+          Enter Player Names
+        </h3>
         <div id="player-inputs-container" class="space-y-4 mb-4">
           <!-- Player input fields will be generated here -->
         </div>
-        <button id="start-tournament-btn" class="hidden w-full btn-pink">Start Tournament</button>
+        <button
+          id="start-tournament-btn"
+          class="w-full btn-pink"
+          data-i18n="tournament.startTournament"
+        >
+          Start Tournament
+        </button>
       </div>
     </div>
 
     <div class="text-center mb-8">
-      <button id="new-game-btn" class="hidden btn-pink">New Game</button>
+      <button id="new-game-btn" class="hidden btn-pink" data-i18n="pong.newGame">New Game</button>
     </div>
 
     <!-- AI Difficulty Selection -->
     <div id="difficulty-menu" class="hidden text-center mb-8">
-      <label class="text-lg text-neon-green mb-4 block">Select Difficulty</label>
+      <label class="text-lg text-neon-green mb-4 block" data-i18n="pong.selectDifficulty"
+        >Select Difficulty</label
+      >
       <div class="text-center mb-4">
-        <button id="difficulty-easy" class="hidden btn-pink w-48">Easy</button>
+        <button id="difficulty-easy" class="hidden btn-pink w-48" data-i18n="pong.difficulty.easy">
+          Easy
+        </button>
       </div>
       <div class="text-center mb-4">
-        <button id="difficulty-medium" class="hidden btn-pink w-48">Medium</button>
+        <button
+          id="difficulty-medium"
+          class="hidden btn-pink w-48"
+          data-i18n="pong.difficulty.medium"
+        >
+          Medium
+        </button>
       </div>
       <div class="text-center mb-4">
-        <button id="difficulty-hard" class="hidden btn-pink w-48">Hard</button>
+        <button id="difficulty-hard" class="hidden btn-pink w-48" data-i18n="pong.difficulty.hard">
+          Hard
+        </button>
       </div>
     </div>
 
     <div id="canvas-container" class="hidden flex flex-col text-center justify-center mb-8">
       <div id="score-board" class="flex justify-center gap-16 mb-6">
         <div class="text-center">
-          <p id="name-player1" class="text-neon-green text-sm mb-1">Player 1</p>
+          <p
+            id="name-player1"
+            class="text-neon-green text-sm mb-1"
+            data-i18n="pong_dynamic.player1"
+          >
+            Player 1
+          </p>
           <p id="score-player1" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
         </div>
         <div class="text-neon-pink text-4xl font-bold self-center">:</div>
         <div class="text-center">
-          <p id="name-player2" class="text-neon-green text-sm mb-1">Player 2</p>
+          <p
+            id="name-player2"
+            class="text-neon-green text-sm mb-1"
+            data-i18n="pong_dynamic.player2"
+          >
+            Player 2
+          </p>
           <p id="score-player2" class="text-5xl font-bold text-neon-pink drop-shadow-neon">0</p>
         </div>
       </div>
@@ -90,25 +143,36 @@
         width="3200"
         height="2000"
       ></canvas>
-      <p class="mt-4 text-neon-green drop-shadow-neon">Pong game streamed via WebSocket</p>
+      <p class="mt-4 text-neon-green drop-shadow-neon" data-i18n="pong.streamInfo">
+        Pong game streamed via WebSocket
+      </p>
     </div>
     <!-- Friends Section -->
     <div
       id="friends-card"
       class="hidden glass-card p-4 sm:p-6 mb-6 sm:mb-10 py-6 sm:py-10 flex flex-col items-center"
     >
-      <h3 class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center">Friends</h3>
+      <h3
+        class="text-lg sm:text-xl font-bold text-neon-pink mb-4 text-center"
+        data-i18n="profile.friendsHeading"
+      >
+        Friends
+      </h3>
       <div id="friends-list" class="w-full max-w-md mx-auto">
         <!-- Users list will be dynamically loaded here -->
       </div>
       <div class="w-full flex justify-center mt-4 sm:mt-6">
-        <button id="find-friends-btn" class="hidden btn-green text-sm sm:text-base">
+        <button
+          id="find-friends-btn"
+          class="btn-green text-sm sm:text-base"
+          data-i18n="profile.friendManagementButton"
+        >
           Friends Management
         </button>
       </div>
     </div>
     <div class="text-center">
-      <button id="back-btn" class="btn-green">Back to Home</button>
+      <button id="back-btn" class="btn-green" data-i18n="common.backToHome">Back to Home</button>
     </div>
   </div>
 </div>

@@ -3,6 +3,8 @@ import { isUserAuthorized, showError } from "../utils/utils.js";
 import { config } from "../config.js";
 import { showErrorPopup } from "../main.js";
 import { SecureTokenManager } from "../utils/secureTokenManager.js";
+import { i18n } from "../utils/i18n.js";
+import { mapBackendError } from "../utils/errorMapper.js";
 
 export class Register {
   private router: Router;
@@ -21,8 +23,8 @@ export class Register {
     const confirmPassword = formData.get("confirmPassword") as string | null;
 
     if (!email || !username || !password || !confirmPassword) {
-      showErrorPopup("All fields are required.");
-      return { success: false, message: "All fields are required." };
+      showErrorPopup(i18n.t("register.allFieldsRequired"));
+      return { success: false, message: i18n.t("register.allFieldsRequired") };
     }
 
     try {
@@ -42,16 +44,17 @@ export class Register {
         }
         return { success: true };
       } else {
-        showErrorPopup(data.message || "Registration failed");
+        const errorMsg = mapBackendError(data.error, data.message, "register.registrationFailed");
+        showErrorPopup(errorMsg);
         return {
           success: false,
-          message: data.message || "Registration failed",
+          message: errorMsg,
         };
       }
     } catch (err) {
       console.error("Network error", err);
-      showErrorPopup("Network error");
-      return { success: false, message: "Network error" };
+      showErrorPopup(i18n.t("register.networkError"));
+      return { success: false, message: i18n.t("register.networkError") };
     }
   }
 

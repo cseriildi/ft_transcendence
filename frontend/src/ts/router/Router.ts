@@ -1,3 +1,5 @@
+import { i18n } from "../utils/i18n.js";
+
 interface Route {
   path: string;
   template: string;
@@ -7,13 +9,22 @@ interface Route {
 class Router {
   private routes: Route[] = [];
   private templates: Map<string, string> = new Map();
+  private i18nReadyCallback?: () => Promise<void>;
 
   constructor() {
     window.addEventListener("popstate", () => this.handleRoute());
     document.addEventListener("DOMContentLoaded", () => this.init());
   }
 
+  setI18nCallback(callback: () => Promise<void>) {
+    this.i18nReadyCallback = callback;
+  }
+
   async init() {
+    if (this.i18nReadyCallback) {
+      await this.i18nReadyCallback();
+    }
+
     await this.loadTemplates();
     this.handleRoute();
   }
@@ -70,7 +81,7 @@ class Router {
     return params;
   }
 
-  private handleRoute() {
+  private async handleRoute() {
     const currentPath = window.location.pathname;
     const route =
       this.routes.find((r) => r.path === currentPath) || this.routes.find((r) => r.path === "/404");
@@ -81,6 +92,9 @@ class Router {
         const appElement = document.getElementById("app");
         if (appElement) {
           appElement.innerHTML = template;
+          i18n.updatePage();
+          const languageSwitcherModule = await import("../components/LanguageSwitcher.js");
+          languageSwitcherModule.languageSwitcher.init();
           if (route.init) {
             route.init();
           }

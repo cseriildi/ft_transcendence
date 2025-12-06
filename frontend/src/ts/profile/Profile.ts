@@ -5,6 +5,7 @@ import { ProfileStats } from "./ProfileStats.js";
 import { GameHistory } from "./GameHistory.js";
 import { FriendsList } from "./FriendsList.js";
 import { ProfileData } from "./ProfileData.js";
+import { i18n } from "../utils/i18n.js";
 
 /**
  * Main Profile class that orchestrates all profile-related functionality
@@ -16,6 +17,9 @@ export class Profile {
   private gameHistory: GameHistory;
   private friendsList: FriendsList;
   private profileData: ProfileData;
+  private languageChangeListener: (() => void) | null = null;
+  private currentUserId: string | null = null;
+  private isOwnProfile: boolean = false;
 
   constructor(router: Router) {
     this.router = router;
@@ -29,6 +33,10 @@ export class Profile {
   public destroy(): void {
     console.log("Destroying profile instance...");
     this.userCache.clear();
+    if (this.languageChangeListener) {
+      window.removeEventListener("languageChanged", this.languageChangeListener);
+      this.languageChangeListener = null;
+    }
   }
 
   async initPage(): Promise<void> {
@@ -45,9 +53,12 @@ export class Profile {
     const viewingUserId = queryParams.userId;
     const currentUserId = getUserId();
     const isOwnProfile = !viewingUserId || viewingUserId === currentUserId?.toString();
+    this.currentUserId = viewingUserId || currentUserId;
+    this.isOwnProfile = isOwnProfile;
 
     // Set up UI elements
     this.setupUIElements(isOwnProfile, viewingUserId, currentUserId);
+    this.setupLanguageListener();
 
     const targetUserId = isOwnProfile ? currentUserId : viewingUserId;
 
@@ -86,7 +97,9 @@ export class Profile {
 
     // Update page title based on whose profile we're viewing
     if (pageTitle) {
-      pageTitle.textContent = isOwnProfile ? "My Profile" : "User Profile";
+      pageTitle.textContent = isOwnProfile
+        ? i18n.t("profile.title")
+        : i18n.t("profile.userProfile");
     }
 
     // Hide edit button and friends section when viewing another user's profile
@@ -116,5 +129,33 @@ export class Profile {
         this.router.navigate(`/chat?chatId=${chatId}&username=${username}`);
       }
     });
+  }
+
+  private setupLanguageListener(): void {
+    if (this.languageChangeListener) {
+      window.removeEventListener("languageChanged", this.languageChangeListener);
+    }
+
+    this.languageChangeListener = async () => {
+      console.log("Language changed, re-rendering profile page...");
+      const pageTitle = document.querySelector(".page-title");
+      if (pageTitle) {
+        pageTitle.textContent = this.isOwnProfile
+          ? i18n.t("profile.title")
+          : i18n.t("profile.userProfile");
+      }
+
+      const gameHistoryContainer = document.getElementById("game-history");
+      if (this.currentUserId) {
+        await this.gameHistory.loadGameHistory(this.currentUserId, gameHistoryContainer);
+      }
+
+      if (this.isOwnProfile) {
+        const friendsListContainer = document.getElementById("friends-list");
+        await this.friendsList.loadFriendsList(friendsListContainer);
+      }
+    };
+
+    window.addEventListener("languageChanged", this.languageChangeListener);
   }
 }

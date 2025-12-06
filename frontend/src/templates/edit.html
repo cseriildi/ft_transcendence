@@ -1,10 +1,19 @@
 <div class="page-bg py-8">
   <div class="max-w-md mx-auto px-4">
-    <h1 class="page-title text-neon-green break-words">Edit Profile</h1>
+    <div class="flex justify-end mb-4">
+      <select
+        id="lang-select"
+        class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+      >
+        <option value="en">🇬🇧 English</option>
+        <option value="de">🇩🇪 Deutsch</option>
+      </select>
+    </div>
+    <h1 class="page-title text-neon-green break-words" data-i18n="edit.title">Edit Profile</h1>
     <div class="form-card">
       <form id="edit-form" class="space-y-4">
         <div>
-          <label class="form-label mb-3" for="avatar">Avatar</label>
+          <label class="form-label mb-3" for="avatar" data-i18n="edit.avatarLabel">Avatar</label>
           <input
             type="file"
             id="avatar"
@@ -12,46 +21,59 @@
             class="hidden"
             accept="image/jpeg,image/jpg,image/png"
           />
-          <label for="avatar" class="flex btn-pink"> Choose File </label>
-          <span id="file-name" class="block mt-2 text-sm text-gray-400 text-center"
+          <label for="avatar" class="flex btn-pink" data-i18n="edit.chooseFile">
+            Choose File
+          </label>
+          <span
+            id="file-name"
+            class="block mt-2 text-sm text-gray-400 text-center"
+            data-i18n="edit.noFileChosen"
             >No file chosen</span
           >
         </div>
         <div>
-          <label class="form-label" for="email">Email</label>
+          <label class="form-label" for="email" data-i18n="edit.emailLabel">Email</label>
           <input type="email" id="email" name="email" class="form-input" />
         </div>
         <div>
-          <label class="form-label" for="username">Nickname</label>
+          <label class="form-label" for="username" data-i18n="edit.usernameLabel">Nickname</label>
           <input type="text" id="username" name="username" class="form-input" />
         </div>
-        <button type="submit" class="w-full btn-green">Save</button>
+        <button type="submit" class="w-full btn-green" data-i18n="edit.saveButton">Save</button>
       </form>
     </div>
 
     <!-- 2FA Security Section -->
     <div class="form-card mt-6">
-      <h2 class="text-lg font-semibold text-white mb-4">Two-Factor Authentication</h2>
+      <h2 class="text-lg font-semibold text-white mb-4" data-i18n="edit.twoFactorHeading">
+        Two-Factor Authentication
+      </h2>
 
       <!-- 2FA Status Display -->
       <div id="twofa-status" class="mb-4">
         <div class="flex items-center justify-between">
-          <span class="text-gray-300">Status:</span>
-          <span id="twofa-status-text" class="font-semibold">Loading...</span>
+          <span class="text-gray-300" data-i18n="edit.statusLabel">Status:</span>
+          <span id="twofa-status-text" class="font-semibold" data-i18n="edit.statusLoading"
+            >Loading...</span
+          >
         </div>
       </div>
 
       <!-- 2FA Controls -->
       <div id="twofa-controls">
         <!-- Enable 2FA Button (shown when disabled) -->
-        <button id="enable-2fa-btn" class="w-full btn-green mb-4 hidden">
+        <button
+          id="enable-2fa-btn"
+          class="w-full btn-green mb-4 hidden"
+          data-i18n="edit.enableButton"
+        >
           Enable Two-Factor Authentication
         </button>
 
         <!-- Disable 2FA Section (shown when enabled) -->
         <div id="disable-2fa-section" class="hidden">
           <div class="mb-4">
-            <label class="form-label" for="disable-password"
+            <label class="form-label" for="disable-password" data-i18n="edit.disableInstructions"
               >Enter your 2FA code to disable 2FA:</label
             >
             <input
@@ -62,7 +84,7 @@
               maxlength="6"
             />
           </div>
-          <button id="disable-2fa-btn" class="w-full btn-pink mb-2">
+          <button id="disable-2fa-btn" class="w-full btn-pink mb-2" data-i18n="edit.disableButton">
             Disable Two-Factor Authentication
           </button>
         </div>
@@ -71,11 +93,13 @@
       <!-- 2FA Setup Modal Content (hidden by default) -->
       <div id="twofa-setup-modal" class="hidden">
         <div class="glass-card p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">Setup Two-Factor Authentication</h3>
+          <h3 class="text-lg font-semibold text-white mb-4" data-i18n="edit.setupHeading">
+            Setup Two-Factor Authentication
+          </h3>
 
           <!-- Step 1: QR Code -->
           <div id="setup-step1" class="mb-6">
-            <p class="text-gray-300 mb-4">
+            <p class="text-gray-300 mb-4" data-i18n="edit.setupStep1">
               1. Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):
             </p>
             <div class="text-center mb-4">
@@ -87,7 +111,7 @@
               />
             </div>
             <div class="text-xs text-gray-400 mb-4">
-              <p class="mb-2">Or manually enter this secret:</p>
+              <p class="mb-2" data-i18n="edit.setupStep1Alt">Or manually enter this secret:</p>
               <div class="bg-gray-700 p-3 rounded border border-gray-600">
                 <code
                   id="manual-secret"
@@ -106,7 +130,7 @@
                       d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
                     ></path>
                   </svg>
-                  Copy Secret
+                  <span data-i18n="edit.copySecret">Copy Secret</span>
                 </button>
               </div>
             </div>
@@ -114,7 +138,7 @@
 
           <!-- Step 2: Enable 2FA -->
           <div id="setup-step2">
-            <p class="text-gray-300 mb-4">
+            <p class="text-gray-300 mb-4" data-i18n="edit.setupStep2">
               2. Enter the 6-digit code from your authenticator app to enable 2FA:
             </p>
             <div class="mb-4">
@@ -127,20 +151,28 @@
               />
             </div>
             <div class="flex gap-2">
-              <button id="enable-2fa-modal-btn" class="flex-1 btn-green">Enable 2FA</button>
+              <button
+                id="enable-2fa-modal-btn"
+                class="flex-1 btn-green"
+                data-i18n="edit.enableModalButton"
+              >
+                Enable 2FA
+              </button>
             </div>
           </div>
 
           <!-- Cancel Button -->
           <div class="mt-4 text-center">
-            <button id="cancel-setup-btn" class="btn-pink">Cancel</button>
+            <button id="cancel-setup-btn" class="btn-pink" data-i18n="edit.cancelButton">
+              Cancel
+            </button>
           </div>
         </div>
       </div>
     </div>
 
     <div class="text-center space-x-4 mt-6">
-      <button id="back-btn" class="btn-pink">Back to Profile</button>
+      <button id="back-btn" class="btn-pink" data-i18n="edit.backToProfile">Back to Profile</button>
     </div>
   </div>
 </div>

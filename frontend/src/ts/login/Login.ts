@@ -3,6 +3,8 @@ import { isUserAuthorized, showError } from "../utils/utils.js";
 import { config } from "../config.js";
 import { showErrorPopup } from "../main.js";
 import { SecureTokenManager } from "../utils/secureTokenManager.js";
+import { i18n } from "../utils/i18n.js";
+import { mapBackendError } from "../utils/errorMapper.js";
 
 export class Login {
   private router: Router;
@@ -20,8 +22,8 @@ export class Login {
     const password = formData.get("password") as string | null;
 
     if (!email || !password) {
-      showErrorPopup("Email and password are required."); // Show popup for empty inputs
-      return { success: false, message: "Email and password are required." };
+      showErrorPopup(i18n.t("auth.emailPasswordRequired"));
+      return { success: false, message: i18n.t("auth.emailPasswordRequired") };
     }
 
     try {
@@ -49,13 +51,14 @@ export class Login {
         }
         return { success: true };
       } else {
-        showErrorPopup(data.message || "Login failed");
-        return { success: false, message: data.message || "Login failed" };
+        const errorMsg = mapBackendError(data.error, data.message, "auth.loginFailed");
+        showErrorPopup(errorMsg);
+        return { success: false, message: errorMsg };
       }
     } catch (err) {
       console.error("Network error", err);
-      showErrorPopup("Network error");
-      return { success: false, message: "Network error" };
+      showErrorPopup(i18n.t("auth.networkError"));
+      return { success: false, message: i18n.t("auth.networkError") };
     }
   }
 
@@ -97,14 +100,14 @@ export class Login {
     const twofaCode = formData.get("twofa-code") as string | null;
 
     if (!twofaCode || twofaCode.length !== 6) {
-      showErrorPopup("Please enter a 6-digit code");
-      return { success: false, message: "Please enter a 6-digit code" };
+      showErrorPopup(i18n.t("edit.enter6Digit"));
+      return { success: false, message: i18n.t("edit.enter6Digit") };
     }
 
     if (!this.tempToken) {
-      showErrorPopup("Session expired. Please log in again.");
+      showErrorPopup(i18n.t("error.sessionExpired"));
       this.showLoginForm();
-      return { success: false, message: "Session expired" };
+      return { success: false, message: i18n.t("error.sessionExpired") };
     }
 
     try {
@@ -135,15 +138,16 @@ export class Login {
       } else {
         // Security: Clear temp token on authentication failure
         this.clearTempToken();
-        showErrorPopup(data.message || "2FA verification failed");
-        return { success: false, message: data.message || "2FA verification failed" };
+        const errorMsg = mapBackendError(data.error, data.message, "auth.2faVerificationFailed");
+        showErrorPopup(errorMsg);
+        return { success: false, message: errorMsg };
       }
     } catch (err) {
       // Security: Clear temp token on network error
       this.clearTempToken();
       console.error("Network error", err);
-      showErrorPopup("Network error");
-      return { success: false, message: "Network error" };
+      showErrorPopup(i18n.t("auth.networkError"));
+      return { success: false, message: i18n.t("auth.networkError") };
     }
   }
 

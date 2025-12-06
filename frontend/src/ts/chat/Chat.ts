@@ -9,6 +9,7 @@ import { ChatUI } from "./ChatUI.js";
 /**
  * Main Chat class that orchestrates all chat-related functionality
  */
+
 export class Chat {
   private router: Router;
   private userCache: UserCache;
