@@ -4,6 +4,7 @@ import { config } from "../config.js";
 import { getUserId, getAccessToken, isUserAuthorized } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { TwoFactorAuth } from "../utils/TwoFactorAuth.js";
+import { i18n } from "../utils/i18n.js";
 
 export class Edit {
   private router: Router;
@@ -22,15 +23,15 @@ export class Edit {
     const username = formData.get("username") as string | null;
 
     if (!email || !username) {
-      showErrorPopup("Email and username are required.");
-      return { success: false, message: "Email and username are required." };
+      showErrorPopup(i18n.t("edit.emailUsernameRequired"));
+      return { success: false, message: i18n.t("edit.emailUsernameRequired") };
     }
 
     const userId = getUserId();
 
     if (!userId) {
-      showErrorPopup("User ID not found. Please log in again.");
-      return { success: false, message: "User ID not found." };
+      showErrorPopup(i18n.t("edit.userIdNotFound"));
+      return { success: false, message: i18n.t("edit.userIdNotFound") };
     }
 
     const emailInput = document.getElementById("email") as HTMLInputElement;
@@ -90,11 +91,12 @@ export class Edit {
 
     try {
       const responses = await Promise.all(requests);
-      const errors = await Promise.all(
+      const hasErrors = await Promise.all(
         responses.map(async (response, index) => {
           if (!response.ok) {
             const data = await response.json();
-            return data.message || "Unknown error";
+            console.error("Update error:", data.message || "Unknown error");
+            return true;
           } else {
             // If username update was successful, update localStorage
             if (requestTypes[index] === "username" && newUsername) {
@@ -102,21 +104,20 @@ export class Edit {
               console.log("Username updated in localStorage:", newUsername);
             }
           }
-          return null;
+          return false;
         })
       );
 
-      const errorMessages = errors.filter((error) => error !== null);
-      if (errorMessages.length > 0) {
-        showErrorPopup(errorMessages.join("; "));
-        return { success: false, message: errorMessages.join("; ") };
+      if (hasErrors.some((error) => error === true)) {
+        showErrorPopup(i18n.t("edit.updateFailed"));
+        return { success: false, message: i18n.t("edit.updateFailed") };
       }
 
       return { success: true };
     } catch (err) {
       console.error("Network error", err);
-      showErrorPopup("Network error");
-      return { success: false, message: "Network error" };
+      showErrorPopup(i18n.t("edit.networkError"));
+      return { success: false, message: i18n.t("edit.networkError") };
     }
   }
 
@@ -141,15 +142,15 @@ export class Edit {
         const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
 
         if (!allowedTypes.includes(file.type)) {
-          showErrorPopup("Only JPEG and PNG files are allowed for avatars.");
+          showErrorPopup(i18n.t("edit.invalidAvatar"));
           fileInput.value = ""; // Clear the input
-          fileNameDisplay.textContent = "No file chosen";
+          fileNameDisplay.textContent = i18n.t("edit.noFileChosen");
           return;
         }
 
         fileNameDisplay.textContent = file.name;
       } else {
-        fileNameDisplay.textContent = "No file chosen";
+        fileNameDisplay.textContent = i18n.t("edit.noFileChosen");
       }
     });
 
@@ -217,18 +218,18 @@ export class Edit {
     }
 
     if (status === null) {
-      statusText.textContent = "Error loading status";
+      statusText.textContent = i18n.t("edit.statusError");
       statusText.className = "font-semibold text-red-400";
       return;
     }
 
     if (status.enabled) {
-      statusText.textContent = "Enabled";
+      statusText.textContent = i18n.t("edit.enabled");
       statusText.className = "font-semibold text-neon-green";
       enableBtn.classList.add("hidden");
       disableSection.classList.remove("hidden");
     } else {
-      statusText.textContent = "Disabled";
+      statusText.textContent = i18n.t("edit.disabled");
       statusText.className = "font-semibold text-neon-pink";
       enableBtn.classList.remove("hidden");
       disableSection.classList.add("hidden");
@@ -318,13 +319,13 @@ export class Edit {
 
     const code = codeInput.value.trim();
     if (code.length !== 6) {
-      showErrorPopup("Please enter a 6-digit code");
+      showErrorPopup(i18n.t("edit.enter6Digit"));
       return;
     }
 
     const success = await this.twoFactorAuth.enable(code);
     if (success) {
-      showSuccessPopup("Two-Factor Authentication enabled successfully!");
+      showSuccessPopup(i18n.t("edit_success.2fa_enabled"));
       this.cancelSetup2FA();
       await this.update2FAStatus();
     }
@@ -336,13 +337,13 @@ export class Edit {
 
     const token = tokenInput.value.trim();
     if (!token) {
-      showErrorPopup("Please enter your 2FA code");
+      showErrorPopup(i18n.t("edit.enter2faCode"));
       return;
     }
 
     const success = await this.twoFactorAuth.disable(token);
     if (success) {
-      showSuccessPopup("Two-Factor Authentication disabled successfully!");
+      showSuccessPopup(i18n.t("edit_success.2fa_disabled"));
       tokenInput.value = "";
       await this.update2FAStatus();
     }
@@ -364,9 +365,9 @@ export class Edit {
 
     try {
       await navigator.clipboard.writeText(secretElement.textContent);
-      showSuccessPopup("Secret copied to clipboard!");
+      showSuccessPopup(i18n.t("edit.secretCopied"));
     } catch (error) {
-      showErrorPopup("Failed to copy secret to clipboard");
+      showErrorPopup(i18n.t("error.failedCopySecret"));
     }
   }
 }

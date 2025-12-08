@@ -1,0 +1,228 @@
+{
+  "home": {
+    "title": "Pong Portal: The Ultimate Paddle Playground",
+    "subtitle": "Play Pong. Be legendary.",
+    "playButton": "Play Pong",
+    "local2P": "Local 2 Player",
+    "playAi": "Play vs AI",
+    "playOnline": "Play Online",
+    "playFriend": "Play with Friend",
+    "tournament": "Tournament",
+    "loginButton": "Log in",
+    "logoutButton": "Log out",
+    "profileButton": "Profile",
+    "loggedInAs": "Logged in as",
+    "createdBy": "Created by"
+  },
+
+  "common": {
+    "backToHome": "Back to Home",
+    "backToProfile": "Back to Profile",
+    "goHome": "Go Home",
+    "loading": "Loading...",
+    "vs": "vs"
+  },
+
+  "auth": {
+    "title": "Authentication",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "loginButton": "Log In",
+    "registerButton": "Register",
+    "emailPasswordRequired": "Email and password are required.",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "invalidEmail": "Invalid email address. Please check and try again.",
+    "invalidPassword": "Invalid password. Please check and try again.",
+    "invalid2FACode": "Invalid 2FA code. Please try again.",
+    "networkError": "Network error. Please check your connection.",
+    "2faVerificationFailed": "2FA verification failed. Please try again.",
+    "twoFactorTitle": "Two-Factor Authentication",
+    "twoFactorInstructions": "Enter the 6-digit code from your authenticator app",
+    "authCodeLabel": "Authentication Code",
+    "verifyButton": "Verify & Log In",
+    "backToLogin": "Back to Login"
+  },
+
+  "register": {
+    "title": "Register",
+    "emailLabel": "Email",
+    "emailPlaceholder": "Enter your email",
+    "usernameLabel": "Nickname",
+    "usernamePlaceholder": "Enter your nickname",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "repeatPasswordLabel": "Repeat Password",
+    "repeatPasswordPlaceholder": "Confirm your password",
+    "registerButton": "Register",
+    "allFieldsRequired": "All fields are required.",
+    "registrationFailed": "Registration failed. Please try again.",
+    "emailExists": "This email is already registered. Please use a different email or log in.",
+    "usernameExists": "This username is already taken. Please choose a different one.",
+    "passwordsMismatch": "Passwords do not match. Please try again.",
+    "weakPassword": "Password is too weak. Please use a stronger password.",
+    "invalidEmailFormat": "Invalid email format. Please enter a valid email address.",
+    "invalidUsername": "Invalid username. Use 3-15 characters (letters, numbers, - and _ only).",
+    "networkError": "Network error. Please check your connection."
+  },
+
+  "pong": {
+    "title": "Pong Game",
+    "newGame": "New Game",
+    "selectDifficulty": "Select Difficulty",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "startGame": "Start Game",
+    "streamInfo": "Pong game streamed via WebSocket",
+    "instanceNotCreated": "Pong instance not created.",
+    "gameError": "Game Error",
+    "waitingForOpponent": "Waiting for opponent...",
+    "waitingForStart": "When ready click Start Game"
+  },
+
+  "pong_dynamic": {
+    "ai": "AI",
+    "you": "You",
+    "player1": "Player 1",
+    "player2": "Player 2"
+  },
+
+  "tournament": {
+    "heading": "Tournament Setup",
+    "howMany": "How many players?",
+    "players4": "4 Players",
+    "players8": "8 Players",
+    "enterNames": "Enter Player Names",
+    "startTournament": "Start Tournament",
+    "playerPlaceholder": "Player {{i}} name",
+    "emptyNames": "All player names must be non-empty",
+    "duplicateNames": "All player names must be unique",
+    "setupFailed": "Tournament setup failed"
+  },
+
+  "profile": {
+    "title": "My Profile",
+    "userProfile": "User Profile",
+    "editButton": "Edit Profile",
+    "friendsHeading": "Friends",
+    "friendManagementButton": "Friend Management",
+    "noFriends": "You don't have friends yet",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Request sent)",
+    "pendingApproval": "(Pending approval)",
+    "unknown": "Unknown",
+    "invalidUserId": "Invalid user ID",
+    "noGamesPlayed": "No games played yet",
+    "failedLoadHistory": "Failed to load game history",
+    "errorLoadHistory": "Error loading game history",
+    "win": "WIN",
+    "loss": "LOSS",
+    "seeMore": "See More",
+    "remaining": "remaining",
+    "winsLabel": "Wins",
+    "lossesLabel": "Losses",
+    "statsHeading": "Game Statistics",
+    "totalGames": "Total Games",
+    "wins": "Wins",
+    "losses": "Losses",
+    "winsPercentage": "Wins %",
+    "lossesPercentage": "Losses %",
+    "winRate": "Win Rate",
+    "matchHistory": "Match History"
+  },
+  "profile_extra": {
+    "noFriends": "You don't have friends yet",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Request sent)",
+    "pendingApproval": "(Pending approval)"
+  },
+
+  "users": {
+    "title": "Users",
+    "noOtherUsers": "No other users found.",
+    "deleteFriend": "Delete Friend",
+    "cancelRequest": "Cancel Request",
+    "accept": "Accept",
+    "decline": "Decline",
+    "addFriend": "Add Friend"
+  },
+
+  "chat": {
+    "title": "Chat",
+    "inputPlaceholder": "Type your message...",
+    "sendButton": "Send",
+    "chattingWith": "Chatting with",
+    "viewProfile": "View Profile",
+    "viewProfileButton": "View Profile",
+    "startTitle": "Start Chat",
+    "blockUser": "Block User",
+    "blockSuccess": "User blocked successfully. You will no longer receive messages from this user.",
+    "blockFailed": "Failed to block user. Please try again.",
+    "blockError": "An error occurred while blocking the user. Please try again.",
+    "blockConfirmPrefix": "Are you sure you want to block",
+    "blockConfirmSuffix": "You will no longer be able to send or receive messages from this user.",
+    "inviteButton": "🎮 Invite"
+  },
+
+  "edit": {
+    "title": "Edit Profile",
+    "avatarLabel": "Avatar",
+    "chooseFile": "Choose File",
+    "noFileChosen": "No file chosen",
+    "invalidAvatar": "Only JPEG and PNG files are allowed for avatars.",
+    "emailLabel": "Email",
+    "usernameLabel": "Nickname",
+    "saveButton": "Save",
+    "emailUsernameRequired": "Email and username are required.",
+    "userIdNotFound": "User ID not found. Please log in again.",
+    "updateFailed": "Failed to update profile. Please try again.",
+    "networkError": "Network error",
+    "twoFactorHeading": "Two-Factor Authentication",
+    "statusLabel": "Status:",
+    "statusLoading": "Loading...",
+    "statusError": "Error loading status",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "enableButton": "Enable Two-Factor Authentication",
+    "disableInstructions": "Enter your 2FA code to disable 2FA:",
+    "disableButton": "Disable Two-Factor Authentication",
+    "setupHeading": "Setup Two-Factor Authentication",
+    "setupStep1": "1. Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.):",
+    "setupStep1Alt": "Or manually enter this secret:",
+    "copySecret": "Copy Secret",
+    "setupStep2": "2. Enter the 6-digit code from your authenticator app to enable 2FA:",
+    "enableModalButton": "Enable 2FA",
+    "cancelButton": "Cancel",
+    "backToProfile": "Back to Profile",
+    "enter6Digit": "Please enter a 6-digit code",
+    "enter2faCode": "Please enter your 2FA code",
+    "secretCopied": "Secret copied to clipboard!"
+  },
+  "edit_success": {
+    "2fa_enabled": "Two-Factor Authentication enabled successfully!",
+    "2fa_disabled": "Two-Factor Authentication disabled successfully!"
+  },
+  "error": {
+    "404": {
+      "title": "404 - Page Not Found",
+      "message": "The page you're looking for doesn't exist."
+    },
+    "sessionExpired": "Session expired. Please log in again.",
+    "invalidVerificationCode": "Invalid verification code. Please try again.",
+    "failed2FAEnable": "Failed to enable 2FA. Please try again.",
+    "failed2FADisable": "Failed to disable 2FA. Please try again.",
+    "failedCopySecret": "Failed to copy secret to clipboard.",
+    "validationError": "Validation error. Please check your input.",
+    "notFound": "Resource not found.",
+    "conflict": "A conflict occurred. Please try again.",
+    "forbidden": "Access denied.",
+    "serverError": "Server error. Please try again later.",
+    "rateLimitExceeded": "Too many attempts. Please try again later."
+  }
+}

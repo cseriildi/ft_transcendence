@@ -8,7 +8,16 @@
   <body>
     <div id="chat-container" class="page-bg py-8">
       <div class="max-w-2xl mx-auto px-4">
-        <h1 class="page-title text-neon-green">Chat</h1>
+        <div class="flex justify-end mb-4">
+          <select
+            id="lang-select"
+            class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+          >
+            <option value="en">🇬🇧 English</option>
+            <option value="de">🇩🇪 Deutsch</option>
+          </select>
+        </div>
+        <h1 class="page-title text-neon-green" data-i18n="chat.title">Chat</h1>
 
         <!-- Chat partner info -->
         <div
@@ -23,14 +32,24 @@
               class="w-10 h-10 rounded-full border-2 border-neon-green"
             />
             <div>
-              <h3 id="partner-username" class="text-white font-semibold">Loading...</h3>
-              <span id="partner-status" class="text-xs text-neon-pink">Chatting with</span>
+              <h3 id="partner-username" class="text-white font-semibold" data-i18n="common.loading">
+                Loading...
+              </h3>
+              <span id="partner-status" class="text-xs text-neon-pink" data-i18n="chat.chattingWith"
+                >Chatting with</span
+              >
             </div>
           </div>
           <div class="flex gap-2 flex-wrap">
-            <button id="invite-btn" class="btn-green">🎮 Invite</button>
-            <button id="view-profile-btn" class="btn-green">View Profile</button>
-            <button id="block-user-btn" class="btn-pink">Block User</button>
+            <button id="invite-btn" class="btn-green" data-i18n="chat.inviteButton">
+              🎮 Invite
+            </button>
+            <button id="view-profile-btn" class="btn-green" data-i18n="chat.viewProfile">
+              View Profile
+            </button>
+            <button id="block-user-btn" class="btn-pink" data-i18n="chat.blockUser">
+              Block User
+            </button>
           </div>
         </div>
 
@@ -42,12 +61,15 @@
             type="text"
             id="chat-input"
             class="flex-1 p-2 rounded border-2 border-neon-pink bg-gray-800 text-white"
+            data-i18n-placeholder="chat.inputPlaceholder"
             placeholder="Type your message..."
           />
-          <button type="submit" class="btn-green">Send</button>
+          <button type="submit" class="btn-green" data-i18n="chat.sendButton">Send</button>
         </form>
         <div class="text-center mt-4">
-          <button id="back-btn" class="btn-pink">Back to Profile</button>
+          <button id="back-btn" class="btn-pink" data-i18n="common.backToProfile">
+            Back to Profile
+          </button>
         </div>
       </div>
     </div>

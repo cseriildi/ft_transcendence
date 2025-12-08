@@ -22,6 +22,8 @@ interface Capsule {
   R: number;
 }
 
+import { i18n } from "../utils/i18n.js";
+
 export class Pong {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -38,6 +40,7 @@ export class Pong {
   // Store references to event listeners for cleanup
   private keydownListener: ((event: KeyboardEvent) => void) | null = null;
   private keyupListener: ((event: KeyboardEvent) => void) | null = null;
+  private languageChangeListener: (() => void) | null = null;
 
   constructor(canvasId: string, wsUrl: string, gameMode: string) {
     const canvasEl = document.getElementById(canvasId);
@@ -51,6 +54,7 @@ export class Pong {
     this.wsUrl = wsUrl;
     this.currentGameMode = gameMode;
     this.setupInputHandlers();
+    this.setupLanguageListener();
     this.connect();
     this.renderLoop();
   }
@@ -154,7 +158,7 @@ export class Pong {
         if (message.type === "error") {
           // Handle error messages from server
           console.error("❌ Game server error:", message.message);
-          alert(`Game Error: ${message.message}`);
+          alert(`${i18n.t("pong.gameError")}: ${message.message}`);
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
             console.log("🏆 Game Over! Result:", message.data);
@@ -267,17 +271,24 @@ export class Pong {
 
     switch (this.currentGameMode) {
       case "ai":
-        name1El.textContent = "AI";
-        name2El.textContent = "You";
+        name1El.textContent = i18n.t("pong_dynamic.ai");
+        name2El.textContent = i18n.t("pong_dynamic.you");
         break;
       case "local":
-        name1El.textContent = "Player 1";
-        name2El.textContent = "Player 2";
+        name1El.textContent = i18n.t("pong_dynamic.player1");
+        name2El.textContent = i18n.t("pong_dynamic.player2");
         break;
       default:
         name1El.textContent = this.player1Username;
         name2El.textContent = this.player2Username;
     }
+  }
+
+  private setupLanguageListener() {
+    this.languageChangeListener = () => {
+      this.updatePlayerNamesDisplay();
+    };
+    window.addEventListener("languageChanged", this.languageChangeListener);
   }
 
   /**
@@ -428,7 +439,7 @@ export class Pong {
           this.ctx.font = "bold 200px Arial";
           this.ctx.textAlign = "center";
           this.ctx.textBaseline = "middle";
-          this.ctx.fillText("Waiting for opponent...", width / 2, height / 2);
+          this.ctx.fillText(i18n.t("pong.waitingForOpponent"), width / 2, height / 2);
           break;
         }
         case "friend": {
@@ -444,7 +455,7 @@ export class Pong {
           this.ctx.font = "bold 150px Arial";
           this.ctx.textAlign = "center";
           this.ctx.textBaseline = "middle";
-          this.ctx.fillText("When ready click Start Game", width / 2, height / 2);
+          this.ctx.fillText(i18n.t("pong.waitingForStart"), width / 2, height / 2);
           break;
         }
         default:
@@ -503,6 +514,9 @@ export class Pong {
     }
     if (this.keyupListener) {
       document.removeEventListener("keyup", this.keyupListener);
+    }
+    if (this.languageChangeListener) {
+      window.removeEventListener("languageChanged", this.languageChangeListener);
     }
 
     this.ws?.close();

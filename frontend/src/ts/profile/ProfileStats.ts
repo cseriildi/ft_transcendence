@@ -1,6 +1,7 @@
 /**
  * Handles profile statistics display and calculation
  */
+import { i18n } from "../utils/i18n.js";
 export class ProfileStats {
   private resetStatsOverview(): void {
     const totalGamesElement = document.getElementById("total-games");
@@ -16,8 +17,9 @@ export class ProfileStats {
     if (totalGamesElement) totalGamesElement.textContent = "0";
     if (totalWinsElement) totalWinsElement.textContent = "0";
     if (totalLossesElement) totalLossesElement.textContent = "0";
-    if (winPercentageLabel) winPercentageLabel.textContent = "Wins 0%";
-    if (lossPercentageLabel) lossPercentageLabel.textContent = "Losses 0%";
+    if (winPercentageLabel) winPercentageLabel.textContent = `${i18n.t("profile.winsLabel")} 0%`;
+    if (lossPercentageLabel)
+      lossPercentageLabel.textContent = `${i18n.t("profile.lossesLabel")} 0%`;
     if (winBar) winBar.style.width = "0%";
     if (lossBar) lossBar.style.width = "0%";
     if (winRateElement) {
@@ -52,6 +54,12 @@ export class ProfileStats {
 
     if (winPercentageLabel) winPercentageLabel.textContent = `Wins ${winPercentage}%`;
     if (lossPercentageLabel) lossPercentageLabel.textContent = `Losses ${lossPercentage}%`;
+
+    // translate labels
+    if (winPercentageLabel)
+      winPercentageLabel.textContent = `${i18n.t("profile.winsLabel")} ${winPercentage}%`;
+    if (lossPercentageLabel)
+      lossPercentageLabel.textContent = `${i18n.t("profile.lossesLabel")} ${lossPercentage}%`;
 
     // Update progress bars
     const winBar = document.getElementById("win-bar");

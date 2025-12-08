@@ -8,6 +8,8 @@ import { Edit } from "./edit/Edit.js";
 import { Chat } from "./chat/Chat.js";
 import { config } from "./config.js";
 import { Users } from "./users/Users.js";
+import { i18n } from "./utils/i18n.js";
+import { languageSwitcher } from "./components/LanguageSwitcher.js";
 import { SecureTokenManager } from "./utils/secureTokenManager.js";
 import {
   getUserId,
@@ -22,6 +24,7 @@ import { fetchWithRefresh } from "./utils/fetchUtils.js";
 const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
 
 let currentPong: Pong | null = null;
+let tournamentLanguageListener: (() => void) | null = null;
 
 const listenersRegistry = new WeakMap<EventTarget, Map<string, EventListener>>();
 const attachedSet = new Set<EventTarget>();
@@ -229,21 +232,45 @@ const initPongPage = async () => {
 
   const showPlayerNamesForm = (playerCount: number) => {
     if (!tournamentForm || !tournamentNames) return;
+
+    // Remove old language listener if it exists
+    if (tournamentLanguageListener) {
+      window.removeEventListener("languageChanged", tournamentLanguageListener);
+      tournamentLanguageListener = null;
+    }
+
     tournamentNames.innerHTML = "";
     for (let i = 1; i <= playerCount; i++) {
       const inputWrapper = document.createElement("div");
       inputWrapper.className = "";
-      inputWrapper.innerHTML = `
-      <input
-        type="text"
-        id="player-${i}"
-        class="form-input"
-        placeholder="Player ${i} name"
-        maxlength="20"
-      />
-    `;
+      const input = document.createElement("input");
+      input.type = "text";
+      input.id = `player-${i}`;
+      input.className = "form-input";
+      input.maxLength = 20;
+      // set translated placeholder now
+      try {
+        input.placeholder = i18n.t("tournament.playerPlaceholder", { i });
+      } catch (e) {
+        input.placeholder = `Player ${i} name`;
+      }
+      // store index to update on language change
+      input.setAttribute("data-player-index", String(i));
+      inputWrapper.appendChild(input);
       tournamentNames.appendChild(inputWrapper);
     }
+
+    // update placeholders when language changes
+    tournamentLanguageListener = () => {
+      const inputs = tournamentNames.querySelectorAll<HTMLInputElement>("input[data-player-index]");
+      inputs.forEach((inp) => {
+        const idx = Number(inp.getAttribute("data-player-index") || "0");
+        if (idx > 0) {
+          inp.placeholder = i18n.t("tournament.playerPlaceholder", { i: idx });
+        }
+      });
+    };
+    window.addEventListener("languageChanged", tournamentLanguageListener);
     showElement(tournamentForm);
     showElement(startTournamentBtn);
   };
@@ -387,6 +414,13 @@ const initNotFoundPage = () => {
 };
 
 const router = new Router();
+
+router.setI18nCallback(async () => {
+  await i18n.init();
+  languageSwitcher.init();
+  console.log("✅ i18n initialized with language:", i18n.getCurrentLanguage());
+});
+
 const loginPage = new Login(router);
 const registerPage = new Register(router);
 const homePage = new Home(router);
@@ -434,7 +468,7 @@ createPopup();
   const tokenManager = SecureTokenManager.getInstance(router);
 
   tokenManager.setTokenExpiryCallback(() => {
-    showErrorPopup("Session expired. Please log in again.");
+    showErrorPopup(i18n.t("error.sessionExpired"));
   });
 
   await tokenManager.initialize();
