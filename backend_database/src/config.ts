@@ -65,6 +65,11 @@ export const config = {
       .map((s) => s.trim()),
   },
 
+  // Service-to-service authentication (gamelogic <-> databank)
+  serviceAuth: {
+    secret: getEnvVar("SERVICE_SECRET"),
+  },
+
   // JWT config
   jwt: {
     issuer: getEnvVar("JWT_ISSUER"),

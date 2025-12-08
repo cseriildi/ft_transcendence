@@ -29,3 +29,4 @@ backend_database/uploads/avatars/
 # Database files only (not directories)
 *.sqlite
 *.sqlite3
+docker-compose.override.yml

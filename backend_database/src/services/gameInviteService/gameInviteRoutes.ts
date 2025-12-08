@@ -1,6 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { gameInviteController } from "./gameInviteController.ts";
 import { requireAuth } from "../../utils/authUtils.ts";
+import { requireServiceAuth } from "../../middleware/serviceAuthMiddleware.ts";
 import { GameInviteSchemas } from "./gameInviteSchemas.ts";
 import {
   GameInviteParams,
@@ -13,7 +14,8 @@ import { ApiResponse } from "../../types/commonTypes.ts";
 /**
  * Game Invite Routes
  *
- * All routes protected with requireAuth middleware.
+ * Most routes protected with requireAuth middleware.
+ * Internal routes (DELETE, GET by ID for service) protected with requireServiceAuth.
  * Rate limiting applied via authenticatedRateLimit in router.ts (100 req/min per user).
  */
 async function gameInviteRoutes(fastify: FastifyInstance) {
@@ -49,19 +51,20 @@ async function gameInviteRoutes(fastify: FastifyInstance) {
     gameInviteController.getInvite
   );
 
-  // Cancel/delete game invitation
+  // Cancel/delete game invitation (internal service only - gamelogic)
+  // Used by gamelogic to delete invitation after game completes
   fastify.delete<{
     Params: GameInviteParams;
     Reply: ApiResponse<{ game_id: number; status: string }>;
   }>(
     "/game-invites/:id",
     {
-      preHandler: requireAuth,
+      preHandler: requireServiceAuth,
       schema: {
         tags: ["game-invites"],
-        description: "Cancel a game invitation (requires authentication)",
-        summary: "Cancel/delete a game invitation",
-        security: [{ bearerAuth: [] }],
+        description: "Delete a game invitation (internal service only)",
+        summary: "Delete a game invitation after game completion",
+        hide: true,
         ...GameInviteSchemas.cancelInvite,
       },
     },
@@ -84,11 +87,12 @@ async function gameInviteRoutes(fastify: FastifyInstance) {
     gameInviteController.listInvites
   );
 
-  // Internal endpoint for game server to verify invitations (no auth required)
+  // Internal endpoint for game server to verify invitations (service auth required)
   // This endpoint is only accessible from internal services and returns minimal info
   fastify.get<{ Params: GameInviteParams; Reply: ApiResponse<GameInviteResponse> }>(
     "/internal/game-invites/:id",
     {
+      preHandler: requireServiceAuth,
       schema: {
         tags: ["game-invites"],
         description: "Internal endpoint for game server to verify invitations",
