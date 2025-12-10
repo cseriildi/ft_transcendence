@@ -12,6 +12,7 @@ export class Users {
   private userActionHandler: UserActionHandler;
   private lastAttachedContainer: HTMLElement | null = null;
   private languageChangeListener: (() => void) | null = null;
+  private backBtnHandler: (() => void) | null = null;
 
   constructor(private router: any) {
     this.friendService = new FriendService();
@@ -26,6 +27,12 @@ export class Users {
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
       this.languageChangeListener = null;
+    }
+
+    if (this.backBtnHandler) {
+      const backBtn = document.getElementById("back-btn");
+      backBtn?.removeEventListener("click", this.backBtnHandler);
+      this.backBtnHandler = null;
     }
   }
 
@@ -42,7 +49,10 @@ export class Users {
 
   private setupBackButton(): void {
     const backBtn = document.getElementById("back-btn");
-    backBtn?.addEventListener("click", () => this.router.navigate("/profile"));
+
+    // Store handler reference for cleanup
+    this.backBtnHandler = () => this.router.navigate("/profile");
+    backBtn?.addEventListener("click", this.backBtnHandler);
   }
 
   private setupUserActionListeners(): void {
@@ -98,5 +108,3 @@ export class Users {
     window.addEventListener("languageChanged", this.languageChangeListener);
   }
 }
-
-export default Users;

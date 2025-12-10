@@ -12,12 +12,36 @@ export class Edit {
   private formHandler: FormHandler;
   private fileInputHandler: FileInputHandler | null = null;
   private twoFactorManager: TwoFactorManager;
+  private backBtnHandler: (() => void) | null = null;
+  private formSubmitHandler: ((e: Event) => Promise<void>) | null = null;
 
   constructor(router: Router) {
     this.router = router;
     this.profileUpdater = new ProfileUpdater();
     this.formHandler = new FormHandler(this.profileUpdater);
     this.twoFactorManager = new TwoFactorManager();
+  }
+
+  public destroy(): void {
+    // Clean up back button listener
+    if (this.backBtnHandler) {
+      const backBtn = document.getElementById("back-btn");
+      backBtn?.removeEventListener("click", this.backBtnHandler);
+      this.backBtnHandler = null;
+    }
+
+    // Clean up form submit listener
+    if (this.formSubmitHandler) {
+      const form = document.getElementById("edit-form");
+      form?.removeEventListener("submit", this.formSubmitHandler);
+      this.formSubmitHandler = null;
+    }
+
+    // Clean up file input handler
+    if (this.fileInputHandler) {
+      this.fileInputHandler.destroy();
+      this.fileInputHandler = null;
+    }
   }
 
   async initPage(): Promise<void> {
@@ -37,14 +61,18 @@ export class Edit {
     const backBtn = document.getElementById("back-btn");
     const form = document.getElementById("edit-form");
 
-    backBtn?.addEventListener("click", () => this.router.navigate("/profile"));
-    form?.addEventListener("submit", async (e) => {
+    // Store handler references for cleanup
+    this.backBtnHandler = () => this.router.navigate("/profile");
+    this.formSubmitHandler = async (e: Event) => {
       e.preventDefault();
       const result = await this.formHandler.handleSubmit(e.target as HTMLFormElement);
       if (result.success) {
         this.router.navigate("/profile");
       }
-    });
+    };
+
+    backBtn?.addEventListener("click", this.backBtnHandler);
+    form?.addEventListener("submit", this.formSubmitHandler);
   }
 
   private setupFileInput(): void {

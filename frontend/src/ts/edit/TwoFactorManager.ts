@@ -4,6 +4,7 @@ import { i18n } from "../utils/i18n.js";
 
 export class TwoFactorManager {
   private twoFactorAuth: TwoFactorAuth;
+  private listenersInitialized: boolean = false;
 
   constructor() {
     this.twoFactorAuth = new TwoFactorAuth();
@@ -54,6 +55,9 @@ export class TwoFactorManager {
     onCancel: () => void,
     onCopySecret: () => void
   ): void {
+    // Prevent duplicate listener registration
+    if (this.listenersInitialized) return;
+
     const enableBtn = document.getElementById("enable-2fa-btn");
     const disableBtn = document.getElementById("disable-2fa-btn");
     const cancelBtn = document.getElementById("cancel-setup-btn");
@@ -87,6 +91,8 @@ export class TwoFactorManager {
         onDisable();
       }
     });
+
+    this.listenersInitialized = true;
   }
 
   async startSetup(): Promise<void> {

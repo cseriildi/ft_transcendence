@@ -12,10 +12,21 @@ export interface FriendStatus {
 }
 
 export class UserListRenderer {
+  private profileClickHandler: ((e: Event) => void) | null = null;
+  private chatClickHandler: ((e: Event) => void) | null = null;
+
   constructor(private router: any) {}
 
   render(users: User[], friends: Friend[] | undefined, container: HTMLElement): void {
     container.innerHTML = "";
+
+    // Remove old event listeners if they exist
+    if (this.profileClickHandler) {
+      container.removeEventListener("click", this.profileClickHandler);
+    }
+    if (this.chatClickHandler) {
+      container.removeEventListener("click", this.chatClickHandler);
+    }
 
     const currentUserId = Number(getUserId());
 
@@ -33,6 +44,37 @@ export class UserListRenderer {
       const userItem = this.createUserItem(user, friendStatus);
       container.appendChild(userItem);
     });
+
+    // Set up event delegation for profile navigation
+    this.profileClickHandler = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const userItem = target.closest(".user-item") as HTMLElement;
+
+      // Only navigate if clicked on user item (not on a button)
+      if (userItem && target.tagName !== "BUTTON") {
+        const userId = userItem.dataset.userId;
+        if (userId) {
+          this.router.navigate(`/profile?userId=${userId}`);
+        }
+      }
+    };
+
+    // Set up event delegation for chat buttons
+    this.chatClickHandler = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.classList.contains("chat-btn")) {
+        const userId = target.dataset.userId;
+        const username = target.dataset.username;
+        if (userId && username) {
+          const currentUserId = getUserId();
+          const chatId = [currentUserId, userId].sort((a, b) => Number(a) - Number(b)).join("-");
+          this.router.navigate(`/chat?chatId=${chatId}&username=${username}`);
+        }
+      }
+    };
+
+    container.addEventListener("click", this.profileClickHandler);
+    container.addEventListener("click", this.chatClickHandler);
   }
 
   private getFriendStatus(userId: number, friends: Friend[] | undefined): FriendStatus {
@@ -49,6 +91,7 @@ export class UserListRenderer {
   private createUserItem(user: User, status: FriendStatus): HTMLDivElement {
     const userItem = document.createElement("div");
     userItem.classList.add(
+      "user-item",
       "flex",
       "flex-col",
       "sm:flex-row",
@@ -63,19 +106,14 @@ export class UserListRenderer {
       "cursor-pointer"
     );
 
+    // Store user ID for event delegation
+    userItem.dataset.userId = user.id.toString();
+
     const userInfo = this.createUserInfo(user);
     const buttonContainer = this.createButtonContainer(user, status);
 
     userItem.appendChild(userInfo);
     userItem.appendChild(buttonContainer);
-
-    // Add click handler to entire user item
-    userItem.addEventListener("click", (e) => {
-      // Only navigate if the click wasn't on a button
-      if ((e.target as HTMLElement).tagName !== "BUTTON") {
-        this.router.navigate(`/profile?userId=${user.id}`);
-      }
-    });
 
     return userItem;
   }
@@ -218,7 +256,7 @@ export class UserListRenderer {
 
   private createDisabledAddButton(userId: number): HTMLButtonElement {
     const button = document.createElement("button");
-    button.textContent = "Request Declined";
+    button.textContent = i18n.t("users.requestDeclined");
     button.classList.add(
       "bg-gray-500",
       "text-white",
@@ -246,13 +284,9 @@ export class UserListRenderer {
   private createChatButton(user: User): HTMLButtonElement {
     const button = document.createElement("button");
     button.textContent = i18n.t("chat.title");
-    button.classList.add("btn-pink");
-    button.addEventListener("click", () => {
-      const currentUserId = getUserId();
-      const friendId = user.id;
-      const chatId = [currentUserId, friendId].sort((a, b) => Number(a) - Number(b)).join("-");
-      this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
-    });
+    button.classList.add("btn-pink", "chat-btn");
+    button.dataset.userId = user.id.toString();
+    button.dataset.username = user.username;
     return button;
   }
 }

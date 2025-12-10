@@ -1,14 +1,22 @@
 import { FriendService } from "./FriendService.js";
 
 export class UserActionHandler {
+  private clickHandler: ((e: Event) => Promise<void>) | null = null;
+  private attachedContainer: HTMLElement | null = null;
+
   constructor(
     private friendService: FriendService,
     private onActionComplete: () => void
   ) {}
 
   setupEventListeners(container: HTMLElement): void {
-    // Use event delegation for all friend action buttons
-    container.addEventListener("click", async (e) => {
+    // Remove listener from previous container if it exists
+    if (this.clickHandler && this.attachedContainer) {
+      this.attachedContainer.removeEventListener("click", this.clickHandler);
+    }
+
+    // Create and store the handler
+    this.clickHandler = async (e: Event) => {
       const target = e.target as HTMLElement;
       if (target.tagName !== "BUTTON") return;
 
@@ -46,6 +54,10 @@ export class UserActionHandler {
       if (success) {
         this.onActionComplete();
       }
-    });
+    };
+
+    // Add listener to new container and store reference
+    container.addEventListener("click", this.clickHandler);
+    this.attachedContainer = container;
   }
 }
