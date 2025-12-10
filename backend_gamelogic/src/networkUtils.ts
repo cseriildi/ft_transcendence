@@ -158,6 +158,9 @@ export function broadcastGameResult(game: GameServer) {
 // Helper function to send error message to client
 export function sendErrorToClient(connection: any, error: string) {
   try {
+    if (!connection) {
+      return;
+    }
     connection.send(
       JSON.stringify({
         type: "error",
