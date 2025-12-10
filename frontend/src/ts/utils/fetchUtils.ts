@@ -1,4 +1,3 @@
-import { config } from "../config.js";
 import { SecureTokenManager } from "./secureTokenManager.js";
 
 export async function fetchWithRefresh(url: string, options: RequestInit): Promise<Response> {

@@ -137,6 +137,13 @@ export class Profile {
     }
 
     this.languageChangeListener = async () => {
+      // Only re-render if we're still on the profile page
+      const gameHistoryContainer = document.getElementById("game-history");
+      if (!gameHistoryContainer) {
+        console.log("Not on profile page, skipping re-render");
+        return;
+      }
+
       console.log("Language changed, re-rendering profile page...");
       const pageTitle = document.querySelector(".page-title");
       if (pageTitle) {
@@ -145,7 +152,6 @@ export class Profile {
           : i18n.t("profile.userProfile");
       }
 
-      const gameHistoryContainer = document.getElementById("game-history");
       if (this.currentUserId) {
         await this.gameHistory.loadGameHistory(this.currentUserId, gameHistoryContainer);
       }
