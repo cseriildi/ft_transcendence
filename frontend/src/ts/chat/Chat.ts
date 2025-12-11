@@ -1,10 +1,12 @@
 import { Router } from "../router/Router.js";
-import { isUserAuthorized } from "../utils/utils.js";
+import { isUserAuthorized, getAccessToken } from "../utils/utils.js";
+import { config } from "../config.js";
 import { UserCache } from "./UserCache.js";
 import { MessageRenderer } from "./MessageRenderer.js";
 import { WebSocketHandler } from "./WebSocketHandler.js";
 import { ChatActions } from "./ChatActions.js";
 import { ChatUI } from "./ChatUI.js";
+import { fetchWithRefresh } from "../utils/fetchUtils.js";
 
 /**
  * Main Chat class that orchestrates all chat-related functionality
@@ -72,12 +74,13 @@ export class Chat {
 
     // Initialize chat partner info
     if (this.partnerUsername && this.chatId) {
+      const isFriend = await this.checkIfFriend(this.chatId);
       await this.chatUI.setupChatPartnerInfo(
         this.partnerUsername,
         this.chatId,
         (userId) => this.onViewProfile(userId),
         (userId, username) => this.onBlockUser(userId, username),
-        (userId, username) => this.onSendInvite(userId, username)
+        isFriend ? (userId, username) => this.onSendInvite(userId, username) : undefined
       );
     }
 
@@ -85,6 +88,47 @@ export class Chat {
     this.webSocketHandler.connect(this.chatId, this.chatBox, () => {
       console.log("Chat history loaded");
     });
+  }
+
+  /**
+   * Check if the chat partner is a friend
+   */
+  private async checkIfFriend(chatId: string): Promise<boolean> {
+    try {
+      const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/status`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getAccessToken()}`,
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch friends status");
+        return false;
+      }
+
+      const data = await response.json();
+      const userIds = chatId.split("-").map((id) => parseInt(id));
+      const currentUserId = Number(localStorage.getItem("userId"));
+      const partnerId = userIds.find((id) => id !== currentUserId);
+
+      if (!partnerId) {
+        return false;
+      }
+
+      // Check if partner is in friends list with "accepted" status
+      const friend = data.data.friends?.find(
+        (f: { user_id: number; status: string }) =>
+          f.user_id === partnerId && f.status === "accepted"
+      );
+
+      return !!friend;
+    } catch (error) {
+      console.error("Error checking friend status:", error);
+      return false;
+    }
   }
 
   /**

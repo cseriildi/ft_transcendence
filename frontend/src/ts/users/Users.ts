@@ -1,17 +1,38 @@
-import { fetchWithRefresh } from "../utils/fetchUtils.js";
-import { getAccessToken, isUserAuthorized, getUserId } from "../utils/utils.js";
-import { config } from "../config.js";
+import { isUserAuthorized } from "../utils/utils.js";
+import { FriendService } from "./FriendService.js";
+import { UserService } from "./UserService.js";
+import { UserListRenderer } from "./UserListRenderer.js";
+import { UserActionHandler } from "./UserActionHandler.js";
 import { i18n } from "../utils/i18n.js";
 
 export class Users {
+  private friendService: FriendService;
+  private userService: UserService;
+  private userListRenderer: UserListRenderer;
+  private userActionHandler: UserActionHandler;
+  private lastAttachedContainer: HTMLElement | null = null;
   private languageChangeListener: (() => void) | null = null;
+  private backBtnHandler: (() => void) | null = null;
 
-  constructor(private router: any) {}
+  constructor(private router: any) {
+    this.friendService = new FriendService();
+    this.userService = new UserService();
+    this.userListRenderer = new UserListRenderer(router);
+    this.userActionHandler = new UserActionHandler(this.friendService, () =>
+      this.loadAndRenderUsers()
+    );
+  }
 
   public destroy(): void {
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
       this.languageChangeListener = null;
+    }
+
+    if (this.backBtnHandler) {
+      const backBtn = document.getElementById("back-btn");
+      backBtn?.removeEventListener("click", this.backBtnHandler);
+      this.backBtnHandler = null;
     }
   }
 
@@ -21,331 +42,50 @@ export class Users {
       return;
     }
 
-    const backBtn = document.getElementById("back-btn");
-    let friends:
-      | {
-          data?: {
-            friends?: Array<{
-              user_id: number;
-              status: string;
-              is_inviter: boolean;
-            }>;
-          };
-        }
-      | undefined;
-
-    backBtn?.addEventListener("click", () => this.router.navigate("/profile"));
-
+    this.setupBackButton();
     this.setupLanguageListener();
+    await this.loadAndRenderUsers();
+  }
 
-    try {
-      const response = await fetchWithRefresh(`${config.apiUrl}/api/friends/status`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getAccessToken()}`,
-        },
-        credentials: "include",
-      });
+  private setupBackButton(): void {
+    const backBtn = document.getElementById("back-btn");
 
-      if (response.ok) {
-        friends = await response.json();
-      } else {
-        console.error("Failed to fetch friends status", await response.json());
-      }
-    } catch (error) {
-      console.error("Error fetching friends status", error);
+    // Store handler reference for cleanup
+    this.backBtnHandler = () => this.router.navigate("/profile");
+    backBtn?.addEventListener("click", this.backBtnHandler);
+  }
+
+  private setupUserActionListeners(): void {
+    const usersListContainer = document.getElementById("user-list");
+    if (!usersListContainer) return;
+
+    // If we already attached to this exact DOM element, skip
+    if (this.lastAttachedContainer === usersListContainer) return;
+
+    // Attach to the current container (handles DOM replacement after navigation)
+    this.userActionHandler.setupEventListeners(usersListContainer);
+    this.lastAttachedContainer = usersListContainer;
+  }
+
+  private async loadAndRenderUsers(): Promise<void> {
+    // Fetch friends status and users in parallel
+    const [friendsResponse, users] = await Promise.all([
+      this.friendService.getFriendsStatus(),
+      this.userService.getUsers(),
+    ]);
+
+    const usersListContainer = document.getElementById("user-list");
+    if (!usersListContainer) {
+      console.error("User list container not found");
+      return;
     }
 
-    try {
-      const response = await fetch(`${config.apiUrl}/api/users`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
+    // Render the user list
+    const friends = friendsResponse?.data?.friends;
+    this.userListRenderer.render(users, friends, usersListContainer);
 
-      if (response.ok) {
-        const data = await response.json();
-        const users = data.data;
-        const usersListContainer = document.getElementById("user-list");
-
-        if (usersListContainer) {
-          usersListContainer.innerHTML = "";
-
-          if (users.length === 1) {
-            usersListContainer.innerHTML = `<p>${i18n.t("users.noOtherUsers")}</p>`;
-            usersListContainer.classList.add("text-white");
-            return;
-          }
-
-          users.forEach((user: { username: string; avatar_url: string; id: number }) => {
-            if (user.id === Number(localStorage.getItem("userId"))) {
-              return;
-            }
-
-            // Check friendship status
-            const friendStatus = friends?.data?.friends?.find(
-              (friend: any) => friend.user_id === user.id
-            );
-
-            const isFriend = friendStatus?.status === "accepted";
-            const isPending = friendStatus?.status === "pending";
-            const isInviter = friendStatus?.is_inviter === true;
-
-            const userItem = document.createElement("div");
-            userItem.classList.add(
-              "flex",
-              "flex-col",
-              "sm:flex-row",
-              "sm:items-center",
-              "sm:justify-between",
-              "mb-4",
-              "p-3",
-              "rounded-lg",
-              "hover:bg-blue-600",
-              "gap-3",
-              "sm:gap-0"
-            );
-
-            const userInfo = document.createElement("div");
-            userInfo.classList.add("flex", "items-center");
-
-            const avatar = document.createElement("img");
-            avatar.src = `${config.apiUrl}${user.avatar_url}`;
-            avatar.alt = `${user.username}'s avatar`;
-            avatar.classList.add("w-12", "h-12", "rounded-full", "mr-4");
-
-            const username = document.createElement("span");
-            username.textContent = user.username;
-            username.classList.add("text-white", "mr-4", "max-w-[150px]", "truncate", "block");
-
-            userInfo.appendChild(avatar);
-            userInfo.appendChild(username);
-
-            // Add click handler to view user profile
-            userInfo.classList.add("cursor-pointer");
-            userInfo.addEventListener("click", () => {
-              this.router.navigate(`/profile?userId=${user.id}`);
-            });
-
-            // Create action button(s) based on status
-            const buttonContainer = document.createElement("div");
-            buttonContainer.classList.add(
-              "flex",
-              "flex-wrap",
-              "gap-2",
-              "w-full",
-              "sm:w-auto",
-              "justify-center",
-              "sm:justify-end"
-            );
-
-            if (isFriend) {
-              // Show Delete Friend button
-              const deleteButton = document.createElement("button");
-              deleteButton.textContent = i18n.t("users.deleteFriend");
-              deleteButton.classList.add(
-                "bg-red-600",
-                "hover:bg-red-700",
-                "text-white",
-                "font-bold",
-                "py-1",
-                "px-3",
-                "rounded",
-                "transition"
-              );
-              deleteButton.addEventListener("click", async () => {
-                try {
-                  const response = await fetchWithRefresh(
-                    `${config.apiUrl}/api/friends/${user.id}`,
-                    {
-                      method: "DELETE",
-                      headers: {
-                        Authorization: `Bearer ${getAccessToken()}`,
-                      },
-                      credentials: "include",
-                    }
-                  );
-
-                  if (response.ok) {
-                    this.initPage();
-                  } else {
-                    console.error("Failed to delete friend", await response.json());
-                  }
-                } catch (error) {
-                  console.error("Error deleting friend", error);
-                }
-              });
-              buttonContainer.appendChild(deleteButton);
-            } else if (isPending && isInviter) {
-              // User sent the request - show Cancel button
-              const cancelButton = document.createElement("button");
-              cancelButton.textContent = i18n.t("users.cancelRequest");
-              cancelButton.classList.add(
-                "bg-gray-600",
-                "hover:bg-gray-700",
-                "text-white",
-                "font-bold",
-                "py-1",
-                "px-3",
-                "rounded",
-                "transition"
-              );
-              cancelButton.addEventListener("click", async () => {
-                try {
-                  const response = await fetchWithRefresh(
-                    `${config.apiUrl}/api/friends/${user.id}`,
-                    {
-                      method: "DELETE",
-                      headers: {
-                        Authorization: `Bearer ${getAccessToken()}`,
-                      },
-                      credentials: "include",
-                    }
-                  );
-
-                  if (response.ok) {
-                    this.initPage();
-                  } else {
-                    console.error("Failed to cancel request", await response.json());
-                  }
-                } catch (error) {
-                  console.error("Error canceling request", error);
-                }
-              });
-              buttonContainer.appendChild(cancelButton);
-            } else if (isPending && !isInviter) {
-              // User received the request - show Accept/Decline buttons
-              const acceptButton = document.createElement("button");
-              acceptButton.textContent = i18n.t("users.accept");
-              acceptButton.classList.add(
-                "bg-neon-green",
-                "hover:bg-green-600",
-                "text-purple-900",
-                "font-bold",
-                "py-1",
-                "px-3",
-                "rounded",
-                "transition"
-              );
-              acceptButton.addEventListener("click", async () => {
-                try {
-                  const response = await fetchWithRefresh(
-                    `${config.apiUrl}/api/friends/${user.id}/accept`,
-                    {
-                      method: "PATCH",
-                      headers: {
-                        Authorization: `Bearer ${getAccessToken()}`,
-                      },
-                      credentials: "include",
-                    }
-                  );
-
-                  if (response.ok) {
-                    this.initPage();
-                  } else {
-                    console.error("Failed to accept request", await response.json());
-                  }
-                } catch (error) {
-                  console.error("Error accepting request", error);
-                }
-              });
-
-              const declineButton = document.createElement("button");
-              declineButton.textContent = i18n.t("users.decline");
-              declineButton.classList.add(
-                "bg-red-600",
-                "hover:bg-red-700",
-                "text-white",
-                "font-bold",
-                "py-1",
-                "px-3",
-                "rounded",
-                "transition"
-              );
-              declineButton.addEventListener("click", async () => {
-                try {
-                  const response = await fetchWithRefresh(
-                    `${config.apiUrl}/api/friends/${user.id}/decline`,
-                    {
-                      method: "PATCH",
-                      headers: {
-                        Authorization: `Bearer ${getAccessToken()}`,
-                      },
-                      credentials: "include",
-                    }
-                  );
-
-                  if (response.ok) {
-                    this.initPage();
-                  } else {
-                    console.error("Failed to decline request", await response.json());
-                  }
-                } catch (error) {
-                  console.error("Error declining request", error);
-                }
-              });
-
-              buttonContainer.appendChild(acceptButton);
-              buttonContainer.appendChild(declineButton);
-            } else {
-              // No relationship - show Add Friend button
-              const addButton = document.createElement("button");
-              addButton.textContent = i18n.t("users.addFriend");
-              addButton.classList.add("btn-green");
-              addButton.addEventListener("click", async () => {
-                try {
-                  const response = await fetchWithRefresh(
-                    `${config.apiUrl}/api/friends/${user.id}`,
-                    {
-                      method: "POST",
-                      headers: {
-                        Authorization: `Bearer ${getAccessToken()}`,
-                      },
-                      credentials: "include",
-                    }
-                  );
-
-                  if (response.ok) {
-                    this.initPage();
-                  } else {
-                    console.error("Failed to add friend", await response.json());
-                  }
-                } catch (error) {
-                  console.error("Error adding friend", error);
-                }
-              });
-              buttonContainer.appendChild(addButton);
-            }
-
-            // Add Chat button for all users
-            const chatButton = document.createElement("button");
-            chatButton.textContent = i18n.t("chat.title");
-            chatButton.classList.add("btn-pink");
-            chatButton.addEventListener("click", () => {
-              const currentUserId = getUserId();
-              const friendId = user.id;
-              const chatId = [currentUserId, friendId]
-                .sort((a, b) => Number(a) - Number(b))
-                .join("-");
-              this.router.navigate(`/chat?chatId=${chatId}&username=${user.username}`);
-            });
-            buttonContainer.appendChild(chatButton);
-
-            userItem.appendChild(userInfo);
-            userItem.appendChild(buttonContainer);
-
-            usersListContainer.appendChild(userItem);
-          });
-        }
-      } else {
-        console.error("Failed to fetch users", await response.json());
-      }
-    } catch (error) {
-      console.error("Error fetching users", error);
-    }
+    // Set up action listeners after rendering
+    this.setupUserActionListeners();
   }
 
   private setupLanguageListener(): void {
@@ -354,8 +94,15 @@ export class Users {
     }
 
     this.languageChangeListener = async () => {
+      // Only re-render if we're still on the users page
+      const usersListContainer = document.getElementById("user-list");
+      if (!usersListContainer) {
+        console.log("Not on users page, skipping re-render");
+        return;
+      }
+
       console.log("Language changed, re-rendering users page...");
-      await this.initPage();
+      await this.loadAndRenderUsers();
     };
 
     window.addEventListener("languageChanged", this.languageChangeListener);

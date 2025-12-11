@@ -56,11 +56,17 @@ export class FriendsList {
         const data = await response.json();
         friendsListContainer.innerHTML = "";
 
+        // Filter out declined friendships - only show accepted and pending
+        const activeFriends = data.data.friends.filter(
+          (friend: { status: string }) =>
+            friend.status === "accepted" || friend.status === "pending"
+        );
+
         if (data.data.friends.length === 0) {
-          friendsListContainer.innerHTML = `<p>${i18n.t("profile.noFriends")}</p>`;
+          friendsListContainer.innerHTML = `<p class="text-center">${i18n.t("profile.noFriends")}</p>`;
           friendsListContainer.classList.add("text-white");
         } else {
-          data.data.friends.forEach(
+          activeFriends.forEach(
             (friend: {
               user_id: number;
               username: string;

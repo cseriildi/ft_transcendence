@@ -46,7 +46,7 @@ export class ChatUI {
     chatId: string,
     onViewProfile: (userId: number) => void,
     onBlockUser: (userId: number, username: string) => void,
-    onSendInvite: (userId: number, username: string) => void
+    onSendInvite?: (userId: number, username: string) => void
   ): Promise<void> {
     const partnerUsernameElement = document.getElementById("partner-username");
     const partnerAvatarElement = document.getElementById("partner-avatar") as HTMLImageElement;
@@ -113,9 +113,14 @@ export class ChatUI {
 
         const inviteBtn = document.getElementById("invite-btn");
         if (inviteBtn) {
-          inviteBtn.addEventListener("click", async () => {
-            onSendInvite(partnerId, partnerUsername);
-          });
+          if (onSendInvite) {
+            inviteBtn.addEventListener("click", async () => {
+              onSendInvite(partnerId, partnerUsername);
+            });
+          } else {
+            // Hide invite button if not friends
+            inviteBtn.style.display = "none";
+          }
         }
       } else {
         console.error("Failed to fetch partner info:", await response.json());
