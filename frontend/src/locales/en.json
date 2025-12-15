@@ -81,7 +81,11 @@
     "instanceNotCreated": "Pong instance not created.",
     "gameError": "Game Error",
     "waitingForOpponent": "Waiting for opponent...",
-    "waitingForStart": "When ready click Start Game"
+    "waitingForStart": "When ready click Start Game",
+    "youWon": "🎉 You Won!",
+    "youLost": "😢 You Lost!",
+    "gameOver": "Game Over",
+    "playerWins": "🎉 {{player}} Wins!"
   },
 
   "pong_dynamic": {
@@ -150,7 +154,8 @@
     "cancelRequest": "Cancel Request",
     "accept": "Accept",
     "decline": "Decline",
-    "addFriend": "Add Friend"
+    "addFriend": "Add Friend",
+    "requestDeclined": "Friend request declined"
   },
 
   "chat": {

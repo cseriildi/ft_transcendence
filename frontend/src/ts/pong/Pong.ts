@@ -49,6 +49,9 @@ export class Pong {
   private keysPressed: Set<string> = new Set();
   private languageChangeListener: (() => void) | null = null;
 
+  // Mobile button controls
+  private buttonListeners: Map<string, () => void> = new Map();
+
   constructor(canvasId: string, wsUrl: string, gameMode: string, gameId?: string) {
     const canvasEl = document.getElementById(canvasId);
     if (!canvasEl) throw new Error(`Canvas element with id "${canvasId}" not found.`);
@@ -62,6 +65,7 @@ export class Pong {
     this.currentGameMode = gameMode;
     this.gameId = gameId;
     this.setupInputHandlers();
+    this.setupButtonControls();
     this.setupLanguageListener();
     this.connect();
     this.renderLoop();
@@ -101,6 +105,9 @@ export class Pong {
     if (difficulty) message.difficulty = difficulty;
 
     console.log("📨 Sending message:", message);
+
+    // Update button visibility for new game mode
+    this.updateButtonVisibility();
 
     // For authenticated modes, ensure WebSocket is open before sending
     if (["remote", "friend"].includes(gameMode)) {
@@ -241,6 +248,32 @@ export class Pong {
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
             console.log("🏆 Game Over! Result:", message.data);
+
+            // Show win/loss notification
+            if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
+              const result = message.data;
+              let didWin = false;
+
+              if (this.currentGameMode === "ai") {
+                // In AI mode, player is always player 2
+                didWin = result.winner === 2;
+              } else if (
+                ["remote", "friend"].includes(this.currentGameMode) &&
+                this.assignedPlayerNumber
+              ) {
+                didWin = result.winner === this.assignedPlayerNumber;
+              }
+
+              const notificationMessage = didWin ? i18n.t("pong.youWon") : i18n.t("pong.youLost");
+              alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
+            } else if (this.currentGameMode === "tournament") {
+              const result = message.data;
+              const winner = result.winnerName || `Player ${result.winner}`;
+              alert(
+                `${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`
+              );
+            }
+
             this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
             if (["remote", "tournament"].includes(this.currentGameMode)) {
               window.dispatchEvent(new CustomEvent("pong:showNewGameButton"));
@@ -385,6 +418,152 @@ export class Pong {
     window.addEventListener("languageChanged", this.languageChangeListener);
   }
 
+  private setupButtonControls() {
+    const sendInput = (type: string, data: any) => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type, data }));
+      }
+    };
+
+    // Get button elements
+    const p1UpBtn = document.getElementById("p1-up-btn");
+    const p1DownBtn = document.getElementById("p1-down-btn");
+    const p2UpBtn = document.getElementById("p2-up-btn");
+    const p2DownBtn = document.getElementById("p2-down-btn");
+
+    // Player 1 buttons
+    if (p1UpBtn) {
+      const upHandler = () => sendInput("playerInput", { player: 1, action: "up" });
+      const upStopHandler = () => sendInput("playerInput", { player: 1, action: "stop" });
+
+      p1UpBtn.addEventListener("touchstart", upHandler);
+      p1UpBtn.addEventListener("mousedown", upHandler);
+      p1UpBtn.addEventListener("touchend", upStopHandler);
+      p1UpBtn.addEventListener("mouseup", upStopHandler);
+      p1UpBtn.addEventListener("mouseleave", upStopHandler);
+
+      this.buttonListeners.set("p1-up-touch", upHandler);
+      this.buttonListeners.set("p1-up-mouse", upHandler);
+      this.buttonListeners.set("p1-up-stop-touch", upStopHandler);
+      this.buttonListeners.set("p1-up-stop-mouse", upStopHandler);
+      this.buttonListeners.set("p1-up-stop-leave", upStopHandler);
+    }
+
+    if (p1DownBtn) {
+      const downHandler = () => sendInput("playerInput", { player: 1, action: "down" });
+      const downStopHandler = () => sendInput("playerInput", { player: 1, action: "stop" });
+
+      p1DownBtn.addEventListener("touchstart", downHandler);
+      p1DownBtn.addEventListener("mousedown", downHandler);
+      p1DownBtn.addEventListener("touchend", downStopHandler);
+      p1DownBtn.addEventListener("mouseup", downStopHandler);
+      p1DownBtn.addEventListener("mouseleave", downStopHandler);
+
+      this.buttonListeners.set("p1-down-touch", downHandler);
+      this.buttonListeners.set("p1-down-mouse", downHandler);
+      this.buttonListeners.set("p1-down-stop-touch", downStopHandler);
+      this.buttonListeners.set("p1-down-stop-mouse", downStopHandler);
+      this.buttonListeners.set("p1-down-stop-leave", downStopHandler);
+    }
+
+    // Player 2 buttons (or single player in online/AI mode)
+    if (p2UpBtn) {
+      const upHandler = () => {
+        const player =
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+            ? this.assignedPlayerNumber
+            : 2;
+        sendInput("playerInput", { player, action: "up" });
+      };
+      const upStopHandler = () => {
+        const player =
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+            ? this.assignedPlayerNumber
+            : 2;
+        sendInput("playerInput", { player, action: "stop" });
+      };
+
+      p2UpBtn.addEventListener("touchstart", upHandler);
+      p2UpBtn.addEventListener("mousedown", upHandler);
+      p2UpBtn.addEventListener("touchend", upStopHandler);
+      p2UpBtn.addEventListener("mouseup", upStopHandler);
+      p2UpBtn.addEventListener("mouseleave", upStopHandler);
+
+      this.buttonListeners.set("p2-up-touch", upHandler);
+      this.buttonListeners.set("p2-up-mouse", upHandler);
+      this.buttonListeners.set("p2-up-stop-touch", upStopHandler);
+      this.buttonListeners.set("p2-up-stop-mouse", upStopHandler);
+      this.buttonListeners.set("p2-up-stop-leave", upStopHandler);
+    }
+
+    if (p2DownBtn) {
+      const downHandler = () => {
+        const player =
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+            ? this.assignedPlayerNumber
+            : 2;
+        sendInput("playerInput", { player, action: "down" });
+      };
+      const downStopHandler = () => {
+        const player =
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+            ? this.assignedPlayerNumber
+            : 2;
+        sendInput("playerInput", { player, action: "stop" });
+      };
+
+      p2DownBtn.addEventListener("touchstart", downHandler);
+      p2DownBtn.addEventListener("mousedown", downHandler);
+      p2DownBtn.addEventListener("touchend", downStopHandler);
+      p2DownBtn.addEventListener("mouseup", downStopHandler);
+      p2DownBtn.addEventListener("mouseleave", downStopHandler);
+
+      this.buttonListeners.set("p2-down-touch", downHandler);
+      this.buttonListeners.set("p2-down-mouse", downHandler);
+      this.buttonListeners.set("p2-down-stop-touch", downStopHandler);
+      this.buttonListeners.set("p2-down-stop-mouse", downStopHandler);
+      this.buttonListeners.set("p2-down-stop-leave", downStopHandler);
+    }
+
+    // Update button visibility based on game mode
+    this.updateButtonVisibility();
+  }
+
+  private updateButtonVisibility() {
+    const mobileControls = document.getElementById("mobile-controls");
+    const player1Controls = document.getElementById("player1-controls");
+    const player2Controls = document.getElementById("player2-controls");
+    const player2Label = document.getElementById("player2-controls-label");
+
+    if (!mobileControls || !player1Controls || !player2Controls) return;
+
+    // Show mobile controls
+    mobileControls.classList.remove("hidden");
+
+    if (["local", "tournament"].includes(this.currentGameMode)) {
+      // Local mode: show both players
+      player1Controls.classList.remove("hidden");
+      player2Controls.classList.remove("hidden");
+      if (player2Label) {
+        player2Label.setAttribute("data-i18n", "pong_dynamic.player2");
+        player2Label.textContent = i18n.t("pong_dynamic.player2");
+      }
+    } else if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
+      // Online/AI mode: show only player 2 controls (or assigned player)
+      player1Controls.classList.add("hidden");
+      player2Controls.classList.remove("hidden");
+      if (player2Label) {
+        if (this.currentGameMode === "ai") {
+          player2Label.setAttribute("data-i18n", "pong_dynamic.you");
+          player2Label.textContent = i18n.t("pong_dynamic.you");
+        } else {
+          player2Label.removeAttribute("data-i18n");
+          player2Label.textContent = "You";
+        }
+      }
+    }
+  }
+
   /**
    * Handle keydown events based on game mode
    */
@@ -493,6 +672,10 @@ export class Pong {
     // Create and store keydown listener
     this.keydownListener = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
+      // Prevent arrow keys from scrolling the page
+      if (key === "arrowup" || key === "arrowdown") {
+        event.preventDefault();
+      }
       this.handleKeyDown(key, sendInput);
     };
 
@@ -685,6 +868,20 @@ export class Pong {
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
     }
+
+    // Clean up button listeners
+    const p1UpBtn = document.getElementById("p1-up-btn");
+    const p1DownBtn = document.getElementById("p1-down-btn");
+    const p2UpBtn = document.getElementById("p2-up-btn");
+    const p2DownBtn = document.getElementById("p2-down-btn");
+
+    [p1UpBtn, p1DownBtn, p2UpBtn, p2DownBtn].forEach((btn) => {
+      if (btn) {
+        const clone = btn.cloneNode(true);
+        btn.parentNode?.replaceChild(clone, btn);
+      }
+    });
+    this.buttonListeners.clear();
 
     this.ws?.close();
     this.ws = null;

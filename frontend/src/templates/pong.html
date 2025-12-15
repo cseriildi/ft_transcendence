@@ -23,22 +23,24 @@
 
       <div class="flex-1 sm:block hidden"></div>
 
-      <div class="flex items-center gap-4 sm:ml-auto">
+      <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 sm:ml-auto">
         <select
           id="lang-select"
-          class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition"
+          class="bg-black/80 text-neon-green border-2 border-neon-pink rounded px-3 py-2 cursor-pointer hover:bg-neon-pink/20 transition w-full sm:w-auto"
         >
           <option value="en">🇬🇧 English</option>
           <option value="de">🇩🇪 Deutsch</option>
           <option value="ru">🇷🇺 Русский</option>
         </select>
-        <button id="login-btn" class="btn-green" data-i18n="home.loginButton">Log in</button>
-        <button id="profile-btn" class="btn-green hidden" data-i18n="home.profileButton">
-          Profile
-        </button>
-        <button id="logout-btn" class="btn-pink hidden ml-4" data-i18n="home.logoutButton">
-          Log out
-        </button>
+        <div class="flex items-center gap-3 sm:gap-4">
+          <button id="login-btn" class="btn-green" data-i18n="home.loginButton">Log in</button>
+          <button id="profile-btn" class="btn-green hidden" data-i18n="home.profileButton">
+            Profile
+          </button>
+          <button id="logout-btn" class="btn-pink hidden" data-i18n="home.logoutButton">
+            Log out
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -148,6 +150,32 @@
         Pong game streamed via WebSocket
       </p>
     </div>
+
+    <!-- Mobile Controls -->
+    <div id="mobile-controls" class="hidden mt-6 mb-8">
+      <div class="flex flex-row justify-center gap-8">
+        <!-- Player 1 Controls (for local mode) -->
+        <div id="player1-controls" class="flex flex-col items-center space-y-2">
+          <p class="text-neon-green text-sm font-bold" data-i18n="pong_dynamic.player1">Player 1</p>
+          <button id="p1-up-btn" class="btn-green w-24 h-12 text-lg font-bold">↑</button>
+          <button id="p1-down-btn" class="btn-green w-24 h-12 text-lg font-bold">↓</button>
+        </div>
+
+        <!-- Player 2 Controls (for local mode) / Single Player Controls (for online/AI) -->
+        <div id="player2-controls" class="flex flex-col items-center space-y-2">
+          <p
+            id="player2-controls-label"
+            class="text-neon-green text-sm font-bold"
+            data-i18n="pong_dynamic.player2"
+          >
+            Player 2
+          </p>
+          <button id="p2-up-btn" class="btn-pink w-24 h-12 text-lg font-bold">↑</button>
+          <button id="p2-down-btn" class="btn-pink w-24 h-12 text-lg font-bold">↓</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Friends Section -->
     <div
       id="friends-card"
