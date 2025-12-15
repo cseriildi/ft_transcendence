@@ -1,0 +1,231 @@
+{
+  "home": {
+    "title": "Pong Portál: A végső ütő-aréna",
+    "subtitle": "Játssz Pongot. Légy legendás.",
+    "playButton": "Pong indítása",
+    "local2P": "Helyi 2 játékos",
+    "playAi": "Játék az MI ellen",
+    "playOnline": "Online játék",
+    "playFriend": "Játék baráttal",
+    "tournament": "Bajnokság",
+    "loginButton": "Bejelentkezés",
+    "logoutButton": "Kijelentkezés",
+    "profileButton": "Profil",
+    "loggedInAs": "Bejelentkezve mint",
+    "createdBy": "Készítette"
+  },
+
+  "common": {
+    "backToHome": "Vissza a főoldalra",
+    "backToProfile": "Vissza a profilhoz",
+    "goHome": "Főoldal",
+    "loading": "Betöltés...",
+    "vs": "vs"
+  },
+
+  "auth": {
+    "title": "Hitelesítés",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "Add meg az e-mail címed",
+    "passwordLabel": "Jelszó",
+    "passwordPlaceholder": "Add meg a jelszavad",
+    "loginButton": "Bejelentkezés",
+    "registerButton": "Regisztráció",
+    "emailPasswordRequired": "E-mail és jelszó megadása kötelező.",
+    "loginFailed": "Sikertelen bejelentkezés. Ellenőrizd az adataidat.",
+    "invalidEmail": "Érvénytelen e-mail cím. Kérjük, ellenőrizd.",
+    "invalidPassword": "Érvénytelen jelszó. Kérjük, ellenőrizd.",
+    "invalid2FACode": "Érvénytelen 2FA kód. Próbáld újra.",
+    "networkError": "Hálózati hiba. Ellenőrizd az internetkapcsolatot.",
+    "2faVerificationFailed": "A 2FA ellenőrzés sikertelen. Próbáld újra.",
+    "twoFactorTitle": "Kétlépcsős hitelesítés",
+    "twoFactorInstructions": "Add meg a hitelesítő alkalmazásod 6 számjegyű kódját",
+    "authCodeLabel": "Hitelesítési kód",
+    "verifyButton": "Ellenőrzés és bejelentkezés",
+    "backToLogin": "Vissza a bejelentkezéshez"
+  },
+
+  "register": {
+    "title": "Regisztráció",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "Add meg az e-mail címed",
+    "usernameLabel": "Becenév",
+    "usernamePlaceholder": "Add meg a beceneved",
+    "passwordLabel": "Jelszó",
+    "passwordPlaceholder": "Add meg a jelszavad",
+    "repeatPasswordLabel": "Jelszó ismétlése",
+    "repeatPasswordPlaceholder": "Erősítsd meg a jelszavad",
+    "registerButton": "Regisztráció",
+    "allFieldsRequired": "Minden mező kitöltése kötelező.",
+    "registrationFailed": "Sikertelen regisztráció. Próbáld újra.",
+    "emailExists": "Ez az e-mail cím már regisztrálva van. Jelentkezz be vagy használj másikat.",
+    "usernameExists": "Ez a felhasználónév már foglalt. Válassz másikat.",
+    "passwordsMismatch": "A jelszavak nem egyeznek. Próbáld újra.",
+    "weakPassword": "A jelszó túl gyenge. Használj erősebb jelszót.",
+    "invalidEmailFormat": "Érvénytelen e-mail formátum.",
+    "invalidUsername": "Érvénytelen felhasználónév. 3–15 karakter (betűk, számok, - és _).",
+    "networkError": "Hálózati hiba. Ellenőrizd a kapcsolatot."
+  },
+
+  "pong": {
+    "title": "Pong játék",
+    "newGame": "Új játék",
+    "selectDifficulty": "Nehézség kiválasztása",
+    "difficulty": {
+      "easy": "Könnyű",
+      "medium": "Közepes",
+      "hard": "Nehéz"
+    },
+    "startGame": "Játék indítása",
+    "streamInfo": "Pong játék WebSocketen keresztül közvetítve",
+    "instanceNotCreated": "A Pong példány nem jött létre.",
+    "gameError": "Játékhiba",
+    "waitingForOpponent": "Várakozás az ellenfélre...",
+    "waitingForStart": "Ha kész vagy, kattints a Játék indítása gombra"
+  },
+
+  "pong_dynamic": {
+    "ai": "MI",
+    "you": "Te",
+    "player1": "1. játékos",
+    "player2": "2. játékos"
+  },
+
+  "tournament": {
+    "heading": "Bajnokság beállítása",
+    "howMany": "Hány játékos?",
+    "players4": "4 játékos",
+    "players8": "8 játékos",
+    "enterNames": "Add meg a játékosok nevét",
+    "startTournament": "Bajnokság indítása",
+    "playerPlaceholder": "{{i}}. játékos neve",
+    "emptyNames": "Minden játékos neve kötelező",
+    "duplicateNames": "A játékosneveknek egyedieknek kell lenniük",
+    "setupFailed": "A bajnokság beállítása sikertelen"
+  },
+
+  "profile": {
+    "title": "Profilom",
+    "userProfile": "Felhasználói profil",
+    "editButton": "Profil szerkesztése",
+    "friendsHeading": "Barátok",
+    "friendManagementButton": "Barátkezelés",
+    "noFriends": "Még nincsenek barátaid",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Kérelem elküldve)",
+    "pendingApproval": "(Jóváhagyásra vár)",
+    "unknown": "Ismeretlen",
+    "invalidUserId": "Érvénytelen felhasználói azonosító",
+    "noGamesPlayed": "Még nem játszottál meccset",
+    "failedLoadHistory": "Nem sikerült betölteni a játék előzményeket",
+    "errorLoadHistory": "Hiba a játék előzmények betöltésekor",
+    "win": "GYŐZELEM",
+    "loss": "VERESÉG",
+    "seeMore": "Több megtekintése",
+    "remaining": "hátralévő",
+    "winsLabel": "Győzelmek",
+    "lossesLabel": "Vereségek",
+    "statsHeading": "Játék statisztikák",
+    "totalGames": "Összes játék",
+    "wins": "Győzelmek",
+    "losses": "Vereségek",
+    "winsPercentage": "Győzelmi %",
+    "lossesPercentage": "Vereségi %",
+    "winRate": "Győzelmi arány",
+    "matchHistory": "Meccs előzmények"
+  },
+
+  "profile_extra": {
+    "noFriends": "Még nincsenek barátaid",
+    "online": "Online",
+    "offline": "Offline",
+    "requestSent": "(Kérelem elküldve)",
+    "pendingApproval": "(Jóváhagyásra vár)"
+  },
+
+  "users": {
+    "title": "Felhasználók",
+    "noOtherUsers": "Nem találhatók más felhasználók.",
+    "deleteFriend": "Barát törlése",
+    "cancelRequest": "Kérelem visszavonása",
+    "accept": "Elfogadás",
+    "decline": "Elutasítás",
+    "addFriend": "Barát hozzáadása"
+  },
+
+  "chat": {
+    "title": "Csevegés",
+    "inputPlaceholder": "Írd be az üzeneted...",
+    "sendButton": "Küldés",
+    "chattingWith": "Csevegés vele:",
+    "viewProfile": "Profil megtekintése",
+    "viewProfileButton": "Profil megtekintése",
+    "startTitle": "Csevegés indítása",
+    "blockUser": "Felhasználó tiltása",
+    "blockSuccess": "A felhasználó sikeresen letiltva. Többé nem kapsz tőle üzeneteket.",
+    "blockFailed": "Nem sikerült letiltani a felhasználót. Próbáld újra.",
+    "blockError": "Hiba történt a felhasználó tiltásakor.",
+    "blockConfirmPrefix": "Biztosan le szeretnéd tiltani:",
+    "blockConfirmSuffix": "Ezután nem tudsz üzenetet küldeni vagy fogadni tőle.",
+    "inviteButton": "🎮 Meghívás"
+  },
+
+  "edit": {
+    "title": "Profil szerkesztése",
+    "avatarLabel": "Avatar",
+    "chooseFile": "Fájl kiválasztása",
+    "noFileChosen": "Nincs kiválasztott fájl",
+    "invalidAvatar": "Csak JPEG és PNG fájlok engedélyezettek.",
+    "emailLabel": "E-mail",
+    "usernameLabel": "Becenév",
+    "saveButton": "Mentés",
+    "emailUsernameRequired": "Az e-mail és a felhasználónév kötelező.",
+    "userIdNotFound": "Felhasználói azonosító nem található. Jelentkezz be újra.",
+    "updateFailed": "A profil frissítése sikertelen.",
+    "networkError": "Hálózati hiba",
+    "twoFactorHeading": "Kétlépcsős hitelesítés",
+    "statusLabel": "Állapot:",
+    "statusLoading": "Betöltés...",
+    "statusError": "Hiba az állapot betöltésekor",
+    "enabled": "Engedélyezve",
+    "disabled": "Letiltva",
+    "enableButton": "Kétlépcsős hitelesítés engedélyezése",
+    "disableInstructions": "Add meg a 2FA kódot a letiltáshoz:",
+    "disableButton": "Kétlépcsős hitelesítés letiltása",
+    "setupHeading": "Kétlépcsős hitelesítés beállítása",
+    "setupStep1": "1. Olvasd be ezt a QR-kódot a hitelesítő alkalmazásoddal:",
+    "setupStep1Alt": "Vagy add meg manuálisan ezt a titkos kulcsot:",
+    "copySecret": "Titkos kulcs másolása",
+    "setupStep2": "2. Add meg az alkalmazás által generált 6 számjegyű kódot:",
+    "enableModalButton": "2FA engedélyezése",
+    "cancelButton": "Mégse",
+    "backToProfile": "Vissza a profilhoz",
+    "enter6Digit": "Kérjük, add meg a 6 számjegyű kódot",
+    "enter2faCode": "Kérjük, add meg a 2FA kódot",
+    "secretCopied": "A titkos kulcs a vágólapra másolva!"
+  },
+
+  "edit_success": {
+    "2fa_enabled": "A kétlépcsős hitelesítés sikeresen engedélyezve!",
+    "2fa_disabled": "A kétlépcsős hitelesítés sikeresen letiltva!"
+  },
+
+  "error": {
+    "404": {
+      "title": "404 - Az oldal nem található",
+      "message": "A keresett oldal nem létezik."
+    },
+    "sessionExpired": "A munkamenet lejárt. Jelentkezz be újra.",
+    "invalidVerificationCode": "Érvénytelen ellenőrző kód.",
+    "failed2FAEnable": "Nem sikerült engedélyezni a 2FA-t.",
+    "failed2FADisable": "Nem sikerült letiltani a 2FA-t.",
+    "failedCopySecret": "Nem sikerült a titkos kulcs másolása.",
+    "validationError": "Érvényesítési hiba. Ellenőrizd a megadott adatokat.",
+    "notFound": "Az erőforrás nem található.",
+    "conflict": "Ütközés történt. Próbáld újra.",
+    "forbidden": "Hozzáférés megtagadva.",
+    "serverError": "Szerverhiba. Próbáld újra később.",
+    "rateLimitExceeded": "Túl sok próbálkozás. Próbáld újra később."
+  }
+}
