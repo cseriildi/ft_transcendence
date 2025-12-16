@@ -44,6 +44,8 @@ class Router {
       "edit",
       "users",
       "chat",
+      "privacy",
+      "terms",
       "404",
     ];
 

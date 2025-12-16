@@ -3,7 +3,7 @@ type TranslationObject = { [key: string]: string | TranslationObject };
 export class I18n {
   private translations: Record<string, TranslationObject> = {};
   private currentLang: string = "en";
-  private supportedLangs: string[] = ["en", "de", "ru"];
+  private supportedLangs: string[] = ["en", "de", "hu", "ru"];
 
   async init(): Promise<void> {
     const savedLang = localStorage.getItem("language");
