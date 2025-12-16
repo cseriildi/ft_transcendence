@@ -227,9 +227,9 @@
     "forbidden": "Hozzáférés megtagadva.",
     "serverError": "Szerverhiba. Próbáld újra később.",
     "rateLimitExceeded": "Túl sok próbálkozás. Próbáld újra később."
-  }
+  },
 
-  ,"footer": {
+  "footer": {
     "privacy": "Adatvédelmi nyilatkozat",
     "terms": "Felhasználási feltételek"
   },
