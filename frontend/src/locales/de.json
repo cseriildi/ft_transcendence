@@ -225,9 +225,9 @@
     "forbidden": "Zugriff verweigert.",
     "serverError": "Serverfehler. Bitte versuche es später erneut.",
     "rateLimitExceeded": "Zu viele Versuche. Bitte versuche es später erneut."
-  }
+  },
 
-  ,"footer": {
+  "footer": {
     "privacy": "Datenschutzerklärung",
     "terms": "Nutzungsbedingungen"
   },
