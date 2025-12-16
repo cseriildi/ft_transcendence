@@ -224,9 +224,9 @@
     "forbidden": "Access denied.",
     "serverError": "Server error. Please try again later.",
     "rateLimitExceeded": "Too many attempts. Please try again later."
-  }
+  },
 
-  ,"footer": {
+  "footer": {
     "privacy": "Privacy Policy",
     "terms": "Terms of Service"
   },
