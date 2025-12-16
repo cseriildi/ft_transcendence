@@ -1,0 +1,115 @@
+# Prometheus Alert Rules for ft_transcendence
+groups:
+  - name: service_health
+    interval: 30s
+    rules:
+      # Alert if any service is down
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 1 minute."
+
+      # Alert if service has high error rate
+      - alert: HighErrorRate
+        expr: |
+          (rate(http_requests_total{status=~"5.."}[5m]) / 
+           rate(http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.service }}"
+
+  - name: performance
+    interval: 30s
+    rules:
+      # Alert if response time is high
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95, 
+            rate(http_request_duration_seconds_bucket[5m])
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time on {{ $labels.service }}"
+          description: "95th percentile response time is {{ $value }}s on {{ $labels.service }}"
+
+      # Alert if request rate is abnormally low (service might be broken)
+      - alert: LowRequestRate
+        expr: rate(http_requests_total[5m]) < 0.1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low request rate on {{ $labels.service }}"
+          description: "Request rate is {{ $value }} req/s on {{ $labels.service }}"
+
+  - name: resources
+    interval: 1m
+    rules:
+      # Alert if container memory usage is high
+      - alert: HighMemoryUsage
+        expr: |
+          (container_memory_usage_bytes / 
+           container_spec_memory_limit_bytes) > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using {{ $value | humanizePercentage }} of memory"
+
+      # Alert if container CPU usage is high
+      - alert: HighCPUUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.name }}"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value | humanizePercentage }}"
+
+      # Alert if disk space is running low
+      - alert: LowDiskSpace
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"} / 
+           node_filesystem_size_bytes{mountpoint="/"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space"
+          description: "Only {{ $value | humanizePercentage }} disk space remaining"
+
+  - name: websockets
+    interval: 30s
+    rules:
+      # Alert if WebSocket connections drop significantly
+      - alert: WebSocketConnectionDrop
+        expr: |
+          (websocket_connections_active - 
+           websocket_connections_active offset 5m) < -10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "WebSocket connections dropped on {{ $labels.service }}"
+          description: "{{ $labels.service }} lost {{ $value }} WebSocket connections"
+
+      # Alert if WebSocket error rate is high
+      - alert: HighWebSocketErrors
+        expr: rate(websocket_errors_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High WebSocket error rate on {{ $labels.service }}"
+          description: "WebSocket error rate is {{ $value }} errors/s on {{ $labels.service }}"

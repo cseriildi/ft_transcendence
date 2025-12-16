@@ -1,6 +1,9 @@
 
 LOCAL_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '/src/ {print $$7; exit}' || echo localhost)
 
+# Compose files - always include monitoring stack
+COMPOSE_FILES = -f docker-compose.yml -f docker-compose.prometheus.yml
+
 # Port configuration (use: sudo make ports=privileged up)
 # privileged: 443/80 (requires sudo), school: 8443/8080 (default)
 ifeq ($(ports),privileged)
@@ -42,38 +45,42 @@ setup-dirs:
 	@mkdir -p live-chat/data || true
 	@echo "✅ Data directories created (permissions will be set by containers)"
 
-# Build all containers
+# Build all containers (includes Prometheus/Grafana)
 build:
 	@echo "🔨 Building all containers..."
-	@docker compose build
+	@docker compose $(COMPOSE_FILES) build
 
-# Start all services (detached)
+# Start all services (detached, includes monitoring)
 up:
 	@echo "🚀 Starting all services..."
 	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
 	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
 		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
-		docker compose up -d
+		docker compose $(COMPOSE_FILES) up -d
 	@echo "✅ Services started. Access the app at $(URL)"
+	@echo ""
+	@echo "📊 Monitoring Stack:"
+	@echo "   Prometheus:  http://localhost:9090"
+	@echo "   Grafana:     http://localhost:3001 (admin/admin)"
 
-# Start services with logs visible
+# Start services with logs visible (includes monitoring)
 dev:
 	@echo "🔧 Starting services in development mode..."
 	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
 	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
 		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
-		docker compose up
+		docker compose $(COMPOSE_FILES) up
 
-# Stop and remove containers
+# Stop and remove containers (includes monitoring)
 down:
 	@echo "🛑 Stopping all services..."
-	@docker compose down
+	@docker compose $(COMPOSE_FILES) down
 	@echo "✅ Services stopped"
 
-# Stop containers without removing them
+# Stop containers without removing them (includes monitoring)
 stop:
 	@echo "⏸️  Stopping containers..."
-	@docker compose stop
+	@docker compose $(COMPOSE_FILES) stop
 	@echo "✅ Containers stopped"
 
 # Restart all services
@@ -88,10 +95,10 @@ re: clean env certs setup-dirs build up
 fre: fclean env certs setup-dirs build up
 	@echo "🔄 Full rebuild complete"
 
-# Clean up containers and networks
+# Clean up containers and networks (includes monitoring)
 clean:
-	@echo "🧹 Cleaning up containers and networks"
-	@docker compose down --rmi local
+	@echo "🧹 Cleaning up containers and networks..."
+	@docker compose $(COMPOSE_FILES) down --rmi local
 	@docker system prune -f
 	@echo "✅ Cleanup complete"
 
