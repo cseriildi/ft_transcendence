@@ -8,19 +8,19 @@
   }
 
   .form-input {
-    @apply w-full px-3 py-2 border-2 border-neon-pink rounded-md bg-gray-800 text-neon-green focus:outline-none focus:ring-2 focus:ring-neon-green font-orbitron;
+    @apply w-full px-3 py-2 border-2 border-neon-pink rounded-md bg-purple-900 text-neon-green focus:outline-none focus:ring-2 focus:ring-neon-green font-orbitron;
   }
 
   .btn-pink,
   .btn-green:hover {
     @apply bg-neon-pink text-white font-bold py-2 px-4 rounded transition;
-    box-shadow: 0 0 8px rgba(255, 0, 127, 0.9);
+    box-shadow: 0 0 10px rgb(255, 0, 127);
   }
 
   .btn-green,
   .btn-pink:hover {
     @apply bg-neon-green text-purple-900 font-bold py-2 px-4 rounded transition;
-    box-shadow: 0 0 8px rgba(57, 255, 20, 0.9);
+    box-shadow: 0 0 10px rgb(0, 255, 127);
   }
 
   .btn-blue {
@@ -33,20 +33,20 @@
   }
 
   .page-bg {
-    @apply min-h-screen bg-gradient-to-br from-purple-700 via-indigo-700 to-gray-800 font-orbitron;
+    @apply min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black font-orbitron;
   }
 
   .form-card {
-    @apply bg-gradient-to-br from-gray-800 to-gray-700 p-6 rounded-lg shadow-neon border-2 border-neon-green text-gray-100 mb-10;
+    @apply bg-gradient-to-br from-gray-900 to-black p-6 rounded-lg shadow-neon border-2 border-neon-pink mb-10;
+  }
+
+  .glass-card {
+    @apply bg-black bg-opacity-20 backdrop-blur-sm rounded-lg border-2 border-neon-pink;
   }
 
   .legal-card {
     @apply bg-black bg-opacity-60 text-neon-green border-2 border-neon-green p-6 rounded-lg shadow-md;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
-  }
-
-  .glass-card {
-    @apply bg-black bg-opacity-60 backdrop-blur-sm rounded-lg border-2 border-neon-green text-gray-100;
   }
 
   .page-title {
