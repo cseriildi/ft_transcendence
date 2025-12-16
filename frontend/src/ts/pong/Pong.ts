@@ -24,6 +24,11 @@ interface Capsule {
   R: number;
 }
 
+interface PlayerInput {
+  player: number;
+  action: "up" | "down" | "stop";
+}
+
 import { i18n } from "../utils/i18n.js";
 
 export class Pong {
@@ -51,7 +56,12 @@ export class Pong {
   private languageChangeListener: (() => void) | null = null;
 
   // Mobile button controls
-  private buttonListeners: Map<string, (e: Event) => void> = new Map();
+  private buttonListeners: Array<{
+    element: HTMLElement;
+    event: string;
+    handler: (e: Event) => void;
+    options?: AddEventListenerOptions;
+  }> = [];
 
   // Tournament bracket tracking
   private tournamentPlayers: string[] = [];
@@ -286,6 +296,7 @@ export class Pong {
               alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
             } else if (this.currentGameMode === "tournament") {
               const result = message.data;
+              // Fallback to player number if winnerName is missing (defensive programming)
               const winner = result.winnerName || `Player ${result.winner}`;
 
               // Update tournament bracket with winner
@@ -468,8 +479,19 @@ export class Pong {
     window.addEventListener("languageChanged", this.languageChangeListener);
   }
 
+  /**
+   * Helper to determine the correct player number for Player 2 buttons.
+   * In online/friend modes, uses the assigned player number.
+   * Otherwise, defaults to player 2.
+   */
+  private getPlayerNumberForP2(): number {
+    return ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+      ? this.assignedPlayerNumber
+      : 2;
+  }
+
   private setupButtonControls() {
-    const sendInput = (type: string, data: any) => {
+    const sendInput = (type: string, data: PlayerInput) => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type, data }));
       }
@@ -500,11 +522,23 @@ export class Pong {
       });
       p1UpBtn.addEventListener("mouseup", upStopHandler);
 
-      this.buttonListeners.set("p1-up-touch", upHandler);
-      this.buttonListeners.set("p1-up-mouse", upHandler);
-      this.buttonListeners.set("p1-up-stop-touch", upStopHandler);
-      this.buttonListeners.set("p1-up-stop-cancel", upStopHandler);
-      this.buttonListeners.set("p1-up-stop-mouse", upStopHandler);
+      this.buttonListeners.push(
+        { element: p1UpBtn, event: "touchstart", handler: upHandler, options: { passive: false } },
+        { element: p1UpBtn, event: "mousedown", handler: upHandler },
+        {
+          element: p1UpBtn,
+          event: "touchend",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p1UpBtn,
+          event: "touchcancel",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        { element: p1UpBtn, event: "mouseup", handler: upStopHandler }
+      );
     }
 
     if (p1DownBtn) {
@@ -527,30 +561,39 @@ export class Pong {
       });
       p1DownBtn.addEventListener("mouseup", downStopHandler);
 
-      this.buttonListeners.set("p1-down-touch", downHandler);
-      this.buttonListeners.set("p1-down-mouse", downHandler);
-      this.buttonListeners.set("p1-down-stop-touch", downStopHandler);
-      this.buttonListeners.set("p1-down-stop-cancel", downStopHandler);
-      this.buttonListeners.set("p1-down-stop-mouse", downStopHandler);
+      this.buttonListeners.push(
+        {
+          element: p1DownBtn,
+          event: "touchstart",
+          handler: downHandler,
+          options: { passive: false },
+        },
+        { element: p1DownBtn, event: "mousedown", handler: downHandler },
+        {
+          element: p1DownBtn,
+          event: "touchend",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p1DownBtn,
+          event: "touchcancel",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        { element: p1DownBtn, event: "mouseup", handler: downStopHandler }
+      );
     }
 
     // Player 2 buttons (or single player in online/AI mode)
     if (p2UpBtn) {
       const upHandler = (e: Event) => {
         e.preventDefault();
-        const player =
-          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
-            ? this.assignedPlayerNumber
-            : 2;
-        sendInput("playerInput", { player, action: "up" });
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "up" });
       };
       const upStopHandler = (e: Event) => {
         e.preventDefault();
-        const player =
-          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
-            ? this.assignedPlayerNumber
-            : 2;
-        sendInput("playerInput", { player, action: "stop" });
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "stop" });
       };
 
       p2UpBtn.addEventListener("touchstart", upHandler, { passive: false });
@@ -561,29 +604,33 @@ export class Pong {
       });
       p2UpBtn.addEventListener("mouseup", upStopHandler);
 
-      this.buttonListeners.set("p2-up-touch", upHandler);
-      this.buttonListeners.set("p2-up-mouse", upHandler);
-      this.buttonListeners.set("p2-up-stop-touch", upStopHandler);
-      this.buttonListeners.set("p2-up-stop-cancel", upStopHandler);
-      this.buttonListeners.set("p2-up-stop-mouse", upStopHandler);
+      this.buttonListeners.push(
+        { element: p2UpBtn, event: "touchstart", handler: upHandler, options: { passive: false } },
+        { element: p2UpBtn, event: "mousedown", handler: upHandler },
+        {
+          element: p2UpBtn,
+          event: "touchend",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p2UpBtn,
+          event: "touchcancel",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        { element: p2UpBtn, event: "mouseup", handler: upStopHandler }
+      );
     }
 
     if (p2DownBtn) {
       const downHandler = (e: Event) => {
         e.preventDefault();
-        const player =
-          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
-            ? this.assignedPlayerNumber
-            : 2;
-        sendInput("playerInput", { player, action: "down" });
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "down" });
       };
       const downStopHandler = (e: Event) => {
         e.preventDefault();
-        const player =
-          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
-            ? this.assignedPlayerNumber
-            : 2;
-        sendInput("playerInput", { player, action: "stop" });
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "stop" });
       };
 
       p2DownBtn.addEventListener("touchstart", downHandler, { passive: false });
@@ -596,11 +643,28 @@ export class Pong {
       });
       p2DownBtn.addEventListener("mouseup", downStopHandler);
 
-      this.buttonListeners.set("p2-down-touch", downHandler);
-      this.buttonListeners.set("p2-down-mouse", downHandler);
-      this.buttonListeners.set("p2-down-stop-touch", downStopHandler);
-      this.buttonListeners.set("p2-down-stop-cancel", downStopHandler);
-      this.buttonListeners.set("p2-down-stop-mouse", downStopHandler);
+      this.buttonListeners.push(
+        {
+          element: p2DownBtn,
+          event: "touchstart",
+          handler: downHandler,
+          options: { passive: false },
+        },
+        { element: p2DownBtn, event: "mousedown", handler: downHandler },
+        {
+          element: p2DownBtn,
+          event: "touchend",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p2DownBtn,
+          event: "touchcancel",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        { element: p2DownBtn, event: "mouseup", handler: downStopHandler }
+      );
     }
 
     // Update button visibility based on game mode
@@ -645,7 +709,7 @@ export class Pong {
   /**
    * Handle keydown events based on game mode
    */
-  private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
+  private handleKeyDown(key: string, sendInput: (type: string, data: PlayerInput) => void): void {
     if (this.keysPressed.has(key)) return;
     this.keysPressed.add(key);
 
@@ -694,7 +758,7 @@ export class Pong {
   /**
    * Handle keyup events based on game mode
    */
-  private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
+  private handleKeyUp(key: string, sendInput: (type: string, data: PlayerInput) => void): void {
     this.keysPressed.delete(key);
 
     // Skip if waiting for opponent
@@ -750,7 +814,7 @@ export class Pong {
   }
 
   private setupInputHandlers() {
-    const sendInput = (type: string, data: any) => {
+    const sendInput = (type: string, data: PlayerInput) => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type, data }));
       }
@@ -1015,9 +1079,13 @@ export class Pong {
     const numPlayers = this.tournamentPlayers.length;
     const numRounds = Math.log2(numPlayers);
 
-    // Build bracket HTML - horizontal on desktop, vertical on mobile
-    let html =
-      '<div class="flex flex-col sm:flex-row gap-4 sm:gap-8 items-center sm:items-center">';
+    // Clear existing content
+    containerEl.innerHTML = "";
+
+    // Create main container
+    const mainContainer = document.createElement("div");
+    mainContainer.className =
+      "flex flex-col sm:flex-row gap-4 sm:gap-8 items-center sm:items-center";
 
     // Group matches by round
     const matchesByRound: Array<Array<(typeof this.tournamentMatches)[0]>> = [];
@@ -1038,32 +1106,47 @@ export class Pong {
       // Only show rounds that have matches
       if (roundMatches.length === 0) continue;
 
-      html += `<div class="flex flex-col gap-4 w-full sm:w-auto">`;
-      html += `<h4 class="text-neon-green text-center font-bold text-sm sm:text-base mb-2">${roundLabel}</h4>`;
+      // Create round container
+      const roundContainer = document.createElement("div");
+      roundContainer.className = "flex flex-col gap-4 w-full sm:w-auto";
 
-      // Show only matches that have been created
+      // Create round label
+      const roundLabelEl = document.createElement("h4");
+      roundLabelEl.className = "text-neon-green text-center font-bold text-sm sm:text-base mb-2";
+      roundLabelEl.textContent = roundLabel;
+      roundContainer.appendChild(roundLabelEl);
+
+      // Add matches
       for (const match of roundMatches) {
-        html += this.renderMatch(match);
+        roundContainer.appendChild(this.renderMatch(match));
       }
 
-      html += `</div>`;
+      mainContainer.appendChild(roundContainer);
 
-      // Add connector lines between rounds (except after last round)
+      // Add connector arrows between rounds
       if (
         round < numRounds - 1 &&
         matchesByRound[round + 1] &&
         matchesByRound[round + 1].length > 0
       ) {
-        // Vertical arrow for mobile, horizontal for desktop
-        html += `<div class="flex items-center justify-center">
-          <div class="text-neon-pink text-2xl sm:inline hidden">→</div>
-          <div class="text-neon-pink text-2xl sm:hidden inline">↓</div>
-        </div>`;
+        const connectorDiv = document.createElement("div");
+        connectorDiv.className = "flex items-center justify-center";
+
+        const desktopArrow = document.createElement("div");
+        desktopArrow.className = "text-neon-pink text-2xl sm:inline hidden";
+        desktopArrow.textContent = "→";
+
+        const mobileArrow = document.createElement("div");
+        mobileArrow.className = "text-neon-pink text-2xl sm:hidden inline";
+        mobileArrow.textContent = "↓";
+
+        connectorDiv.appendChild(desktopArrow);
+        connectorDiv.appendChild(mobileArrow);
+        mainContainer.appendChild(connectorDiv);
       }
     }
 
-    html += "</div>";
-    containerEl.innerHTML = html;
+    containerEl.appendChild(mainContainer);
   }
 
   private renderMatch(match: {
@@ -1071,23 +1154,37 @@ export class Pong {
     player2: string;
     winner?: string;
     round: number;
-  }): string {
+  }): HTMLElement {
     const isPlayer1Winner = match.winner === match.player1;
     const isPlayer2Winner = match.winner === match.player2;
 
-    return `
-      <div class="glass-card p-3 sm:min-w-[150px] w-full sm:w-auto">
-        <div class="flex flex-col gap-2">
-          <div class="text-sm sm:text-base ${isPlayer1Winner ? "text-neon-green font-bold" : "text-white"} ${isPlayer2Winner ? "opacity-50" : ""}">
-            ${match.player1}${isPlayer1Winner ? " ✓" : ""}
-          </div>
-          <div class="border-t border-neon-pink/30"></div>
-          <div class="text-sm sm:text-base ${isPlayer2Winner ? "text-neon-green font-bold" : "text-white"} ${isPlayer1Winner ? "opacity-50" : ""}">
-            ${match.player2}${isPlayer2Winner ? " ✓" : ""}
-          </div>
-        </div>
-      </div>
-    `;
+    // Create match card
+    const card = document.createElement("div");
+    card.className = "glass-card p-3 sm:min-w-[150px] w-full sm:w-auto";
+
+    const innerDiv = document.createElement("div");
+    innerDiv.className = "flex flex-col gap-2";
+
+    // Player 1
+    const player1Div = document.createElement("div");
+    player1Div.className = `text-sm sm:text-base ${isPlayer1Winner ? "text-neon-green font-bold" : "text-white"} ${isPlayer2Winner ? "opacity-50" : ""}`;
+    player1Div.textContent = match.player1 + (isPlayer1Winner ? " ✓" : "");
+
+    // Divider
+    const divider = document.createElement("div");
+    divider.className = "border-t border-neon-pink/30";
+
+    // Player 2
+    const player2Div = document.createElement("div");
+    player2Div.className = `text-sm sm:text-base ${isPlayer2Winner ? "text-neon-green font-bold" : "text-white"} ${isPlayer1Winner ? "opacity-50" : ""}`;
+    player2Div.textContent = match.player2 + (isPlayer2Winner ? " ✓" : "");
+
+    innerDiv.appendChild(player1Div);
+    innerDiv.appendChild(divider);
+    innerDiv.appendChild(player2Div);
+    card.appendChild(innerDiv);
+
+    return card;
   }
 
   public destroy(): void {
@@ -1109,18 +1206,10 @@ export class Pong {
     }
 
     // Clean up button listeners
-    const p1UpBtn = document.getElementById("p1-up-btn");
-    const p1DownBtn = document.getElementById("p1-down-btn");
-    const p2UpBtn = document.getElementById("p2-up-btn");
-    const p2DownBtn = document.getElementById("p2-down-btn");
-
-    [p1UpBtn, p1DownBtn, p2UpBtn, p2DownBtn].forEach((btn) => {
-      if (btn) {
-        const clone = btn.cloneNode(true);
-        btn.parentNode?.replaceChild(clone, btn);
-      }
+    this.buttonListeners.forEach(({ element, event, handler, options }) => {
+      element.removeEventListener(event, handler, options);
     });
-    this.buttonListeners.clear();
+    this.buttonListeners = [];
 
     this.ws?.close();
     this.ws = null;
