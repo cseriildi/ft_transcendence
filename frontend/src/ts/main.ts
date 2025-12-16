@@ -430,6 +430,16 @@ const initNotFoundPage = () => {
   });
 };
 
+const initLegalPage = () => {
+  const backBtn = document.getElementById("back-btn");
+  backBtn?.addEventListener("click", () => {
+    router.navigate("/");
+  });
+};
+
+const initPrivacyPage = initLegalPage;
+const initTermsPage = initLegalPage;
+
 const router = new Router();
 
 router.setI18nCallback(async () => {
@@ -504,6 +514,8 @@ createPopup();
   router.addRoute("/users", "users", () => usersPage.initPage());
   router.addRoute("/chat", "chat", () => chatPage.initPage());
   router.addRoute("/404", "404", initNotFoundPage);
+  router.addRoute("/privacy", "privacy", initPrivacyPage);
+  router.addRoute("/terms", "terms", initTermsPage);
 
   router.init();
 })();

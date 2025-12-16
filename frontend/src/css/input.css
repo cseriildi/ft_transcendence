@@ -44,6 +44,11 @@
     @apply bg-black bg-opacity-20 backdrop-blur-sm rounded-lg border-2 border-neon-pink;
   }
 
+  .legal-card {
+    @apply bg-black bg-opacity-60 text-neon-green border-2 border-neon-green p-6 rounded-lg shadow-md;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  }
+
   .page-title {
     @apply text-5xl font-bold text-center mb-8 text-neon-green drop-shadow-neon;
   }

@@ -224,5 +224,22 @@
     "forbidden": "Access denied.",
     "serverError": "Server error. Please try again later.",
     "rateLimitExceeded": "Too many attempts. Please try again later."
+  },
+
+  "footer": {
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+
+  "legal": {
+    "privacyTitle": "Privacy Policy",
+    "privacyP1": "This Privacy Policy explains how Pong Portal (the \"Service\") collects, uses, and discloses information. We collect only the information necessary to provide and improve the Service, such as account information (email, username) and avatar uploads. We do not sell personal data.",
+    "privacyP2": "We use cookies and similar technologies for session management and preferences. Third-party services (e.g., analytics, OAuth providers) may collect data per their own policies. You can request deletion of your account and personal data by contacting us.",
+    "privacyContact": "If you have questions about this policy, contact us via the project repository",
+
+    "termsTitle": "Terms of Service",
+    "termsP1": "By using Pong Portal, you agree to follow these Terms. You are responsible for maintaining the confidentiality of your account and for all activities that occur under your account. Do not use the Service for unlawful purposes.",
+    "termsP2": "We reserve the right to suspend or terminate accounts that violate these Terms. The Service is provided as-is; we disclaim warranties to the fullest extent permitted by law.",
+    "termsContact": "If you have questions about these terms, contact the project maintainers"
   }
 }

@@ -105,6 +105,18 @@ export class Home {
       loginBtn?.classList.remove("hidden");
       userInfoCard?.classList.add("hidden");
     }
+
+    // Footer links
+    const privacyLink = document.getElementById("privacy-link");
+    const termsLink = document.getElementById("terms-link");
+    privacyLink?.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.router.navigate("/privacy");
+    });
+    termsLink?.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.router.navigate("/terms");
+    });
   }
 }
 
