@@ -228,4 +228,21 @@
     "serverError": "Szerverhiba. Próbáld újra később.",
     "rateLimitExceeded": "Túl sok próbálkozás. Próbáld újra később."
   }
+
+  ,"footer": {
+    "privacy": "Adatvédelmi nyilatkozat",
+    "terms": "Felhasználási feltételek"
+  },
+
+  "legal": {
+    "privacyTitle": "Adatvédelmi nyilatkozat",
+    "privacyP1": "Ez az Adatvédelmi nyilatkozat ismerteti, hogyan gyűjtjük, használjuk és továbbítjuk az információkat a Pong Portál (a \"Szolgáltatás\") használata során. Csak azokat az adatokat gyűjtjük, amelyek szükségesek a szolgáltatás biztosításához és fejlesztéséhez, például fiókinformációk (e-mail, felhasználónév) és avatár feltöltések. Nem értékesítjük a személyes adatokat.",
+    "privacyP2": "Sütiket és hasonló technológiákat használunk munkamenet-kezelésre és preferenciák tárolására. Harmadik féltől származó szolgáltatások (pl. elemzés, OAuth-szolgáltatók) saját irányelveik szerint gyűjthetnek adatokat. Fiók és személyes adatok törlését kérheted a projekt karbantartóinál.",
+    "privacyContact": "Ha kérdésed van az adatvédelmi nyilatkozattal kapcsolatban, vedd fel velünk a kapcsolatot a projekt tárolóján keresztül",
+
+    "termsTitle": "Felhasználási feltételek",
+    "termsP1": "A Pong Portál használatával elfogadod a jelen Feltételeket. Felelősséged a fiókod biztonságának megőrzése, és a fiókod alatt történő tevékenységekért te felelsz. Ne használd a szolgáltatást jogellenes célokra.",
+    "termsP2": "Fenntartjuk a jogot a fiókok felfüggesztésére vagy megszüntetésére, ha azok megsértik a feltételeket. A szolgáltatás \"ahogy van\" alapon érhető el; a lehető legszélesebb körben kizárjuk a garanciákat.",
+    "termsContact": "Ha kérdésed van a feltételekkel kapcsolatban, vedd fel a kapcsolatot a projekt karbantartóival"
+  }
 }
