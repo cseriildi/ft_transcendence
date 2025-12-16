@@ -62,18 +62,11 @@ export class Pong {
     round: number;
   }> = [];
   private currentRound: number = 0;
-  private currentMatchPlayers: { player1: string; player2: string } | null =
-    null;
+  private currentMatchPlayers: { player1: string; player2: string } | null = null;
 
-  constructor(
-    canvasId: string,
-    wsUrl: string,
-    gameMode: string,
-    gameId?: string,
-  ) {
+  constructor(canvasId: string, wsUrl: string, gameMode: string, gameId?: string) {
     const canvasEl = document.getElementById(canvasId);
-    if (!canvasEl)
-      throw new Error(`Canvas element with id "${canvasId}" not found.`);
+    if (!canvasEl) throw new Error(`Canvas element with id "${canvasId}" not found.`);
     const canvas = canvasEl as HTMLCanvasElement;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Could not get 2D rendering context.");
@@ -100,7 +93,7 @@ export class Pong {
     gameMode: string,
     playerInfo?: PlayerInfo,
     difficulty?: "easy" | "medium" | "hard",
-    gameId?: string,
+    gameId?: string
   ) {
     this.currentGameMode = gameMode;
 
@@ -136,7 +129,7 @@ export class Pong {
           () => {
             this.sendWhenConnected(message);
           },
-          { once: true },
+          { once: true }
         );
       } else {
         this.sendWhenConnected(message);
@@ -193,7 +186,7 @@ export class Pong {
         () => {
           send();
         },
-        { once: true },
+        { once: true }
       );
     }
   }
@@ -212,9 +205,7 @@ export class Pong {
       if (accessToken) {
         urlWithMode += `&token=${encodeURIComponent(accessToken)}`;
       } else {
-        console.warn(
-          `⚠️ No access token available for ${this.currentGameMode} mode`,
-        );
+        console.warn(`⚠️ No access token available for ${this.currentGameMode} mode`);
       }
     }
 
@@ -291,23 +282,17 @@ export class Pong {
                 didWin = result.winner === this.assignedPlayerNumber;
               }
 
-              const notificationMessage = didWin
-                ? i18n.t("pong.youWon")
-                : i18n.t("pong.youLost");
+              const notificationMessage = didWin ? i18n.t("pong.youWon") : i18n.t("pong.youLost");
               alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
             } else if (this.currentGameMode === "tournament") {
               const result = message.data;
               const winner = result.winnerName || `Player ${result.winner}`;
 
               // Update tournament bracket with winner
-              this.recordTournamentWinner(
-                this.player1Username,
-                this.player2Username,
-                winner,
-              );
+              this.recordTournamentWinner(this.player1Username, this.player2Username, winner);
 
               alert(
-                `${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`,
+                `${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`
               );
             }
 
@@ -335,11 +320,7 @@ export class Pong {
           } else {
             this.assignedPlayerNumber = null;
           }
-          if (
-            ["remote", "friend", "tournament", "ai"].includes(
-              this.currentGameMode,
-            )
-          ) {
+          if (["remote", "friend", "tournament", "ai"].includes(this.currentGameMode)) {
             if (message.player1Username) {
               this.player1Username = message.player1Username;
             }
@@ -355,10 +336,7 @@ export class Pong {
             message.player1Username &&
             message.player2Username
           ) {
-            this.updateTournamentStatus(
-              message.player1Username,
-              message.player2Username,
-            );
+            this.updateTournamentStatus(message.player1Username, message.player2Username);
           }
 
           this.updateScoreDisplay();
@@ -390,10 +368,7 @@ export class Pong {
               this.updateScoreDisplay();
             }
           }
-        } else if (
-          message.type === "tournamentComplete" &&
-          message.mode === "tournament"
-        ) {
+        } else if (message.type === "tournamentComplete" && message.mode === "tournament") {
           console.log("🎉 Tournament Complete! Results:", message.data);
         }
       } catch (err) {
@@ -428,22 +403,13 @@ export class Pong {
     };
   }
 
-  private updateCapsule(paddle: {
-    cx?: number;
-    cy?: number;
-    capsule: Capsule;
-  }) {
+  private updateCapsule(paddle: { cx?: number; cy?: number; capsule: Capsule }) {
     const cap = paddle.capsule;
     const dx = cap.x2 - cap.x1;
     const dy = cap.y2 - cap.y1;
     const length = Math.sqrt(dx * dx + dy * dy);
 
-    if (
-      paddle.cx === undefined ||
-      paddle.cy === undefined ||
-      !isFinite(length) ||
-      length === 0
-    )
+    if (paddle.cx === undefined || paddle.cy === undefined || !isFinite(length) || length === 0)
       return;
 
     const halfLength = length / 2;
@@ -459,10 +425,8 @@ export class Pong {
     const score1El = document.getElementById("score-player1");
     const score2El = document.getElementById("score-player2");
 
-    if (score1El)
-      score1El.textContent = this.gameState.score.player1.toString();
-    if (score2El)
-      score2El.textContent = this.gameState.score.player2.toString();
+    if (score1El) score1El.textContent = this.gameState.score.player1.toString();
+    if (score2El) score2El.textContent = this.gameState.score.player2.toString();
   }
 
   private updatePlayerNamesDisplay() {
@@ -575,8 +539,7 @@ export class Pong {
       const upHandler = (e: Event) => {
         e.preventDefault();
         const player =
-          ["remote", "friend"].includes(this.currentGameMode) &&
-          this.assignedPlayerNumber
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
             : 2;
         sendInput("playerInput", { player, action: "up" });
@@ -584,8 +547,7 @@ export class Pong {
       const upStopHandler = (e: Event) => {
         e.preventDefault();
         const player =
-          ["remote", "friend"].includes(this.currentGameMode) &&
-          this.assignedPlayerNumber
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
             : 2;
         sendInput("playerInput", { player, action: "stop" });
@@ -610,8 +572,7 @@ export class Pong {
       const downHandler = (e: Event) => {
         e.preventDefault();
         const player =
-          ["remote", "friend"].includes(this.currentGameMode) &&
-          this.assignedPlayerNumber
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
             : 2;
         sendInput("playerInput", { player, action: "down" });
@@ -619,8 +580,7 @@ export class Pong {
       const downStopHandler = (e: Event) => {
         e.preventDefault();
         const player =
-          ["remote", "friend"].includes(this.currentGameMode) &&
-          this.assignedPlayerNumber
+          ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
             : 2;
         sendInput("playerInput", { player, action: "stop" });
@@ -685,18 +645,12 @@ export class Pong {
   /**
    * Handle keydown events based on game mode
    */
-  private handleKeyDown(
-    key: string,
-    sendInput: (type: string, data: any) => void,
-  ): void {
+  private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
     if (this.keysPressed.has(key)) return;
     this.keysPressed.add(key);
 
     // Skip if waiting for opponent
-    if (
-      ["friend", "remote"].includes(this.currentGameMode) &&
-      this.assignedPlayerNumber === null
-    ) {
+    if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
       return;
     }
 
@@ -740,17 +694,11 @@ export class Pong {
   /**
    * Handle keyup events based on game mode
    */
-  private handleKeyUp(
-    key: string,
-    sendInput: (type: string, data: any) => void,
-  ): void {
+  private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
     this.keysPressed.delete(key);
 
     // Skip if waiting for opponent
-    if (
-      ["friend", "remote"].includes(this.currentGameMode) &&
-      this.assignedPlayerNumber === null
-    ) {
+    if (["friend", "remote"].includes(this.currentGameMode) && this.assignedPlayerNumber === null) {
       return;
     }
 
@@ -860,13 +808,7 @@ export class Pong {
     // Draw ball
     this.ctx.fillStyle = "#ff00cc";
     this.ctx.beginPath();
-    this.ctx.arc(
-      ball.x * scale,
-      ball.y * scale,
-      ball.radius * scale,
-      0,
-      Math.PI * 2,
-    );
+    this.ctx.arc(ball.x * scale, ball.y * scale, ball.radius * scale, 0, Math.PI * 2);
     this.ctx.fill();
 
     // Draw paddles
@@ -881,11 +823,7 @@ export class Pong {
           this.ctx.font = "bold 200px Arial";
           this.ctx.textAlign = "center";
           this.ctx.textBaseline = "middle";
-          this.ctx.fillText(
-            i18n.t("pong.waitingForOpponent"),
-            width / 2,
-            height / 2,
-          );
+          this.ctx.fillText(i18n.t("pong.waitingForOpponent"), width / 2, height / 2);
           break;
         }
         case "friend": {
@@ -893,11 +831,7 @@ export class Pong {
           this.ctx.font = "bold 150px Arial";
           this.ctx.textAlign = "center";
           this.ctx.textBaseline = "middle";
-          this.ctx.fillText(
-            "Waiting for friend to join...",
-            width / 2,
-            height / 2,
-          );
+          this.ctx.fillText("Waiting for friend to join...", width / 2, height / 2);
           break;
         }
         case "tournament": {
@@ -905,11 +839,7 @@ export class Pong {
           this.ctx.font = "bold 150px Arial";
           this.ctx.textAlign = "center";
           this.ctx.textBaseline = "middle";
-          this.ctx.fillText(
-            i18n.t("pong.waitingForStart"),
-            width / 2,
-            height / 2,
-          );
+          this.ctx.fillText(i18n.t("pong.waitingForStart"), width / 2, height / 2);
           break;
         }
         default:
@@ -970,13 +900,8 @@ export class Pong {
     // Listen for storage changes (logout in another tab)
     this.storageListener = (event: StorageEvent) => {
       // Check if userId or username was removed (logout)
-      if (
-        (event.key === "userId" || event.key === "username") &&
-        event.newValue === null
-      ) {
-        console.log(
-          "🚪 User logged out in another tab, closing game connection",
-        );
+      if ((event.key === "userId" || event.key === "username") && event.newValue === null) {
+        console.log("🚪 User logged out in another tab, closing game connection");
         this.stopAuthCheck();
         if (this.ws) {
           this.ws.close(1000, "user_logged_out");
@@ -1029,14 +954,12 @@ export class Pong {
     const existingMatch = this.tournamentMatches.find(
       (m) =>
         (m.player1 === player1 && m.player2 === player2) ||
-        (m.player1 === player2 && m.player2 === player1),
+        (m.player1 === player2 && m.player2 === player1)
     );
 
     if (!existingMatch) {
       // Determine round number based on number of completed matches
-      const completedMatches = this.tournamentMatches.filter(
-        (m) => m.winner,
-      ).length;
+      const completedMatches = this.tournamentMatches.filter((m) => m.winner).length;
       const numPlayers = this.tournamentPlayers.length;
 
       // Calculate which round we're in
@@ -1061,16 +984,12 @@ export class Pong {
     }
   }
 
-  private recordTournamentWinner(
-    player1: string,
-    player2: string,
-    winner: string,
-  ): void {
+  private recordTournamentWinner(player1: string, player2: string, winner: string): void {
     // Find the match
     const match = this.tournamentMatches.find(
       (m) =>
         (m.player1 === player1 && m.player2 === player2) ||
-        (m.player1 === player2 && m.player2 === player1),
+        (m.player1 === player2 && m.player2 === player1)
     );
 
     if (match) {
@@ -1085,10 +1004,7 @@ export class Pong {
 
     if (!bracketEl || !containerEl) return;
 
-    if (
-      this.currentGameMode !== "tournament" ||
-      this.tournamentPlayers.length === 0
-    ) {
+    if (this.currentGameMode !== "tournament" || this.tournamentPlayers.length === 0) {
       bracketEl.classList.add("hidden");
       return;
     }
@@ -1106,9 +1022,7 @@ export class Pong {
     // Group matches by round
     const matchesByRound: Array<Array<(typeof this.tournamentMatches)[0]>> = [];
     for (let r = 0; r < numRounds; r++) {
-      matchesByRound[r] = this.tournamentMatches.filter(
-        (m) => m.round === r + 1,
-      );
+      matchesByRound[r] = this.tournamentMatches.filter((m) => m.round === r + 1);
     }
 
     // Render each round
@@ -1191,10 +1105,7 @@ export class Pong {
       document.removeEventListener("keyup", this.keyupListener);
     }
     if (this.languageChangeListener) {
-      window.removeEventListener(
-        "languageChanged",
-        this.languageChangeListener,
-      );
+      window.removeEventListener("languageChanged", this.languageChangeListener);
     }
 
     // Clean up button listeners
