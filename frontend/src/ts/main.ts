@@ -430,19 +430,15 @@ const initNotFoundPage = () => {
   });
 };
 
-const initPrivacyPage = () => {
+const initLegalPage = () => {
   const backBtn = document.getElementById("back-btn");
   backBtn?.addEventListener("click", () => {
     router.navigate("/");
   });
 };
 
-const initTermsPage = () => {
-  const backBtn = document.getElementById("back-btn");
-  backBtn?.addEventListener("click", () => {
-    router.navigate("/");
-  });
-};
+const initPrivacyPage = initLegalPage;
+const initTermsPage = initLegalPage;
 
 const router = new Router();
 
