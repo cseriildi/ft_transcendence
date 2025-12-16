@@ -128,7 +128,7 @@ export function broadcastGameResult(game: GameServer) {
     return;
   }
 
-  const { winner, loser, winnerScore, loserScore } = result;
+  const { winnerId, loserId, winner, loser, winnerScore, loserScore } = result;
 
   if (game.gameMode === "tournament" && game.tournament) {
     game.tournament?.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
@@ -142,8 +142,10 @@ export function broadcastGameResult(game: GameServer) {
         type: "gameResult",
         mode: game.gameMode,
         data: {
-          winner: winner.username,
-          loser: loser.username,
+          winner: winnerId,
+          loser: loserId,
+          winnerName: winner.username,
+          loserName: loser.username,
           winnerScore,
           loserScore,
         },

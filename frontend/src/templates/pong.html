@@ -152,17 +152,17 @@
     </div>
 
     <!-- Mobile Controls -->
-    <div id="mobile-controls" class="hidden mt-6 mb-8">
+    <div id="mobile-controls" class="hidden mt-6 mb-8 lg:!hidden">
       <div class="flex flex-row justify-center gap-8">
         <!-- Player 1 Controls (for local mode) -->
-        <div id="player1-controls" class="flex flex-col items-center space-y-2">
+        <div id="player1-controls" class="flex flex-col items-center space-y-8">
           <p class="text-neon-green text-sm font-bold" data-i18n="pong_dynamic.player1">Player 1</p>
-          <button id="p1-up-btn" class="btn-green w-24 h-12 text-lg font-bold">↑</button>
-          <button id="p1-down-btn" class="btn-green w-24 h-12 text-lg font-bold">↓</button>
+          <button id="p1-up-btn" class="btn-green w-24 h-12 text-lg font-bold">▲</button>
+          <button id="p1-down-btn" class="btn-green w-24 h-12 text-lg font-bold">▼</button>
         </div>
 
         <!-- Player 2 Controls (for local mode) / Single Player Controls (for online/AI) -->
-        <div id="player2-controls" class="flex flex-col items-center space-y-2">
+        <div id="player2-controls" class="flex flex-col items-center space-y-8">
           <p
             id="player2-controls-label"
             class="text-neon-green text-sm font-bold"
@@ -170,9 +170,20 @@
           >
             Player 2
           </p>
-          <button id="p2-up-btn" class="btn-pink w-24 h-12 text-lg font-bold">↑</button>
-          <button id="p2-down-btn" class="btn-pink w-24 h-12 text-lg font-bold">↓</button>
+          <button id="p2-up-btn" class="btn-pink w-24 h-12 text-lg font-bold">▲</button>
+          <button id="p2-down-btn" class="btn-pink w-24 h-12 text-lg font-bold">▼</button>
         </div>
+      </div>
+    </div>
+
+    <!-- Tournament Bracket Visualization -->
+    <div id="tournament-bracket" class="hidden mt-8 mb-8 px-4">
+      <h3 class="text-xl sm:text-2xl font-bold text-neon-pink text-center mb-4 sm:mb-6" data-i18n="tournament.bracket">Tournament Bracket</h3>
+      <div id="bracket-container" class="flex justify-center items-start sm:items-center overflow-x-auto sm:overflow-x-visible">
+        <!-- Bracket will be dynamically generated here -->
+      </div>
+      <div id="tournament-status" class="text-center mt-4 text-neon-green text-base sm:text-lg">
+        <!-- Current match status -->
       </div>
     </div>
 

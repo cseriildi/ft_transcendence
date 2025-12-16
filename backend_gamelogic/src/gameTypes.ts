@@ -287,12 +287,16 @@ export class GameServer {
       return null;
     }
 
+    const winnerId = this.score1 > this.score2 ? 1 : 2;
+    const loserId = this.score1 > this.score2 ? 2 : 1;
     const winner = this.score1 > this.score2 ? player1 : player2;
     const loser = this.score1 > this.score2 ? player2 : player1;
     const winnerScore = Math.max(this.score1, this.score2);
     const loserScore = Math.min(this.score1, this.score2);
 
     return {
+      winnerId,
+      loserId,
       winner,
       loser,
       winnerScore,

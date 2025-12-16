@@ -41,6 +41,7 @@ export class Pong {
   private player2Username: string = "Player 2";
   private authCheckInterval: number | null = null;
   private storageListener: ((event: StorageEvent) => void) | null = null;
+  private isDestroyed: boolean = false;
   // Note: autoreconnect behavior is handled in onclose (keeps main branch behavior)
 
   // Store references to event listeners for cleanup
@@ -50,7 +51,13 @@ export class Pong {
   private languageChangeListener: (() => void) | null = null;
 
   // Mobile button controls
-  private buttonListeners: Map<string, () => void> = new Map();
+  private buttonListeners: Map<string, (e: Event) => void> = new Map();
+
+  // Tournament bracket tracking
+  private tournamentPlayers: string[] = [];
+  private tournamentMatches: Array<{ player1: string; player2: string; winner?: string; round: number }> = [];
+  private currentRound: number = 0;
+  private currentMatchPlayers: { player1: string; player2: string } | null = null;
 
   constructor(canvasId: string, wsUrl: string, gameMode: string, gameId?: string) {
     const canvasEl = document.getElementById(canvasId);
@@ -140,6 +147,12 @@ export class Pong {
       mode: this.currentGameMode,
       players: playerNames,
     };
+
+    // Initialize tournament tracking
+    this.tournamentPlayers = [...playerNames];
+    this.tournamentMatches = [];
+    this.currentRound = 0;
+    this.updateTournamentBracket();
 
     this.sendWhenConnected(message);
   }
@@ -269,6 +282,10 @@ export class Pong {
             } else if (this.currentGameMode === "tournament") {
               const result = message.data;
               const winner = result.winnerName || `Player ${result.winner}`;
+              
+              // Update tournament bracket with winner
+              this.recordTournamentWinner(this.player1Username, this.player2Username, winner);
+              
               alert(
                 `${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`
               );
@@ -303,6 +320,11 @@ export class Pong {
               this.player2Username = message.player2Username;
             }
             this.updatePlayerNamesDisplay();
+          }
+
+          // Track tournament match
+          if (this.currentGameMode === "tournament" && message.player1Username && message.player2Username) {
+            this.updateTournamentStatus(message.player1Username, message.player2Username);
           }
 
           this.updateScoreDisplay();
@@ -351,6 +373,11 @@ export class Pong {
         reason: ev.reason,
         wasClean: ev.wasClean,
       });
+
+      // Don't reconnect if destroyed
+      if (this.isDestroyed) {
+        return;
+      }
 
       // Don't reconnect if user logged out (for authenticated modes)
       if (["remote", "friend"].includes(this.currentGameMode)) {
@@ -414,6 +441,17 @@ export class Pong {
   private setupLanguageListener() {
     this.languageChangeListener = () => {
       this.updatePlayerNamesDisplay();
+      // Update tournament bracket to refresh translated labels
+      if (this.currentGameMode === "tournament") {
+        this.updateTournamentBracket();
+        // Update current match status text
+        if (this.currentMatchPlayers) {
+          const statusEl = document.getElementById("tournament-status");
+          if (statusEl) {
+            statusEl.textContent = `${i18n.t("tournament.currentMatch")}: ${this.currentMatchPlayers.player1} vs ${this.currentMatchPlayers.player2}`;
+          }
+        }
+      }
     };
     window.addEventListener("languageChanged", this.languageChangeListener);
   }
@@ -433,49 +471,63 @@ export class Pong {
 
     // Player 1 buttons
     if (p1UpBtn) {
-      const upHandler = () => sendInput("playerInput", { player: 1, action: "up" });
-      const upStopHandler = () => sendInput("playerInput", { player: 1, action: "stop" });
+      const upHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "up" });
+      };
+      const upStopHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "stop" });
+      };
 
-      p1UpBtn.addEventListener("touchstart", upHandler);
+      p1UpBtn.addEventListener("touchstart", upHandler, { passive: false });
       p1UpBtn.addEventListener("mousedown", upHandler);
-      p1UpBtn.addEventListener("touchend", upStopHandler);
+      p1UpBtn.addEventListener("touchend", upStopHandler, { passive: false });
+      p1UpBtn.addEventListener("touchcancel", upStopHandler, { passive: false });
       p1UpBtn.addEventListener("mouseup", upStopHandler);
-      p1UpBtn.addEventListener("mouseleave", upStopHandler);
 
       this.buttonListeners.set("p1-up-touch", upHandler);
       this.buttonListeners.set("p1-up-mouse", upHandler);
       this.buttonListeners.set("p1-up-stop-touch", upStopHandler);
+      this.buttonListeners.set("p1-up-stop-cancel", upStopHandler);
       this.buttonListeners.set("p1-up-stop-mouse", upStopHandler);
-      this.buttonListeners.set("p1-up-stop-leave", upStopHandler);
     }
 
     if (p1DownBtn) {
-      const downHandler = () => sendInput("playerInput", { player: 1, action: "down" });
-      const downStopHandler = () => sendInput("playerInput", { player: 1, action: "stop" });
+      const downHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "down" });
+      };
+      const downStopHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "stop" });
+      };
 
-      p1DownBtn.addEventListener("touchstart", downHandler);
+      p1DownBtn.addEventListener("touchstart", downHandler, { passive: false });
       p1DownBtn.addEventListener("mousedown", downHandler);
-      p1DownBtn.addEventListener("touchend", downStopHandler);
+      p1DownBtn.addEventListener("touchend", downStopHandler, { passive: false });
+      p1DownBtn.addEventListener("touchcancel", downStopHandler, { passive: false });
       p1DownBtn.addEventListener("mouseup", downStopHandler);
-      p1DownBtn.addEventListener("mouseleave", downStopHandler);
 
       this.buttonListeners.set("p1-down-touch", downHandler);
       this.buttonListeners.set("p1-down-mouse", downHandler);
       this.buttonListeners.set("p1-down-stop-touch", downStopHandler);
+      this.buttonListeners.set("p1-down-stop-cancel", downStopHandler);
       this.buttonListeners.set("p1-down-stop-mouse", downStopHandler);
-      this.buttonListeners.set("p1-down-stop-leave", downStopHandler);
     }
 
     // Player 2 buttons (or single player in online/AI mode)
     if (p2UpBtn) {
-      const upHandler = () => {
+      const upHandler = (e: Event) => {
+        e.preventDefault();
         const player =
           ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
             : 2;
         sendInput("playerInput", { player, action: "up" });
       };
-      const upStopHandler = () => {
+      const upStopHandler = (e: Event) => {
+        e.preventDefault();
         const player =
           ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
@@ -483,28 +535,30 @@ export class Pong {
         sendInput("playerInput", { player, action: "stop" });
       };
 
-      p2UpBtn.addEventListener("touchstart", upHandler);
+      p2UpBtn.addEventListener("touchstart", upHandler, { passive: false });
       p2UpBtn.addEventListener("mousedown", upHandler);
-      p2UpBtn.addEventListener("touchend", upStopHandler);
+      p2UpBtn.addEventListener("touchend", upStopHandler, { passive: false });
+      p2UpBtn.addEventListener("touchcancel", upStopHandler, { passive: false });
       p2UpBtn.addEventListener("mouseup", upStopHandler);
-      p2UpBtn.addEventListener("mouseleave", upStopHandler);
 
       this.buttonListeners.set("p2-up-touch", upHandler);
       this.buttonListeners.set("p2-up-mouse", upHandler);
       this.buttonListeners.set("p2-up-stop-touch", upStopHandler);
+      this.buttonListeners.set("p2-up-stop-cancel", upStopHandler);
       this.buttonListeners.set("p2-up-stop-mouse", upStopHandler);
-      this.buttonListeners.set("p2-up-stop-leave", upStopHandler);
     }
 
     if (p2DownBtn) {
-      const downHandler = () => {
+      const downHandler = (e: Event) => {
+        e.preventDefault();
         const player =
           ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
             : 2;
         sendInput("playerInput", { player, action: "down" });
       };
-      const downStopHandler = () => {
+      const downStopHandler = (e: Event) => {
+        e.preventDefault();
         const player =
           ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
             ? this.assignedPlayerNumber
@@ -512,17 +566,17 @@ export class Pong {
         sendInput("playerInput", { player, action: "stop" });
       };
 
-      p2DownBtn.addEventListener("touchstart", downHandler);
+      p2DownBtn.addEventListener("touchstart", downHandler, { passive: false });
       p2DownBtn.addEventListener("mousedown", downHandler);
-      p2DownBtn.addEventListener("touchend", downStopHandler);
+      p2DownBtn.addEventListener("touchend", downStopHandler, { passive: false });
+      p2DownBtn.addEventListener("touchcancel", downStopHandler, { passive: false });
       p2DownBtn.addEventListener("mouseup", downStopHandler);
-      p2DownBtn.addEventListener("mouseleave", downStopHandler);
 
       this.buttonListeners.set("p2-down-touch", downHandler);
       this.buttonListeners.set("p2-down-mouse", downHandler);
       this.buttonListeners.set("p2-down-stop-touch", downStopHandler);
+      this.buttonListeners.set("p2-down-stop-cancel", downStopHandler);
       this.buttonListeners.set("p2-down-stop-mouse", downStopHandler);
-      this.buttonListeners.set("p2-down-stop-leave", downStopHandler);
     }
 
     // Update button visibility based on game mode
@@ -854,7 +908,139 @@ export class Pong {
     }
   }
 
+  private updateTournamentStatus(player1: string, player2: string): void {
+    // Store current match players for language change updates
+    this.currentMatchPlayers = { player1, player2 };
+    
+    const statusEl = document.getElementById("tournament-status");
+    if (statusEl) {
+      statusEl.textContent = `${i18n.t("tournament.currentMatch")}: ${player1} vs ${player2}`;
+    }
+
+    // Add this match to the bracket if not already present
+    const existingMatch = this.tournamentMatches.find(
+      m => (m.player1 === player1 && m.player2 === player2) || 
+           (m.player1 === player2 && m.player2 === player1)
+    );
+
+    if (!existingMatch) {
+      // Determine round number based on number of completed matches
+      const completedMatches = this.tournamentMatches.filter(m => m.winner).length;
+      const numPlayers = this.tournamentPlayers.length;
+      
+      // Calculate which round we're in
+      let round = 1;
+      let matchesInPreviousRounds = 0;
+      let matchesPerRound = numPlayers / 2;
+      
+      while (completedMatches >= matchesInPreviousRounds + matchesPerRound) {
+        matchesInPreviousRounds += matchesPerRound;
+        matchesPerRound /= 2;
+        round++;
+      }
+      
+      this.currentRound = round;
+      this.tournamentMatches.push({ player1, player2, round, winner: undefined });
+      this.updateTournamentBracket();
+    }
+  }
+
+  private recordTournamentWinner(player1: string, player2: string, winner: string): void {
+    // Find the match
+    const match = this.tournamentMatches.find(
+      m => (m.player1 === player1 && m.player2 === player2) || 
+           (m.player1 === player2 && m.player2 === player1)
+    );
+
+    if (match) {
+      match.winner = winner;
+      this.updateTournamentBracket();
+    }
+  }
+
+  private updateTournamentBracket(): void {
+    const bracketEl = document.getElementById("tournament-bracket");
+    const containerEl = document.getElementById("bracket-container");
+
+    if (!bracketEl || !containerEl) return;
+
+    if (this.currentGameMode !== "tournament" || this.tournamentPlayers.length === 0) {
+      bracketEl.classList.add("hidden");
+      return;
+    }
+
+    bracketEl.classList.remove("hidden");
+
+    // Calculate number of rounds based on player count
+    const numPlayers = this.tournamentPlayers.length;
+    const numRounds = Math.log2(numPlayers);
+
+    // Build bracket HTML - horizontal on desktop, vertical on mobile
+    let html = '<div class="flex flex-col sm:flex-row gap-4 sm:gap-8 items-center sm:items-center">';
+
+    // Group matches by round
+    const matchesByRound: Array<Array<typeof this.tournamentMatches[0]>> = [];
+    for (let r = 0; r < numRounds; r++) {
+      matchesByRound[r] = this.tournamentMatches.filter(m => m.round === r + 1);
+    }
+
+    // Render each round
+    for (let round = 0; round < numRounds; round++) {
+      const roundMatches = matchesByRound[round] || [];
+      const roundLabel = round === numRounds - 1 ? i18n.t("tournament.final") : 
+                         round === numRounds - 2 ? i18n.t("tournament.semiFinal") :
+                         `${i18n.t("tournament.round")} ${round + 1}`;
+
+      // Only show rounds that have matches
+      if (roundMatches.length === 0) continue;
+
+      html += `<div class="flex flex-col gap-4 w-full sm:w-auto">`;
+      html += `<h4 class="text-neon-green text-center font-bold text-sm sm:text-base mb-2">${roundLabel}</h4>`;
+
+      // Show only matches that have been created
+      for (const match of roundMatches) {
+        html += this.renderMatch(match);
+      }
+
+      html += `</div>`;
+
+      // Add connector lines between rounds (except after last round)
+      if (round < numRounds - 1 && matchesByRound[round + 1] && matchesByRound[round + 1].length > 0) {
+        // Vertical arrow for mobile, horizontal for desktop
+        html += `<div class="flex items-center justify-center">
+          <div class="text-neon-pink text-2xl sm:inline hidden">→</div>
+          <div class="text-neon-pink text-2xl sm:hidden inline">↓</div>
+        </div>`;
+      }
+    }
+
+    html += '</div>';
+    containerEl.innerHTML = html;
+  }
+
+  private renderMatch(match: { player1: string; player2: string; winner?: string; round: number }): string {
+    const isPlayer1Winner = match.winner === match.player1;
+    const isPlayer2Winner = match.winner === match.player2;
+
+    return `
+      <div class="glass-card p-3 sm:min-w-[150px] w-full sm:w-auto">
+        <div class="flex flex-col gap-2">
+          <div class="text-sm sm:text-base ${isPlayer1Winner ? 'text-neon-green font-bold' : 'text-white'} ${isPlayer2Winner ? 'opacity-50' : ''}">
+            ${match.player1}${isPlayer1Winner ? ' ✓' : ''}
+          </div>
+          <div class="border-t border-neon-pink/30"></div>
+          <div class="text-sm sm:text-base ${isPlayer2Winner ? 'text-neon-green font-bold' : 'text-white'} ${isPlayer1Winner ? 'opacity-50' : ''}">
+            ${match.player2}${isPlayer2Winner ? ' ✓' : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   public destroy(): void {
+    // Mark as destroyed to prevent reconnection
+    this.isDestroyed = true;
+
     // Stop auth check
     this.stopAuthCheck();
 

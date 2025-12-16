@@ -105,7 +105,12 @@
     "playerPlaceholder": "Spielername {{i}}",
     "emptyNames": "Alle Spielernamen dürfen nicht leer sein",
     "duplicateNames": "Alle Spielernamen müssen einzigartig sein",
-    "setupFailed": "Turnieraufbau fehlgeschlagen"
+    "setupFailed": "Turnieraufbau fehlgeschlagen",
+    "bracket": "Turnierbaum",
+    "currentMatch": "Aktuelles Spiel",
+    "round": "Runde",
+    "semiFinal": "Halbfinale",
+    "final": "Finale"
   },
 
   "profile": {

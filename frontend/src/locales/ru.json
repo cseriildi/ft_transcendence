@@ -105,7 +105,12 @@
     "playerPlaceholder": "Имя игрока {{i}}",
     "emptyNames": "Все имена должны быть заполнены",
     "duplicateNames": "Имена должны быть уникальными",
-    "setupFailed": "Ошибка настройки турнира"
+    "setupFailed": "Ошибка настройки турнира",
+    "bracket": "Сетка турнира",
+    "currentMatch": "Текущий матч",
+    "round": "Раунд",
+    "semiFinal": "Полуфинал",
+    "final": "Финал"
   },
 
   "profile": {
