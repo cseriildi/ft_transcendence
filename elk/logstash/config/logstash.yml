@@ -1,0 +1,17 @@
+---
+## Logstash Configuration
+
+http.host: "0.0.0.0"
+path.config: /usr/share/logstash/pipeline/*.conf
+path.logs: /usr/share/logstash/logs
+
+pipeline.workers: 2
+pipeline.batch.size: 125
+pipeline.batch.delay: 50
+
+xpack.monitoring.enabled: false
+
+queue.type: memory
+queue.max_bytes: 128mb
+
+log.level: info

@@ -54,6 +54,38 @@ npm run dev
 
 ---
 
+### 📊 ELK Stack - Log Management (Optional)
+
+Want centralized log management with powerful search and visualization?
+
+```bash
+# Start application with ELK stack (any of these work)
+make elk=true       # Full setup with ELK
+make elk=true up    # Start with ELK
+make elk-up         # Shortcut
+
+# Configure Elasticsearch (first time only)
+make elk-setup
+
+# Access Kibana for log visualization
+open http://localhost:5601
+```
+
+**Features:**
+- Real-time log aggregation from all services
+- Full-text search and filtering
+- Pre-configured dashboards
+- 90-day log retention
+- Distributed tracing with request IDs
+
+**💡 Pro Tip:** Add `elk=true` to any make command to include ELK stack:
+- `make elk=true dev` - Development mode with ELK
+- `make elk=true restart` - Restart with ELK
+
+See the complete guide: **[elk/README.md](elk/README.md)**
+
+---
+
 ### 📋 Environment Files
 
 - **`.env`** - Created from `.env.example`, used by Docker Compose (production mode)

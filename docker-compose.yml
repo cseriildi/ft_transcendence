@@ -29,6 +29,14 @@ services:
     restart: unless-stopped
     networks:
       - transcendence
+    depends_on:
+      - logstash
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://127.0.0.1:5000"
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   backend:
     build:
@@ -49,6 +57,14 @@ services:
     restart: unless-stopped
     networks:
       - transcendence
+    depends_on:
+      - logstash
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://127.0.0.1:5000"
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   frontend:
     build:
@@ -62,6 +78,14 @@ services:
     restart: unless-stopped
     networks:
       - transcendence
+    depends_on:
+      - logstash
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://127.0.0.1:5000"
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   nginx:
     build:
@@ -86,9 +110,16 @@ services:
       - frontend
       - databank
       - backend
+      - logstash
     restart: unless-stopped
     networks:
       - transcendence
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://127.0.0.1:5000"
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   live-chat:
     build:
@@ -109,9 +140,16 @@ services:
       - ./live-chat/data:/app/data
     depends_on:
       - databank
+      - logstash
     restart: unless-stopped
     networks:
       - transcendence
+    logging:
+      driver: "syslog"
+      options:
+        syslog-address: "tcp://127.0.0.1:5000"
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
 volumes:
   databank-data:

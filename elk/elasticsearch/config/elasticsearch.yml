@@ -1,0 +1,18 @@
+---
+## Elasticsearch Configuration
+
+cluster.name: "transcendence-logs"
+network.host: 0.0.0.0
+
+# Index settings
+action.auto_create_index: true
+action.destructive_requires_name: true
+
+# Performance tuning
+indices.memory.index_buffer_size: 20%
+indices.queries.cache.size: 10%
+
+# Disable ML and other heavy features for resource optimization
+xpack.ml.enabled: false
+xpack.graph.enabled: false
+xpack.watcher.enabled: false
