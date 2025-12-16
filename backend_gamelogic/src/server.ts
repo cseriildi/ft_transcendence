@@ -23,6 +23,7 @@ const fastify: FastifyInstance = Fastify({
 
 // Register plugins
 await fastify.register(errorHandlerPlugin);
+await fastify.register(import("./plugins/prometheusPlugin.js"));
 await fastify.register(import("@fastify/websocket"));
 
 // Create single GameManager instance for all game tracking and lifecycle management

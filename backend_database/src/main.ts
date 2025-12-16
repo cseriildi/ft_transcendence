@@ -155,6 +155,10 @@ export async function build(opts: BuildOptions = {}) {
     await app.register(errorHandler);
 
     //cookie module for parsing and setting cookies
+
+    // Register Prometheus metrics plugin
+    await app.register(import("./plugins/prometheusPlugin.ts"));
+
     await app.register(cookie);
 
     // Register multipart for file uploads
