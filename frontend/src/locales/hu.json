@@ -81,7 +81,11 @@
     "instanceNotCreated": "A Pong példány nem jött létre.",
     "gameError": "Játékhiba",
     "waitingForOpponent": "Várakozás az ellenfélre...",
-    "waitingForStart": "Ha kész vagy, kattints a Játék indítása gombra"
+    "waitingForStart": "Ha kész vagy, kattints a Játék indítása gombra",
+    "youWon": "🎉 Győztél!",
+    "youLost": "😢 Veszítettél!",
+    "gameOver": "Játék vége",
+    "playerWins": "🎉 {{player}} nyert!"
   },
 
   "pong_dynamic": {
@@ -101,7 +105,12 @@
     "playerPlaceholder": "{{i}}. játékos neve",
     "emptyNames": "Minden játékos neve kötelező",
     "duplicateNames": "A játékosneveknek egyedieknek kell lenniük",
-    "setupFailed": "A bajnokság beállítása sikertelen"
+    "setupFailed": "A bajnokság beállítása sikertelen",
+    "bracket": "Bajnokság tabló",
+    "currentMatch": "Jelenlegi mérkőzés",
+    "round": "Forduló",
+    "semiFinal": "Elődöntő",
+    "final": "Döntő"
   },
 
   "profile": {
@@ -151,7 +160,8 @@
     "cancelRequest": "Kérelem visszavonása",
     "accept": "Elfogadás",
     "decline": "Elutasítás",
-    "addFriend": "Barát hozzáadása"
+    "addFriend": "Barát hozzáadása",
+    "requestDeclined": "Barátkérelem elutasítva"
   },
 
   "chat": {
