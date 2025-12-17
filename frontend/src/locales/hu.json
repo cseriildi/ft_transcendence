@@ -255,7 +255,7 @@
   "legal": {
     "privacyTitle": "Adatvédelmi nyilatkozat",
     "privacyP1": "Ez az Adatvédelmi nyilatkozat ismerteti, hogyan gyűjtjük, használjuk és továbbítjuk az információkat a Pong Portál (a \"Szolgáltatás\") használata során. Csak azokat az adatokat gyűjtjük, amelyek szükségesek a szolgáltatás biztosításához és fejlesztéséhez, például fiókinformációk (e-mail, felhasználónév) és avatár feltöltések. Nem értékesítjük a személyes adatokat.",
-    "privacyP2": "Sütiket és hasonló technológiákat használunk munkamenet-kezelésre és preferenciák tárolására. Harmadik féltől származó szolgáltatások (pl. elemzés, OAuth-szolgáltatók) saját irányelveik szerint gyűjthetnek adatokat. Fiók és személyes adatok törlését kérheted a projekt karbantartóinál.",
+    "privacyP2": "Sütiket és hasonló technológiákat használunk munkamenet-kezelésre és preferenciák tárolására. Harmadik féltől származó szolgáltatások (pl. elemzés) saját irányelveik szerint gyűjthetnek adatokat. Fiók és személyes adatok törlését kérheted a projekt karbantartóinál.",
     "privacyContact": "Ha kérdésed van az adatvédelmi nyilatkozattal kapcsolatban, vedd fel velünk a kapcsolatot a projekt tárolóján keresztül",
 
     "termsTitle": "Felhasználási feltételek",

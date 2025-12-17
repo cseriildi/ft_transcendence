@@ -11,6 +11,11 @@ import { config as appConfig } from "./config.ts";
 import errorHandler from "./plugins/errorHandlerPlugin.ts";
 import rateLimit from "@fastify/rate-limit";
 import cors from "@fastify/cors";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
+import cookie from "@fastify/cookie";
+import multipart from "@fastify/multipart";
+import staticFiles from "@fastify/static";
 import { randomBytes } from "node:crypto";
 
 export type BuildOptions = {
@@ -19,10 +24,6 @@ export type BuildOptions = {
   disableRateLimit?: boolean;
 };
 
-/**
- * Generates a unique request ID
- * Format: req-{timestamp}-{random} for easy chronological sorting
- */
 function generateRequestId(): string {
   const timestamp = Date.now().toString(36); // Base36 timestamp (shorter)
   const random = randomBytes(4).toString("hex"); // 8 char random
@@ -31,6 +32,7 @@ function generateRequestId(): string {
 
 export async function build(opts: BuildOptions = {}) {
   const {
+    //pino logger configuration options
     logger = {
       level: appConfig.logging.level,
       // Structured logging for production
@@ -41,7 +43,7 @@ export async function build(opts: BuildOptions = {}) {
             url: request.url,
             hostname: request.hostname,
             remoteAddress: request.ip,
-            userId: request.user?.id, // Include authenticated user ID in logs
+            userId: request.user?.id,
           };
         },
         res(reply) {
@@ -96,11 +98,11 @@ export async function build(opts: BuildOptions = {}) {
       const publicPort = appConfig.server.publicPort || appConfig.server.port;
       const swaggerUrl = `${appConfig.server.publicHost}:${publicPort}`;
 
-      await app.register(import("@fastify/swagger"), {
+      await app.register(swagger, {
         openapi: {
           info: {
-            title: "Fastify API",
-            description: "API documentation for Fastify backend",
+            title: "Fastify PONG API",
+            description: "API documentation for Fastify PONG backend",
             version: "1.0.0",
           },
           servers: [
@@ -122,14 +124,13 @@ export async function build(opts: BuildOptions = {}) {
             { name: "health", description: "Health check endpoints" },
             { name: "auth", description: "Authentication endpoints" },
             { name: "2fa", description: "Two-Factor Authentication (2FA) endpoints" },
-            { name: "oauth", description: "OAuth (GitHub) endpoints" },
             { name: "users", description: "User management endpoints" },
             { name: "matches", description: "Match endpoints" },
           ],
         },
       });
 
-      await app.register(import("@fastify/swagger-ui"), {
+      await app.register(swaggerUi, {
         routePrefix: "/docs",
         uiConfig: {
           docExpansion: "list",
@@ -140,22 +141,28 @@ export async function build(opts: BuildOptions = {}) {
     }
     //------------------------------------
 
+    //app.register injects the fastify instance into the callback functions as first parameter
     if (!disableRateLimit) {
       await app.register(rateLimit, { max: 20, timeWindow: "1 second" });
     }
 
+    // Register database connector plugin
     await app.register(dbConnector, {
       path: database?.path ?? appConfig.database.path,
     });
+
+    // Register custom error handler plugin
     await app.register(errorHandler);
+
+    //cookie module for parsing and setting cookies
 
     // Register Prometheus metrics plugin
     await app.register(import("./plugins/prometheusPlugin.ts"));
 
-    await app.register(import("@fastify/cookie"));
+    await app.register(cookie);
 
     // Register multipart for file uploads
-    await app.register(import("@fastify/multipart"), {
+    await app.register(multipart, {
       limits: {
         fileSize: 5 * 1024 * 1024, // 5MB max file size
         files: 1, // Max 1 file per request
@@ -163,7 +170,7 @@ export async function build(opts: BuildOptions = {}) {
     });
 
     // Register static file serving for uploaded avatars
-    await app.register(import("@fastify/static"), {
+    await app.register(staticFiles, {
       root: appConfig.server.env === "production" ? "/app/uploads" : `${process.cwd()}/uploads`,
       prefix: "/uploads/",
       decorateReply: false,
@@ -225,17 +232,15 @@ const start = async () => {
     }
 
     // Graceful shutdown handlers for production environments
-    // Docker/K8s send SIGTERM before force-killing the container
     const signals: NodeJS.Signals[] = ["SIGTERM", "SIGINT"];
     signals.forEach((signal) => {
       process.on(signal, async () => {
         if (!app) return; // Should never happen, but TypeScript safety
         app.log.info({ signal }, `Received ${signal}, closing server gracefully...`);
         try {
-          // Fastify's close() method:
-          // 1. Stops accepting new connections
-          // 2. Waits for in-flight requests to complete
-          // 3. Triggers onClose hooks (closes DB connection via databasePlugin)
+          //Stops accepting new connections
+          //Waits for in-flight requests to complete
+          //Triggers onClose hooks (closes DB connection via databasePlugin)
           await app.close();
           app.log.info("Server closed gracefully");
           process.exit(0);
@@ -249,8 +254,6 @@ const start = async () => {
     if (app) {
       app.log.error(err, "Failed to start server");
     } else {
-      // Fallback if app failed to build
-      // eslint-disable-next-line no-console
       console.error("Failed to build application:", err);
     }
     process.exit(1);
@@ -259,6 +262,5 @@ const start = async () => {
 
 // Only start if this file is run directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  void start(); // Explicitly mark as fire-and-forget :
-  // errors are handled inside start() and will exit the process
+  void start();
 }
