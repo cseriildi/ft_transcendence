@@ -133,23 +133,33 @@ export function broadcastGameResult(game: GameServer) {
   if (game.tournament) {
     game.tournament.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
   }
-
+  const message = JSON.stringify({
+    type: "gameResult",
+    mode: game.gameMode,
+    data: {
+      winner: winnerId,
+      loser: loserId,
+      winnerName: winner.username,
+      loserName: loser.username,
+      winnerScore,
+      loserScore,
+    },
+  });
+  if (game.gameMode === "remoteTournament" && game.tournament) {
+    for (const playerConn of game.tournament.getAllConnections()) {
+      if (!playerConn) continue;
+      try {
+        playerConn.send(message);
+      } catch (err) {
+        console.error("Failed to send game result to tournament player:", err);
+      }
+    }
+    return;
+  }
   // Send to all connected clients
   for (const [playerNum, { connection }] of game.clients.entries()) {
     if (!connection) continue;
     try {
-      const message = JSON.stringify({
-        type: "gameResult",
-        mode: game.gameMode,
-        data: {
-          winner: winnerId,
-          loser: loserId,
-          winnerName: winner.username,
-          loserName: loser.username,
-          winnerScore,
-          loserScore,
-        },
-      });
       connection.send(message);
     } catch (err) {
       console.error("Failed to send game result to client:", err);

@@ -266,8 +266,10 @@ export class GameServer {
       (client) => client.playerInfo.userId === userId
     );
     if (currentClient) {
-      this.disconnect(currentClient.connection);
-      currentClient.connection = newConnection;
+      if (currentClient.connection !== newConnection) {
+        this.disconnect(currentClient.connection);
+        currentClient.connection = newConnection;
+      }
       broadcastGameSetup(this);
       return true;
     }

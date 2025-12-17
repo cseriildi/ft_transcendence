@@ -316,7 +316,7 @@ export class Pong {
               // In AI mode, player is always player 2
               didWin = result.winner === 2;
             } else if (
-              ["remote", "friend"].includes(this.currentGameMode) &&
+              ["remote", "friend", "remoteTournament"].includes(this.currentGameMode) &&
               this.assignedPlayerNumber
             ) {
               didWin = result.winner === this.assignedPlayerNumber;
@@ -324,15 +324,16 @@ export class Pong {
 
             const notificationMessage = didWin ? i18n.t("pong.youWon") : i18n.t("pong.youLost");
             alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
-          } else if (this.currentGameMode === "tournament") {
+          } else if (["tournament", "remoteTournament"].includes(this.currentGameMode)) {
             const result = message.data;
             // Fallback to player number if winnerName is missing (defensive programming)
             const winner = result.winnerName || `Player ${result.winner}`;
+            const loser = result.loserName || `Player ${result.loser}`;
 
             // Update tournament bracket with winner
-            this.recordTournamentWinner(this.player1Username, this.player2Username, winner);
+            this.recordTournamentWinner(winner, loser, winner);
 
-            alert(`${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`);
+            // alert(`${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`);
           }
 
           this.sendWhenConnected({
@@ -372,7 +373,7 @@ export class Pong {
 
           // Track tournament match
           if (
-            this.currentGameMode === "tournament" &&
+            ["tournament", "remoteTournament"].includes(this.currentGameMode) &&
             message.player1Username &&
             message.player2Username
           ) {
@@ -420,6 +421,7 @@ export class Pong {
             } else {
               console.log("Current players list not available or invalid. Full message:", message);
             }
+            this.tournamentPlayers = message.players || [];
           }
           break;
         }
@@ -432,6 +434,9 @@ export class Pong {
             console.log("🔄 New Tournament Round! Matchups:", message.pairs);
             this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
           }
+          this.tournamentMatches.push(...message.pairs);
+          this.currentRound += 1;
+          this.updateTournamentBracket();
           break;
         }
         default:
@@ -511,7 +516,7 @@ export class Pong {
     this.languageChangeListener = () => {
       this.updatePlayerNamesDisplay();
       // Update tournament bracket to refresh translated labels
-      if (this.currentGameMode === "tournament") {
+      if (["tournament", "remoteTournament"].includes(this.currentGameMode)) {
         this.updateTournamentBracket();
         // Update current match status text
         if (this.currentMatchPlayers) {
@@ -531,7 +536,8 @@ export class Pong {
    * Otherwise, defaults to player 2.
    */
   private getPlayerNumberForP2(): number {
-    return ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+    return ["remote", "friend", "remoteTournament"].includes(this.currentGameMode) &&
+      this.assignedPlayerNumber
       ? this.assignedPlayerNumber
       : 2;
   }
@@ -736,7 +742,7 @@ export class Pong {
         player2Label.setAttribute("data-i18n", "pong_dynamic.player2");
         player2Label.textContent = i18n.t("pong_dynamic.player2");
       }
-    } else if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
+    } else if (["remote", "friend", "ai", "remoteTournament"].includes(this.currentGameMode)) {
       // Online/AI mode: show only player 2 controls (or assigned player)
       player1Controls.classList.add("hidden");
       player2Controls.classList.remove("hidden");
@@ -1114,7 +1120,10 @@ export class Pong {
 
     if (!bracketEl || !containerEl) return;
 
-    if (this.currentGameMode !== "tournament" || this.tournamentPlayers.length === 0) {
+    if (
+      !["tournament", "remoteTournament"].includes(this.currentGameMode) ||
+      this.tournamentPlayers.length === 0
+    ) {
       bracketEl.classList.add("hidden");
       return;
     }

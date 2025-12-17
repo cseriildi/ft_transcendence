@@ -86,4 +86,8 @@ export class Tournament {
     player.score = 0;
     this.waitingPlayers.add(player);
   }
+
+  getAllConnections(): any[] {
+    return [];
+  }
 }

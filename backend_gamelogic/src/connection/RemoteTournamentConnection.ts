@@ -6,7 +6,6 @@ import { createGame } from "../gameUtils.js";
 import { RemoteTournament } from "../RemoteTournament.js";
 
 export default class RemoteTournamentConnection extends ConnectionSession {
-  private tournament: RemoteTournament | null = null;
   private userId: number;
   private username: string;
 
@@ -23,10 +22,14 @@ export default class RemoteTournamentConnection extends ConnectionSession {
     this.username = username;
   }
 
+  private get tournament(): RemoteTournament | null {
+    return this.gameManager.getTournamentPlayer(this.userId);
+  }
+
   protected async handleMessage(data: any) {
     switch (data.type) {
       case "newGame":
-        if (this.fetchTournament()) break;
+        if (this.reconnectToTournament()) break;
         this.joinTournament();
         if (this.tournament) {
           this.game = this.tournament.fetchGame(this.userId);
@@ -50,21 +53,23 @@ export default class RemoteTournamentConnection extends ConnectionSession {
     }
   }
 
-  private fetchTournament(): boolean {
-    this.tournament = this.gameManager.getTournamentPlayer(this.userId);
-    return (
-      this.tournament !== null &&
-      this.tournament.updatePlayerConnection(this.userId, this.connection)
-    );
+  private reconnectToTournament(): boolean {
+    const tournament = this.tournament;
+    let updated = false;
+    if (tournament) {
+      updated = tournament.updatePlayerConnection(this.userId, this.connection);
+      this.game = tournament.fetchGame(this.userId);
+    }
+    return updated;
   }
 
   private joinTournament() {
     if (this.tournament) return;
-    this.tournament = this.gameManager.getWaitingTournament();
-    if (!this.tournament) {
-      this.tournament = new RemoteTournament(this.gameManager);
+    let tournament = this.gameManager.getWaitingTournament();
+    if (!tournament) {
+      tournament = new RemoteTournament(this.gameManager);
     }
-    this.tournament.addPlayer(
+    tournament.addPlayer(
       {
         username: this.username,
         userId: this.userId,

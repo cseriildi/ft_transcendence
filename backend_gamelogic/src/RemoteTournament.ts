@@ -9,8 +9,9 @@ export class RemoteTournament extends Tournament {
   private createdAt: Date;
   private waiting: boolean = true;
   private gameManager: GameManager;
-  private ongoingGames: Set<GameServer> = new Set();
-  private maxPlayers: number = 8;
+  private activeGameCount: number = 0;
+  private maxPlayers: number = 4;
+  private finished: boolean = false;
   constructor(gameManager: GameManager) {
     super([]);
     this.createdAt = new Date();
@@ -74,10 +75,24 @@ export class RemoteTournament extends Tournament {
 
     if (game) {
       game.updateConnection(userId, connection);
+    } else if (this.waiting) {
+      const player = Array.from(this.waitingPlayers).find((p) => p.userId === userId);
+      if (player) {
+        connection.send(
+          JSON.stringify({
+            type: "playerJoined",
+            username: player.username,
+            players: Array.from(this.waitingPlayers, (p) => p.username),
+          })
+        );
+      }
     }
     if (playerData) {
       if (playerData.connection !== connection) {
-        this.disconnect(playerData.connection);
+        // Only disconnect if it's a different connection object and not null
+        if (playerData.connection) {
+          this.disconnect(playerData.connection);
+        }
         playerData.connection = connection;
         this.players.set(userId, playerData);
         return true;
@@ -112,12 +127,13 @@ export class RemoteTournament extends Tournament {
 
   createGames(): void {
     this.currentRound.forEach((pairing) => {
+      this.activeGameCount++;
       const game = createGame("remoteTournament", (game) => {
         this.gameManager.removeActiveGame(game);
         this.players.get(pairing.player1.userId)!.game = null;
         this.players.get(pairing.player2.userId)!.game = null;
-        this.ongoingGames.delete(game);
-        if (this.ongoingGames.size === 0) {
+        this.activeGameCount--;
+        if (this.activeGameCount === 0) {
           if (this.waitingPlayers.size >= 2) {
             this.generatePairings();
             this.createGames();
@@ -130,6 +146,7 @@ export class RemoteTournament extends Tournament {
           }
         }
       });
+
       this.gameManager.addActiveGame(game);
       game.tournament = this;
       game.clients.set(1, {
@@ -143,13 +160,19 @@ export class RemoteTournament extends Tournament {
       game.freezeBall();
       this.players.get(pairing.player1.userId)!.game = game;
       this.players.get(pairing.player2.userId)!.game = game;
-      this.ongoingGames.add(game);
       game.runGameCountdown();
     });
+    this.currentRound.clear();
   }
 
   fetchGame(userId: number): GameServer | null {
     const playerData = this.players.get(userId);
     return playerData ? playerData.game : null;
+  }
+
+  getAllConnections(): any[] {
+    return Array.from(this.players.values())
+      .map((pdata) => pdata.connection)
+      .filter((conn) => conn !== null);
   }
 }
