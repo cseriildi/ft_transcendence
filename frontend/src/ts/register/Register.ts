@@ -27,6 +27,42 @@ export class Register {
       return { success: false, message: i18n.t("register.allFieldsRequired") };
     }
 
+    // Validate email format
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      showErrorPopup(i18n.t("register.invalidEmailFormat"));
+      return { success: false, message: i18n.t("register.invalidEmailFormat") };
+    }
+
+    // Validate username length
+    if (username.length < 3) {
+      showErrorPopup(i18n.t("register.usernameTooShort"));
+      return { success: false, message: i18n.t("register.usernameTooShort") };
+    }
+    if (username.length > 15) {
+      showErrorPopup(i18n.t("register.usernameTooLong"));
+      return { success: false, message: i18n.t("register.usernameTooLong") };
+    }
+
+    // Validate username pattern: only letters, numbers, hyphens, and underscores
+    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+    if (!usernamePattern.test(username)) {
+      showErrorPopup(i18n.t("register.invalidUsername"));
+      return { success: false, message: i18n.t("register.invalidUsername") };
+    }
+
+    // Validate password length (production requirement: min 10 characters)
+    if (password.length < 10) {
+      showErrorPopup(i18n.t("register.passwordTooShort"));
+      return { success: false, message: i18n.t("register.passwordTooShort") };
+    }
+
+    // Validate password contains at least one number
+    if (!/\d/.test(password)) {
+      showErrorPopup(i18n.t("register.passwordNoNumber"));
+      return { success: false, message: i18n.t("register.passwordNoNumber") };
+    }
+
     try {
       const response = await fetch(`${config.apiUrl}/auth/register`, {
         method: "POST",
@@ -52,7 +88,6 @@ export class Register {
         };
       }
     } catch (err) {
-      console.error("Network error", err);
       showErrorPopup(i18n.t("register.networkError"));
       return { success: false, message: i18n.t("register.networkError") };
     }

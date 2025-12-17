@@ -28,7 +28,6 @@ export async function fetchWithRefresh(url: string, options: RequestInit): Promi
 
     return response;
   } catch (error) {
-    console.error("Error in fetchWithRefresh:", error);
     throw error;
   }
 }

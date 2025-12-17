@@ -63,7 +63,10 @@
     "passwordsMismatch": "Die Passwörter stimmen nicht überein. Bitte versuche es erneut.",
     "weakPassword": "Das Passwort ist zu schwach. Bitte verwende ein stärkeres Passwort.",
     "invalidEmailFormat": "Ungültiges E-Mail-Format. Bitte gib eine gültige E-Mail-Adresse ein.",
-    "invalidUsername": "Ungültiger Benutzername. Verwende 3-15 Zeichen (nur Buchstaben, Zahlen, - und _).",
+    "invalidUsername": "Ungültiger Benutzername. Verwende 3-15 Zeichen (nur Buchstaben, Zahlen, - und _).",    "usernameTooShort": "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+    "usernameTooLong": "Der Benutzername darf höchstens 15 Zeichen enthalten.",
+    "passwordTooShort": "Das Passwort muss mindestens 10 Zeichen lang sein.",
+    "passwordNoNumber": "Das Passwort muss mindestens eine Zahl enthalten.",
     "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung."
   },
 
@@ -104,7 +107,12 @@
     "startTournament": "Turnier starten",
     "playerPlaceholder": "Spielername {{i}}",
     "emptyNames": "Alle Spielernamen dürfen nicht leer sein",
-    "duplicateNames": "Alle Spielernamen müssen einzigartig sein",
+    "emptyPlayerName": "Spielername darf nicht leer sein",
+
+    "duplicatePlayerNames": "Alle Spielernamen müssen einzigartig sein",
+    "playerNameTooShort": "Spielername muss mindestens 3 Zeichen lang sein",
+    "playerNameTooLong": "Spielername darf maximal 15 Zeichen lang sein",
+    "invalidPlayerName": "Spielername darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten",
     "setupFailed": "Turnieraufbau fehlgeschlagen",
     "bracket": "Turnierbaum",
     "currentMatch": "Aktuelles Spiel",
@@ -245,7 +253,7 @@
   "legal": {
     "privacyTitle": "Datenschutzerklärung",
     "privacyP1": "Diese Datenschutzerklärung erklärt, wie das Pong Portal (der \"Dienst\") Informationen sammelt, verwendet und weitergibt. Wir erheben nur die Daten, die zur Bereitstellung und Verbesserung des Dienstes erforderlich sind, z. B. Kontoinformationen (E-Mail, Benutzername) und Avatar-Uploads. Wir verkaufen keine personenbezogenen Daten.",
-    "privacyP2": "Wir verwenden Cookies und ähnliche Technologien für Sitzungsverwaltung und Präferenzen. Drittanbieter (z. B. Analytik, OAuth-Anbieter) können Daten gemäß ihren Richtlinien sammeln. Sie können die Löschung Ihres Kontos und Ihrer personenbezogenen Daten anfordern.",
+    "privacyP2": "Wir verwenden Cookies und ähnliche Technologien für Sitzungsverwaltung und Präferenzen. Drittanbieter (z. B. Analytik) können Daten gemäß ihren Richtlinien sammeln. Sie können die Löschung Ihres Kontos und Ihrer personenbezogenen Daten anfordern.",
     "privacyContact": "Bei Fragen zu dieser Richtlinie kontaktieren Sie uns über das Projekt-Repository",
 
     "termsTitle": "Nutzungsbedingungen",

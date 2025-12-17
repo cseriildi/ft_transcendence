@@ -21,10 +21,6 @@ import {
 import "../../types/fastifyTypes.ts";
 
 export const gameInviteController = {
-  /**
-   * Create a game invitation to a friend
-   * POST /api/game-invites/:id
-   */
   createInvite: async (
     request: FastifyRequest<{ Params: GameInviteParams }>,
     _reply: FastifyReply
@@ -33,19 +29,14 @@ export const gameInviteController = {
     const { id } = request.params;
     const inviterId = request.user!.id;
     const inviteeId = validatePositiveId(id, "user ID");
-
-    // Validate users exist and are different
     ensureDifferentUsers(inviterId, inviteeId);
     await ensureUsersExist(db, inviterId, inviteeId);
 
-    // Verify friendship exists and is accepted, get friendship ID
     const friendsId = await ensureUsersFriends(db, inviterId, inviteeId);
 
-    // Check for existing pending invitation in either direction
     const existingInvite = await findPendingGameInvite(db, inviterId, inviteeId);
 
     if (existingInvite) {
-      // Return existing pending invite (use the actual inviter/invitee from DB)
       const responseBody: CreateGameInviteResponse = {
         game_id: existingInvite.id,
         inviter_id: String(existingInvite.inviter_id),
@@ -74,10 +65,6 @@ export const gameInviteController = {
     return ApiResponseHelper.success(responseBody, "Game invitation created successfully");
   },
 
-  /**
-   * Get a specific game invitation by ID
-   * GET /api/game-invites/:id
-   */
   getInvite: async (
     request: FastifyRequest<{ Params: GameInviteParams }>,
     _reply: FastifyReply
@@ -154,15 +141,11 @@ export const gameInviteController = {
     const { id } = request.params;
     const gameId = validatePositiveId(id, "game ID");
 
-    // Fetch invitation to verify it exists
     const invite = await getGameInviteById(db, gameId);
 
     if (!invite) {
       throw errors.notFound("Game invitation not found");
     }
-
-    // No user authorization needed - service requests are trusted
-    // Delete the invitation
     await db.run("DELETE FROM friend_game_invitations WHERE id = ?", [gameId]);
 
     return ApiResponseHelper.success(
@@ -171,10 +154,6 @@ export const gameInviteController = {
     );
   },
 
-  /**
-   * List all game invitations for current user (sent + received)
-   * GET /api/game-invites
-   */
   listInvites: async (
     request: FastifyRequest,
     _reply: FastifyReply
@@ -241,11 +220,6 @@ export const gameInviteController = {
     return ApiResponseHelper.success(responseBody, "Game invitations retrieved");
   },
 
-  /**
-   * Get invitation for internal services (game server) - no auth required
-   * Used by game server to verify invitations exist before starting games
-   * GET /internal/game-invites/:id
-   */
   getInviteInternal: async (
     request: FastifyRequest<{ Params: GameInviteParams }>,
     _reply: FastifyReply

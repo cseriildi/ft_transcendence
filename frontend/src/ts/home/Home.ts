@@ -60,11 +60,9 @@ export class Home {
           localStorage.removeItem("username");
 
           this.router.navigate("/");
-        } else {
-          console.error("Failed to log out", await response.json());
         }
       } catch (error) {
-        console.error("Error during logout", error);
+        // Silently fail logout
       }
     });
 
@@ -93,11 +91,9 @@ export class Home {
           if (userName && userData.data.username) {
             userName.innerHTML = userData.data.username;
           }
-        } else {
-          console.error("Failed to fetch user data", await response.json());
         }
       } catch (error) {
-        console.error("Error fetching user data", error);
+        // Silently fail to load user info
       }
     } else {
       logoutBtn?.classList.add("hidden");

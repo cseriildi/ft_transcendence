@@ -24,7 +24,6 @@ export class UserCache {
     }
 
     try {
-      console.log("Loading users cache...");
       const response = await fetch(`${config.apiUrl}/api/users`, {
         headers: {
           Authorization: `Bearer ${getAccessToken()}`,
@@ -40,12 +39,9 @@ export class UserCache {
         });
 
         this.cacheTimestamp = Date.now();
-        console.log(`Loaded ${users.length} users into cache`);
-      } else {
-        console.error("Failed to fetch users list");
       }
     } catch (error) {
-      console.error("Error fetching users list:", error);
+      // Silently fail - will use userId as fallback
     }
   }
 
@@ -65,7 +61,6 @@ export class UserCache {
   }
 
   public clear(): void {
-    console.log(`Clearing user cache (${this.cache.size} entries)`);
     this.cache.clear();
     this.cacheTimestamp = 0;
   }

@@ -1,11 +1,9 @@
-// import { FastifyRequest } from "fastify"; // Removed - not currently used
 import { MultipartFile } from "@fastify/multipart";
 import { errors } from "./errorUtils.ts";
 import { promises as fs } from "fs";
 import path from "path";
 import { randomBytes } from "crypto";
 
-// Upload configuration
 export const UPLOAD_CONFIG = {
   uploadsDir: path.join(process.cwd(), "uploads", "avatars"),
   defaultAvatarPath: path.join(
@@ -21,7 +19,6 @@ export const UPLOAD_CONFIG = {
   allowedExtensions: [".jpg", ".jpeg", ".png"],
 };
 
-// Ensure uploads directory exists
 export async function ensureUploadsDirExists(): Promise<void> {
   try {
     await fs.mkdir(UPLOAD_CONFIG.uploadsDir, { recursive: true });
@@ -33,14 +30,12 @@ export async function ensureUploadsDirExists(): Promise<void> {
   }
 }
 
-// Generate unique filename
 export function generateUniqueFilename(originalFilename: string): string {
   const ext = path.extname(originalFilename).toLowerCase();
   const randomName = randomBytes(16).toString("hex");
   return `${randomName}${ext}`;
 }
 
-// Validate file type
 export function validateFileType(mimetype: string, filename: string): void {
   const ext = path.extname(filename).toLowerCase();
 

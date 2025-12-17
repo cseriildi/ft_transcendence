@@ -4,7 +4,7 @@
 
 This is a **university finishing project** - a TypeScript/Fastify REST API backend demonstrating production-ready patterns, authentication systems, and database operations with SQLite. This is a **showcase/learning project**, not enterprise software.
 
-**Stack:** Fastify + TypeScript + SQLite + Vitest + JWT + OAuth 2.0 + 2FA/TOTP
+**Stack:** Fastify + TypeScript + SQLite + Vitest + JWT + 2FA/TOTP
 
 **Test Coverage:** 172 passing tests - comprehensive test suite exists, maintain this standard.
 
@@ -61,7 +61,7 @@ Should I proceed with [chosen approach]?
 - **File naming:** camelCase for all TypeScript files (e.g., `authController.ts`, not `auth-controller.ts`)
 
 - **Route organization:**
-  - Auth/OAuth routes: No rate limiting (have specific limits in controllers)
+  - Auth routes: No rate limiting (have specific limits in controllers)
   - API routes (`/api/*`): Protected with `authenticatedRateLimit` (100 req/min)
   - Register routes in `src/router.ts` with appropriate prefix from `config.routes`
 
@@ -100,7 +100,6 @@ Should I proceed with [chosen approach]?
 - Passwords: bcrypt with work factor 10
 - JWTs: HS256 signing, 15min access tokens, 7d refresh tokens
 - Refresh tokens: Hashed in database, httpOnly cookies, atomic rotation
-- OAuth: HMAC-signed state tokens with CSRF protection
 - 2FA: Rate-limited TOTP (5 attempts per 15min)
 - Input sanitization: HTML escaping via `sanitize()` utility
 - SQL injection: Parameterized queries only (no string concatenation)
@@ -300,14 +299,6 @@ export const someController = {
 
 **When suggesting features, consider if SQLite limitations apply.**
 
-### OAuth Flow Specifics
-- State tokens are HMAC-signed with timestamp
-- Auto-creates user on first OAuth login
-- Links OAuth to existing account if email matches
-- Fetches avatar from OAuth provider automatically
-
-**Don't suggest breaking CSRF protection "for convenience."**
-
 ### 2FA Implementation
 - Uses speakeasy library for TOTP generation
 - QR codes generated with qrcode library
@@ -365,7 +356,7 @@ If user requests something problematic:
 ### This is About Demonstrating Understanding
 
 **Code should show you know:**
-- Secure authentication patterns (JWT, OAuth, 2FA)
+- Secure authentication patterns (JWT, 2FA)
 - Database best practices (migrations, transactions, indexing)
 - API design (RESTful routes, validation, error handling)
 - Testing methodology (unit, integration, coverage)

@@ -14,14 +14,12 @@ export class ProfileData {
 
   public async loadUserProfile(userId: string | number): Promise<void> {
     if (!userId) {
-      console.error("No valid user ID found for profile fetch.");
       this.resetProfileElements();
       return;
     }
 
     const numericUserId = Number(userId);
     if (isNaN(numericUserId) || numericUserId <= 0) {
-      console.error("Invalid user ID provided:", userId);
       this.resetProfileElements();
       return;
     }
@@ -31,11 +29,9 @@ export class ProfileData {
       if (userData) {
         this.updateProfileElements(userData);
       } else {
-        console.error("Failed to fetch user data for user:", userId);
         this.resetProfileElements();
       }
     } catch (error) {
-      console.error("Error fetching user data", error);
       this.resetProfileElements();
     }
   }

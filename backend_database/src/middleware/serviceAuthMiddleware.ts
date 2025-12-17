@@ -5,7 +5,6 @@ import crypto from "node:crypto";
 
 /**
  * Middleware to verify requests from internal services (e.g., gamelogic)
- * Validates the X-Service-Token header using constant-time comparison
  */
 export async function requireServiceAuth(request: FastifyRequest, _reply: FastifyReply) {
   const serviceSecret = config.serviceAuth.secret;
@@ -37,6 +36,5 @@ export async function requireServiceAuth(request: FastifyRequest, _reply: Fastif
     });
   }
 
-  // Mark this as a service request (useful for logging/auditing)
   request.isServiceRequest = true;
 }

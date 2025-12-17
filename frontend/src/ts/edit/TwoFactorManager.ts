@@ -116,10 +116,8 @@ export class TwoFactorManager {
     qrImg.classList.add("opacity-0");
     qrImg.onload = () => {
       qrImg.classList.remove("opacity-0");
-      console.debug("QR image loaded, natural size:", qrImg.naturalWidth, qrImg.naturalHeight);
     };
-    qrImg.onerror = (e) => {
-      console.error("QR image failed to load", e, setupData.qr_code);
+    qrImg.onerror = () => {
       qrImg.alt = "Failed to load QR code";
     };
 
