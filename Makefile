@@ -33,7 +33,7 @@ else
 	URL = https://$(LOCAL_IP):8443
 endif
 
-SERVICES = backend frontend databank nginx
+SERVICES = backend frontend database nginx
 
 # =============================================================================
 # High-level targets
@@ -55,8 +55,14 @@ fre: fclean env certs setup-dirs build up
 # =============================================================================
 
 env:
-	@echo "🧩 Generating .env (replacing localhost with $(LOCAL_IP))..."
-	@sed 's/localhost/$(LOCAL_IP)/g' .env.example > .env || true
+	@echo "🧩 Generating .env using LOCAL_IP=$(LOCAL_IP)..."
+	@if [ -f .env ]; then \
+		echo "→ Updating existing .env"; \
+		sed -i 's/localhost/$(LOCAL_IP)/g' .env; \
+	else \
+		echo "→ Creating .env from .env.example"; \
+		sed 's/localhost/$(LOCAL_IP)/g' .env.example > .env; \
+	fi
 
 certs:
 	@echo "🔐 Generating SSL certificates..."
@@ -84,24 +90,44 @@ up:
 	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
 	@echo "📊 Including ELK stack"
 
-	@echo "🔧 Starting Logstash first (for syslog logging)..."
+	@echo "🔧 Starting Elasticsearch and Logstash first..."
 	@$(DOCKER_COMPOSE) $(COMPOSE_FILES) up -d --quiet-pull elasticsearch logstash $(QUIET_REDIRECT) || true
 
-	@echo "⏳ Waiting for Logstash to be ready..."
+	@echo "⏳ Waiting for Elasticsearch to be ready..."
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
-		if nc -z localhost 5000 2>/dev/null; then \
-			echo "✅ Logstash is ready!"; \
+		if curl -fsS http://localhost:9200/_cluster/health >/dev/null 2>&1; then \
+			echo "✅ Elasticsearch is ready!"; \
 			break; \
 		fi; \
 		if [ $$i -eq 12 ]; then \
-			echo "⚠️  Logstash not ready after 60s, proceeding anyway..."; \
+			echo "⚠️  Elasticsearch not ready after 60s, proceeding anyway..."; \
 		else \
-			echo "   Attempt $$i/12: Waiting for Logstash port 5000..."; \
+			echo "   Attempt $$i/12: Waiting for Elasticsearch..."; \
 			sleep 5; \
 		fi; \
 	done
 
-	@echo "🚀 Starting remaining services..."
+	@echo "📋 Setting up Elasticsearch index template..."
+	@./elk/create-index-template.sh || echo "⚠️  Template setup had issues, continuing anyway..."
+
+	@echo "⏳ Waiting for Logstash to be ready..."
+	@for i in 1 2 3 4 5; do \
+		if nc -z localhost 5000 2>/dev/null; then \
+			echo "✅ Logstash is ready!"; \
+			break; \
+		fi; \
+		if [ $$i -eq 5 ]; then \
+			echo "⚠️  Logstash not ready after 25s, proceeding anyway..."; \
+		else \
+			echo "   Attempt $$i/5: Waiting for Logstash port 5000..."; \
+			sleep 5; \
+		fi; \
+	done
+
+	@echo "⏳ Waiting 3 seconds for DNS propagation..."
+	@sleep 3
+
+	@echo "🚀 Starting application services..."
 	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
 		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
 		$(DOCKER_COMPOSE) $(COMPOSE_FILES) up -d --quiet-pull $(QUIET_REDIRECT) || true
@@ -118,10 +144,10 @@ up:
 
 	@echo ""
 	@echo "✅ Services started"
-	@echo "🌐 App:            $(URL)"
-	@echo "📊 Kibana:         http://localhost:5601"
-	@echo "   Prometheus Targets: http://localhost:9090/targets"
-	@echo "   Grafana Dashboard: http://localhost:3001/d/transcendence-overview/"
+	@echo "🌐 App:            		$(URL)"
+	@echo "📊 Kibana:         		http://localhost:5601"
+	@echo "🔥 Prometheus Targets: 		http://localhost:9090/targets"
+	@echo "📈 Grafana Dashboard: 		http://localhost:3001/d/transcendence-overview/"
 
 dev:
 	@echo "🔧 Starting services in development mode..."
@@ -180,10 +206,10 @@ fclean:
 db-reset:
 	@echo "🗄️  Resetting database..."
 	@# Start containers to ensure proper permissions for deletion
-	@$(DOCKER_COMPOSE) up -d databank live-chat $(QUIET_REDIRECT) || true
+	@$(DOCKER_COMPOSE) up -d database live-chat $(QUIET_REDIRECT) || true
 	@sleep 2
 	@# Remove database files via docker exec (container has proper permissions)
-	@if $(DOCKER_COMPOSE) ps databank | grep -q "Up"; then \
+	@if $(DOCKER_COMPOSE) ps database | grep -q "Up"; then \
 		echo "Removing backend database..."; \
 		$(DOCKER_COMPOSE) exec -T databank rm -f /app/data/database.db || echo "❌ Could not remove backend database"; \
 	else \
@@ -196,7 +222,7 @@ db-reset:
 		echo "⚠️  Live-chat container not running"; \
 	fi
 	@# Stop containers to close file handles, then clean up .nfs* files
-	@$(DOCKER_COMPOSE) stop databank live-chat $(QUIET_REDIRECT) || true
+	@$(DOCKER_COMPOSE) stop database live-chat $(QUIET_REDIRECT) || true
 	@sleep 1
 	@echo "Cleaning up .nfs* artifacts..."
 	@find backend_database/database -name '.nfs*' -type f -delete 2>/dev/null || true
