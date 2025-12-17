@@ -26,7 +26,6 @@ export async function requireAuth(request: FastifyRequest, reply: FastifyReply) 
     // Attach user info to request for use in handlers
     request.user = {
       id: parseInt(payload.sub!),
-      ...payload,
     };
   } catch (error) {
     // verifyAccessToken already throws errors.unauthorized

@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS users (
   email TEXT UNIQUE NOT NULL,
   twofa_secret TEXT,
   twofa_enabled BOOLEAN DEFAULT 0,
-  password_hash TEXT,
+  password_hash TEXT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   last_seen DATETIME
