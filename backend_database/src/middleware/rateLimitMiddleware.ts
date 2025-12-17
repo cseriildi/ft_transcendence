@@ -1,8 +1,8 @@
 /**
- * 
+ *
  *  two layer rate limiting middleware in addition to global rate limiting
  *  provided by @fastify/rate-limit
- * 
+ *
  *  Different limits for different endpoint categories:
  *  Authentication (5/5min)**: High-risk, brute force target
  *  2FA (5/15min + lockout)**: Critical security, 1M combinations
@@ -33,7 +33,7 @@ export async function authenticatedRateLimit(
   if (config.server.env === "test") {
     return;
   }
-  
+
   // Only apply to authenticated users
   if (!request.user) {
     return;

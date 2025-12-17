@@ -35,6 +35,6 @@ export async function requireServiceAuth(request: FastifyRequest, _reply: Fastif
       url: request.url,
     });
   }
-  
+
   request.isServiceRequest = true;
 }

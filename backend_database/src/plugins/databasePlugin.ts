@@ -23,10 +23,8 @@ async function dbConnector(fastify: FastifyInstance, options: DatabaseOptions) {
     });
   });
 
- 
- //Setup database configuration and run migrations
+  //Setup database configuration and run migrations
   const setupDatabase = async () => {
-    
     // Helper function for promisified db.run()
     const run = (sql: string) =>
       new Promise<void>((resolve, reject) => db.run(sql, (err) => (err ? reject(err) : resolve())));

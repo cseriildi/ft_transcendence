@@ -69,9 +69,7 @@ describe("Configuration", () => {
       // In real scenario, this would prevent app startup
       expect(() => {
         if (!process.env.SERVICE_SECRET) {
-          throw new Error(
-            "❌ Required environment variable SERVICE_SECRET is not set"
-          );
+          throw new Error("❌ Required environment variable SERVICE_SECRET is not set");
         }
       }).toThrow("Required environment variable SERVICE_SECRET is not set");
     });
@@ -81,9 +79,7 @@ describe("Configuration", () => {
 
       expect(() => {
         if (!process.env.JWT_ACCESS_SECRET) {
-          throw new Error(
-            "❌ Required environment variable JWT_ACCESS_SECRET is not set"
-          );
+          throw new Error("❌ Required environment variable JWT_ACCESS_SECRET is not set");
         }
       }).toThrow("Required environment variable JWT_ACCESS_SECRET is not set");
     });
@@ -93,9 +89,7 @@ describe("Configuration", () => {
 
       expect(() => {
         if (!process.env.JWT_REFRESH_SECRET) {
-          throw new Error(
-            "❌ Required environment variable JWT_REFRESH_SECRET is not set"
-          );
+          throw new Error("❌ Required environment variable JWT_REFRESH_SECRET is not set");
         }
       }).toThrow("Required environment variable JWT_REFRESH_SECRET is not set");
     });

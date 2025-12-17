@@ -11,7 +11,6 @@ import {
 } from "./gameInviteTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 
-
 async function gameInviteRoutes(fastify: FastifyInstance) {
   // Create game invitation to a friend
   fastify.post<{ Params: GameInviteParams; Reply: ApiResponse<CreateGameInviteResponse> }>(

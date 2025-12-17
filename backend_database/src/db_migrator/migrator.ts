@@ -95,7 +95,6 @@ export async function runMigrations(db: Database, logger: FastifyBaseLogger): Pr
       await dbRun(db, "COMMIT");
       logger.info(`  ✅ Successfully applied: ${file}`);
     } catch (err) {
-
       await dbRun(db, "ROLLBACK");
 
       const errorMessage = err instanceof Error ? err.message : String(err);

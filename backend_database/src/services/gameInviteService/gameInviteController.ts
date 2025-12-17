@@ -220,7 +220,6 @@ export const gameInviteController = {
     return ApiResponseHelper.success(responseBody, "Game invitations retrieved");
   },
 
-
   getInviteInternal: async (
     request: FastifyRequest<{ Params: GameInviteParams }>,
     _reply: FastifyReply
