@@ -1,0 +1,2 @@
+# This directory will contain Logstash data at runtime
+# It's ignored by git (see .gitignore)

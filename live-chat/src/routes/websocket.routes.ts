@@ -20,11 +20,24 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
       return;
     }
 
+    // Track WebSocket connection
+    if (fastify.metrics?.wsConnectionsActive) {
+      fastify.metrics.wsConnectionsActive.inc();
+    }
+    if (fastify.metrics?.wsConnectionsTotal) {
+      fastify.metrics.wsConnectionsTotal.inc({ status: "connected" });
+    }
+
     // Track which chat rooms this connection is in
     const userChatRooms = new Set<string>();
 
     // Handle incoming messages with action-based routing
     connection.on("message", async (message) => {
+      // Track incoming message
+      if (fastify.metrics?.wsMessagesTotal) {
+        fastify.metrics.wsMessagesTotal.inc({ direction: "incoming", type: "chat" });
+      }
+
       try {
         const data = JSON.parse(message.toString());
 
@@ -56,6 +69,14 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
 
     // Handle connection close
     connection.on("close", () => {
+      // Track WebSocket disconnection
+      if (fastify.metrics?.wsConnectionsActive) {
+        fastify.metrics.wsConnectionsActive.dec();
+      }
+      if (fastify.metrics?.wsConnectionsTotal) {
+        fastify.metrics.wsConnectionsTotal.inc({ status: "disconnected" });
+      }
+
       cleanupChatConnections(connection, userId, userChatRooms);
     });
   });
