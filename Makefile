@@ -138,7 +138,7 @@ down:
 
 stop:
 	@echo "⏸️  Stopping containers..."
-	@$(DOCKER_COMPOSE) stop
+	@$(DOCKER_COMPOSE) $(COMPOSE_FILES) stop
 	@echo "✅ Containers stopped"
 
 restart: down up
