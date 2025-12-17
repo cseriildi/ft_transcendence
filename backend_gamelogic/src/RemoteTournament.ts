@@ -2,6 +2,7 @@ import { GameManager } from "./gameManager.js";
 import { GameServer } from "./gameTypes.js";
 import { TournamentPlayer, Tournament } from "./Tournament.js";
 import { createGame } from "./gameUtils.js";
+import { sendErrorToClient } from "./networkUtils.js";
 
 export class RemoteTournament extends Tournament {
   private players: Map<number, { connection: any; game: GameServer | null }> = new Map();
@@ -9,6 +10,7 @@ export class RemoteTournament extends Tournament {
   private waiting: boolean = true;
   private gameManager: GameManager;
   private ongoingGames: Set<GameServer> = new Set();
+  private maxPlayers: number = 8;
   constructor(gameManager: GameManager) {
     super([]);
     this.createdAt = new Date();
@@ -19,17 +21,15 @@ export class RemoteTournament extends Tournament {
 
   addPlayer(player: TournamentPlayer, connection: any): void {
     this.waitingPlayers.add(player);
-    if (this.getPlayerCount() == 8) {
+    if (this.getPlayerCount() === this.maxPlayers) {
       this.gameManager.setWaitingTournament(null);
       this.waiting = false;
     }
     this.players.set(player.userId, { connection: connection, game: null });
-    let currentPlayers: string[] = [];
-    this.waitingPlayers.forEach((p) => currentPlayers.push(p.username));
     this.broadcastMessage({
       type: "playerJoined",
       username: player.username,
-      players: currentPlayers,
+      players: Array.from(this.waitingPlayers, (p) => p.username),
     });
     this.gameManager.addTournamentPlayer(player.userId, this);
     if (!this.waiting) {
@@ -50,14 +50,34 @@ export class RemoteTournament extends Tournament {
     return this.waiting;
   }
 
+  disconnect(connection: any): void {
+    if (!connection) return;
+    for (const [userId, playerData] of this.players.entries()) {
+      if (playerData.connection === connection) {
+        try {
+          sendErrorToClient(connection, "You have been disconnected");
+          connection.close();
+        } catch (err) {
+          console.error("Error closing connection:", err);
+        }
+        playerData.connection = null;
+        this.players.set(userId, playerData);
+        break;
+      }
+    }
+  }
+
   updatePlayerConnection(userId: number, connection: any): boolean {
     const playerData = this.players.get(userId);
+    if (!playerData) return false;
     let game = this.fetchGame(userId);
+
     if (game) {
       game.updateConnection(userId, connection);
     }
     if (playerData) {
       if (playerData.connection !== connection) {
+        this.disconnect(playerData.connection);
         playerData.connection = connection;
         this.players.set(userId, playerData);
         return true;

@@ -31,6 +31,7 @@ export default class RemoteTournamentConnection extends ConnectionSession {
         if (this.tournament) {
           this.game = this.tournament.fetchGame(this.userId);
         }
+        break;
       case "nextGame":
         if (!this.tournament) return;
         this.game = this.tournament.fetchGame(this.userId);
@@ -45,7 +46,7 @@ export default class RemoteTournamentConnection extends ConnectionSession {
       this.game.disconnect(this.connection);
     }
     if (this.tournament) {
-      this.tournament.updatePlayerConnection(this.userId, null);
+      this.tournament.disconnect(this.connection);
     }
   }
 
