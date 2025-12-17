@@ -27,7 +27,7 @@ services:
       - elasticsearch-data:/usr/share/elasticsearch/data
       - ./elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
     ports:
-      - "${ELASTICSEARCH_PORT:-9200}:9200"
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
     networks:
       - transcendence
     restart: unless-stopped
@@ -45,9 +45,9 @@ services:
       - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
     ports:
-      - "${LOGSTASH_PORT:-5044}:5044"
-      - "${LOGSTASH_TCP_PORT:-5000}:5000/tcp"
-      - "${LOGSTASH_UDP_PORT:-5000}:5000/udp"
+      - "127.0.0.1:${LOGSTASH_PORT:-5044}:5044"
+      - "127.0.0.1:${LOGSTASH_TCP_PORT:-5000}:5000/tcp"
+      - "127.0.0.1:${LOGSTASH_UDP_PORT:-5000}:5000/udp"
     environment:
       - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
       - ELASTICSEARCH_HOST=elasticsearch:9200
@@ -70,7 +70,7 @@ services:
     volumes:
       - ./elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
     ports:
-      - "${KIBANA_PORT:-5601}:5601"
+      - "127.0.0.1:${KIBANA_PORT:-5601}:5601"
     environment:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
     networks:
