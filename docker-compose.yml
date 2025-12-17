@@ -32,7 +32,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:5000"
+        syslog-address: "tcp://logstash:5000"
         tag: "{{.Name}}"
         syslog-format: "rfc3164"
 
@@ -58,7 +58,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:5000"
+        syslog-address: "tcp://logstash:5000"
         tag: "{{.Name}}"
         syslog-format: "rfc3164"
 
@@ -77,7 +77,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:5000"
+        syslog-address: "tcp://logstash:5000"
         tag: "{{.Name}}"
         syslog-format: "rfc3164"
 
@@ -110,7 +110,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:5000"
+        syslog-address: "tcp://logstash:5000"
         tag: "{{.Name}}"
         syslog-format: "rfc3164"
 
@@ -139,7 +139,7 @@ services:
     logging:
       driver: "syslog"
       options:
-        syslog-address: "tcp://127.0.0.1:5000"
+        syslog-address: "tcp://logstash:5000"
         tag: "{{.Name}}"
         syslog-format: "rfc3164"
 
