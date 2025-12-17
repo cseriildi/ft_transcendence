@@ -25,7 +25,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
       fastify.metrics.wsConnectionsActive.inc();
     }
     if (fastify.metrics?.wsConnectionsTotal) {
-      fastify.metrics.wsConnectionsTotal.inc({ status: 'connected' });
+      fastify.metrics.wsConnectionsTotal.inc({ status: "connected" });
     }
 
     // Track which chat rooms this connection is in
@@ -35,7 +35,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
     connection.on("message", async (message) => {
       // Track incoming message
       if (fastify.metrics?.wsMessagesTotal) {
-        fastify.metrics.wsMessagesTotal.inc({ direction: 'incoming', type: 'chat' });
+        fastify.metrics.wsMessagesTotal.inc({ direction: "incoming", type: "chat" });
       }
 
       try {
@@ -74,7 +74,7 @@ export async function registerWebSocketRoute(fastify: FastifyInstance) {
         fastify.metrics.wsConnectionsActive.dec();
       }
       if (fastify.metrics?.wsConnectionsTotal) {
-        fastify.metrics.wsConnectionsTotal.inc({ status: 'disconnected' });
+        fastify.metrics.wsConnectionsTotal.inc({ status: "disconnected" });
       }
 
       cleanupChatConnections(connection, userId, userChatRooms);

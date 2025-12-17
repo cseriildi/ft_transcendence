@@ -60,7 +60,7 @@ fastify.register(async function (server: FastifyInstance) {
       fastify.metrics.wsConnectionsActive.inc();
     }
     if (fastify.metrics?.wsConnectionsTotal) {
-      fastify.metrics.wsConnectionsTotal.inc({ status: 'connected' });
+      fastify.metrics.wsConnectionsTotal.inc({ status: "connected" });
     }
 
     let session: ConnectionSession | null = null;
@@ -70,7 +70,7 @@ fastify.register(async function (server: FastifyInstance) {
     connection.on("message", (raw: any) => {
       // Track incoming message
       if (fastify.metrics?.wsMessagesTotal) {
-        fastify.metrics.wsMessagesTotal.inc({ direction: 'incoming', type: 'game' });
+        fastify.metrics.wsMessagesTotal.inc({ direction: "incoming", type: "game" });
       }
 
       if (session) {
@@ -86,7 +86,7 @@ fastify.register(async function (server: FastifyInstance) {
         fastify.metrics.wsConnectionsActive.dec();
       }
       if (fastify.metrics?.wsConnectionsTotal) {
-        fastify.metrics.wsConnectionsTotal.inc({ status: 'disconnected' });
+        fastify.metrics.wsConnectionsTotal.inc({ status: "disconnected" });
       }
 
       if (session) {

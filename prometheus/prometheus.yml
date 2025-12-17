@@ -3,8 +3,8 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
   external_labels:
-    cluster: 'transcendence'
-    environment: 'production'
+    cluster: "transcendence"
+    environment: "production"
 
 # Alertmanager configuration (optional, can be added later)
 # alerting:
@@ -14,54 +14,54 @@ global:
 
 # Load and evaluate rules
 rule_files:
-  - '/etc/prometheus/rules/*.yml'
+  - "/etc/prometheus/rules/*.yml"
 
 # Scrape configurations
 scrape_configs:
   # Prometheus self-monitoring
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
         labels:
-          service: 'prometheus'
+          service: "prometheus"
 
   # Backend Database Service
-  - job_name: 'backend-database'
+  - job_name: "backend-database"
     static_configs:
-      - targets: ['database:3000']
+      - targets: ["database:3000"]
         labels:
-          service: 'backend-database'
-          component: 'api'
-    metrics_path: '/metrics'
+          service: "backend-database"
+          component: "api"
+    metrics_path: "/metrics"
     scrape_interval: 10s
 
   # Backend Game Logic Service
-  - job_name: 'backend-gamelogic'
+  - job_name: "backend-gamelogic"
     static_configs:
-      - targets: ['game:3001']
+      - targets: ["game:3001"]
         labels:
-          service: 'backend-gamelogic'
-          component: 'websocket'
-    metrics_path: '/metrics'
+          service: "backend-gamelogic"
+          component: "websocket"
+    metrics_path: "/metrics"
     scrape_interval: 10s
 
   # Live Chat Service
-  - job_name: 'live-chat'
+  - job_name: "live-chat"
     static_configs:
-      - targets: ['live-chat:3002']
+      - targets: ["live-chat:3002"]
         labels:
-          service: 'live-chat'
-          component: 'websocket'
-    metrics_path: '/metrics'
+          service: "live-chat"
+          component: "websocket"
+    metrics_path: "/metrics"
     scrape_interval: 10s
 
   # Node Exporter - System metrics
-  - job_name: 'node-exporter'
+  - job_name: "node-exporter"
     static_configs:
-      - targets: ['node-exporter:9100']
+      - targets: ["node-exporter:9100"]
         labels:
-          service: 'node-exporter'
-          component: 'system'
+          service: "node-exporter"
+          component: "system"
 
   # cAdvisor - Container metrics (optional, may not work on all systems)
   # - job_name: 'cadvisor'
