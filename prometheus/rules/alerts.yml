@@ -43,10 +43,10 @@ groups:
 
       # Alert if request rate is abnormally low (service might be broken)
       - alert: LowRequestRate
-        expr: rate(http_requests_total[5m]) < 0.1
-        for: 15m
+        expr: rate(http_requests_total[5m]) < 0.01
+        for: 30m
         labels:
-          severity: warning
+          severity: info
         annotations:
           summary: "Low request rate on {{ $labels.service }}"
           description: "Request rate is {{ $value }} req/s on {{ $labels.service }}"

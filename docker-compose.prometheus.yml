@@ -16,7 +16,7 @@ services:
       - ./prometheus/rules:/etc/prometheus/rules:ro
       - prometheus-data:/prometheus
     ports:
-      - "${PROMETHEUS_PORT:-9090}:9090"
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
     networks:
       - transcendence
     restart: unless-stopped
@@ -34,6 +34,7 @@ services:
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
       - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+      - GF_SECURITY_ADMIN_PASSWORD_POLICY=false
       - GF_AUTH_ANONYMOUS_ENABLED=false
       - GF_AUTH_BASIC_ENABLED=true
       - GF_AUTH_DISABLE_LOGIN_FORM=false
@@ -48,7 +49,7 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - grafana-data:/var/lib/grafana/data
     ports:
-      - "${GRAFANA_PORT:-3001}:3000"
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
     networks:
       - transcendence
     depends_on:
@@ -73,7 +74,7 @@ services:
     volumes:
       - /:/host:ro,rslave
     ports:
-      - "${NODE_EXPORTER_PORT:-9100}:9100"
+      - "127.0.0.1:${NODE_EXPORTER_PORT:-9100}:9100"
     networks:
       - transcendence
     restart: unless-stopped
