@@ -80,7 +80,6 @@ export class Edit {
     const fileNameDisplay = document.getElementById("file-name");
 
     if (!fileInput || !fileNameDisplay) {
-      console.error("File input or file name display element not found");
       return;
     }
 
@@ -100,7 +99,6 @@ export class Edit {
 
       return userData;
     } catch (err) {
-      console.error("Error fetching user data", err);
       return null;
     }
   }

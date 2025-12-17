@@ -25,11 +25,9 @@ export class UserService {
         const data: UsersResponse = await response.json();
         return data.data;
       } else {
-        console.error("Failed to fetch users", await response.json());
         return [];
       }
     } catch (error) {
-      console.error("Error fetching users", error);
       return [];
     }
   }

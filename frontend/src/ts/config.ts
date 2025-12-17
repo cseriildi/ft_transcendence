@@ -25,7 +25,4 @@ export const config = {
   wsUrl: getConfigValue("WS_URL", "wss://localhost:8443/ws"),
 } as const;
 
-// Log configuration on load (only in development)
-if (window.APP_CONFIG) {
-  console.log("🚀 Frontend config loaded:", config);
-}
+// Configuration loaded silently

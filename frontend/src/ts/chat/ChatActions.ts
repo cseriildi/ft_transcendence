@@ -23,7 +23,6 @@ export class ChatActions {
   ): Promise<void> {
     const currentUserId = getUserId();
     if (!currentUserId) {
-      console.error("Current user ID not found");
       return;
     }
 
@@ -46,11 +45,9 @@ export class ChatActions {
         onSuccess();
       } else {
         const error = await response.json();
-        console.error("Failed to block user:", error);
         alert(error.error || "Failed to block user. Please try again.");
       }
     } catch (error) {
-      console.error("Error blocking user:", error);
       alert("An error occurred while blocking the user. Please try again.");
     }
   }
@@ -67,7 +64,6 @@ export class ChatActions {
     try {
       const currentUserId = getUserId();
       if (!currentUserId) {
-        console.error("No current user ID; cannot send invite");
         return;
       }
 
@@ -83,7 +79,6 @@ export class ChatActions {
 
       if (!response.ok) {
         const err = await response.json().catch(() => ({}));
-        console.error("Failed to create friend game invite", err);
         alert(err.message || "Failed to create invitation");
         return;
       }
@@ -91,7 +86,6 @@ export class ChatActions {
       const body = await response.json();
       const gameId = body.data?.game_id;
       if (!gameId) {
-        console.error("API did not return gameId", body);
         alert("Server did not return a game id");
         return;
       }
@@ -101,7 +95,6 @@ export class ChatActions {
 
       onMessageReady(message);
     } catch (error) {
-      console.error("Error sending game invite:", error);
       alert("Failed to send invitation. Please try again.");
     }
   }

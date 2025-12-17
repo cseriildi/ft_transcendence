@@ -64,6 +64,10 @@
     "weakPassword": "Password is too weak. Please use a stronger password.",
     "invalidEmailFormat": "Invalid email format. Please enter a valid email address.",
     "invalidUsername": "Invalid username. Use 3-15 characters (letters, numbers, - and _ only).",
+    "usernameTooShort": "Username must be at least 3 characters long.",
+    "usernameTooLong": "Username must not exceed 15 characters.",
+    "passwordTooShort": "Password must be at least 10 characters long.",
+    "passwordNoNumber": "Password must contain at least one number.",
     "networkError": "Network error. Please check your connection."
   },
 
@@ -104,7 +108,11 @@
     "startTournament": "Start Tournament",
     "playerPlaceholder": "Player {{i}} name",
     "emptyNames": "All player names must be non-empty",
-    "duplicateNames": "All player names must be unique",
+    "emptyPlayerName": "Player name cannot be empty",
+    "duplicatePlayerNames": "All player names must be unique",
+    "playerNameTooShort": "Player name must be at least 3 characters",
+    "playerNameTooLong": "Player name cannot exceed 15 characters",
+    "invalidPlayerName": "Player name can only contain letters, numbers, underscores, and hyphens",
     "setupFailed": "Tournament setup failed",
     "bracket": "Tournament Bracket",
     "currentMatch": "Current Match",

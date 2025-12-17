@@ -30,7 +30,6 @@ export class I18n {
 
   async loadLanguage(lang: string): Promise<void> {
     if (!this.supportedLangs.includes(lang)) {
-      console.warn(`Language ${lang} not supported, using English`);
       lang = "en";
     }
 
@@ -41,7 +40,6 @@ export class I18n {
 
         this.translations[lang] = await response.json();
       } catch (error) {
-        console.error(`❌ Error loading ${lang}:`, error);
         if (lang !== "en") {
           await this.loadLanguage("en");
         }
@@ -86,9 +84,7 @@ export class I18n {
       return result;
     }
 
-    console.warn(
-      `i18n: missing translation for key=\"${key}\" in lang=\"${this.currentLang}\". Falling back to key.`
-    );
+    // Missing translation - return key as fallback
     return key;
   }
 

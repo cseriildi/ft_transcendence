@@ -29,11 +29,9 @@ export class FriendService {
       if (response.ok) {
         return await response.json();
       } else {
-        console.error("Failed to fetch friends status", await response.json());
         return undefined;
       }
     } catch (error) {
-      console.error("Error fetching friends status", error);
       return undefined;
     }
   }
@@ -51,11 +49,9 @@ export class FriendService {
       if (response.ok) {
         return true;
       } else {
-        console.error("Failed to add friend", await response.json());
         return false;
       }
     } catch (error) {
-      console.error("Error adding friend", error);
       return false;
     }
   }
@@ -73,11 +69,9 @@ export class FriendService {
       if (response.ok) {
         return true;
       } else {
-        console.error("Failed to delete friend", await response.json());
         return false;
       }
     } catch (error) {
-      console.error("Error deleting friend", error);
       return false;
     }
   }
@@ -95,11 +89,9 @@ export class FriendService {
       if (response.ok) {
         return true;
       } else {
-        console.error("Failed to accept request", await response.json());
         return false;
       }
     } catch (error) {
-      console.error("Error accepting request", error);
       return false;
     }
   }
@@ -117,11 +109,9 @@ export class FriendService {
       if (response.ok) {
         return true;
       } else {
-        console.error("Failed to decline request", await response.json());
         return false;
       }
     } catch (error) {
-      console.error("Error declining request", error);
       return false;
     }
   }

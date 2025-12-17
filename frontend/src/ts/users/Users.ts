@@ -76,7 +76,6 @@ export class Users {
 
     const usersListContainer = document.getElementById("user-list");
     if (!usersListContainer) {
-      console.error("User list container not found");
       return;
     }
 
@@ -97,11 +96,8 @@ export class Users {
       // Only re-render if we're still on the users page
       const usersListContainer = document.getElementById("user-list");
       if (!usersListContainer) {
-        console.log("Not on users page, skipping re-render");
         return;
       }
-
-      console.log("Language changed, re-rendering users page...");
       await this.loadAndRenderUsers();
     };
 

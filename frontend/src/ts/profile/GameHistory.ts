@@ -41,7 +41,6 @@ export class GameHistory {
     // Validate userId is a valid number
     const numericUserId = Number(userId);
     if (isNaN(numericUserId) || numericUserId <= 0) {
-      console.error("Invalid user ID provided to loadGameHistory:", userId);
       container.innerHTML = `<p class='text-red-400 text-center'>${i18n.t("profile.invalidUserId")}</p>`;
       this.profileStats.reset();
       return;
@@ -85,11 +84,9 @@ export class GameHistory {
         this.displayedMatchesCount = 0;
         await this.showMoreMatches(userId, container);
       } else {
-        console.error("Failed to fetch match history", await response.json());
         container.innerHTML = `<p class='text-red-400 text-center'>${i18n.t("profile.failedLoadHistory")}</p>`;
       }
     } catch (error) {
-      console.error("Error fetching match history", error);
       container.innerHTML = `<p class='text-red-400 text-center'>${i18n.t("profile.errorLoadHistory")}</p>`;
     }
   }
@@ -98,7 +95,6 @@ export class GameHistory {
     // Validate userId is a valid number
     const numericUserId = Number(userId);
     if (isNaN(numericUserId) || numericUserId <= 0) {
-      console.error("Invalid user ID provided to showMoreMatches:", userId);
       return;
     }
 

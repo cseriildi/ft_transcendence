@@ -59,11 +59,9 @@ export class UserCache {
         this.cache.set(userId, userData);
         return userData;
       } else {
-        console.error(`Failed to fetch user ${userId}`, await response.json());
         return null;
       }
     } catch (error) {
-      console.error(`Error fetching user ${userId}`, error);
       return null;
     }
   }

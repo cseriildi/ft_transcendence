@@ -64,6 +64,10 @@
     "weakPassword": "A jelszó túl gyenge. Használj erősebb jelszót.",
     "invalidEmailFormat": "Érvénytelen e-mail formátum.",
     "invalidUsername": "Érvénytelen felhasználónév. 3–15 karakter (betűk, számok, - és _).",
+    "usernameTooShort": "A felhasználónévnek legalább 3 karakter hosszúnak kell lennie.",
+    "usernameTooLong": "A felhasználónév nem haladhatja meg a 15 karaktert.",
+    "passwordTooShort": "A jelszónak legalább 10 karakter hosszúnak kell lennie.",
+    "passwordNoNumber": "A jelszónak legalább egy számot kell tartalmaznia.",
     "networkError": "Hálózati hiba. Ellenőrizd a kapcsolatot."
   },
 
@@ -104,7 +108,11 @@
     "startTournament": "Bajnokság indítása",
     "playerPlaceholder": "{{i}}. játékos neve",
     "emptyNames": "Minden játékos neve kötelező",
-    "duplicateNames": "A játékosneveknek egyedieknek kell lenniük",
+    "emptyPlayerName": "A játékos neve nem lehet üres",
+    "duplicatePlayerNames": "A játékosneveknek egyedieknek kell lenniük",
+    "playerNameTooShort": "A játékos nevének legalább 3 karakterből kell állnia",
+    "playerNameTooLong": "A játékos neve maximum 15 karakter hosszú lehet",
+    "invalidPlayerName": "A játékos neve csak betűket, számokat, aláhúzásjeleket és kötőjeleket tartalmazhat",
     "setupFailed": "A bajnokság beállítása sikertelen",
     "bracket": "Bajnokság tabló",
     "currentMatch": "Jelenlegi mérkőzés",
