@@ -17,6 +17,7 @@ export class Home {
     const remoteBtn = document.getElementById("remote-btn");
     const friendBtn = document.getElementById("friend-btn");
     const tournamentBtn = document.getElementById("tournament-btn");
+    const remoteTournamentBtn = document.getElementById("remote-tournament-btn");
     const loginBtn = document.getElementById("login-btn");
     const logoutBtn = document.getElementById("logout-btn");
     const userAvatar = document.getElementById("user-avatar") as HTMLImageElement;
@@ -43,6 +44,13 @@ export class Home {
     tournamentBtn?.addEventListener("click", () =>
       this.router.navigate("/pong", { mode: "tournament" })
     );
+    remoteTournamentBtn?.addEventListener("click", () => {
+      if (!isUserAuthorized()) {
+        this.router.navigate("/login");
+        return;
+      }
+      this.router.navigate("/pong", { mode: "remoteTournament" });
+    });
     profileBtn?.addEventListener("click", () => this.router.navigate("/profile"));
     loginBtn?.addEventListener("click", () => {
       this.router.navigate("/login");

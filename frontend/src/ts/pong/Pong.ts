@@ -109,7 +109,7 @@ export class Pong {
     this.currentGameMode = gameMode;
 
     // For ONLINE mode, playerInfo is required
-    if (["remote", "friend"].includes(gameMode) && !playerInfo) {
+    if (["remote", "friend", "remoteTournament"].includes(gameMode) && !playerInfo) {
       return;
     }
 
@@ -129,7 +129,7 @@ export class Pong {
     this.updateButtonVisibility();
 
     // For authenticated modes, ensure WebSocket is open before sending
-    if (["remote", "friend"].includes(gameMode)) {
+    if (["remote", "friend", "remoteTournament"].includes(gameMode)) {
       if (!this.isConnected) {
         this.ws?.addEventListener(
           "open",
@@ -242,7 +242,7 @@ export class Pong {
     }
 
     // Add access token for authenticated modes
-    if (["remote", "friend"].includes(this.currentGameMode)) {
+    if (["remote", "friend", "remoteTournament"].includes(this.currentGameMode)) {
       const accessToken = SecureTokenManager.getInstance().getAccessToken();
       if (accessToken) {
         urlWithMode += `&token=${encodeURIComponent(accessToken)}`;
@@ -276,7 +276,7 @@ export class Pong {
       }
 
       // Start periodic auth check for authenticated modes (every 5 seconds)
-      if (["remote", "friend"].includes(this.currentGameMode)) {
+      if (["remote", "friend", "remoteTournament"].includes(this.currentGameMode)) {
         this.startAuthCheck();
       }
     };
@@ -286,10 +286,17 @@ export class Pong {
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
+      let message: any;
       try {
-        const message = JSON.parse(event.data);
+        message = JSON.parse(event.data);
+      } catch (err) {
+        console.error("❌ Failed to parse message from server:", event.data);
+        return;
+      }
+      if (!message.type) return;
 
-        if (message.type === "error") {
+      switch (message.type) {
+        case "error": {
           // Handle error messages from server
           if (message.message === "You have been disconnected") {
             this.destroy();
@@ -297,53 +304,50 @@ export class Pong {
             return;
           }
           showErrorPopup(`${i18n.t("pong.gameError")}: ${message.message}`);
-        } else if (["playerLeft", "gameResult"].includes(message.type)) {
-          if (message.type === "gameResult") {
-            // Show win/loss notification
-            if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
-              const result = message.data;
-              let didWin = false;
-
-              if (this.currentGameMode === "ai") {
-                // In AI mode, player is always player 2
-                didWin = result.winner === 2;
-              } else if (
-                ["remote", "friend"].includes(this.currentGameMode) &&
-                this.assignedPlayerNumber
-              ) {
-                didWin = result.winner === this.assignedPlayerNumber;
-              }
-
-              const notificationMessage = didWin ? i18n.t("pong.youWon") : i18n.t("pong.youLost");
-              alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
-            } else if (this.currentGameMode === "tournament") {
-              const result = message.data;
-              // Fallback to player number if winnerName is missing (defensive programming)
-              const winner = result.winnerName || `Player ${result.winner}`;
-
-              // Update tournament bracket with winner
-              this.recordTournamentWinner(this.player1Username, this.player2Username, winner);
-
-              alert(
-                `${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`
-              );
-            }
-
-            this.sendWhenConnected({
-              type: "nextGame",
-              mode: this.currentGameMode,
-            });
-            if (["remote", "tournament"].includes(this.currentGameMode)) {
-              window.dispatchEvent(new CustomEvent("pong:showNewGameButton"));
-            }
-          } else {
-            showErrorPopup(`⚠️ ${message.message}`);
-          }
+          break;
         }
-        if (["gameSetup"].includes(message.type)) {
+        case "gameResult": {
+          // Show win/loss notification
+          if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
+            const result = message.data;
+            let didWin = false;
+
+            if (this.currentGameMode === "ai") {
+              // In AI mode, player is always player 2
+              didWin = result.winner === 2;
+            } else if (
+              ["remote", "friend"].includes(this.currentGameMode) &&
+              this.assignedPlayerNumber
+            ) {
+              didWin = result.winner === this.assignedPlayerNumber;
+            }
+
+            const notificationMessage = didWin ? i18n.t("pong.youWon") : i18n.t("pong.youLost");
+            alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
+          } else if (this.currentGameMode === "tournament") {
+            const result = message.data;
+            // Fallback to player number if winnerName is missing (defensive programming)
+            const winner = result.winnerName || `Player ${result.winner}`;
+
+            // Update tournament bracket with winner
+            this.recordTournamentWinner(this.player1Username, this.player2Username, winner);
+
+            alert(`${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`);
+          }
+
+          this.sendWhenConnected({
+            type: "nextGame",
+            mode: this.currentGameMode,
+          });
+          if (["remote", "tournament"].includes(this.currentGameMode)) {
+            window.dispatchEvent(new CustomEvent("pong:showNewGameButton"));
+          }
+          break;
+        }
+        case "gameSetup": {
           this.gameState = message.data;
 
-          if (["friend", "remote"].includes(this.currentGameMode)) {
+          if (["friend", "remote", "remoteTournament"].includes(this.currentGameMode)) {
             if (message.playerNumber) {
               this.assignedPlayerNumber = message.playerNumber;
             } else {
@@ -352,7 +356,11 @@ export class Pong {
           } else {
             this.assignedPlayerNumber = null;
           }
-          if (["remote", "friend", "tournament", "ai"].includes(this.currentGameMode)) {
+          if (
+            ["remote", "friend", "tournament", "ai", "remoteTournament"].includes(
+              this.currentGameMode
+            )
+          ) {
             if (message.player1Username) {
               this.player1Username = message.player1Username;
             }
@@ -372,7 +380,9 @@ export class Pong {
           }
 
           this.updateScoreDisplay();
-        } else if (message.type === "gameState") {
+          break;
+        }
+        case "gameState": {
           // Merge updates with existing state
           if (this.gameState) {
             this.gameState.ball.x = message.data.ball.x;
@@ -400,11 +410,32 @@ export class Pong {
               this.updateScoreDisplay();
             }
           }
-        } else if (message.type === "tournamentComplete" && message.mode === "tournament") {
-          // Tournament complete handled elsewhere
+          break;
         }
-      } catch (err) {
-        // Silently handle malformed messages
+        case "playerJoined": {
+          if (this.currentGameMode === "remoteTournament") {
+            console.log(`Player joined: ${message.username}`);
+            if (message.players && Array.isArray(message.players)) {
+              console.log(`Current players: ${message.players.join(", ")}`);
+            } else {
+              console.log("Current players list not available or invalid. Full message:", message);
+            }
+          }
+          break;
+        }
+        case "tournamentComplete": {
+          // Tournament complete handled elsewhere
+          break;
+        }
+        case "newRound": {
+          if (this.currentGameMode === "remoteTournament") {
+            console.log("🔄 New Tournament Round! Matchups:", message.pairs);
+            this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
+          }
+          break;
+        }
+        default:
+          break;
       }
     };
 
@@ -418,7 +449,7 @@ export class Pong {
       }
 
       // Don't reconnect if user logged out (for authenticated modes)
-      if (["remote", "friend"].includes(this.currentGameMode)) {
+      if (["remote", "friend", "remoteTournament"].includes(this.currentGameMode)) {
         const hasUserId = localStorage.getItem("userId") !== null;
         if (!hasUserId) {
           return;
@@ -733,7 +764,7 @@ export class Pong {
       return;
     }
 
-    if (["friend", "remote"].includes(this.currentGameMode)) {
+    if (["friend", "remote", "remoteTournament"].includes(this.currentGameMode)) {
       switch (key) {
         case "arrowup":
           if (this.assignedPlayerNumber) {
@@ -781,7 +812,7 @@ export class Pong {
       return;
     }
 
-    if (["friend", "remote"].includes(this.currentGameMode)) {
+    if (["friend", "remote", "remoteTournament"].includes(this.currentGameMode)) {
       // ONLINE mode: only stop assigned player
       if (this.assignedPlayerNumber) {
         if (key === "arrowup" || key === "arrowdown") {

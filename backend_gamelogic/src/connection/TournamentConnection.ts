@@ -71,7 +71,6 @@ export default class TournamentConnection extends ConnectionSession {
     const pair = this.tournament.getNextPair();
     if (!pair) {
       console.log("🏆 No more pairs - tournament complete!");
-      this.tournament.getResults();
       this.gameManager.removeTournament(this.tournament);
       this.tournament = null;
       return;

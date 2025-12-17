@@ -130,8 +130,8 @@ export function broadcastGameResult(game: GameServer) {
 
   const { winnerId, loserId, winner, loser, winnerScore, loserScore } = result;
 
-  if (game.gameMode === "tournament" && game.tournament) {
-    game.tournament?.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
+  if (game.tournament) {
+    game.tournament.advanceWinner({ username: winner.username, userId: winner.userId, score: 0 });
   }
 
   // Send to all connected clients

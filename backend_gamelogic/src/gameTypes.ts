@@ -229,11 +229,14 @@ export class GameServer {
   }
 
   disconnect(connection: any): void {
+    if (!connection) return;
     for (const client of this.clients.values()) {
       if (client.connection === connection) {
         sendErrorToClient(client.connection, "You have been disconnected");
         try {
-          client.connection.close();
+          if (client.connection) {
+            client.connection.close();
+          }
         } catch (err) {
           console.error("Error closing connection:", err);
         }

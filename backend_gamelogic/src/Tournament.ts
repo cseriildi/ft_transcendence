@@ -11,9 +11,8 @@ export interface GamePairing {
 }
 
 export class Tournament {
-  private activePlayers: Set<TournamentPlayer> = new Set();
-  private currentRound: Set<GamePairing> = new Set();
-  private results: Array<GamePairing> = [];
+  protected waitingPlayers: Set<TournamentPlayer> = new Set();
+  protected currentRound: Set<GamePairing> = new Set();
   private round: number = 0;
 
   constructor(playerNames: string[]) {
@@ -39,7 +38,7 @@ export class Tournament {
 
     // Add validated participants
     trimmedNames.forEach((username) => {
-      this.activePlayers.add({
+      this.waitingPlayers.add({
         username: username,
         userId: 0,
         score: 0,
@@ -48,18 +47,18 @@ export class Tournament {
   }
 
   getRandomPlayer(): TournamentPlayer | null {
-    if (this.activePlayers.size === 0) {
+    if (this.waitingPlayers.size === 0) {
       return null;
     }
-    const randomIndex = Math.floor(Math.random() * this.activePlayers.size);
-    const player = Array.from(this.activePlayers)[randomIndex];
-    this.activePlayers.delete(player);
+    const randomIndex = Math.floor(Math.random() * this.waitingPlayers.size);
+    const player = Array.from(this.waitingPlayers)[randomIndex];
+    this.waitingPlayers.delete(player);
     return player;
   }
 
   getNextPair(): GamePairing | null {
     if (this.currentRound.size === 0) {
-      if (this.activePlayers.size < 2) {
+      if (this.waitingPlayers.size < 2) {
         return null;
       }
       this.generatePairings();
@@ -72,7 +71,7 @@ export class Tournament {
   generatePairings(): void {
     this.round++;
 
-    while (this.activePlayers.size >= 2) {
+    while (this.waitingPlayers.size >= 2) {
       const pairing: GamePairing = {
         player1: this.getRandomPlayer()!,
         player2: this.getRandomPlayer()!,
@@ -83,27 +82,8 @@ export class Tournament {
     }
   }
 
-  storeGameResult(gamePairing: GamePairing): void {
-    const winner =
-      gamePairing.player1.score > gamePairing.player2.score
-        ? gamePairing.player1
-        : gamePairing.player2;
-
-    this.results.push(gamePairing);
-    winner.score = 0;
-    this.activePlayers.add(winner);
-  }
-
   advanceWinner(player: TournamentPlayer): void {
     player.score = 0;
-    this.activePlayers.add(player);
-  }
-
-  getResults(): Array<GamePairing> {
-    return this.results;
-  }
-
-  getRound(): number {
-    return this.round;
+    this.waitingPlayers.add(player);
   }
 }

@@ -7,7 +7,6 @@ describe("Tournament System", () => {
       const tournament = new Tournament(["Alice", "Bob", "Charlie", "David"]);
 
       expect(tournament).toBeDefined();
-      expect(tournament.getRound()).toBe(0);
     });
 
     it("should trim player names", () => {
@@ -156,135 +155,6 @@ describe("Tournament System", () => {
     });
   });
 
-  describe("Game Results Processing", () => {
-    it("should store game results", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
-
-      const pair = tournament.getNextPair()!;
-      pair.player1.score = 5;
-      pair.player2.score = 3;
-
-      tournament.storeGameResult(pair);
-      const results = tournament.getResults();
-
-      expect(results.length).toBe(1);
-      expect(results[0]).toBe(pair);
-    });
-
-    it("should reset winner score to zero", () => {
-      const tournament = new Tournament(["A", "B"]);
-
-      const pair = tournament.getNextPair()!;
-      pair.player1.score = 10;
-      pair.player2.score = 5;
-
-      tournament.storeGameResult(pair);
-
-      expect(pair.player1.score).toBe(0);
-    });
-
-    it("should advance winner back to active players", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
-
-      const pair1 = tournament.getNextPair()!;
-      pair1.player1.score = 5;
-      pair1.player2.score = 2;
-
-      tournament.storeGameResult(pair1);
-
-      const pair2 = tournament.getNextPair()!;
-      expect(pair2).not.toBeNull();
-
-      // Winner (player1) should be available for next round
-      const hasPlayer1 =
-        pair2.player1.username === pair1.player1.username ||
-        pair2.player2.username === pair1.player1.username;
-
-      // If not in this pair, there should be more pairs
-      if (!hasPlayer1) {
-        const pair3 = tournament.getNextPair();
-        // Either player1 is in pair2, or will appear in future pairs
-        expect(pair2 || pair3).not.toBeNull();
-      } else {
-        expect(hasPlayer1).toBe(true);
-      }
-    });
-
-    it("should accumulate multiple results", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
-
-      const pair1 = tournament.getNextPair()!;
-      pair1.player1.score = 5;
-      pair1.player2.score = 2;
-      tournament.storeGameResult(pair1);
-
-      const pair2 = tournament.getNextPair()!;
-      pair2.player1.score = 6;
-      pair2.player2.score = 4;
-      tournament.storeGameResult(pair2);
-
-      const results = tournament.getResults();
-      expect(results.length).toBe(2);
-    });
-  });
-
-  describe("Tournament Progression", () => {
-    it("should start at round 0", () => {
-      const tournament = new Tournament(["A", "B"]);
-
-      expect(tournament.getRound()).toBe(0);
-    });
-
-    it("should increment round when new pairings generated", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
-
-      tournament.getNextPair();
-      expect(tournament.getRound()).toBe(1);
-    });
-
-    it("should not increment round for same round pairs", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
-
-      tournament.getNextPair();
-      const round1 = tournament.getRound();
-
-      tournament.getNextPair();
-      const round2 = tournament.getRound();
-
-      expect(round2).toBe(round1);
-    });
-
-    it("should simulate complete tournament", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
-
-      // Round 1: 2 games
-      const pair1 = tournament.getNextPair()!;
-      pair1.player1.score = 5;
-      pair1.player2.score = 2;
-      tournament.storeGameResult(pair1);
-
-      const pair2 = tournament.getNextPair()!;
-      pair2.player1.score = 6;
-      pair2.player2.score = 4;
-      tournament.storeGameResult(pair2);
-
-      expect(tournament.getRound()).toBe(1);
-      expect(tournament.getResults().length).toBe(2);
-
-      // Round 2: finals
-      const final = tournament.getNextPair();
-      expect(final).not.toBeNull();
-      expect(final!.round).toBe(2);
-
-      final!.player1.score = 5;
-      final!.player2.score = 3;
-      tournament.storeGameResult(final!);
-
-      // No more pairs
-      expect(tournament.getNextPair()).toBeNull();
-    });
-  });
-
   describe("Winner Advancement", () => {
     it("should advance specified player", () => {
       const tournament = new Tournament(["A", "B", "C", "D"]);
@@ -335,10 +205,6 @@ describe("Tournament System", () => {
     it("should preserve player usernames through tournament", () => {
       const names = ["Alice", "Bob", "Charlie"];
       const tournament = new Tournament(names);
-
-      const results = tournament.getResults();
-      // Results start empty
-      expect(results.length).toBe(0);
 
       // Get players and verify names
       const players = [
