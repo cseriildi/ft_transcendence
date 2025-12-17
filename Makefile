@@ -60,8 +60,8 @@ up:
 	@echo "✅ Services started. Access the app at $(URL)"
 	@echo ""
 	@echo "📊 Monitoring Stack:"
-	@echo "   Prometheus:  http://localhost:9090"
-	@echo "   Grafana:     http://localhost:3001 (admin/admin)"
+	@echo "   Prometheus Targets: http://localhost:9090/targets"
+	@echo "   Grafana Dashboard: http://localhost:3001/d/transcendence-overview/"
 
 # Start services with logs visible (includes monitoring)
 dev:
