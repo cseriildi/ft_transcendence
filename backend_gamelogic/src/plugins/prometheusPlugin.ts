@@ -89,7 +89,10 @@ async function prometheusPlugin(app: FastifyInstance) {
       const route = request.routeOptions?.url || request.url;
       const statusCode = reply.statusCode.toString();
 
-      httpRequestDuration.observe({ method: request.method, route, status_code: statusCode }, duration);
+      httpRequestDuration.observe(
+        { method: request.method, route, status_code: statusCode },
+        duration
+      );
       httpRequestsTotal.inc({ method: request.method, route, status_code: statusCode });
 
       // Track response size if available
@@ -97,7 +100,7 @@ async function prometheusPlugin(app: FastifyInstance) {
       if (contentLength) {
         httpResponseSizeBytes.observe(
           { method: request.method, route, status_code: statusCode },
-          parseInt(contentLength as string, 10),
+          parseInt(contentLength as string, 10)
         );
       }
     }
