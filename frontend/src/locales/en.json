@@ -81,7 +81,11 @@
     "instanceNotCreated": "Pong instance not created.",
     "gameError": "Game Error",
     "waitingForOpponent": "Waiting for opponent...",
-    "waitingForStart": "When ready click Start Game"
+    "waitingForStart": "When ready click Start Game",
+    "youWon": "🎉 You Won!",
+    "youLost": "😢 You Lost!",
+    "gameOver": "Game Over",
+    "playerWins": "🎉 {{player}} Wins!"
   },
 
   "pong_dynamic": {
@@ -101,7 +105,12 @@
     "playerPlaceholder": "Player {{i}} name",
     "emptyNames": "All player names must be non-empty",
     "duplicateNames": "All player names must be unique",
-    "setupFailed": "Tournament setup failed"
+    "setupFailed": "Tournament setup failed",
+    "bracket": "Tournament Bracket",
+    "currentMatch": "Current Match",
+    "round": "Round",
+    "semiFinal": "Semi-Final",
+    "final": "Final"
   },
 
   "profile": {
@@ -150,7 +159,8 @@
     "cancelRequest": "Cancel Request",
     "accept": "Accept",
     "decline": "Decline",
-    "addFriend": "Add Friend"
+    "addFriend": "Add Friend",
+    "requestDeclined": "Friend request declined"
   },
 
   "chat": {

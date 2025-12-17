@@ -24,6 +24,11 @@ interface Capsule {
   R: number;
 }
 
+interface PlayerInput {
+  player: number;
+  action: "up" | "down" | "stop";
+}
+
 import { i18n } from "../utils/i18n.js";
 
 export class Pong {
@@ -41,6 +46,7 @@ export class Pong {
   private player2Username: string = "Player 2";
   private authCheckInterval: number | null = null;
   private storageListener: ((event: StorageEvent) => void) | null = null;
+  private isDestroyed: boolean = false;
   // Note: autoreconnect behavior is handled in onclose (keeps main branch behavior)
 
   // Store references to event listeners for cleanup
@@ -48,6 +54,25 @@ export class Pong {
   private keyupListener: ((event: KeyboardEvent) => void) | null = null;
   private keysPressed: Set<string> = new Set();
   private languageChangeListener: (() => void) | null = null;
+
+  // Mobile button controls
+  private buttonListeners: Array<{
+    element: HTMLElement;
+    event: string;
+    handler: (e: Event) => void;
+    options?: AddEventListenerOptions;
+  }> = [];
+
+  // Tournament bracket tracking
+  private tournamentPlayers: string[] = [];
+  private tournamentMatches: Array<{
+    player1: string;
+    player2: string;
+    winner?: string;
+    round: number;
+  }> = [];
+  private currentRound: number = 0;
+  private currentMatchPlayers: { player1: string; player2: string } | null = null;
 
   constructor(canvasId: string, wsUrl: string, gameMode: string, gameId?: string) {
     const canvasEl = document.getElementById(canvasId);
@@ -62,6 +87,7 @@ export class Pong {
     this.currentGameMode = gameMode;
     this.gameId = gameId;
     this.setupInputHandlers();
+    this.setupButtonControls();
     this.setupLanguageListener();
     this.connect();
     this.renderLoop();
@@ -102,6 +128,9 @@ export class Pong {
 
     console.log("📨 Sending message:", message);
 
+    // Update button visibility for new game mode
+    this.updateButtonVisibility();
+
     // For authenticated modes, ensure WebSocket is open before sending
     if (["remote", "friend"].includes(gameMode)) {
       if (!this.isConnected) {
@@ -133,6 +162,12 @@ export class Pong {
       mode: this.currentGameMode,
       players: playerNames,
     };
+
+    // Initialize tournament tracking
+    this.tournamentPlayers = [...playerNames];
+    this.tournamentMatches = [];
+    this.currentRound = 0;
+    this.updateTournamentBracket();
 
     this.sendWhenConnected(message);
   }
@@ -241,7 +276,41 @@ export class Pong {
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
             console.log("🏆 Game Over! Result:", message.data);
-            this.sendWhenConnected({ type: "nextGame", mode: this.currentGameMode });
+
+            // Show win/loss notification
+            if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
+              const result = message.data;
+              let didWin = false;
+
+              if (this.currentGameMode === "ai") {
+                // In AI mode, player is always player 2
+                didWin = result.winner === 2;
+              } else if (
+                ["remote", "friend"].includes(this.currentGameMode) &&
+                this.assignedPlayerNumber
+              ) {
+                didWin = result.winner === this.assignedPlayerNumber;
+              }
+
+              const notificationMessage = didWin ? i18n.t("pong.youWon") : i18n.t("pong.youLost");
+              alert(`${i18n.t("pong.gameOver")}\n\n${notificationMessage}`);
+            } else if (this.currentGameMode === "tournament") {
+              const result = message.data;
+              // Fallback to player number if winnerName is missing (defensive programming)
+              const winner = result.winnerName || `Player ${result.winner}`;
+
+              // Update tournament bracket with winner
+              this.recordTournamentWinner(this.player1Username, this.player2Username, winner);
+
+              alert(
+                `${i18n.t("pong.gameOver")}\n\n${i18n.t("pong.playerWins", { player: winner })}`
+              );
+            }
+
+            this.sendWhenConnected({
+              type: "nextGame",
+              mode: this.currentGameMode,
+            });
             if (["remote", "tournament"].includes(this.currentGameMode)) {
               window.dispatchEvent(new CustomEvent("pong:showNewGameButton"));
             }
@@ -270,6 +339,15 @@ export class Pong {
               this.player2Username = message.player2Username;
             }
             this.updatePlayerNamesDisplay();
+          }
+
+          // Track tournament match
+          if (
+            this.currentGameMode === "tournament" &&
+            message.player1Username &&
+            message.player2Username
+          ) {
+            this.updateTournamentStatus(message.player1Username, message.player2Username);
           }
 
           this.updateScoreDisplay();
@@ -318,6 +396,11 @@ export class Pong {
         reason: ev.reason,
         wasClean: ev.wasClean,
       });
+
+      // Don't reconnect if destroyed
+      if (this.isDestroyed) {
+        return;
+      }
 
       // Don't reconnect if user logged out (for authenticated modes)
       if (["remote", "friend"].includes(this.currentGameMode)) {
@@ -381,14 +464,252 @@ export class Pong {
   private setupLanguageListener() {
     this.languageChangeListener = () => {
       this.updatePlayerNamesDisplay();
+      // Update tournament bracket to refresh translated labels
+      if (this.currentGameMode === "tournament") {
+        this.updateTournamentBracket();
+        // Update current match status text
+        if (this.currentMatchPlayers) {
+          const statusEl = document.getElementById("tournament-status");
+          if (statusEl) {
+            statusEl.textContent = `${i18n.t("tournament.currentMatch")}: ${this.currentMatchPlayers.player1} vs ${this.currentMatchPlayers.player2}`;
+          }
+        }
+      }
     };
     window.addEventListener("languageChanged", this.languageChangeListener);
   }
 
   /**
+   * Helper to determine the correct player number for Player 2 buttons.
+   * In online/friend modes, uses the assigned player number.
+   * Otherwise, defaults to player 2.
+   */
+  private getPlayerNumberForP2(): number {
+    return ["remote", "friend"].includes(this.currentGameMode) && this.assignedPlayerNumber
+      ? this.assignedPlayerNumber
+      : 2;
+  }
+
+  private setupButtonControls() {
+    const sendInput = (type: string, data: PlayerInput) => {
+      if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+        this.ws.send(JSON.stringify({ type, data }));
+      }
+    };
+
+    // Get button elements
+    const p1UpBtn = document.getElementById("p1-up-btn");
+    const p1DownBtn = document.getElementById("p1-down-btn");
+    const p2UpBtn = document.getElementById("p2-up-btn");
+    const p2DownBtn = document.getElementById("p2-down-btn");
+
+    // Player 1 buttons
+    if (p1UpBtn) {
+      const upHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "up" });
+      };
+      const upStopHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "stop" });
+      };
+
+      p1UpBtn.addEventListener("touchstart", upHandler, { passive: false });
+      p1UpBtn.addEventListener("mousedown", upHandler);
+      p1UpBtn.addEventListener("touchend", upStopHandler, { passive: false });
+      p1UpBtn.addEventListener("touchcancel", upStopHandler, {
+        passive: false,
+      });
+      p1UpBtn.addEventListener("mouseup", upStopHandler);
+
+      this.buttonListeners.push(
+        { element: p1UpBtn, event: "touchstart", handler: upHandler, options: { passive: false } },
+        { element: p1UpBtn, event: "mousedown", handler: upHandler },
+        {
+          element: p1UpBtn,
+          event: "touchend",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p1UpBtn,
+          event: "touchcancel",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        { element: p1UpBtn, event: "mouseup", handler: upStopHandler }
+      );
+    }
+
+    if (p1DownBtn) {
+      const downHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "down" });
+      };
+      const downStopHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: 1, action: "stop" });
+      };
+
+      p1DownBtn.addEventListener("touchstart", downHandler, { passive: false });
+      p1DownBtn.addEventListener("mousedown", downHandler);
+      p1DownBtn.addEventListener("touchend", downStopHandler, {
+        passive: false,
+      });
+      p1DownBtn.addEventListener("touchcancel", downStopHandler, {
+        passive: false,
+      });
+      p1DownBtn.addEventListener("mouseup", downStopHandler);
+
+      this.buttonListeners.push(
+        {
+          element: p1DownBtn,
+          event: "touchstart",
+          handler: downHandler,
+          options: { passive: false },
+        },
+        { element: p1DownBtn, event: "mousedown", handler: downHandler },
+        {
+          element: p1DownBtn,
+          event: "touchend",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p1DownBtn,
+          event: "touchcancel",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        { element: p1DownBtn, event: "mouseup", handler: downStopHandler }
+      );
+    }
+
+    // Player 2 buttons (or single player in online/AI mode)
+    if (p2UpBtn) {
+      const upHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "up" });
+      };
+      const upStopHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "stop" });
+      };
+
+      p2UpBtn.addEventListener("touchstart", upHandler, { passive: false });
+      p2UpBtn.addEventListener("mousedown", upHandler);
+      p2UpBtn.addEventListener("touchend", upStopHandler, { passive: false });
+      p2UpBtn.addEventListener("touchcancel", upStopHandler, {
+        passive: false,
+      });
+      p2UpBtn.addEventListener("mouseup", upStopHandler);
+
+      this.buttonListeners.push(
+        { element: p2UpBtn, event: "touchstart", handler: upHandler, options: { passive: false } },
+        { element: p2UpBtn, event: "mousedown", handler: upHandler },
+        {
+          element: p2UpBtn,
+          event: "touchend",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p2UpBtn,
+          event: "touchcancel",
+          handler: upStopHandler,
+          options: { passive: false },
+        },
+        { element: p2UpBtn, event: "mouseup", handler: upStopHandler }
+      );
+    }
+
+    if (p2DownBtn) {
+      const downHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "down" });
+      };
+      const downStopHandler = (e: Event) => {
+        e.preventDefault();
+        sendInput("playerInput", { player: this.getPlayerNumberForP2(), action: "stop" });
+      };
+
+      p2DownBtn.addEventListener("touchstart", downHandler, { passive: false });
+      p2DownBtn.addEventListener("mousedown", downHandler);
+      p2DownBtn.addEventListener("touchend", downStopHandler, {
+        passive: false,
+      });
+      p2DownBtn.addEventListener("touchcancel", downStopHandler, {
+        passive: false,
+      });
+      p2DownBtn.addEventListener("mouseup", downStopHandler);
+
+      this.buttonListeners.push(
+        {
+          element: p2DownBtn,
+          event: "touchstart",
+          handler: downHandler,
+          options: { passive: false },
+        },
+        { element: p2DownBtn, event: "mousedown", handler: downHandler },
+        {
+          element: p2DownBtn,
+          event: "touchend",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        {
+          element: p2DownBtn,
+          event: "touchcancel",
+          handler: downStopHandler,
+          options: { passive: false },
+        },
+        { element: p2DownBtn, event: "mouseup", handler: downStopHandler }
+      );
+    }
+
+    // Update button visibility based on game mode
+    this.updateButtonVisibility();
+  }
+
+  private updateButtonVisibility() {
+    const mobileControls = document.getElementById("mobile-controls");
+    const player1Controls = document.getElementById("player1-controls");
+    const player2Controls = document.getElementById("player2-controls");
+    const player2Label = document.getElementById("player2-controls-label");
+
+    if (!mobileControls || !player1Controls || !player2Controls) return;
+
+    // Show mobile controls
+    mobileControls.classList.remove("hidden");
+
+    if (["local", "tournament"].includes(this.currentGameMode)) {
+      // Local mode: show both players
+      player1Controls.classList.remove("hidden");
+      player2Controls.classList.remove("hidden");
+      if (player2Label) {
+        player2Label.setAttribute("data-i18n", "pong_dynamic.player2");
+        player2Label.textContent = i18n.t("pong_dynamic.player2");
+      }
+    } else if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
+      // Online/AI mode: show only player 2 controls (or assigned player)
+      player1Controls.classList.add("hidden");
+      player2Controls.classList.remove("hidden");
+      if (player2Label) {
+        if (this.currentGameMode === "ai") {
+          player2Label.setAttribute("data-i18n", "pong_dynamic.you");
+          player2Label.textContent = i18n.t("pong_dynamic.you");
+        } else {
+          player2Label.removeAttribute("data-i18n");
+          player2Label.textContent = "You";
+        }
+      }
+    }
+  }
+
+  /**
    * Handle keydown events based on game mode
    */
-  private handleKeyDown(key: string, sendInput: (type: string, data: any) => void): void {
+  private handleKeyDown(key: string, sendInput: (type: string, data: PlayerInput) => void): void {
     if (this.keysPressed.has(key)) return;
     this.keysPressed.add(key);
 
@@ -437,7 +758,7 @@ export class Pong {
   /**
    * Handle keyup events based on game mode
    */
-  private handleKeyUp(key: string, sendInput: (type: string, data: any) => void): void {
+  private handleKeyUp(key: string, sendInput: (type: string, data: PlayerInput) => void): void {
     this.keysPressed.delete(key);
 
     // Skip if waiting for opponent
@@ -450,11 +771,20 @@ export class Pong {
       if (this.assignedPlayerNumber) {
         if (key === "arrowup" || key === "arrowdown") {
           if (this.keysPressed.has("arrowup")) {
-            sendInput("playerInput", { player: this.assignedPlayerNumber, action: "up" });
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "up",
+            });
           } else if (this.keysPressed.has("arrowdown")) {
-            sendInput("playerInput", { player: this.assignedPlayerNumber, action: "down" });
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "down",
+            });
           } else {
-            sendInput("playerInput", { player: this.assignedPlayerNumber, action: "stop" });
+            sendInput("playerInput", {
+              player: this.assignedPlayerNumber,
+              action: "stop",
+            });
           }
         }
       }
@@ -484,7 +814,7 @@ export class Pong {
   }
 
   private setupInputHandlers() {
-    const sendInput = (type: string, data: any) => {
+    const sendInput = (type: string, data: PlayerInput) => {
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         this.ws.send(JSON.stringify({ type, data }));
       }
@@ -493,6 +823,10 @@ export class Pong {
     // Create and store keydown listener
     this.keydownListener = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
+      // Prevent arrow keys from scrolling the page
+      if (key === "arrowup" || key === "arrowdown") {
+        event.preventDefault();
+      }
       this.handleKeyDown(key, sendInput);
     };
 
@@ -671,7 +1005,192 @@ export class Pong {
     }
   }
 
+  private updateTournamentStatus(player1: string, player2: string): void {
+    // Store current match players for language change updates
+    this.currentMatchPlayers = { player1, player2 };
+
+    const statusEl = document.getElementById("tournament-status");
+    if (statusEl) {
+      statusEl.textContent = `${i18n.t("tournament.currentMatch")}: ${player1} vs ${player2}`;
+    }
+
+    // Add this match to the bracket if not already present
+    const existingMatch = this.tournamentMatches.find(
+      (m) =>
+        (m.player1 === player1 && m.player2 === player2) ||
+        (m.player1 === player2 && m.player2 === player1)
+    );
+
+    if (!existingMatch) {
+      // Determine round number based on number of completed matches
+      const completedMatches = this.tournamentMatches.filter((m) => m.winner).length;
+      const numPlayers = this.tournamentPlayers.length;
+
+      // Calculate which round we're in
+      let round = 1;
+      let matchesInPreviousRounds = 0;
+      let matchesPerRound = numPlayers / 2;
+
+      while (completedMatches >= matchesInPreviousRounds + matchesPerRound) {
+        matchesInPreviousRounds += matchesPerRound;
+        matchesPerRound /= 2;
+        round++;
+      }
+
+      this.currentRound = round;
+      this.tournamentMatches.push({
+        player1,
+        player2,
+        round,
+        winner: undefined,
+      });
+      this.updateTournamentBracket();
+    }
+  }
+
+  private recordTournamentWinner(player1: string, player2: string, winner: string): void {
+    // Find the match
+    const match = this.tournamentMatches.find(
+      (m) =>
+        (m.player1 === player1 && m.player2 === player2) ||
+        (m.player1 === player2 && m.player2 === player1)
+    );
+
+    if (match) {
+      match.winner = winner;
+      this.updateTournamentBracket();
+    }
+  }
+
+  private updateTournamentBracket(): void {
+    const bracketEl = document.getElementById("tournament-bracket");
+    const containerEl = document.getElementById("bracket-container");
+
+    if (!bracketEl || !containerEl) return;
+
+    if (this.currentGameMode !== "tournament" || this.tournamentPlayers.length === 0) {
+      bracketEl.classList.add("hidden");
+      return;
+    }
+
+    bracketEl.classList.remove("hidden");
+
+    // Calculate number of rounds based on player count
+    const numPlayers = this.tournamentPlayers.length;
+    const numRounds = Math.log2(numPlayers);
+
+    // Clear existing content
+    containerEl.innerHTML = "";
+
+    // Create main container
+    const mainContainer = document.createElement("div");
+    mainContainer.className =
+      "flex flex-col sm:flex-row gap-4 sm:gap-8 items-center sm:items-center";
+
+    // Group matches by round
+    const matchesByRound: Array<Array<(typeof this.tournamentMatches)[0]>> = [];
+    for (let r = 0; r < numRounds; r++) {
+      matchesByRound[r] = this.tournamentMatches.filter((m) => m.round === r + 1);
+    }
+
+    // Render each round
+    for (let round = 0; round < numRounds; round++) {
+      const roundMatches = matchesByRound[round] || [];
+      const roundLabel =
+        round === numRounds - 1
+          ? i18n.t("tournament.final")
+          : round === numRounds - 2
+            ? i18n.t("tournament.semiFinal")
+            : `${i18n.t("tournament.round")} ${round + 1}`;
+
+      // Only show rounds that have matches
+      if (roundMatches.length === 0) continue;
+
+      // Create round container
+      const roundContainer = document.createElement("div");
+      roundContainer.className = "flex flex-col gap-4 w-full sm:w-auto";
+
+      // Create round label
+      const roundLabelEl = document.createElement("h4");
+      roundLabelEl.className = "text-neon-green text-center font-bold text-sm sm:text-base mb-2";
+      roundLabelEl.textContent = roundLabel;
+      roundContainer.appendChild(roundLabelEl);
+
+      // Add matches
+      for (const match of roundMatches) {
+        roundContainer.appendChild(this.renderMatch(match));
+      }
+
+      mainContainer.appendChild(roundContainer);
+
+      // Add connector arrows between rounds
+      if (
+        round < numRounds - 1 &&
+        matchesByRound[round + 1] &&
+        matchesByRound[round + 1].length > 0
+      ) {
+        const connectorDiv = document.createElement("div");
+        connectorDiv.className = "flex items-center justify-center";
+
+        const desktopArrow = document.createElement("div");
+        desktopArrow.className = "text-neon-pink text-2xl sm:inline hidden";
+        desktopArrow.textContent = "→";
+
+        const mobileArrow = document.createElement("div");
+        mobileArrow.className = "text-neon-pink text-2xl sm:hidden inline";
+        mobileArrow.textContent = "↓";
+
+        connectorDiv.appendChild(desktopArrow);
+        connectorDiv.appendChild(mobileArrow);
+        mainContainer.appendChild(connectorDiv);
+      }
+    }
+
+    containerEl.appendChild(mainContainer);
+  }
+
+  private renderMatch(match: {
+    player1: string;
+    player2: string;
+    winner?: string;
+    round: number;
+  }): HTMLElement {
+    const isPlayer1Winner = match.winner === match.player1;
+    const isPlayer2Winner = match.winner === match.player2;
+
+    // Create match card
+    const card = document.createElement("div");
+    card.className = "glass-card p-3 sm:min-w-[150px] w-full sm:w-auto";
+
+    const innerDiv = document.createElement("div");
+    innerDiv.className = "flex flex-col gap-2";
+
+    // Player 1
+    const player1Div = document.createElement("div");
+    player1Div.className = `text-sm sm:text-base ${isPlayer1Winner ? "text-neon-green font-bold" : "text-white"} ${isPlayer2Winner ? "opacity-50" : ""}`;
+    player1Div.textContent = match.player1 + (isPlayer1Winner ? " ✓" : "");
+
+    // Divider
+    const divider = document.createElement("div");
+    divider.className = "border-t border-neon-pink/30";
+
+    // Player 2
+    const player2Div = document.createElement("div");
+    player2Div.className = `text-sm sm:text-base ${isPlayer2Winner ? "text-neon-green font-bold" : "text-white"} ${isPlayer1Winner ? "opacity-50" : ""}`;
+    player2Div.textContent = match.player2 + (isPlayer2Winner ? " ✓" : "");
+
+    innerDiv.appendChild(player1Div);
+    innerDiv.appendChild(divider);
+    innerDiv.appendChild(player2Div);
+    card.appendChild(innerDiv);
+
+    return card;
+  }
+
   public destroy(): void {
+    // Mark as destroyed to prevent reconnection
+    this.isDestroyed = true;
+
     // Stop auth check
     this.stopAuthCheck();
 
@@ -685,6 +1204,12 @@ export class Pong {
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
     }
+
+    // Clean up button listeners
+    this.buttonListeners.forEach(({ element, event, handler, options }) => {
+      element.removeEventListener(event, handler, options);
+    });
+    this.buttonListeners = [];
 
     this.ws?.close();
     this.ws = null;
