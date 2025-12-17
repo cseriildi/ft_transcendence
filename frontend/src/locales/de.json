@@ -245,7 +245,7 @@
   "legal": {
     "privacyTitle": "Datenschutzerklärung",
     "privacyP1": "Diese Datenschutzerklärung erklärt, wie das Pong Portal (der \"Dienst\") Informationen sammelt, verwendet und weitergibt. Wir erheben nur die Daten, die zur Bereitstellung und Verbesserung des Dienstes erforderlich sind, z. B. Kontoinformationen (E-Mail, Benutzername) und Avatar-Uploads. Wir verkaufen keine personenbezogenen Daten.",
-    "privacyP2": "Wir verwenden Cookies und ähnliche Technologien für Sitzungsverwaltung und Präferenzen. Drittanbieter (z. B. Analytik, OAuth-Anbieter) können Daten gemäß ihren Richtlinien sammeln. Sie können die Löschung Ihres Kontos und Ihrer personenbezogenen Daten anfordern.",
+    "privacyP2": "Wir verwenden Cookies und ähnliche Technologien für Sitzungsverwaltung und Präferenzen. Drittanbieter (z. B. Analytik) können Daten gemäß ihren Richtlinien sammeln. Sie können die Löschung Ihres Kontos und Ihrer personenbezogenen Daten anfordern.",
     "privacyContact": "Bei Fragen zu dieser Richtlinie kontaktieren Sie uns über das Projekt-Repository",
 
     "termsTitle": "Nutzungsbedingungen",

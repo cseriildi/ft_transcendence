@@ -24,10 +24,8 @@ export const twoFAController = {
       });
     }
 
-    // Authorization: Ensure authenticated user matches the userId parameter
     ensureUserOwnership(request.user!.id, userId);
 
-    // Check if user exists
     const user = await db.get<{ username: string }>("SELECT username FROM users WHERE id = ?", [
       userId,
     ]);
@@ -36,16 +34,13 @@ export const twoFAController = {
       throw errors.notFound("User", { targetUserId: userId });
     }
 
-    // Generate secret
     const secret = speakeasy.generateSecret({
       name: `Pong (${user.username})`,
       issuer: "Pong",
     });
 
-    // Store secret in database (not enabled yet)
     await db.run("UPDATE users SET twofa_secret = ? WHERE id = ?", [secret.base32, userId]);
 
-    // Generate QR code
     const qrCodeUrl = await QRCode.toDataURL(secret.otpauth_url!);
 
     reply.code(201);
