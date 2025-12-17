@@ -15,7 +15,6 @@ export const matchController = {
     const errors = requestErrors(request);
     const { winner_id, loser_id, winner_score, loser_score } = request.body;
 
-    // Validate both players exist
     const playersExist = await db.get<{ count: number }>(
       `SELECT COUNT(*) as count FROM users WHERE id IN (?, ?)`,
       [winner_id, loser_id]
@@ -28,13 +27,11 @@ export const matchController = {
       });
     }
 
-    // Insert match with just IDs
     const result = await db.run(
       `INSERT INTO matches (winner_id, loser_id, winner_score, loser_score) VALUES (?, ?, ?, ?)`,
       [winner_id, loser_id, winner_score, loser_score]
     );
 
-    // Fetch the created match with usernames via JOIN
     const match = await db.get<Match>(
       `SELECT 
         m.id, 
@@ -72,13 +69,11 @@ export const matchController = {
       throw errors.validation("Invalid user ID - must be a positive integer");
     }
 
-    // First check if the user exists
     const user = await db.get<User>(`SELECT * FROM users WHERE id = ?`, [userId]);
     if (!user) {
       throw errors.notFound("User", { userId });
     }
 
-    // Get matches with usernames via JOINs
     const matches = await db.all<Match>(
       `SELECT 
         m.id, 

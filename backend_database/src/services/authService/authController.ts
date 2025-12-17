@@ -122,18 +122,14 @@ export const authController = {
     }
 
     try {
-      // Verify refresh token to get jti
       const decoded = await verifyRefreshToken(refreshToken);
       const jti = decoded.jti!;
 
-      // Revoke the refresh token in database
       await db.run("UPDATE refresh_tokens SET revoked = 1 WHERE jti = ?", [jti]);
 
-      // Set user as offline immediately after logout by setting last_seen to past time
       const pastTime = new Date(Date.now() - 5 * 60 * 1000).toISOString(); // 5 minutes ago
       await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [pastTime, decoded.sub]);
 
-      // Log successful logout
       request.log.info(
         {
           userId: decoded.sub,
@@ -142,7 +138,6 @@ export const authController = {
         "User logged out successfully"
       );
 
-      // Clear the refresh token cookie
       reply.clearCookie("refresh_token", { path: "/auth" });
 
       return ApiResponseHelper.success(
@@ -169,7 +164,6 @@ export const authController = {
     const clientIp = request.ip;
     checkRateLimit(`register:${clientIp}`, 5, 5 * 60);
 
-    // Validate password strength
     assertPasswordValid(request.body.password, {
       endpoint: "register",
       email: request.body.email,
@@ -196,7 +190,6 @@ export const authController = {
       throw errors.conflict("Username already exists", { username: request.body.username });
     }
 
-    // Sanitize input before storage (prevent XSS)
     const cleanUsername = sanitize.username(request.body.username);
     const cleanEmail = sanitize.email(request.body.email);
 
@@ -212,12 +205,11 @@ export const authController = {
     });
 
     // Step 2: Filesystem operation outside transaction
-    // Concept: DB transactions can't control filesystem - separate systems
     let avatar;
     try {
       avatar = await copyDefaultAvatar(userId);
     } catch (err) {
-      // Compensating action: rollback user creation if file copy fails
+      // rollback user creation if file copy fails
       request.log.error(
         { userId, error: err },
         "Avatar copy failed during registration, rolling back user creation"
@@ -226,21 +218,19 @@ export const authController = {
       throw errors.internal("Failed to create user avatar", { userId });
     }
 
-    // Step 3: Store avatar metadata in database
+    // Step 3: Store avatar  database
     try {
       await db.run(
         "INSERT INTO avatars (user_id, file_url, file_path, file_name, mime_type, file_size) VALUES (?, ?, ?, ?, ?, ?)",
         [userId, avatar.fileUrl, avatar.filePath, avatar.fileName, avatar.mimeType, avatar.fileSize]
       );
     } catch (err) {
-      // Compensating actions: cleanup filesystem and database
+      // cleanup filesystem and database
       request.log.error(
         { userId, error: err },
         "Avatar DB insert failed, cleaning up file and user"
       );
-      // Delete the orphaned avatar file from filesystem
       await deleteUploadedFile(avatar.fileUrl);
-      // Delete user record from database
       await db.run("DELETE FROM users WHERE id = ?", [userId]);
       throw errors.internal("Failed to store avatar metadata", { userId });
     }
@@ -284,11 +274,7 @@ export const authController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { email, password } = request.body || {};
-
-    // Sanitize email for lookup (normalize for consistency)
     const cleanEmail = sanitize.email(email);
-
-    // Rate limit: 5 login attempts per 5 minutes per IP
     const clientIp = request.ip;
     checkRateLimit(`login:${clientIp}`, 5, 5 * 60);
 
@@ -305,12 +291,8 @@ export const authController = {
         throw errors.unauthorized("Invalid password", { email: cleanEmail });
       }
 
-      // Check if user has 2FA enabled
       if (result.twofa_enabled) {
-        // User has 2FA - don't issue tokens yet, return temp token for 2FA verification
         const tempToken = await signTemporaryToken(result.id);
-
-        // Clear rate limit on successful password verification
         resetRateLimit(`login:${clientIp}`);
 
         request.log.info(
@@ -340,14 +322,11 @@ export const authController = {
       // Clear rate limit on successful login
       resetRateLimit(`login:${clientIp}`);
 
-      // Set user as online immediately after successful login
       const now = new Date().toISOString();
       await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [now, result.id]);
 
-      // Retrieve avatar URL using helper
       const avatar_url = await getAvatarUrl(db, result.id);
 
-      // Log successful login
       request.log.info(
         {
           userId: result.id,
@@ -384,15 +363,10 @@ export const authController = {
     const db = new DatabaseHelper(request.server.db);
     const errors = requestErrors(request);
     const { tempToken, twofa_code } = request.body;
-
-    // Verify temporary token
     const decoded = await verifyTemporaryToken(tempToken);
     const userId = parseInt(decoded.sub!);
-
-    // Rate limit 2FA attempts per user (5 attempts per 15 minutes)
     checkRateLimit(`2fa-login:${userId}`, 5, 15 * 60, 15);
 
-    // Get user's 2FA configuration
     const user = await db.get<User & { twofa_secret: string; twofa_enabled: number }>(
       "SELECT id, username, email, created_at, twofa_secret, twofa_enabled FROM users WHERE id = ?",
       [userId]
@@ -406,7 +380,6 @@ export const authController = {
       throw errors.unauthorized("2FA is not enabled for this user", { targetUserId: userId });
     }
 
-    // Verify 2FA token
     const verified = speakeasy.totp.verify({
       secret: user.twofa_secret,
       encoding: "base32",
@@ -418,22 +391,16 @@ export const authController = {
       throw errors.unauthorized("Invalid 2FA token", { targetUserId: userId });
     }
 
-    // Clear rate limit on successful 2FA verification
     resetRateLimit(`2fa-login:${userId}`);
-
-    // Issue real access and refresh tokens
     const accessToken = await signAccessToken(user.id);
     const refreshToken = await generateAndStoreRefreshToken(db, user.id);
     setRefreshTokenCookie(reply, refreshToken);
 
-    // Set user as online
     const now = new Date().toISOString();
     await db.run("UPDATE users SET last_seen = ? WHERE id = ?", [now, user.id]);
 
-    // Retrieve avatar URL
     const avatar_url = await getAvatarUrl(db, user.id);
 
-    // Log successful 2FA login
     request.log.info(
       {
         userId: user.id,

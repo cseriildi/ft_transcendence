@@ -11,13 +11,7 @@ import {
 } from "./gameInviteTypes.ts";
 import { ApiResponse } from "../../types/commonTypes.ts";
 
-/**
- * Game Invite Routes
- *
- * Most routes protected with requireAuth middleware.
- * Internal routes (DELETE, GET by ID for service) protected with requireServiceAuth.
- * Rate limiting applied via authenticatedRateLimit in router.ts (100 req/min per user).
- */
+
 async function gameInviteRoutes(fastify: FastifyInstance) {
   // Create game invitation to a friend
   fastify.post<{ Params: GameInviteParams; Reply: ApiResponse<CreateGameInviteResponse> }>(
