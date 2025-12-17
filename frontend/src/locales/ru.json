@@ -109,7 +109,6 @@
     "playerPlaceholder": "Имя игрока {{i}}",
     "emptyNames": "Все имена должны быть заполнены",
     "emptyPlayerName": "Имя игрока не может быть пустым",
-    "duplicateNames": "Имена должны быть уникальными",
     "duplicatePlayerNames": "Имена должны быть уникальными",
     "playerNameTooShort": "Имя игрока должно содержать минимум 3 символа",
     "playerNameTooLong": "Имя игрока не может превышать 15 символов",

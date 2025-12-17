@@ -109,7 +109,6 @@
     "playerPlaceholder": "{{i}}. játékos neve",
     "emptyNames": "Minden játékos neve kötelező",
     "emptyPlayerName": "A játékos neve nem lehet üres",
-    "duplicateNames": "A játékosneveknek egyedieknek kell lenniük",
     "duplicatePlayerNames": "A játékosneveknek egyedieknek kell lenniük",
     "playerNameTooShort": "A játékos nevének legalább 3 karakterből kell állnia",
     "playerNameTooLong": "A játékos neve maximum 15 karakter hosszú lehet",
