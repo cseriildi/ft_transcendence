@@ -81,7 +81,11 @@
     "instanceNotCreated": "Pong-Instanz nicht erstellt.",
     "gameError": "Spiel-Fehler",
     "waitingForOpponent": "Warten auf Gegner...",
-    "waitingForStart": "Wenn bereit, klicke Spiel starten"
+    "waitingForStart": "Wenn bereit, klicke Spiel starten",
+    "youWon": "🎉 Du hast gewonnen!",
+    "youLost": "😢 Du hast verloren!",
+    "gameOver": "Spiel vorbei",
+    "playerWins": "🎉 {{player}} gewinnt!"
   },
 
   "pong_dynamic": {
@@ -101,7 +105,12 @@
     "playerPlaceholder": "Spielername {{i}}",
     "emptyNames": "Alle Spielernamen dürfen nicht leer sein",
     "duplicateNames": "Alle Spielernamen müssen einzigartig sein",
-    "setupFailed": "Turnieraufbau fehlgeschlagen"
+    "setupFailed": "Turnieraufbau fehlgeschlagen",
+    "bracket": "Turnierbaum",
+    "currentMatch": "Aktuelles Spiel",
+    "round": "Runde",
+    "semiFinal": "Halbfinale",
+    "final": "Finale"
   },
 
   "profile": {
@@ -150,7 +159,8 @@
     "cancelRequest": "Anfrage abbrechen",
     "accept": "Akzeptieren",
     "decline": "Ablehnen",
-    "addFriend": "Freund hinzufügen"
+    "addFriend": "Freund hinzufügen",
+    "requestDeclined": "Freundschaftsanfrage abgelehnt"
   },
 
   "chat": {
@@ -225,5 +235,23 @@
     "forbidden": "Zugriff verweigert.",
     "serverError": "Serverfehler. Bitte versuche es später erneut.",
     "rateLimitExceeded": "Zu viele Versuche. Bitte versuche es später erneut."
+  },
+
+  "footer": {
+    "privacy": "Datenschutzerklärung",
+    "terms": "Nutzungsbedingungen"
+  },
+
+  "legal": {
+    "privacyTitle": "Datenschutzerklärung",
+    "privacyP1": "Diese Datenschutzerklärung erklärt, wie das Pong Portal (der \"Dienst\") Informationen sammelt, verwendet und weitergibt. Wir erheben nur die Daten, die zur Bereitstellung und Verbesserung des Dienstes erforderlich sind, z. B. Kontoinformationen (E-Mail, Benutzername) und Avatar-Uploads. Wir verkaufen keine personenbezogenen Daten.",
+    "privacyP2": "Wir verwenden Cookies und ähnliche Technologien für Sitzungsverwaltung und Präferenzen. Drittanbieter (z. B. Analytik, OAuth-Anbieter) können Daten gemäß ihren Richtlinien sammeln. Sie können die Löschung Ihres Kontos und Ihrer personenbezogenen Daten anfordern.",
+    "privacyContact": "Bei Fragen zu dieser Richtlinie kontaktieren Sie uns über das Projekt-Repository",
+
+    "termsTitle": "Nutzungsbedingungen",
+    "termsP1": "Durch die Nutzung des Pong Portals stimmen Sie diesen Bedingungen zu. Sie sind verantwortlich für die Vertraulichkeit Ihres Kontos und für alle Aktivitäten, die unter Ihrem Konto stattfinden. Nutzen Sie den Dienst nicht für rechtswidrige Zwecke.",
+    "termsP2": "Wir behalten uns das Recht vor, Konten zu sperren oder zu löschen, die gegen diese Bedingungen verstoßen. Der Dienst wird wie besehen bereitgestellt; wir lehnen Gewährleistungen im gesetzlich zulässigen Umfang ab.",
+    "termsContact": "Bei Fragen zu diesen Bedingungen kontaktieren Sie die Projektverantwortlichen"
   }
+
 }
