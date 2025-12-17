@@ -27,7 +27,7 @@ jobs:
 
       - name: Build and start services
         run: |
-          docker compose up -d --build
+          docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml up -d --build
 
       - name: Wait for services to be ready
         run: |
