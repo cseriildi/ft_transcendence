@@ -233,7 +233,7 @@ shell:
 	@SERVICE="$(filter-out $@,$(MAKECMDGOALS))"; \
 	if echo "$(SERVICES)" | grep -wq "$$SERVICE"; then \
 		echo "🐚 Opening shell in $$SERVICE container..."; \
-		$(DOCKER_COMPOSE) exec "$$SERVICE" sh; \
+		$(DOCKER_COMPOSE) $(COMPOSE_FILES) exec "$$SERVICE" sh; \
 	else \
 		echo "❌ Invalid service. Available services: $(SERVICES)"; \
 		echo "Usage: make shell [service]"; \
