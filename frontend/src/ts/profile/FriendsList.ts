@@ -35,11 +35,9 @@ export class FriendsList {
       if (usersResponse.ok) {
         const usersData = await usersResponse.json();
         users = usersData.data;
-      } else {
-        console.error("Failed to fetch users", await usersResponse.json());
       }
     } catch (error) {
-      console.error("Error fetching users", error);
+      // Silently fail - empty users array
     }
 
     // Fetch friends status
@@ -79,11 +77,9 @@ export class FriendsList {
             }
           );
         }
-      } else {
-        console.error("Failed to fetch user list", await response.json());
       }
     } catch (error) {
-      console.error("Error fetching user list", error);
+      // Silently fail
     }
   }
 
@@ -267,7 +263,6 @@ export class FriendsList {
       const currentUserId = getUserId();
       const friendId = friend.user_id;
       if (currentUserId === null) {
-        console.error("Current user ID is null, cannot create chat ID.");
         return;
       }
       const chatId = [Number(currentUserId), Number(friendId)].sort((a, b) => a - b).join("-");
@@ -298,7 +293,6 @@ export class FriendsList {
         try {
           const currentUserId = getUserId();
           if (!currentUserId) {
-            console.error("No current user ID; cannot send invite");
             return;
           }
 
@@ -320,7 +314,6 @@ export class FriendsList {
 
           if (!response.ok) {
             const err = await response.json().catch(() => ({}));
-            console.error("Failed to create friend game invite", err);
             inviteButton.disabled = false;
             inviteButton.textContent = i18n.t("chat.inviteButton");
             alert(err.message || "Failed to create invitation");
@@ -330,7 +323,6 @@ export class FriendsList {
           const body = await response.json();
           const gameId = body.data?.game_id;
           if (!gameId) {
-            console.error("API did not return gameId", body);
             inviteButton.disabled = false;
             inviteButton.textContent = i18n.t("chat.inviteButton");
             alert("Server did not return a game id");
@@ -350,7 +342,6 @@ export class FriendsList {
             `/chat?chatId=${chatId}&username=${friend.username}&autoMessage=${encoded}`
           );
         } catch (err) {
-          console.error("Error sending invite:", err);
           inviteButton.disabled = false;
           inviteButton.textContent = "Invite";
           alert("Failed to send invitation. Please try again.");

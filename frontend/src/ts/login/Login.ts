@@ -56,7 +56,6 @@ export class Login {
         return { success: false, message: errorMsg };
       }
     } catch (err) {
-      console.error("Network error", err);
       showErrorPopup(i18n.t("auth.networkError"));
       return { success: false, message: i18n.t("auth.networkError") };
     }
@@ -145,7 +144,6 @@ export class Login {
     } catch (err) {
       // Security: Clear temp token on network error
       this.clearTempToken();
-      console.error("Network error", err);
       showErrorPopup(i18n.t("auth.networkError"));
       return { success: false, message: i18n.t("auth.networkError") };
     }

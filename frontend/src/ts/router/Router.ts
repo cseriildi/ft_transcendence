@@ -55,7 +55,7 @@ class Router {
         const html = await response.text();
         this.templates.set(template, html);
       } catch (error) {
-        console.error(`Failed to load template: ${template}`, error);
+        // Template loading failed
       }
     }
   }

@@ -24,6 +24,30 @@ export class FormHandler {
       return { success: false, message: i18n.t("edit.emailUsernameRequired") };
     }
 
+    // Validate email format
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      showErrorPopup(i18n.t("register.invalidEmailFormat"));
+      return { success: false, message: i18n.t("register.invalidEmailFormat") };
+    }
+
+    // Validate username length
+    if (username.length < 3) {
+      showErrorPopup(i18n.t("register.usernameTooShort"));
+      return { success: false, message: i18n.t("register.usernameTooShort") };
+    }
+    if (username.length > 15) {
+      showErrorPopup(i18n.t("register.usernameTooLong"));
+      return { success: false, message: i18n.t("register.usernameTooLong") };
+    }
+
+    // Validate username pattern: only letters, numbers, hyphens, and underscores
+    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+    if (!usernamePattern.test(username)) {
+      showErrorPopup(i18n.t("register.invalidUsername"));
+      return { success: false, message: i18n.t("register.invalidUsername") };
+    }
+
     const emailInput = document.getElementById("email") as HTMLInputElement;
     const usernameInput = document.getElementById("username") as HTMLInputElement;
     const avatarInput = document.getElementById("avatar") as HTMLInputElement;
@@ -60,14 +84,11 @@ export class FormHandler {
       const hasErrors = await Promise.all(
         responses.map(async (response, index) => {
           if (!response.ok) {
-            const data = await response.json();
-            console.error("Update error:", data.message || "Unknown error");
             return true;
           } else {
             // If username update was successful, update localStorage
             if (requestTypes[index] === "username" && newUsername) {
               localStorage.setItem("username", newUsername);
-              console.log("Username updated in localStorage:", newUsername);
             }
           }
           return false;
@@ -81,7 +102,6 @@ export class FormHandler {
 
       return { success: true };
     } catch (err) {
-      console.error("Network error", err);
       showErrorPopup(i18n.t("edit.networkError"));
       return { success: false, message: i18n.t("edit.networkError") };
     }

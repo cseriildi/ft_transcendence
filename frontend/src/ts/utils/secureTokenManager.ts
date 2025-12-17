@@ -35,7 +35,6 @@ class SecureTokenManager {
         try {
           await this.refreshAccessToken();
         } catch (error) {
-          console.error("Scheduled token refresh failed:", error);
           this.handleTokenExpiry();
         }
       },
@@ -77,7 +76,6 @@ class SecureTokenManager {
       const data = await response.json();
       if (data.data?.tokens?.accessToken) {
         this.setAccessToken(data.data.tokens.accessToken);
-        console.log("🔄 Token refreshed successfully");
       }
     } else {
       throw new Error("Token refresh failed");
@@ -98,7 +96,6 @@ class SecureTokenManager {
     if (this.onTokenExpiry) {
       this.onTokenExpiry();
     } else {
-      console.warn("No token expiry callback set, using window.location fallback");
       this.router.navigate("/");
     }
   }
@@ -108,7 +105,7 @@ class SecureTokenManager {
     try {
       await this.refreshAccessToken();
     } catch (error) {
-      console.log("No valid session found");
+      // No valid session found
     }
   }
 }

@@ -24,11 +24,8 @@ export class WebSocketHandler {
     this.ws = new WebSocket(`${config.wsUrl}/chat?userId=${getUserId()}&username=${getUserId()}`);
 
     this.ws.onopen = () => {
-      console.log("Connected to WebSocket server");
-
       if (chatId) {
         this.ws?.send(JSON.stringify({ action: "join_chat", chatid: chatId }));
-        console.log(`Sent join_chat action for chat ID: ${chatId}`);
 
         const urlParams = new URLSearchParams(window.location.search);
         const autoMessage = urlParams.get("autoMessage");
@@ -37,11 +34,9 @@ export class WebSocketHandler {
             const decoded = decodeURIComponent(autoMessage);
             this.pendingAutoMessage = decoded;
           } catch (err) {
-            console.error("Failed to decode autoMessage:", err);
+            // Silently ignore malformed auto message
           }
         }
-      } else {
-        console.error("Chat ID is missing in the URL");
       }
     };
 
@@ -56,12 +51,11 @@ export class WebSocketHandler {
     };
 
     this.ws.onclose = () => {
-      console.log("Disconnected from WebSocket server");
       this.userCache.clear();
     };
 
-    this.ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
+    this.ws.onerror = () => {
+      // WebSocket errors are handled by onclose
     };
   }
 
@@ -117,7 +111,6 @@ export class WebSocketHandler {
 
       onHistoryLoaded();
     } catch (error) {
-      console.error("Error processing chat history messages:", error);
       onHistoryLoaded();
     }
   }
@@ -142,7 +135,7 @@ export class WebSocketHandler {
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
     } catch (error) {
-      console.error("Error handling incoming message:", error);
+      // Silently skip malformed messages
     }
   }
 
@@ -155,7 +148,6 @@ export class WebSocketHandler {
     chatBox: HTMLDivElement
   ): Promise<void> {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      console.error("WebSocket is not connected");
       return;
     }
 
@@ -174,7 +166,7 @@ export class WebSocketHandler {
       chatBox.appendChild(messageElement);
       chatBox.scrollTop = chatBox.scrollHeight;
     } catch (error) {
-      console.error("Error sending message:", error);
+      // Silently fail on send error
     }
   }
 
@@ -182,7 +174,6 @@ export class WebSocketHandler {
    * Disconnect WebSocket
    */
   public disconnect(): void {
-    console.log("Disconnecting from WebSocket...");
     this.ws?.close();
   }
 }

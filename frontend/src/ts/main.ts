@@ -99,14 +99,12 @@ const initPongPage = async () => {
 
   // Redirect to home if no mode is specified or if mode is invalid
   if (!mode || !VALID_MODES.includes(mode)) {
-    console.warn(`Invalid or missing pong mode: ${mode}, redirecting to home`);
     router.navigate("/");
     return;
   }
 
   // Redirect to login if user is not authorized for remote or friend modes
   if ((mode === "remote" || mode === "friend") && !isUserAuthorized()) {
-    console.warn(`You need to be logged in to play in ${mode} mode.`);
     router.navigate("/login");
     return;
   }
@@ -190,11 +188,9 @@ const initPongPage = async () => {
         }
 
         router.navigate("/");
-      } else {
-        console.error("Failed to log out", await response.json());
       }
     } catch (error) {
-      console.error("Error during logout", error);
+      // Logout failed
     }
   });
 
@@ -255,7 +251,7 @@ const initPongPage = async () => {
       input.type = "text";
       input.id = `player-${i}`;
       input.className = "form-input";
-      input.maxLength = 20;
+      input.maxLength = 15;
       // set translated placeholder now
       try {
         input.placeholder = i18n.t("tournament.playerPlaceholder", { i });
@@ -290,14 +286,40 @@ const initPongPage = async () => {
       "#player-inputs-container input"
     ) as NodeListOf<HTMLInputElement>;
     const playerNames = Array.from(inputs).map((input) => input.value.trim());
-    if (playerNames.filter((name) => name.length === 0).length > 0) {
-      alert("All player names must be non-empty");
-      return;
+
+    // Validate all player names
+    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+
+    for (const name of playerNames) {
+      // Check if name is empty
+      if (!name || name.length === 0) {
+        showErrorPopup(i18n.t("tournament.emptyPlayerName"));
+        return;
+      }
+
+      // Check length
+      if (name.length < 3) {
+        showErrorPopup(`${i18n.t("tournament.playerNameTooShort")}: "${name}"`);
+        return;
+      }
+      if (name.length > 15) {
+        showErrorPopup(`${i18n.t("tournament.playerNameTooLong")}: "${name}"`);
+        return;
+      }
+
+      // Check pattern
+      if (!usernamePattern.test(name)) {
+        showErrorPopup(`${i18n.t("tournament.invalidPlayerName")}: "${name}"`);
+        return;
+      }
     }
+
+    // Check for duplicate names
     if (new Set(playerNames).size !== playerNames.length) {
-      alert("All player names must be unique");
+      showErrorPopup(i18n.t("tournament.duplicatePlayerNames"));
       return;
     }
+
     clearPong();
     currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
     currentPong.newTournament(playerNames);
@@ -350,11 +372,9 @@ const initPongPage = async () => {
         if (userName && userData.data.username) {
           userName.textContent = userData.data.username;
         }
-      } else {
-        console.error("Failed to fetch user data", await response.json());
       }
     } catch (error) {
-      console.error("Error fetching user data", error);
+      // Failed to fetch user data
     }
   } else {
     hideElement(logoutBtn);
@@ -445,7 +465,6 @@ const router = new Router();
 router.setI18nCallback(async () => {
   await i18n.init();
   languageSwitcher.init();
-  console.log("✅ i18n initialized with language:", i18n.getCurrentLanguage());
 });
 
 const loginPage = new Login(router);
@@ -457,10 +476,7 @@ const usersPage = new Users(router);
 const chatPage = new Chat(router);
 
 const createPopup = () => {
-  const popup = document.getElementById("error-popup");
-  if (!popup) {
-    console.error("Popup element not found in the HTML.");
-  }
+  // Popup element should exist in HTML
 };
 
 export const showErrorPopup = (message: string) => {

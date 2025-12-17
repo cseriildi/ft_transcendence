@@ -30,6 +30,7 @@ interface PlayerInput {
 }
 
 import { i18n } from "../utils/i18n.js";
+import { showErrorPopup } from "../main.js";
 
 export class Pong {
   private canvas: HTMLCanvasElement;
@@ -109,12 +110,10 @@ export class Pong {
 
     // For ONLINE mode, playerInfo is required
     if (["remote", "friend"].includes(gameMode) && !playerInfo) {
-      console.error(`❌ Player info is required for ${gameMode} mode`);
       return;
     }
 
     if (gameMode === "friend" && !gameId) {
-      console.error("❌ Game ID is required for friend mode");
       return;
     }
 
@@ -125,8 +124,6 @@ export class Pong {
       mode: this.currentGameMode,
     };
     if (difficulty) message.difficulty = difficulty;
-
-    console.log("📨 Sending message:", message);
 
     // Update button visibility for new game mode
     this.updateButtonVisibility();
@@ -157,6 +154,42 @@ export class Pong {
   }
 
   newTournament(playerNames: string[]) {
+    // Validate all player names
+    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+
+    for (const name of playerNames) {
+      // Check if name is empty
+      if (!name || name.trim().length === 0) {
+        showErrorPopup(i18n.t("tournament.emptyPlayerName"));
+        return;
+      }
+
+      const trimmedName = name.trim();
+
+      // Check length
+      if (trimmedName.length < 3) {
+        showErrorPopup(`${i18n.t("tournament.playerNameTooShort")}: "${trimmedName}"`);
+        return;
+      }
+      if (trimmedName.length > 15) {
+        showErrorPopup(`${i18n.t("tournament.playerNameTooLong")}: "${trimmedName}"`);
+        return;
+      }
+
+      // Check pattern
+      if (!usernamePattern.test(trimmedName)) {
+        showErrorPopup(`${i18n.t("tournament.invalidPlayerName")}: "${trimmedName}"`);
+        return;
+      }
+    }
+
+    // Check for duplicate names
+    const uniqueNames = new Set(playerNames.map((n) => n.trim()));
+    if (uniqueNames.size !== playerNames.length) {
+      showErrorPopup(i18n.t("tournament.duplicatePlayerNames"));
+      return;
+    }
+
     const message: Record<string, unknown> = {
       type: "newTournament",
       mode: this.currentGameMode,
@@ -178,7 +211,6 @@ export class Pong {
    */
   private sendWhenConnected(message: Record<string, unknown>) {
     if (!this.ws) {
-      console.warn("WebSocket not initialized, cannot send message", message);
       return;
     }
 
@@ -214,8 +246,6 @@ export class Pong {
       const accessToken = SecureTokenManager.getInstance().getAccessToken();
       if (accessToken) {
         urlWithMode += `&token=${encodeURIComponent(accessToken)}`;
-      } else {
-        console.warn(`⚠️ No access token available for ${this.currentGameMode} mode`);
       }
     }
 
@@ -235,7 +265,6 @@ export class Pong {
 
     this.ws.onopen = () => {
       this.isConnected = true;
-      console.log("✅ Connected to game server");
       // send a backup auth message in case token wasn't included in the URL
       try {
         const accessToken = SecureTokenManager.getInstance().getAccessToken();
@@ -252,12 +281,8 @@ export class Pong {
       }
     };
 
-    this.ws.onerror = (event: Event) => {
-      console.error("❌ WebSocket encountered an error", {
-        url: urlWithMode,
-        readyState: this.ws?.readyState,
-        event,
-      });
+    this.ws.onerror = () => {
+      // WebSocket error handled by onclose event
     };
 
     this.ws.onmessage = (event: MessageEvent) => {
@@ -266,17 +291,14 @@ export class Pong {
 
         if (message.type === "error") {
           // Handle error messages from server
-          console.error("❌ Game server error:", message.message);
           if (message.message === "You have been disconnected") {
             this.destroy();
             window.location.href = "/";
             return;
           }
-          alert(`${i18n.t("pong.gameError")}: ${message.message}`);
+          showErrorPopup(`${i18n.t("pong.gameError")}: ${message.message}`);
         } else if (["playerLeft", "gameResult"].includes(message.type)) {
           if (message.type === "gameResult") {
-            console.log("🏆 Game Over! Result:", message.data);
-
             // Show win/loss notification
             if (["remote", "friend", "ai"].includes(this.currentGameMode)) {
               const result = message.data;
@@ -315,8 +337,7 @@ export class Pong {
               window.dispatchEvent(new CustomEvent("pong:showNewGameButton"));
             }
           } else {
-            console.warn("⚠️ Player left:", message.message);
-            alert(`⚠️ ${message.message}`);
+            showErrorPopup(`⚠️ ${message.message}`);
           }
         }
         if (["gameSetup"].includes(message.type)) {
@@ -380,22 +401,16 @@ export class Pong {
             }
           }
         } else if (message.type === "tournamentComplete" && message.mode === "tournament") {
-          console.log("🎉 Tournament Complete! Results:", message.data);
+          // Tournament complete handled elsewhere
         }
       } catch (err) {
-        console.error("Error parsing game message:", err);
+        // Silently handle malformed messages
       }
     };
 
-    this.ws.onclose = (ev: CloseEvent) => {
+    this.ws.onclose = () => {
       this.isConnected = false;
       this.stopAuthCheck();
-      console.warn("WebSocket closed", {
-        url: urlWithMode,
-        code: ev.code,
-        reason: ev.reason,
-        wasClean: ev.wasClean,
-      });
 
       // Don't reconnect if destroyed
       if (this.isDestroyed) {
@@ -1160,7 +1175,7 @@ export class Pong {
 
     // Create match card
     const card = document.createElement("div");
-    card.className = "glass-card p-3 sm:min-w-[150px] w-full sm:w-auto";
+    card.className = "glass-card p-3 min-w-[200px]";
 
     const innerDiv = document.createElement("div");
     innerDiv.className = "flex flex-col gap-2";
@@ -1214,6 +1229,5 @@ export class Pong {
     this.ws?.close();
     this.ws = null;
     this.isConnected = false;
-    console.log("🛑 Pong destroyed");
   }
 }

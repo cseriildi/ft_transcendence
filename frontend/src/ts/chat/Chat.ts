@@ -33,12 +33,10 @@ export class Chat {
   }
 
   public destroy(): void {
-    console.log("Destroying chat instance...");
     this.cleanup();
   }
 
   private cleanup(): void {
-    console.log("Cleaning up chat resources...");
     this.webSocketHandler.disconnect();
     this.userCache.clear();
   }
@@ -51,7 +49,6 @@ export class Chat {
 
     const chatBox = document.getElementById("chat-box") as HTMLDivElement;
     if (!chatBox) {
-      console.error("Chat box element not found");
       return;
     }
     this.chatBox = chatBox;
@@ -61,7 +58,6 @@ export class Chat {
     this.partnerUsername = urlParams.get("username");
 
     if (!this.chatId) {
-      console.error("Chat ID is missing in the URL");
       return;
     }
 
@@ -86,7 +82,7 @@ export class Chat {
 
     // Connect WebSocket
     this.webSocketHandler.connect(this.chatId, this.chatBox, () => {
-      console.log("Chat history loaded");
+      // Chat history loaded
     });
   }
 
@@ -105,7 +101,6 @@ export class Chat {
       });
 
       if (!response.ok) {
-        console.error("Failed to fetch friends status");
         return false;
       }
 
@@ -126,7 +121,6 @@ export class Chat {
 
       return !!friend;
     } catch (error) {
-      console.error("Error checking friend status:", error);
       return false;
     }
   }
@@ -136,7 +130,6 @@ export class Chat {
    */
   private async onSendMessage(message: string): Promise<void> {
     if (!this.chatId || !this.chatBox) {
-      console.error("Chat ID or chat box not available");
       return;
     }
 
@@ -166,13 +159,12 @@ export class Chat {
    */
   private async onSendInvite(userId: number, username: string): Promise<void> {
     if (!this.chatId || !this.chatBox) {
-      console.error("Chat ID or chat box not available");
       return;
     }
 
     await this.chatActions.sendGameInvite(userId, username, this.chatId, (message) => {
-      this.webSocketHandler.sendMessage(this.chatId!, message, this.chatBox!).catch((err) => {
-        console.error("Failed to send invite message:", err);
+      this.webSocketHandler.sendMessage(this.chatId!, message, this.chatBox!).catch(() => {
+        // Silently fail
       });
     });
   }

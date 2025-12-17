@@ -31,7 +31,6 @@ export class Profile {
   }
 
   public destroy(): void {
-    console.log("Destroying profile instance...");
     this.userCache.clear();
     if (this.languageChangeListener) {
       window.removeEventListener("languageChanged", this.languageChangeListener);
@@ -63,7 +62,6 @@ export class Profile {
     const targetUserId = isOwnProfile ? currentUserId : viewingUserId;
 
     if (!targetUserId) {
-      console.error("No valid user ID found for profile fetch.");
       this.profileStats.reset();
       return;
     }
@@ -140,11 +138,8 @@ export class Profile {
       // Only re-render if we're still on the profile page
       const gameHistoryContainer = document.getElementById("game-history");
       if (!gameHistoryContainer) {
-        console.log("Not on profile page, skipping re-render");
         return;
       }
-
-      console.log("Language changed, re-rendering profile page...");
       const pageTitle = document.querySelector(".page-title");
       if (pageTitle) {
         pageTitle.textContent = this.isOwnProfile

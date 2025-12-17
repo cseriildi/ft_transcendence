@@ -63,8 +63,10 @@
     "passwordsMismatch": "Die Passwörter stimmen nicht überein. Bitte versuche es erneut.",
     "weakPassword": "Das Passwort ist zu schwach. Bitte verwende ein stärkeres Passwort.",
     "invalidEmailFormat": "Ungültiges E-Mail-Format. Bitte gib eine gültige E-Mail-Adresse ein.",
-    "invalidUsername": "Ungültiger Benutzername. Verwende 3-15 Zeichen (nur Buchstaben, Zahlen, - und _).",
-    "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung."
+    "invalidUsername": "Ungültiger Benutzername. Verwende 3-15 Zeichen (nur Buchstaben, Zahlen, - und _).",    "usernameTooShort": "Der Benutzername muss mindestens 3 Zeichen lang sein.",
+    "usernameTooLong": "Der Benutzername darf höchstens 15 Zeichen enthalten.",
+    "passwordTooShort": "Das Passwort muss mindestens 10 Zeichen lang sein.",
+    "passwordNoNumber": "Das Passwort muss mindestens eine Zahl enthalten.",    "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung."
   },
 
   "pong": {
@@ -104,7 +106,12 @@
     "startTournament": "Turnier starten",
     "playerPlaceholder": "Spielername {{i}}",
     "emptyNames": "Alle Spielernamen dürfen nicht leer sein",
+    "emptyPlayerName": "Spielername darf nicht leer sein",
     "duplicateNames": "Alle Spielernamen müssen einzigartig sein",
+    "duplicatePlayerNames": "Alle Spielernamen müssen einzigartig sein",
+    "playerNameTooShort": "Spielername muss mindestens 3 Zeichen lang sein",
+    "playerNameTooLong": "Spielername darf maximal 15 Zeichen lang sein",
+    "invalidPlayerName": "Spielername darf nur Buchstaben, Zahlen, Unterstriche und Bindestriche enthalten",
     "setupFailed": "Turnieraufbau fehlgeschlagen",
     "bracket": "Turnierbaum",
     "currentMatch": "Aktuelles Spiel",

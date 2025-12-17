@@ -50,7 +50,6 @@ export class TwoFactorAuth {
         throw new Error(i18n.t("error.failed2FAEnable"));
       }
     } catch (error) {
-      console.error("2FA setup error:", error);
       showErrorPopup(i18n.t("error.failed2FAEnable"));
       return null;
     }
@@ -86,7 +85,6 @@ export class TwoFactorAuth {
         throw new Error(i18n.t("error.invalidVerificationCode"));
       }
     } catch (error) {
-      console.error("2FA verify error:", error);
       showErrorPopup(i18n.t("error.invalidVerificationCode"));
       return false;
     }
@@ -125,7 +123,6 @@ export class TwoFactorAuth {
         throw new Error(i18n.t("error.failed2FAEnable"));
       }
     } catch (error) {
-      console.error("2FA enable error:", error);
       showErrorPopup(i18n.t("error.failed2FAEnable"));
       return false;
     }
@@ -166,7 +163,6 @@ export class TwoFactorAuth {
         throw new Error(i18n.t("error.failed2FADisable"));
       }
     } catch (error) {
-      console.error("2FA disable error:", error);
       showErrorPopup(i18n.t("error.failed2FADisable"));
       return false;
     }
@@ -192,7 +188,6 @@ export class TwoFactorAuth {
       }
       return null;
     } catch (error) {
-      console.error("2FA status error:", error);
       return null;
     }
   }

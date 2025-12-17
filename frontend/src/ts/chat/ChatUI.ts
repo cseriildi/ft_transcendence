@@ -59,7 +59,6 @@ export class ChatUI {
 
     const currentUserId = getUserId();
     if (!currentUserId) {
-      console.error("Current user ID not found");
       return;
     }
 
@@ -67,7 +66,6 @@ export class ChatUI {
     const partnerId = userIds.find((id) => id !== Number(currentUserId));
 
     if (!partnerId) {
-      console.error("Partner ID could not be extracted from chat ID:", chatId);
       if (partnerAvatarElement) {
         partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
       }
@@ -123,13 +121,11 @@ export class ChatUI {
           }
         }
       } else {
-        console.error("Failed to fetch partner info:", await response.json());
         if (partnerAvatarElement) {
           partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
         }
       }
     } catch (error) {
-      console.error("Error fetching partner info:", error);
       if (partnerAvatarElement) {
         partnerAvatarElement.alt = `${partnerUsername}'s avatar`;
       }

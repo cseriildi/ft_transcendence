@@ -7,7 +7,6 @@ let isStartingHeartbeat = false;
 export const startHeartbeat = () => {
   // Prevent concurrent calls
   if (isStartingHeartbeat) {
-    console.log("Heartbeat start already in progress, ignoring duplicate call");
     return;
   }
 
@@ -15,7 +14,6 @@ export const startHeartbeat = () => {
 
   try {
     if (heartbeatInterval) {
-      console.log("Clearing existing heartbeat interval");
       clearInterval(heartbeatInterval);
       heartbeatInterval = null;
     }
@@ -44,23 +42,17 @@ export const startHeartbeat = () => {
           if (xhr.status === 200) {
             resolve();
           } else if (xhr.status === 401 && retryOnAuth) {
-            console.log("Heartbeat failed with 401, attempting token refresh...");
             try {
               await SecureTokenManager.getInstance().refreshAccessToken();
-              console.log("Token refreshed, retrying heartbeat...");
               // Retry once with the new token
               await attemptHeartbeat(false);
               resolve();
             } catch (refreshError) {
-              console.error("Token refresh failed during heartbeat:", refreshError);
               stopHeartbeat();
               reject(refreshError);
             }
           } else {
-            console.error("Heartbeat failed (XHR):", xhr.status, xhr.responseText);
-
             if (xhr.status === 404 || xhr.status === 405) {
-              console.warn("Heartbeat endpoint not available, stopping heartbeat");
               stopHeartbeat();
             }
             reject(new Error(`Heartbeat failed with status ${xhr.status}`));
@@ -68,7 +60,6 @@ export const startHeartbeat = () => {
         };
 
         xhr.onerror = function () {
-          console.error("Failed to send heartbeat (XHR error)");
           reject(new Error("XHR error"));
         };
 
@@ -79,7 +70,7 @@ export const startHeartbeat = () => {
     try {
       await attemptHeartbeat();
     } catch (error) {
-      console.error("Failed to send heartbeat:", error);
+      // Failed to send heartbeat
     }
   };
 
@@ -90,11 +81,8 @@ export const startHeartbeat = () => {
 };
 
 export const stopHeartbeat = () => {
-  console.log("Stopping heartbeat");
-
   // Wait for any ongoing start operation to complete
   if (isStartingHeartbeat) {
-    console.log("Waiting for heartbeat start to complete before stopping");
     // Use a small timeout to allow the start operation to finish
     setTimeout(() => stopHeartbeat(), 10);
     return;
@@ -103,9 +91,6 @@ export const stopHeartbeat = () => {
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
     heartbeatInterval = null;
-    console.log("Heartbeat stopped successfully");
-  } else {
-    console.log("No active heartbeat to stop");
   }
 };
 
