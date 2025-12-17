@@ -284,11 +284,11 @@ export const authController = {
         [cleanEmail]
       );
       if (!result) {
-        throw errors.unauthorized("Invalid email", { email: cleanEmail });
+        throw errors.unauthorized("Invalid email or password", { email: cleanEmail });
       }
       const passwordMatch = await bcrypt.compare(password, result.password_hash);
       if (!passwordMatch) {
-        throw errors.unauthorized("Invalid password", { email: cleanEmail });
+        throw errors.unauthorized("Invalid email or password", { email: cleanEmail });
       }
 
       if (result.twofa_enabled) {

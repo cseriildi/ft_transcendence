@@ -1,7 +1,3 @@
-/**
- * Schema utilities for creating reusable Fastify JSON schemas
- * Reduces repetition and ensures consistency across all routes
- */
 
 // Common error response schema (used for 400, 401, 403, 404, 409, 500, etc.)
 export const errorResponseSchema = {
@@ -13,11 +9,6 @@ export const errorResponseSchema = {
   },
 };
 
-/**
- * Creates a success response schema with custom data shape
- * @param dataSchema - The schema for the data property
- * @returns Complete API response schema
- */
 export function createSuccessSchema(dataSchema: Record<string, any>) {
   return {
     type: "object" as const,
@@ -30,13 +21,6 @@ export function createSuccessSchema(dataSchema: Record<string, any>) {
   };
 }
 
-/**
- * Creates a standard response object with common error codes
- * @param statusCode - Success status code (200, 201, etc.)
- * @param dataSchema - Schema for successful response data
- * @param errorCodes - Array of error status codes to include (e.g., [400, 401, 404])
- * @returns Complete response schema object
- */
 export function createResponseSchema(
   statusCode: number,
   dataSchema: Record<string, any>,
@@ -54,9 +38,6 @@ export function createResponseSchema(
   return response;
 }
 
-/**
- * Common reusable data schemas
- */
 export const commonDataSchemas = {
   // User object
   user: {
