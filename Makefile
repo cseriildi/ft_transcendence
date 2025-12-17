@@ -209,7 +209,7 @@ db-reset:
 
 status:
 	@echo "📊 Service Status:"
-	@$(DOCKER_COMPOSE) ps
+	@$(DOCKER_COMPOSE) $(COMPOSE_FILES) ps
 
 stats:
 	@echo "📈 Resource Usage:"
