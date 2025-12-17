@@ -13,6 +13,7 @@ const app = Fastify({ logger: true });
 
 // Register plugins
 await app.register(import("@fastify/websocket"));
+await app.register(import("./plugins/prometheusPlugin.js"));
 await app.register(rateLimit, {
   max: 5,
   timeWindow: "1 second",

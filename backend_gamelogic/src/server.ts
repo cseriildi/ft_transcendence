@@ -23,10 +23,19 @@ const fastify: FastifyInstance = Fastify({
 
 // Register plugins
 await fastify.register(errorHandlerPlugin);
+await fastify.register(import("./plugins/prometheusPlugin.js"));
 await fastify.register(import("@fastify/websocket"));
 
 // Create single GameManager instance for all game tracking and lifecycle management
 const gameManager = new GameManager();
+
+// Track active games metric
+setInterval(() => {
+  const activeGames = gameManager.getActiveGames().size;
+  if (fastify.metrics?.gamesActive) {
+    fastify.metrics.gamesActive.set(activeGames);
+  }
+}, 1000);
 
 // Health check endpoint
 fastify.get("/health", async () => {
@@ -46,11 +55,24 @@ fastify.register(async function (server: FastifyInstance) {
   server.get("/game", { websocket: true }, async (connection: any, req: any) => {
     console.log("Client connected");
 
+    // Track WebSocket connection
+    if (fastify.metrics?.wsConnectionsActive) {
+      fastify.metrics.wsConnectionsActive.inc();
+    }
+    if (fastify.metrics?.wsConnectionsTotal) {
+      fastify.metrics.wsConnectionsTotal.inc({ status: "connected" });
+    }
+
     let session: ConnectionSession | null = null;
     const messageQueue: any[] = [];
 
     // Set up message listener IMMEDIATELY before async operations
     connection.on("message", (raw: any) => {
+      // Track incoming message
+      if (fastify.metrics?.wsMessagesTotal) {
+        fastify.metrics.wsMessagesTotal.inc({ direction: "incoming", type: "game" });
+      }
+
       if (session) {
         session.onMessage(raw);
       } else {
@@ -59,6 +81,14 @@ fastify.register(async function (server: FastifyInstance) {
     });
 
     connection.on("close", () => {
+      // Track WebSocket disconnection
+      if (fastify.metrics?.wsConnectionsActive) {
+        fastify.metrics.wsConnectionsActive.dec();
+      }
+      if (fastify.metrics?.wsConnectionsTotal) {
+        fastify.metrics.wsConnectionsTotal.inc({ status: "disconnected" });
+      }
+
       if (session) {
         try {
           console.log(`🔵 Connection closed for ${session.mode} mode`);

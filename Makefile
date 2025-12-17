@@ -9,7 +9,7 @@ MAKEFLAGS += --no-print-directory
 LOCAL_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '/src/ {print $$7; exit}' || echo localhost)
 
 # Compose files (ELK always included)
-COMPOSE_FILES = -f docker-compose.yml -f docker-compose.elk.yml
+COMPOSE_FILES = -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml
 
 # Docker compose wrapper
 DOCKER_COMPOSE = docker compose --ansi never
@@ -120,6 +120,8 @@ up:
 	@echo "✅ Services started"
 	@echo "🌐 App:            $(URL)"
 	@echo "📊 Kibana:         http://localhost:5601"
+	@echo "   Prometheus Targets: http://localhost:9090/targets"
+	@echo "   Grafana Dashboard: http://localhost:3001/d/transcendence-overview/"
 
 dev:
 	@echo "🔧 Starting services in development mode..."

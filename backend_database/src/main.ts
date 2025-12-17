@@ -148,6 +148,10 @@ export async function build(opts: BuildOptions = {}) {
       path: database?.path ?? appConfig.database.path,
     });
     await app.register(errorHandler);
+
+    // Register Prometheus metrics plugin
+    await app.register(import("./plugins/prometheusPlugin.ts"));
+
     await app.register(import("@fastify/cookie"));
 
     // Register multipart for file uploads
