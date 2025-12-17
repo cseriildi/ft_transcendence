@@ -1,0 +1,89 @@
+# Prometheus Configuration for ft_transcendence
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: "transcendence"
+    environment: "production"
+
+# Alertmanager configuration (optional, can be added later)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets: ['alertmanager:9093']
+
+# Load and evaluate rules
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+        labels:
+          service: "prometheus"
+
+  # Backend Database Service
+  - job_name: "backend-database"
+    static_configs:
+      - targets: ["database:3000"]
+        labels:
+          service: "backend-database"
+          component: "api"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+
+  # Backend Game Logic Service
+  - job_name: "backend-gamelogic"
+    static_configs:
+      - targets: ["game:3001"]
+        labels:
+          service: "backend-gamelogic"
+          component: "websocket"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+
+  # Live Chat Service
+  - job_name: "live-chat"
+    static_configs:
+      - targets: ["live-chat:3002"]
+        labels:
+          service: "live-chat"
+          component: "websocket"
+    metrics_path: "/metrics"
+    scrape_interval: 10s
+
+  # Node Exporter - System metrics
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+        labels:
+          service: "node-exporter"
+          component: "system"
+
+  # cAdvisor - Container metrics (optional, may not work on all systems)
+  # - job_name: 'cadvisor'
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']
+  #       labels:
+  #         service: 'cadvisor'
+  #         component: 'containers'
+  #   scrape_interval: 20s
+
+  # PostgreSQL (if added later)
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+  #       labels:
+  #         service: 'postgres-exporter'
+  #         component: 'database'
+
+  # Nginx metrics (via stub_status or exporter)
+  # - job_name: 'nginx'
+  #   static_configs:
+  #     - targets: ['nginx-exporter:9113']
+  #       labels:
+  #         service: 'nginx'
+  #         component: 'proxy'

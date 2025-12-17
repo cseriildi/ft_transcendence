@@ -54,7 +54,6 @@ export const config = {
   // Route prefixes
   routes: {
     auth: getEnvVar("AUTH_PREFIX"),
-    oauth: getEnvVar("OAUTH_PREFIX"),
     api: getEnvVar("API_PREFIX"),
   },
 
@@ -78,21 +77,5 @@ export const config = {
     refreshSecret: getEnvVar("JWT_REFRESH_SECRET"),
     accessTtl: getEnvVar("JWT_ACCESS_TTL"),
     refreshTtl: getEnvVar("JWT_REFRESH_TTL"),
-  },
-
-  // OAuth config
-  oauth: {
-    // OAuth is optional functionality
-    stateSecret: getOptionalEnvVar("OAUTH_STATE_SECRET", ""),
-    github: {
-      clientId: getOptionalEnvVar("GITHUB_CLIENT_ID", ""),
-      clientSecret: getOptionalEnvVar("GITHUB_CLIENT_SECRET", ""),
-      redirectUri: getOptionalEnvVar("GITHUB_REDIRECT_URI", ""),
-    },
-    google: {
-      clientId: getOptionalEnvVar("GOOGLE_CLIENT_ID", ""),
-      clientSecret: getOptionalEnvVar("GOOGLE_CLIENT_SECRET", ""),
-      redirectUri: getOptionalEnvVar("GOOGLE_REDIRECT_URI", ""),
-    },
   },
 } as const;

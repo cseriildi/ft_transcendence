@@ -1,0 +1,2 @@
+# This directory will contain Elasticsearch data at runtime
+# It's ignored by git (see .gitignore)

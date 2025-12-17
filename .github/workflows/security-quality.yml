@@ -114,7 +114,7 @@ jobs:
           fi
 
           # Verify sensitive variables are not hardcoded
-          for var in JWT_SECRET OAUTH_CLIENT_SECRET SESSION_SECRET; do
+          for var in JWT_SECRET SESSION_SECRET; do
             if grep -q "^${var}=.*[A-Za-z0-9]" .env.example 2>/dev/null; then
               # TODO: Ensure .env.example uses placeholder values (e.g., "your_secret_here")
               echo "WARNING: ${var} should not have a real value in .env.example"
