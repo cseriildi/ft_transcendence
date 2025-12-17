@@ -255,7 +255,7 @@ jobs:
 
           # Validate docker-compose.yml syntax (create minimal .env for validation)
           cp .env.example .env 2>/dev/null || touch .env
-          if docker compose config > /dev/null 2>&1; then
+          if docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml config > /dev/null 2>&1; then
             echo "✓ Docker compose configuration is valid"
           else
             echo "ERROR: docker-compose.yml has syntax errors"
