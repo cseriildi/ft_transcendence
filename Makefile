@@ -145,7 +145,7 @@ up:
 	@echo ""
 	@echo "✅ Services started"
 	@echo "🌐 App:            		$(URL)"
-	@echo "📊 Kibana:         		http://localhost:5601"
+	@echo "📊 Kibana:         		http://localhost:5601/app/dashboards#/view/transcendence-overview"
 	@echo "🔥 Prometheus Targets: 		http://localhost:9090/targets"
 	@echo "📈 Grafana Dashboard: 		http://localhost:3001/d/transcendence-overview/"
 
