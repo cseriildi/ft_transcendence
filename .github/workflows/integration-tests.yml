@@ -128,9 +128,9 @@ jobs:
         run: |
           echo "Testing container health..."
 
-          containers=$(docker compose ps --services)
-          for container in $containers; do
-            status=$(docker compose ps -q $container | xargs docker inspect --format='{{.State.Status}}')
+          app_containers="databank backend frontend nginx live-chat"
+          for container in $app_containers; do
+            status=$(docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml ps -q $container | xargs docker inspect --format='{{.State.Status}}')
             if [ "$status" != "running" ]; then
               echo "ERROR: Container $container is not running (status: $status)"
               exit 1
@@ -138,7 +138,7 @@ jobs:
             echo "Container $container is running"
           done
 
-          echo "✓ All containers are running"
+          echo "✓ All application containers are running"
 
       - name: Show service logs on failure
         if: failure()
