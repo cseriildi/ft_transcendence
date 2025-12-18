@@ -33,7 +33,7 @@ else
 	URL = https://$(LOCAL_IP):8443
 endif
 
-SERVICES = backend frontend database nginx
+SERVICES = databank backend frontend live-chat nginx
 
 # =============================================================================
 # High-level targets
@@ -193,10 +193,10 @@ fclean:
 db-reset:
 	@echo "🗄️  Resetting database..."
 	@# Start containers to ensure proper permissions for deletion
-	@$(DOCKER_COMPOSE) up -d database live-chat $(QUIET_REDIRECT) || true
+	@$(DOCKER_COMPOSE) up -d databank live-chat $(QUIET_REDIRECT) || true
 	@sleep 2
 	@# Remove database files via docker exec (container has proper permissions)
-	@if $(DOCKER_COMPOSE) ps database | grep -q "Up"; then \
+	@if $(DOCKER_COMPOSE) ps databank | grep -q "Up"; then \
 		echo "Removing backend database..."; \
 		$(DOCKER_COMPOSE) exec -T databank rm -f /app/data/database.db || echo "❌ Could not remove backend database"; \
 	else \
@@ -209,7 +209,7 @@ db-reset:
 		echo "⚠️  Live-chat container not running"; \
 	fi
 	@# Stop containers to close file handles, then clean up .nfs* files
-	@$(DOCKER_COMPOSE) stop database live-chat $(QUIET_REDIRECT) || true
+	@$(DOCKER_COMPOSE) stop databank live-chat $(QUIET_REDIRECT) || true
 	@sleep 1
 	@echo "Cleaning up .nfs* artifacts..."
 	@find backend_database/database -name '.nfs*' -type f -delete 2>/dev/null || true
