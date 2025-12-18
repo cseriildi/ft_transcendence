@@ -33,7 +33,7 @@
     "registerButton": "Registrieren",
     "emailPasswordRequired": "E-Mail und Passwort sind erforderlich.",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Anmeldedaten.",
-    "invalidEmail": "Ungültige E-Mail-Adresse. Bitte überprüfe sie und versuche es erneut.",
+    "invalidEmail": "Falsche E-Mail oder Passwort.",
     "invalidPassword": "Ungültiges Passwort. Bitte überprüfe es und versuche es erneut.",
     "invalid2FACode": "Ungültiger 2FA-Code. Bitte versuche es erneut.",
     "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung.",

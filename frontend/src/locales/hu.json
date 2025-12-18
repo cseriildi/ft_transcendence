@@ -33,7 +33,7 @@
     "registerButton": "Regisztráció",
     "emailPasswordRequired": "E-mail és jelszó megadása kötelező.",
     "loginFailed": "Sikertelen bejelentkezés. Ellenőrizd az adataidat.",
-    "invalidEmail": "Érvénytelen e-mail cím. Kérjük, ellenőrizd.",
+    "invalidEmail": "Hibás e-mail cím vagy jelszó.",
     "invalidPassword": "Érvénytelen jelszó. Kérjük, ellenőrizd.",
     "invalid2FACode": "Érvénytelen 2FA kód. Próbáld újra.",
     "networkError": "Hálózati hiba. Ellenőrizd az internetkapcsolatot.",

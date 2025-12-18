@@ -33,7 +33,7 @@
     "registerButton": "Регистрация",
     "emailPasswordRequired": "Электронная почта и пароль обязательны.",
     "loginFailed": "Ошибка входа. Проверьте данные.",
-    "invalidEmail": "Неверная электронная почта.",
+    "invalidEmail": "Неверный email или пароль.",
     "invalidPassword": "Неверный пароль.",
     "invalid2FACode": "Неверный код 2ФА.",
     "networkError": "Ошибка сети.",
