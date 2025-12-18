@@ -27,7 +27,30 @@ jobs:
 
       - name: Build and start services
         run: |
-          docker compose up -d --build
+          # Start ELK stack first (especially logstash for syslog logging)
+          echo "Starting ELK stack first..."
+          # Use the single merged compose file present in the repo
+          docker compose -f docker-compose.yml up -d --build elasticsearch logstash
+
+          # Wait for logstash to be ready
+          echo "Waiting for logstash to be ready..."
+          timeout=60
+          while [ $timeout -gt 0 ]; do
+            if docker compose -f docker-compose.yml ps logstash | grep -q "Up"; then
+              echo "✓ Logstash is ready"
+              break
+            fi
+            echo "Waiting for logstash... ($timeout seconds left)"
+            sleep 2
+            timeout=$((timeout - 2))
+          done
+
+          # Give DNS a moment to propagate
+          sleep 3
+
+          # Now start all remaining services
+          echo "Starting remaining services..."
+          docker compose -f docker-compose.yml up -d --build
 
       - name: Wait for services to be ready
         run: |
@@ -106,9 +129,9 @@ jobs:
         run: |
           echo "Testing container health..."
 
-          containers=$(docker compose ps --services)
-          for container in $containers; do
-            status=$(docker compose ps -q $container | xargs docker inspect --format='{{.State.Status}}')
+          app_containers="databank backend frontend nginx live-chat"
+          for container in $app_containers; do
+            status=$(docker compose -f docker-compose.yml ps -q $container | xargs docker inspect --format='{{.State.Status}}')
             if [ "$status" != "running" ]; then
               echo "ERROR: Container $container is not running (status: $status)"
               exit 1
@@ -116,7 +139,7 @@ jobs:
             echo "Container $container is running"
           done
 
-          echo "✓ All containers are running"
+          echo "✓ All application containers are running"
 
       - name: Show service logs on failure
         if: failure()

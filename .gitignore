@@ -30,3 +30,8 @@ backend_database/uploads/avatars/
 *.sqlite
 *.sqlite3
 docker-compose.override.yml
+
+# ELK Stack - ignore runtime data
+elk/elasticsearch/data/
+elk/logstash/data/
+elk/kibana/data/

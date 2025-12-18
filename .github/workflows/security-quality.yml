@@ -255,10 +255,26 @@ jobs:
 
           # Validate docker-compose.yml syntax (create minimal .env for validation)
           cp .env.example .env 2>/dev/null || touch .env
-          if docker compose config > /dev/null 2>&1; then
-            echo "✓ Docker compose configuration is valid"
+          # Build list of existing compose files to validate
+          compose_files=("docker-compose.yml")
+          if [ -f docker-compose.elk.yml ]; then
+            compose_files+=("docker-compose.elk.yml")
+          fi
+          if [ -f docker-compose.prometheus.yml ]; then
+            compose_files+=("docker-compose.prometheus.yml")
+          fi
+
+          # Construct docker compose command with the available files
+          cmd=(docker compose)
+          for f in "${compose_files[@]}"; do
+            cmd+=( -f "$f" )
+          done
+          cmd+=( config )
+
+          if ${cmd[@]} > /dev/null 2>&1; then
+            echo "✓ Docker compose configuration is valid (using: ${compose_files[*]})"
           else
-            echo "ERROR: docker-compose.yml has syntax errors"
+            echo "ERROR: docker-compose.yml has syntax errors (validated: ${compose_files[*]})"
             rm -f .env
             exit 1
           fi

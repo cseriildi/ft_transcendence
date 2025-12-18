@@ -1,6 +1,7 @@
 name: transcendence
 
 services:
+  # --- Main application services (from docker-compose.yml)
   databank:
     build:
       context: ./backend_database
@@ -8,27 +9,31 @@ services:
     env_file:
       - .env
     environment:
-      # Docker container marker for auto-detection
       DOCKER_CONTAINER: "true"
-      # Map .env variables to internal service variables
       PORT: ${DATABANK_PORT:-3000}
       HOST: ${DATABANK_HOST:-0.0.0.0}
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_PATH: ${DATABANK_DATABASE_PATH:-/app/data/database.db}
-      # Public-facing URL configuration
       PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
       PUBLIC_PORT: ${PUBLIC_PORT:-}
       PUBLIC_PROTOCOL: ${PUBLIC_PROTOCOL:-http}
-      # CORS configuration
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200}
-      # Service-to-service authentication
       SERVICE_SECRET: ${SERVICE_SECRET}
     volumes:
       - ./backend_database/database:/app/data
       - ./backend_database/uploads:/app/uploads
     restart: unless-stopped
+    depends_on:
+      logstash:
+        condition: service_healthy
     networks:
       - transcendence
+    logging:
+      driver: ${LOGGING_DRIVER:-syslog}
+      options:
+        syslog-address: ${SYSLOG_ADDRESS:-tcp://127.0.0.1:5000}
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   backend:
     build:
@@ -41,14 +46,21 @@ services:
       PORT: ${GAMELOGIC_PORT:-3001}
       HOST: ${GAMELOGIC_HOST:-0.0.0.0}
       NODE_ENV: ${NODE_ENV:-production}
-      # Public-facing URL configuration
       PUBLIC_HOST: ${PUBLIC_HOST:-localhost}
       PUBLIC_PORT: ${PUBLIC_PORT:-}
-      # Service-to-service authentication
       SERVICE_SECRET: ${SERVICE_SECRET}
     restart: unless-stopped
+    depends_on:
+      logstash:
+        condition: service_healthy
     networks:
       - transcendence
+    logging:
+      driver: ${LOGGING_DRIVER:-syslog}
+      options:
+        syslog-address: ${SYSLOG_ADDRESS:-tcp://127.0.0.1:5000}
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   frontend:
     build:
@@ -60,8 +72,17 @@ services:
       PUBLIC_API_URL: ${PUBLIC_API_URL:-https://localhost:8443}
       PUBLIC_WS_URL: ${PUBLIC_WS_URL:-wss://localhost:8443/ws}
     restart: unless-stopped
+    depends_on:
+      logstash:
+        condition: service_healthy
     networks:
       - transcendence
+    logging:
+      driver: ${LOGGING_DRIVER:-syslog}
+      options:
+        syslog-address: ${SYSLOG_ADDRESS:-tcp://127.0.0.1:5000}
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   nginx:
     build:
@@ -83,12 +104,23 @@ services:
     volumes:
       - ./.certs:/etc/nginx/certs:ro
     depends_on:
-      - frontend
-      - databank
-      - backend
+      frontend:
+        condition: service_started
+      databank:
+        condition: service_started
+      backend:
+        condition: service_started
+      logstash:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - transcendence
+    logging:
+      driver: ${LOGGING_DRIVER:-syslog}
+      options:
+        syslog-address: ${SYSLOG_ADDRESS:-tcp://127.0.0.1:5000}
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
 
   live-chat:
     build:
@@ -103,18 +135,193 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       DATABASE_PATH: ${LIVECHAT_DATABASE_PATH:-/app/data/database.db}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://databank:3000}
-      # CORS configuration
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:4200,http://localhost:8080}
     volumes:
       - ./live-chat/data:/app/data
     depends_on:
-      - databank
+      databank:
+        condition: service_started
+      logstash:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - transcendence
+    logging:
+      driver: ${LOGGING_DRIVER:-syslog}
+      options:
+        syslog-address: ${SYSLOG_ADDRESS:-tcp://127.0.0.1:5000}
+        tag: "{{.Name}}"
+        syslog-format: "rfc3164"
+
+  # --- ELK services (from docker-compose.elk.yml)
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    container_name: elasticsearch
+    environment:
+      - node.name=elasticsearch
+      - cluster.name=transcendence-logs
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - xpack.security.enabled=${ELK_SECURITY_ENABLED:-false}
+      - xpack.security.enrollment.enabled=false
+      - xpack.security.http.ssl.enabled=false
+      - xpack.security.transport.ssl.enabled=false
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+      - ./elk/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
+    ports:
+      - "127.0.0.1:${ELASTICSEARCH_PORT:-9200}:9200"
+    networks:
+      - transcendence
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.3
+    container_name: logstash
+    volumes:
+      - ./elk/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./elk/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    ports:
+      - "127.0.0.1:${LOGSTASH_PORT:-5044}:5044"
+      - "127.0.0.1:${LOGSTASH_TCP_PORT:-5000}:5000/tcp"
+      - "127.0.0.1:${LOGSTASH_UDP_PORT:-5000}:5000/udp"
+    environment:
+      - "LS_JAVA_OPTS=-Xmx256m -Xms256m"
+      - ELASTICSEARCH_HOST=elasticsearch:9200
+    networks:
+      - transcendence
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9600/_node/stats || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.3
+    container_name: kibana
+    volumes:
+      - ./elk/kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
+    ports:
+      - "127.0.0.1:${KIBANA_PORT:-5601}:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    networks:
+      - transcendence
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:5601/api/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  # --- Monitoring stack (from docker-compose.prometheus.yml)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+      - "--web.enable-lifecycle"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - transcendence
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+      - GF_SECURITY_ADMIN_PASSWORD_POLICY=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_AUTH_BASIC_ENABLED=true
+      - GF_AUTH_DISABLE_LOGIN_FORM=false
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_USERS_ALLOW_ORG_CREATE=false
+      - GF_USERS_AUTO_ASSIGN_ORG=true
+      - GF_USERS_AUTO_ASSIGN_ORG_ROLE=Viewer
+      - GF_LOG_LEVEL=info
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana-data:/var/lib/grafana/data
+    ports:
+      - "127.0.0.1:${GRAFANA_PORT:-3001}:3000"
+    networks:
+      - transcendence
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: node-exporter
+    command:
+      - "--path.rootfs=/host"
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /:/host:ro,rslave
+    ports:
+      - "127.0.0.1:${NODE_EXPORTER_PORT:-9101}:9100"
+    networks:
+      - transcendence
+    restart: unless-stopped
+    pid: host
 
 volumes:
   databank-data:
+  elasticsearch-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
 
 networks:
   transcendence:
