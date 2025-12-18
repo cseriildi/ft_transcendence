@@ -107,9 +107,10 @@ export class FriendsList {
     userItem.classList.add(
       "user-item",
       "flex",
+      "flex-wrap",
       "items-center",
-      "space-x-2",
-      "sm:space-x-4",
+      "gap-2",
+      "sm:gap-3",
       "p-2",
       "sm:p-3",
       "hover:bg-blue-600",
@@ -118,8 +119,7 @@ export class FriendsList {
       "max-w-md",
       "rounded-lg",
       "text-white",
-      "relative",
-      "min-w-0"
+      "relative"
     );
 
     // Avatar container with online indicator
@@ -204,10 +204,10 @@ export class FriendsList {
     isInviter: boolean
   ): HTMLDivElement {
     const usernameContainer = document.createElement("div");
-    usernameContainer.classList.add("flex", "flex-col", "flex-1", "min-w-0");
+    usernameContainer.classList.add("flex", "flex-col", "flex-1", "min-w-0", "overflow-hidden");
 
     const usernameRow = document.createElement("div");
-    usernameRow.classList.add("flex", "items-center", "gap-2");
+    usernameRow.classList.add("flex", "flex-wrap", "items-center", "gap-1", "sm:gap-2");
 
     const usernameSpan = document.createElement("span");
     usernameSpan.textContent = username;
@@ -225,6 +225,7 @@ export class FriendsList {
         "sm:px-1.5",
         "py-0.5",
         "rounded",
+        "whitespace-nowrap",
         "flex-shrink-0",
         isOnline ? "text-neon-green" : "text-neon-pink"
       );
@@ -256,7 +257,7 @@ export class FriendsList {
     const chatButton = document.createElement("button");
     chatButton.textContent = i18n.t("chat.title");
     chatButton.title = i18n.t("chat.startTitle");
-    chatButton.classList.add("btn-pink");
+    chatButton.classList.add("btn-pink", "whitespace-nowrap");
 
     chatButton.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the profile navigation
@@ -285,7 +286,7 @@ export class FriendsList {
     const inviteButton = document.createElement("button");
     inviteButton.textContent = i18n.t("chat.inviteButton");
     inviteButton.title = i18n.t("chat.inviteButton");
-    inviteButton.classList.add("btn-green", "ml-2");
+    inviteButton.classList.add("btn-green", "whitespace-nowrap");
 
     inviteButton.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent triggering the profile navigation
@@ -334,7 +335,8 @@ export class FriendsList {
             .sort((a, b) => a - b)
             .join("-");
           const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
-          const message = `Game Invitation! 🎮 ${gameLink} 🎮`;
+          // Send neutral, non-localized token so the chat page will localize it for the recipient
+          const message = `__GAME_INVITE__:${gameLink}`;
 
           // Navigate to chat page with an autoMessage parameter
           const encoded = encodeURIComponent(message);
