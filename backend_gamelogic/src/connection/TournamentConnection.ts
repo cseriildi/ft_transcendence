@@ -56,7 +56,7 @@ export default class TournamentConnection extends ConnectionSession {
     const usernames = names.map((name: string) => name.trim());
 
     // Username pattern: letters, numbers, underscores, and hyphens only
-    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+    const usernamePattern = /^[a-zA-Z0-9_\-]+$/;
 
     // Validate each name
     for (const username of usernames) {
