@@ -29,13 +29,14 @@ jobs:
         run: |
           # Start ELK stack first (especially logstash for syslog logging)
           echo "Starting ELK stack first..."
-          docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml up -d --build elasticsearch logstash
+          # Use the single merged compose file present in the repo
+          docker compose -f docker-compose.yml up -d --build elasticsearch logstash
 
           # Wait for logstash to be ready
           echo "Waiting for logstash to be ready..."
           timeout=60
           while [ $timeout -gt 0 ]; do
-            if docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml ps logstash | grep -q "Up"; then
+            if docker compose -f docker-compose.yml ps logstash | grep -q "Up"; then
               echo "✓ Logstash is ready"
               break
             fi
@@ -49,7 +50,7 @@ jobs:
 
           # Now start all remaining services
           echo "Starting remaining services..."
-          docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml up -d --build
+          docker compose -f docker-compose.yml up -d --build
 
       - name: Wait for services to be ready
         run: |
@@ -130,7 +131,7 @@ jobs:
 
           app_containers="databank backend frontend nginx live-chat"
           for container in $app_containers; do
-            status=$(docker compose -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml ps -q $container | xargs docker inspect --format='{{.State.Status}}')
+            status=$(docker compose -f docker-compose.yml ps -q $container | xargs docker inspect --format='{{.State.Status}}')
             if [ "$status" != "running" ]; then
               echo "ERROR: Container $container is not running (status: $status)"
               exit 1
