@@ -186,7 +186,7 @@
     "blockConfirmPrefix": "Are you sure you want to block",
     "blockConfirmSuffix": "You will no longer be able to send or receive messages from this user.",
     "inviteButton": "🎮 Invite",
-    "gameInvitationMessage": "Game Invitation! 🎮 {{link}} 🎮"
+    "gameInvitationMessage": "Game Invitation! 🎮"
   },
 
   "edit": {

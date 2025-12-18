@@ -187,7 +187,8 @@
     "blockConfirmPrefix": "Biztosan le szeretnéd tiltani:",
     "blockConfirmSuffix": "Ezután nem tudsz üzenetet küldeni vagy fogadni tőle.",
     "inviteButton": "🎮 Meghívás",
-    "gameInvitationMessage": "Játékmeghívó! 🎮 {{link}} 🎮"
+    "joinGame": "Csatlakozás a játékhoz",
+    "gameInvitationMessage": "Játékmeghívó! 🎮"
   },
 
   "edit": {

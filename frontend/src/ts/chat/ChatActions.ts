@@ -92,7 +92,8 @@ export class ChatActions {
       }
 
       const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
-      const message = i18n.t("chat.gameInvitationMessage", { link: gameLink });
+      // Send a neutral, non-localized token + link. Clients will render localized wrapper.
+      const message = `__GAME_INVITE__:${gameLink}`;
 
       onMessageReady(message);
     } catch (error) {

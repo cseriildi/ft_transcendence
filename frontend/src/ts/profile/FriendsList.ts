@@ -335,7 +335,8 @@ export class FriendsList {
             .sort((a, b) => a - b)
             .join("-");
           const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
-          const message = i18n.t("chat.gameInvitationMessage", { link: gameLink });
+          // Send neutral, non-localized token so the chat page will localize it for the recipient
+          const message = `__GAME_INVITE__:${gameLink}`;
 
           // Navigate to chat page with an autoMessage parameter
           const encoded = encodeURIComponent(message);
