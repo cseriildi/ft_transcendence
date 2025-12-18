@@ -10,7 +10,10 @@ export interface GamePairing {
   round: number;
 }
 
+export interface TournamentState {}
+
 export class Tournament {
+  private state: any[] = [];
   protected waitingPlayers: Set<TournamentPlayer> = new Set();
   protected currentRound: Set<GamePairing> = new Set();
   private round: number = 0;
@@ -90,4 +93,6 @@ export class Tournament {
   getAllConnections(): any[] {
     return [];
   }
+
+  broadcastTournamentState(): void {}
 }

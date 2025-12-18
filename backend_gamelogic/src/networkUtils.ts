@@ -46,7 +46,7 @@ export function broadcastGameState(game: GameServer) {
 
   // Send to all connected clients
   for (const { connection } of game.clients.values()) {
-    if (!connection) continue; // Skip clients without connections
+    if (!connection || connection.readyState !== connection.OPEN) continue;
     try {
       connection.send(message);
     } catch (err) {
@@ -103,7 +103,7 @@ export function broadcastGameSetup(game: GameServer) {
 
   // Send to all connected clients - each gets told which player they are
   for (const [playerNum, { connection }] of game.clients.entries()) {
-    if (!connection) continue; // Skip clients without connections (e.g., tournament AI)
+    if (!connection || connection.readyState !== connection.OPEN) continue;
     try {
       const message = JSON.stringify({
         type: "gameSetup",
@@ -147,7 +147,7 @@ export function broadcastGameResult(game: GameServer) {
   });
   if (game.gameMode === "remoteTournament" && game.tournament) {
     for (const playerConn of game.tournament.getAllConnections()) {
-      if (!playerConn) continue;
+      if (!playerConn || playerConn.readyState !== playerConn.OPEN) continue;
       try {
         playerConn.send(message);
       } catch (err) {
@@ -158,7 +158,7 @@ export function broadcastGameResult(game: GameServer) {
   }
   // Send to all connected clients
   for (const [playerNum, { connection }] of game.clients.entries()) {
-    if (!connection) continue;
+    if (!connection || connection.readyState !== connection.OPEN) continue;
     try {
       connection.send(message);
     } catch (err) {
@@ -170,7 +170,7 @@ export function broadcastGameResult(game: GameServer) {
 // Helper function to send error message to client
 export function sendErrorToClient(connection: any, error: string) {
   try {
-    if (!connection) {
+    if (!connection || connection.readyState !== connection.OPEN) {
       return;
     }
     connection.send(

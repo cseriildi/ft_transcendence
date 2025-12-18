@@ -2,7 +2,7 @@ import { GameManager } from "./gameManager.js";
 import { GameServer } from "./gameTypes.js";
 import { TournamentPlayer, Tournament } from "./Tournament.js";
 import { createGame } from "./gameUtils.js";
-import { sendErrorToClient } from "./networkUtils.js";
+import { sendErrorToClient, broadcastGameSetup } from "./networkUtils.js";
 
 export class RemoteTournament extends Tournament {
   private players: Map<number, { connection: any; game: GameServer | null }> = new Map();
@@ -10,8 +10,7 @@ export class RemoteTournament extends Tournament {
   private waiting: boolean = true;
   private gameManager: GameManager;
   private activeGameCount: number = 0;
-  private maxPlayers: number = 4;
-  private finished: boolean = false;
+  private maxPlayers: number = 2;
   constructor(gameManager: GameManager) {
     super([]);
     this.createdAt = new Date();
@@ -56,13 +55,29 @@ export class RemoteTournament extends Tournament {
     for (const [userId, playerData] of this.players.entries()) {
       if (playerData.connection === connection) {
         try {
-          sendErrorToClient(connection, "You have been disconnected");
-          connection.close();
+          if (
+            playerData.connection &&
+            playerData.connection.readyState === playerData.connection.OPEN
+          ) {
+            sendErrorToClient(connection, "You have been disconnected");
+            connection.close();
+          }
         } catch (err) {
           console.error("Error closing connection:", err);
         }
+        // Clear connection in tournament
         playerData.connection = null;
         this.players.set(userId, playerData);
+
+        // Also clear connection in game if player has one
+        if (playerData.game) {
+          const currentClient = Array.from(playerData.game.clients.values()).find(
+            (client) => client.playerInfo.userId === userId
+          );
+          if (currentClient) {
+            currentClient.connection = null;
+          }
+        }
         break;
       }
     }
@@ -70,35 +85,22 @@ export class RemoteTournament extends Tournament {
 
   updatePlayerConnection(userId: number, connection: any): boolean {
     const playerData = this.players.get(userId);
-    if (!playerData) return false;
-    let game = this.fetchGame(userId);
+    if (!playerData || !connection || playerData.connection === connection) {
+      return false;
+    }
 
-    if (game) {
-      game.updateConnection(userId, connection);
-    } else if (this.waiting) {
-      const player = Array.from(this.waitingPlayers).find((p) => p.userId === userId);
-      if (player) {
-        connection.send(
-          JSON.stringify({
-            type: "playerJoined",
-            username: player.username,
-            players: Array.from(this.waitingPlayers, (p) => p.username),
-          })
-        );
+    this.disconnect(playerData.connection);
+    playerData.connection = connection;
+    if (playerData.game) {
+      const currentClient = Array.from(playerData.game.clients.values()).find(
+        (client) => client.playerInfo.userId === userId
+      );
+      if (currentClient) {
+        currentClient.connection = connection;
       }
     }
-    if (playerData) {
-      if (playerData.connection !== connection) {
-        // Only disconnect if it's a different connection object and not null
-        if (playerData.connection) {
-          this.disconnect(playerData.connection);
-        }
-        playerData.connection = connection;
-        this.players.set(userId, playerData);
-        return true;
-      }
-    }
-    return false;
+    this.players.set(userId, playerData);
+    return true;
   }
 
   broadcastMessage(message: any): void {
@@ -130,6 +132,12 @@ export class RemoteTournament extends Tournament {
       this.activeGameCount++;
       const game = createGame("remoteTournament", (game) => {
         this.gameManager.removeActiveGame(game);
+
+        // Clear game connections before setting game to null
+        for (const client of game.clients.values()) {
+          client.connection = null;
+        }
+
         this.players.get(pairing.player1.userId)!.game = null;
         this.players.get(pairing.player2.userId)!.game = null;
         this.activeGameCount--;
@@ -149,17 +157,33 @@ export class RemoteTournament extends Tournament {
 
       this.gameManager.addActiveGame(game);
       game.tournament = this;
+
+      // Get connections from tournament's stored connections
+      const player1Data = this.players.get(pairing.player1.userId);
+      const player2Data = this.players.get(pairing.player2.userId);
+      const player1Connection = player1Data?.connection || null;
+      const player2Connection = player2Data?.connection || null;
+
       game.clients.set(1, {
         playerInfo: { username: pairing.player1.username, userId: pairing.player1.userId },
-        connection: this.players.get(pairing.player1.userId)?.connection,
+        connection: player1Connection,
       });
       game.clients.set(2, {
         playerInfo: { username: pairing.player2.username, userId: pairing.player2.userId },
-        connection: this.players.get(pairing.player2.userId)?.connection,
+        connection: player2Connection,
       });
+
+      // Update game references (keep connections in sync)
+      if (player1Data) {
+        player1Data.game = game;
+        this.players.set(pairing.player1.userId, player1Data);
+      }
+      if (player2Data) {
+        player2Data.game = game;
+        this.players.set(pairing.player2.userId, player2Data);
+      }
+
       game.freezeBall();
-      this.players.get(pairing.player1.userId)!.game = game;
-      this.players.get(pairing.player2.userId)!.game = game;
       game.runGameCountdown();
     });
     this.currentRound.clear();

@@ -45,9 +45,7 @@ export default class RemoteTournamentConnection extends ConnectionSession {
   }
 
   public onClose() {
-    if (this.game) {
-      this.game.disconnect(this.connection);
-    }
+    // Only disconnect from tournament - it will handle both tournament and game connections
     if (this.tournament) {
       this.tournament.disconnect(this.connection);
     }
