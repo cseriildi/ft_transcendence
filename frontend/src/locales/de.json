@@ -33,7 +33,7 @@
     "registerButton": "Registrieren",
     "emailPasswordRequired": "E-Mail und Passwort sind erforderlich.",
     "loginFailed": "Anmeldung fehlgeschlagen. Bitte überprüfe deine Anmeldedaten.",
-    "invalidEmail": "Ungültige E-Mail-Adresse. Bitte überprüfe sie und versuche es erneut.",
+    "invalidEmail": "Falsche E-Mail oder Passwort.",
     "invalidPassword": "Ungültiges Passwort. Bitte überprüfe es und versuche es erneut.",
     "invalid2FACode": "Ungültiger 2FA-Code. Bitte versuche es erneut.",
     "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung.",
@@ -185,7 +185,8 @@
     "blockError": "Beim Sperren des Benutzers ist ein Fehler aufgetreten. Bitte versuche es erneut.",
     "blockConfirmPrefix": "Bist du sicher, dass du",
     "blockConfirmSuffix": "sperren möchtest? Du kannst keine Nachrichten mehr mit diesem Benutzer senden oder empfangen.",
-    "inviteButton": "🎮 Einladen"
+    "inviteButton": "🎮 Einladen",
+    "gameInvitationMessage": "Spieleinladung! 🎮"
   },
 
   "edit": {

@@ -2,6 +2,7 @@ import { getAccessToken, getUserId } from "../utils/utils.js";
 import { fetchWithRefresh } from "../utils/fetchUtils.js";
 import { config } from "../config.js";
 import { MessageRenderer } from "./MessageRenderer.js";
+import { i18n } from "../utils/i18n.js";
 
 /**
  * Handles user actions in chat (blocking, inviting, etc.)
@@ -91,7 +92,8 @@ export class ChatActions {
       }
 
       const gameLink = `${location.origin}/pong?mode=friend&gameId=${gameId}`;
-      const message = `Game Invitation! 🎮 ${gameLink} 🎮`;
+      // Send a neutral, non-localized token + link. Clients will render localized wrapper.
+      const message = `__GAME_INVITE__:${gameLink}`;
 
       onMessageReady(message);
     } catch (error) {
