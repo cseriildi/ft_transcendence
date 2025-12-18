@@ -199,7 +199,7 @@ describe("GameManager", () => {
       gameManager.addUserGame(123, game);
       gameManager.setWaitingRemote({ playerInfo, connection, game });
 
-      const tournament = new Tournament(["P1", "P2", "P3", "P4"]);
+      const tournament = new Tournament(["Player1", "Player2", "Player3", "Player4"]);
       gameManager.addTournament(tournament);
 
       vi.spyOn(game, "stop");

@@ -25,10 +25,32 @@ export class Tournament {
     // Trim all names
     const trimmedNames = playerNames.map((name) => name.trim());
 
-    // Check for empty names
-    const emptyNames = trimmedNames.filter((username) => username.length === 0);
-    if (emptyNames.length > 0) {
-      throw new Error("All player names must be non-empty");
+    // Username pattern: letters, numbers, underscores, and hyphens only
+    const usernamePattern = /^[a-zA-Z0-9_\-]+$/;
+
+    // Validate each name
+    for (const username of trimmedNames) {
+      // Check for empty names
+      if (username.length === 0) {
+        throw new Error("Player name cannot be empty");
+      }
+
+      // Check minimum length
+      if (username.length < 3) {
+        throw new Error(`Player name must be at least 3 characters: "${username}"`);
+      }
+
+      // Check maximum length
+      if (username.length > 15) {
+        throw new Error(`Player name cannot exceed 15 characters: "${username}"`);
+      }
+
+      // Check pattern
+      if (!usernamePattern.test(username)) {
+        throw new Error(
+          `Player name can only contain letters, numbers, underscores, and hyphens: "${username}"`
+        );
+      }
     }
 
     // Check for duplicates

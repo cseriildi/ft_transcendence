@@ -155,7 +155,7 @@ export class Pong {
 
   newTournament(playerNames: string[]) {
     // Validate all player names
-    const usernamePattern = /^[a-zA-Z0-9_-]+$/;
+    const usernamePattern = /^[a-zA-Z0-9_\-]+$/;
 
     for (const name of playerNames) {
       // Check if name is empty

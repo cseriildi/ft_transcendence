@@ -54,15 +54,46 @@ export default class TournamentConnection extends ConnectionSession {
 
   private checkNames(names: string[]): string[] {
     const usernames = names.map((name: string) => name.trim());
-    if (usernames.includes("")) throw new Error("Player usernames must be non-empty");
 
+    // Username pattern: letters, numbers, underscores, and hyphens only
+    const usernamePattern = /^[a-zA-Z0-9_\-]+$/;
+
+    // Validate each name
+    for (const username of usernames) {
+      // Check for empty names
+      if (username.length === 0) {
+        throw new Error("Player name cannot be empty");
+      }
+
+      // Check minimum length
+      if (username.length < 3) {
+        throw new Error(`Player name must be at least 3 characters: "${username}"`);
+      }
+
+      // Check maximum length
+      if (username.length > 15) {
+        throw new Error(`Player name cannot exceed 15 characters: "${username}"`);
+      }
+
+      // Check pattern
+      if (!usernamePattern.test(username)) {
+        throw new Error(
+          `Player name can only contain letters, numbers, underscores, and hyphens: "${username}"`
+        );
+      }
+    }
+
+    // Check for duplicates
     const uniqueUsernames = new Set(usernames);
-    if (uniqueUsernames.size !== usernames.length)
+    if (uniqueUsernames.size !== usernames.length) {
       throw new Error("Player usernames must be unique");
+    }
 
+    // Check player count
     if (names.length !== 4 && names.length !== 8) {
       throw new Error("Tournament must have exactly 4 or 8 players");
     }
+
     return usernames;
   }
 

@@ -20,13 +20,46 @@ describe("Tournament System", () => {
     it("should reject empty player names", () => {
       expect(() => {
         new Tournament(["Alice", "", "Bob"]);
-      }).toThrow("All player names must be non-empty");
+      }).toThrow("Player name cannot be empty");
     });
 
     it("should reject whitespace-only names", () => {
       expect(() => {
         new Tournament(["Alice", "   ", "Bob"]);
-      }).toThrow("All player names must be non-empty");
+      }).toThrow("Player name cannot be empty");
+    });
+
+    it("should reject names shorter than 3 characters", () => {
+      expect(() => {
+        new Tournament(["Alice", "Bo", "Charlie"]);
+      }).toThrow("Player name must be at least 3 characters");
+    });
+
+    it("should reject names longer than 15 characters", () => {
+      expect(() => {
+        new Tournament(["Alice", "VeryLongPlayerName123", "Charlie"]);
+      }).toThrow("Player name cannot exceed 15 characters");
+    });
+
+    it("should reject names with invalid characters", () => {
+      expect(() => {
+        new Tournament(["Alice", "Bob@123", "Charlie"]);
+      }).toThrow("Player name can only contain letters, numbers, underscores, and hyphens");
+    });
+
+    it("should accept names with underscores and hyphens", () => {
+      const tournament = new Tournament(["Alice_123", "Bob-456", "Charlie_X"]);
+      expect(tournament).toBeDefined();
+    });
+
+    it("should accept minimum length names (3 characters)", () => {
+      const tournament = new Tournament(["Abc", "Def", "Ghi"]);
+      expect(tournament).toBeDefined();
+    });
+
+    it("should accept maximum length names (15 characters)", () => {
+      const tournament = new Tournament(["Player123456789", "Alice_Bob_Carol", "Charlie"]);
+      expect(tournament).toBeDefined();
     });
 
     it("should reject duplicate player names", () => {
@@ -107,7 +140,7 @@ describe("Tournament System", () => {
     });
 
     it("should assign round number to pairs", () => {
-      const tournament = new Tournament(["A", "B", "C", "D", "E", "F"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD", "EEE", "FFF"]);
 
       const pair1 = tournament.getNextPair();
       expect(pair1!.round).toBe(1);
@@ -125,7 +158,7 @@ describe("Tournament System", () => {
     });
 
     it("should generate multiple pairs for tournament", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       const pair1 = tournament.getNextPair();
       const pair2 = tournament.getNextPair();
@@ -146,7 +179,7 @@ describe("Tournament System", () => {
     });
 
     it("should handle odd number of players", () => {
-      const tournament = new Tournament(["A", "B", "C"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC"]);
 
       const pair = tournament.getNextPair();
       expect(pair).not.toBeNull();
@@ -158,7 +191,7 @@ describe("Tournament System", () => {
 
   describe("Game Results Processing", () => {
     it("should store game results", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       const pair = tournament.getNextPair()!;
       pair.player1.score = 5;
@@ -172,7 +205,7 @@ describe("Tournament System", () => {
     });
 
     it("should reset winner score to zero", () => {
-      const tournament = new Tournament(["A", "B"]);
+      const tournament = new Tournament(["AAA", "BBB"]);
 
       const pair = tournament.getNextPair()!;
       pair.player1.score = 10;
@@ -184,7 +217,7 @@ describe("Tournament System", () => {
     });
 
     it("should advance winner back to active players", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       const pair1 = tournament.getNextPair()!;
       pair1.player1.score = 5;
@@ -211,7 +244,7 @@ describe("Tournament System", () => {
     });
 
     it("should accumulate multiple results", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       const pair1 = tournament.getNextPair()!;
       pair1.player1.score = 5;
@@ -230,20 +263,20 @@ describe("Tournament System", () => {
 
   describe("Tournament Progression", () => {
     it("should start at round 0", () => {
-      const tournament = new Tournament(["A", "B"]);
+      const tournament = new Tournament(["AAA", "BBB"]);
 
       expect(tournament.getRound()).toBe(0);
     });
 
     it("should increment round when new pairings generated", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       tournament.getNextPair();
       expect(tournament.getRound()).toBe(1);
     });
 
     it("should not increment round for same round pairs", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       tournament.getNextPair();
       const round1 = tournament.getRound();
@@ -255,7 +288,7 @@ describe("Tournament System", () => {
     });
 
     it("should simulate complete tournament", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       // Round 1: 2 games
       const pair1 = tournament.getNextPair()!;
@@ -287,7 +320,7 @@ describe("Tournament System", () => {
 
   describe("Winner Advancement", () => {
     it("should advance specified player", () => {
-      const tournament = new Tournament(["A", "B", "C", "D"]);
+      const tournament = new Tournament(["AAA", "BBB", "CCC", "DDD"]);
 
       const pair = tournament.getNextPair()!;
       const winner = pair.player1;
@@ -312,7 +345,7 @@ describe("Tournament System", () => {
     });
 
     it("should reset advanced player score", () => {
-      const tournament = new Tournament(["A", "B"]);
+      const tournament = new Tournament(["AAA", "BBB"]);
 
       const pair = tournament.getNextPair()!;
       pair.player1.score = 100;
@@ -325,7 +358,7 @@ describe("Tournament System", () => {
 
   describe("Tournament Data Integrity", () => {
     it("should initialize players with zero scores", () => {
-      const tournament = new Tournament(["A", "B"]);
+      const tournament = new Tournament(["AAA", "BBB"]);
 
       const player = tournament.getRandomPlayer();
 
