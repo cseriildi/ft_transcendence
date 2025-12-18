@@ -186,7 +186,8 @@
     "blockError": "Hiba történt a felhasználó tiltásakor.",
     "blockConfirmPrefix": "Biztosan le szeretnéd tiltani:",
     "blockConfirmSuffix": "Ezután nem tudsz üzenetet küldeni vagy fogadni tőle.",
-    "inviteButton": "🎮 Meghívás"
+    "inviteButton": "🎮 Meghívás",
+    "gameInvitationMessage": "Játékmeghívó! 🎮 {{link}} 🎮"
   },
 
   "edit": {

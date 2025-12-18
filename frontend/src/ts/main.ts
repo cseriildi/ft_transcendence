@@ -25,6 +25,7 @@ const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
 
 let currentPong: Pong | null = null;
 let tournamentLanguageListener: (() => void) | null = null;
+let friendsListLanguageListener: (() => void) | null = null;
 
 const listenersRegistry = new WeakMap<EventTarget, Map<string, EventListener>>();
 const attachedSet = new Set<EventTarget>();
@@ -82,6 +83,15 @@ const clearPong = () => {
   if (currentPong) {
     currentPong.destroy();
     currentPong = null;
+  }
+  // Clean up language listeners
+  if (tournamentLanguageListener) {
+    window.removeEventListener("languageChanged", tournamentLanguageListener);
+    tournamentLanguageListener = null;
+  }
+  if (friendsListLanguageListener) {
+    window.removeEventListener("languageChanged", friendsListLanguageListener);
+    friendsListLanguageListener = null;
   }
 };
 
@@ -419,7 +429,20 @@ const initPongPage = async () => {
         showElement(friendsSection);
         const FriendsListModule = await import("./profile/FriendsList.js");
         const friendsList = new FriendsListModule.FriendsList(router);
-        friendsList.loadFriendsList(friendList);
+        await friendsList.loadFriendsList(friendList);
+
+        // Remove old language listener if it exists
+        if (friendsListLanguageListener) {
+          window.removeEventListener("languageChanged", friendsListLanguageListener);
+          friendsListLanguageListener = null;
+        }
+
+        // Add language change listener to reload friends list
+        friendsListLanguageListener = () => {
+          friendsList.loadFriendsList(friendList);
+        };
+        window.addEventListener("languageChanged", friendsListLanguageListener);
+
         showElement(findFriendsBtn);
       }
       break;
