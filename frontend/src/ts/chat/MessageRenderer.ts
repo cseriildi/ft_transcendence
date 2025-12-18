@@ -77,12 +77,10 @@ export class MessageRenderer {
           link.target = "_blank";
           link.rel = "noopener noreferrer";
 
-
           link.textContent = part;
           link.className = "text-blue-400 hover:underline cursor-pointer";
 
           if (isGameInvite && part.includes("/pong?mode=friend&gameId=")) {
-
             const template = i18n.t("chat.gameInvitationMessage");
             const joinLabel = i18n.t("chat.joinGame");
             const inviteText = template.replace("{{link}}", joinLabel);
