@@ -8,8 +8,8 @@ MAKEFLAGS += --no-print-directory
 # Try to resolve local IP (fallback to localhost)
 LOCAL_IP := $(shell ip route get 1.1.1.1 2>/dev/null | awk '/src/ {print $$7; exit}' || echo localhost)
 
-# Compose files (ELK always included)
-COMPOSE_FILES = -f docker-compose.yml -f docker-compose.elk.yml -f docker-compose.prometheus.yml
+# Compose file
+COMPOSE_FILES = -f docker-compose.yml
 
 # Docker compose wrapper
 DOCKER_COMPOSE = docker compose --ansi never
@@ -88,59 +88,46 @@ build:
 up:
 	@echo "🚀 Starting all services..."
 	@echo "📡 HTTPS: $(HTTPS_PORT), HTTP: $(HTTP_PORT) → HTTPS"
-	@echo "📊 Including ELK stack"
 
-	@echo "🔧 Starting Elasticsearch and Logstash first..."
-	@$(DOCKER_COMPOSE) $(COMPOSE_FILES) up -d --quiet-pull elasticsearch logstash $(QUIET_REDIRECT) || true
+	@echo "🚀 Starting services..."
+	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
+		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
+		$(DOCKER_COMPOSE) $(COMPOSE_FILES) up -d --quiet-pull $(QUIET_REDIRECT) || true
 
-	@echo "⏳ Waiting for Elasticsearch to be ready..."
+	@# Start ELK services first so Elasticsearch is available for templates/ILM
+	@echo "🔧 Starting Elasticsearch, Logstash and Kibana first..."
+	@$(DOCKER_COMPOSE) $(COMPOSE_FILES) up -d --quiet-pull elasticsearch logstash kibana $(QUIET_REDIRECT) || true
+
+	@echo "⏳ Waiting for Elasticsearch to be ready (before templates)..."
 	@for i in 1 2 3 4 5 6 7 8 9 10 11 12; do \
 		if curl -fsS http://localhost:9200/_cluster/health >/dev/null 2>&1; then \
-			echo "✅ Elasticsearch is ready!"; \
+			echo "✅ Elasticsearch is ready"; \
 			break; \
 		fi; \
 		if [ $$i -eq 12 ]; then \
 			echo "⚠️  Elasticsearch not ready after 60s, proceeding anyway..."; \
 		else \
-			echo "   Attempt $$i/12: Waiting for Elasticsearch..."; \
-			sleep 5; \
+			echo "   Attempt $$i/12: Waiting for Elasticsearch..."; sleep 5; \
 		fi; \
 	done
 
-	@echo "📋 Setting up Elasticsearch index template..."
-	@./elk/create-index-template.sh || echo "⚠️  Template setup had issues, continuing anyway..."
+	@# Create index template early so indices created by services use proper mappings
+	@# Run full ELK setup (includes optional deletion, ILM, template, write-index and Kibana setup)
+	@if [ -x ./elk/setup-elasticsearch.sh ]; then \
+		echo "⚙️  Running ELK setup (delete->template->ILM->Kibana)..."; \
+		./elk/setup-elasticsearch.sh || echo "⚠️  setup-elasticsearch failed (continuing)"; \
+	else \
+		echo "ℹ️  setup-elasticsearch.sh not found or not executable, skipping"; \
+	fi
 
-	@echo "⏳ Waiting for Logstash to be ready..."
-	@for i in 1 2 3 4 5; do \
-		if nc -z localhost 5000 2>/dev/null; then \
-			echo "✅ Logstash is ready!"; \
-			break; \
-		fi; \
-		if [ $$i -eq 5 ]; then \
-			echo "⚠️  Logstash not ready after 25s, proceeding anyway..."; \
-		else \
-			echo "   Attempt $$i/5: Waiting for Logstash port 5000..."; \
-			sleep 5; \
-		fi; \
-	done
-
-	@echo "⏳ Waiting 3 seconds for DNS propagation..."
-	@sleep 3
-
-	@echo "🚀 Starting application services..."
+	@echo "🚀 Starting remaining services..."
 	@NGINX_HTTPS_PORT=$(HTTPS_PORT) NGINX_HTTP_PORT=$(HTTP_PORT) \
 		PUBLIC_API_URL=$(PUBLIC_API_URL) PUBLIC_WS_URL=$(PUBLIC_WS_URL) \
 		$(DOCKER_COMPOSE) $(COMPOSE_FILES) up -d --quiet-pull $(QUIET_REDIRECT) || true
 
-	@echo "🔍 Checking if ELK stack needs initial setup..."
-	@sleep 2
-	@# Quiet check: if Kibana is reachable AND index-pattern exists, we assume configured
-	@if curl -fsS http://localhost:5601/api/saved_objects/index-pattern/transcendence-logs >/dev/null 2>&1; then \
-		echo "✅ ELK stack already configured"; \
-	else \
-		echo "⚙️  Running first-time ELK setup..."; \
-		$(MAKE) elk-setup; \
-	fi
+	@# ELK setup already run before starting remaining services
+
+
 
 	@echo ""
 	@echo "✅ Services started"
@@ -266,42 +253,6 @@ shell:
 		exit 1; \
 	fi
 
-# =============================================================================
-# ELK Stack Commands
-# =============================================================================
-
-elk-up:
-	@$(MAKE) up
-
-elk-down:
-	@$(MAKE) down
-
-elk-setup:
-	@echo "⚙️  Configuring Elasticsearch..."
-	@if ! $(DOCKER_COMPOSE) $(COMPOSE_FILES) ps elasticsearch | grep -q "Up"; then \
-		echo "❌ Elasticsearch is not running. Start it with: make elk-up"; \
-		exit 1; \
-	fi
-	@chmod +x ./elk/setup-elasticsearch.sh
-	@./elk/setup-elasticsearch.sh
-
-elk-logs:
-	@echo "📋 Showing Logstash logs..."
-	@$(DOCKER_COMPOSE) $(COMPOSE_FILES) logs -f logstash
-
-elk-clean:
-	@echo "⚠️  WARNING: This will delete all stored logs in Elasticsearch"
-	@printf "Are you sure? [y/N] "; \
-	read REPLY; \
-	case "$$REPLY" in \
-		[Yy]*) \
-			echo "🧹 Removing Elasticsearch data..."; \
-			$(DOCKER_COMPOSE) $(COMPOSE_FILES) down -v; \
-			docker volume rm transcendence_elasticsearch-data 2>/dev/null || true; \
-			echo "✅ ELK data cleaned"; \
-			;; \
-		*) echo "❌ Cancelled"; exit 1 ;; \
-	esac
 
 # =============================================================================
 # Help
@@ -341,14 +292,6 @@ help:
 	@echo "  make stats            - Show resource usage of all containers"
 	@echo "  make fre              - Deep clean and full rebuild (fclean + all)"
 	@echo ""
-	@echo "ELK Stack (Log Management - Always Enabled):"
-	@echo "  make elk-up           - Shortcut for 'make up'"
-	@echo "  make elk-down         - Shortcut for 'make down'"
-	@echo "  make elk-setup        - Configure Elasticsearch indices and ILM policies (run once)"
-	@echo "  make elk-logs         - View Logstash logs"
-	@echo "  make elk-clean        - Remove ELK data volumes (keeps configurations)"
-	@echo ""
-	@echo "💡 Tip: ELK stack is always included for comprehensive log management"
 
 # Allow "make backend" etc. without errors (common pattern)
 $(SERVICES):
@@ -358,4 +301,4 @@ $(SERVICES):
 	@$(MAKE) help
 
 .PHONY: all env certs setup-dirs build up dev down stop restart re fre clean fclean \
-	db-reset status stats logs shell help elk-up elk-down elk-setup elk-logs elk-clean $(SERVICES)
+	db-reset status stats logs shell help $(SERVICES)
