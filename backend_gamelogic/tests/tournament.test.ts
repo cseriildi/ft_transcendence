@@ -20,13 +20,46 @@ describe("Tournament System", () => {
     it("should reject empty player names", () => {
       expect(() => {
         new Tournament(["Alice", "", "Bob"]);
-      }).toThrow("All player names must be non-empty");
+      }).toThrow("Player name cannot be empty");
     });
 
     it("should reject whitespace-only names", () => {
       expect(() => {
         new Tournament(["Alice", "   ", "Bob"]);
-      }).toThrow("All player names must be non-empty");
+      }).toThrow("Player name cannot be empty");
+    });
+
+    it("should reject names shorter than 3 characters", () => {
+      expect(() => {
+        new Tournament(["Alice", "Bo", "Charlie"]);
+      }).toThrow("Player name must be at least 3 characters");
+    });
+
+    it("should reject names longer than 15 characters", () => {
+      expect(() => {
+        new Tournament(["Alice", "VeryLongPlayerName123", "Charlie"]);
+      }).toThrow("Player name cannot exceed 15 characters");
+    });
+
+    it("should reject names with invalid characters", () => {
+      expect(() => {
+        new Tournament(["Alice", "Bob@123", "Charlie"]);
+      }).toThrow("Player name can only contain letters, numbers, underscores, and hyphens");
+    });
+
+    it("should accept names with underscores and hyphens", () => {
+      const tournament = new Tournament(["Alice_123", "Bob-456", "Charlie_X"]);
+      expect(tournament).toBeDefined();
+    });
+
+    it("should accept minimum length names (3 characters)", () => {
+      const tournament = new Tournament(["Abc", "Def", "Ghi"]);
+      expect(tournament).toBeDefined();
+    });
+
+    it("should accept maximum length names (15 characters)", () => {
+      const tournament = new Tournament(["Player123456789", "Alice_Bob_Carol", "Charlie"]);
+      expect(tournament).toBeDefined();
     });
 
     it("should reject duplicate player names", () => {
