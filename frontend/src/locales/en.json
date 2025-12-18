@@ -33,7 +33,7 @@
     "registerButton": "Register",
     "emailPasswordRequired": "Email and password are required.",
     "loginFailed": "Login failed. Please check your credentials.",
-    "invalidEmail": "Invalid email address. Please check and try again.",
+    "invalidEmail": "Wrong email or password.",
     "invalidPassword": "Invalid password. Please check and try again.",
     "invalid2FACode": "Invalid 2FA code. Please try again.",
     "networkError": "Network error. Please check your connection.",

@@ -98,11 +98,6 @@ export default class FriendConnection extends ConnectionSession {
       this.game.gameId = this.gameId;
       this.gameManager.addActiveGame(this.game);
       this.gameManager.addUserGame(this.userId, this.game, this.gameId);
-      this.gameManager.setWaitingRemote({
-        playerInfo: { userId: this.userId, username: this.username },
-        connection: this.connection,
-        game: this.game,
-      });
     } else {
       if (!this.game.updateConnection(this.userId, this.connection)) {
         let playerNum: 1 | 2 = this.game.clients.has(1) ? 2 : 1;
