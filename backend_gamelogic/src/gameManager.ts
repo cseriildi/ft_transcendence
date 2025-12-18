@@ -1,4 +1,5 @@
 import { GameServer, PlayerInfo } from "./gameTypes.js";
+import { RemoteTournament } from "./RemoteTournament.js";
 import { Tournament } from "./Tournament.js";
 
 export type WaitingRemote = {
@@ -14,7 +15,9 @@ export class GameManager {
     { online: GameServer | null; friend: Map<string, GameServer> | null }
   >();
   private activeTournaments = new Set<Tournament>();
+  private activeTournamentPlayers = new Map<number, RemoteTournament>();
   private waitingRemotePlayer: WaitingRemote | null = null;
+  private waitingTournament: RemoteTournament | null = null;
 
   addTournament(t: Tournament) {
     this.activeTournaments.add(t);
@@ -103,5 +106,25 @@ export class GameManager {
 
   getActiveGames() {
     return this.activeGames;
+  }
+
+  getWaitingTournament() {
+    return this.waitingTournament;
+  }
+
+  setWaitingTournament(tournament: RemoteTournament | null) {
+    this.waitingTournament = tournament;
+  }
+
+  addTournamentPlayer(userId: number, tournament: RemoteTournament) {
+    this.activeTournamentPlayers.set(userId, tournament);
+  }
+
+  removeTournamentPlayer(userId: number) {
+    this.activeTournamentPlayers.delete(userId);
+  }
+
+  getTournamentPlayer(userId: number): RemoteTournament | null {
+    return this.activeTournamentPlayers.get(userId) || null;
   }
 }

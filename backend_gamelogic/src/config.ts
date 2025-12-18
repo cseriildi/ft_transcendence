@@ -1,4 +1,4 @@
-export const VALID_MODES = ["local", "ai", "remote", "friend", "tournament"];
+export const VALID_MODES = ["local", "ai", "remote", "friend", "tournament", "remoteTournament"];
 
 // Helper function to get required environment variable
 function getEnvVar(name: string): string {

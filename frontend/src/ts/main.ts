@@ -21,7 +21,7 @@ import {
 } from "./utils/utils.js";
 import { fetchWithRefresh } from "./utils/fetchUtils.js";
 
-const VALID_MODES = ["local", "remote", "friend", "ai", "tournament"];
+const VALID_MODES = ["local", "remote", "friend", "ai", "tournament", "remoteTournament"];
 
 let currentPong: Pong | null = null;
 let tournamentLanguageListener: (() => void) | null = null;
@@ -104,7 +104,7 @@ const initPongPage = async () => {
   }
 
   // Redirect to login if user is not authorized for remote or friend modes
-  if ((mode === "remote" || mode === "friend") && !isUserAuthorized()) {
+  if (["remote", "friend", "remoteTournament"].includes(mode) && !isUserAuthorized()) {
     router.navigate("/login");
     return;
   }
@@ -430,6 +430,13 @@ const initPongPage = async () => {
       showElement(tournamentSetup);
       showElement(tournament4Btn);
       showElement(tournament8Btn);
+      break;
+    }
+    case "remoteTournament": {
+      hideElement(newGameBtn);
+      showElement(canvasContainer);
+      currentPong = new Pong("pong-canvas", `${config.wsUrl}/game`, mode);
+      currentPong.startGame(mode, { userId: parseInt(userId!), username: username! });
       break;
     }
     default: {

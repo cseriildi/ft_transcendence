@@ -11,6 +11,7 @@ import FriendConnection from "./connection/FriendConnection.js";
 import TournamentConnection from "./connection/TournamentConnection.js";
 import { verifyAccessToken, fetchUsername } from "./utils/authUtils.js";
 import ConnectionSession from "./connection/ConnectionSession.js";
+import RemoteTournamentConnection from "./connection/RemoteTournamentConnection.js";
 
 // Validate configuration on startup
 validateConfig();
@@ -129,7 +130,7 @@ fastify.register(async function (server: FastifyInstance) {
       let username: string | undefined;
       let token: string | undefined;
 
-      if (["remote", "friend"].includes(mode)) {
+      if (["remote", "friend", "remoteTournament"].includes(mode)) {
         token = url.searchParams.get("token") || undefined;
 
         if (!token) {
@@ -174,6 +175,16 @@ fastify.register(async function (server: FastifyInstance) {
             break;
           case "tournament":
             session = new TournamentConnection(connection, req, mode, gameManager);
+            break;
+          case "remoteTournament":
+            session = new RemoteTournamentConnection(
+              connection,
+              req,
+              mode,
+              gameManager,
+              userId!,
+              username!
+            );
             break;
           default:
             break;

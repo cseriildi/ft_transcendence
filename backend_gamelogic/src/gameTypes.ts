@@ -229,11 +229,14 @@ export class GameServer {
   }
 
   disconnect(connection: any): void {
+    if (!connection) return;
     for (const client of this.clients.values()) {
       if (client.connection === connection) {
-        sendErrorToClient(client.connection, "You have been disconnected");
         try {
-          client.connection.close();
+          if (client.connection && client.connection.readyState === client.connection.OPEN) {
+            sendErrorToClient(client.connection, "You have been disconnected");
+            client.connection.close();
+          }
         } catch (err) {
           console.error("Error closing connection:", err);
         }
@@ -259,12 +262,27 @@ export class GameServer {
   }
 
   updateConnection(userId: number, newConnection: any): boolean {
+    // This method is now deprecated for remote tournaments
+    // The tournament manages connections directly
+    // Keeping for compatibility with non-tournament games
     const currentClient = Array.from(this.clients.values()).find(
       (client) => client.playerInfo.userId === userId
     );
     if (currentClient) {
-      this.disconnect(currentClient.connection);
-      currentClient.connection = newConnection;
+      const oldConnection = currentClient.connection;
+      if (oldConnection !== newConnection) {
+        currentClient.connection = newConnection;
+        if (oldConnection) {
+          try {
+            if (oldConnection.readyState === oldConnection.OPEN) {
+              sendErrorToClient(oldConnection, "You have been disconnected");
+              oldConnection.close();
+            }
+          } catch (err) {
+            console.error("Error closing old connection:", err);
+          }
+        }
+      }
       broadcastGameSetup(this);
       return true;
     }
