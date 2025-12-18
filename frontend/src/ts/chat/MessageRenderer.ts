@@ -4,6 +4,21 @@
 import { i18n } from "../utils/i18n.js";
 
 export class MessageRenderer {
+  constructor() {
+    window.addEventListener("languageChanged", () => this.updateInviteAnchors());
+  }
+
+  private updateInviteAnchors(): void {
+    const anchors = document.querySelectorAll<HTMLAnchorElement>("a[data-game-invite]");
+    anchors.forEach((a) => {
+      const template = i18n.t("chat.gameInvitationMessage");
+      const joinLabel = i18n.t("chat.joinGame");
+      const inviteText = template.replace("{{link}}", joinLabel);
+      a.textContent = inviteText;
+      a.title = inviteText;
+      a.setAttribute("aria-label", inviteText);
+    });
+  }
   /**
    * Create a message element with styling and link parsing
    */
@@ -80,6 +95,7 @@ export class MessageRenderer {
             inviteAnchor.textContent = inviteText;
             inviteAnchor.title = inviteText;
             inviteAnchor.setAttribute("aria-label", inviteText);
+            inviteAnchor.setAttribute("data-game-invite", "true");
 
             messageSpan.appendChild(inviteAnchor);
           } else {
